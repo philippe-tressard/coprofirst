@@ -38,6 +38,14 @@ export interface TicketEvolution {
 	peut_modifier?: boolean;
 	/**  🗑️ L'administrateur, sur une entrée saisie (jamais une réponse). */
 	peut_supprimer?: boolean;
+	/**  🔄 Ce que la correction du Suivi a fait de l'affaire — servi par le seul
+	 *   `PATCH` qui le corrige (`suite_sections.corriger_suivi`, #2715), absent
+	 *   ailleurs. `false` : l'affaire n'a pas suivi, le libellé dit pourquoi, et
+	 *   `etat_propose` est l'état que l'écran propose de lui appliquer. */
+	affaire_suivie?: boolean | null;
+	affaire_suivie_libelle?: string;
+	etat_propose?: string | null;
+	etat_propose_libelle?: string;
 }
 
 /**  La CORRECTION d'une Suite (`PATCH`) — toutes ses sections sauf la Diffusion

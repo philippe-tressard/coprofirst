@@ -20,11 +20,22 @@ c'est réécrire l'étape à la date où elle a été saisie — pas en ajouter 
 
 ## ⚠️ La subtilité, la même que pour le périmètre (`perimetre_fil.py`)
 
-Corriger une Suite ANCIENNE ne doit pas défaire un état RÉCENT. L'affaire suit
-la correction seulement si cette Suite est la dernière transition du fil, ET si
-l'affaire est encore dans l'état que la Suite lui avait donné — un état posé
-depuis par l'édition de l'affaire (« Correction : État … ») n'est pas une
-transition du fil, et ne doit pas être écrasé en silence.
+Corriger une Suite ANCIENNE ne doit pas défaire un état RÉCENT : une transition
+qui la SUIT dans le fil garde la main, et l'affaire ne bouge pas.
+
+## La dernière transition part de l'état réel (#2715, 13/11/2026)
+
+La règle exigeait aussi que l'affaire soit encore dans l'état que la Suite lui
+avait donné. Or un état se pose hors du fil — le crayon du titre écrit une
+« Correction : État … » sans transition, la création en lot naît « Chez le
+prestataire » sans Suite. Corriger la dernière Suite en « Résolu » laissait alors
+l'affaire « Chez le prestataire », sans un mot (TK-E00066). Arbitré : quand la
+Suite corrigée est la dernière transition et qu'elle DONNE un état, l'affaire le
+prend, quel que soit l'état réel. Ramenée à un commentaire, elle ne fait pas
+revenir l'affaire à l'état ancien du fil — ce serait écraser le plus récent.
+
+Ce qui n'est pas répercuté se DIT : la route sert `affaire_suivie` (False) et
+l'écran propose d'appliquer l'état (`suite_sections.corriger_suivi`).
 
 Les trois règles sont pures, et se vérifient par `--selftest`.
 """
@@ -88,24 +99,32 @@ def doit_propager_statut(
     resultat_avant: str,
     fil: Sequence[Any],
     statut_affaire: str,
+    *,
+    devient_transition: bool,
 ) -> bool:
     """L'affaire doit-elle suivre la correction du Suivi de cette entrée ?
 
-    Oui si aucune transition ne la SUIT dans le fil, et si l'affaire est encore
-    dans l'état que l'entrée lui donnait AVANT d'être corrigée (`resultat_avant`).
+    Jamais si une transition la SUIT dans le fil. Sinon, oui si l'affaire est
+    encore dans l'état que l'entrée lui donnait AVANT d'être corrigée
+    (`resultat_avant`) — ou si l'entrée corrigée DONNE un état
+    (`devient_transition`) : l'état réel, posé hors du fil, cède alors (#2715).
 
     ⚠️ Cas zéro : entrée sans identifiant ou absente du fil → `False`. La valeur
     sûre est celle qui n'écrit pas.
     """
-    if entree_id is None:
+    if entree_id is None or entree_id not in [e.id for e in fil]:
         return False
+    if suivie_d_une_transition(entree_id, fil):
+        return False
+    return statut_affaire == resultat_avant or devient_transition
+
+
+def suivie_d_une_transition(entree_id: Optional[int], fil: Sequence[Any]) -> bool:
+    """Une transition SUIT-elle cette entrée dans le fil ? Absente : non."""
     ids = [e.id for e in fil]
     if entree_id not in ids:
         return False
-    suivantes = fil[ids.index(entree_id) + 1 :]
-    if any(getattr(e, "type", None) == "etat" for e in suivantes):
-        return False
-    return statut_affaire == resultat_avant
+    return any(getattr(e, "type", None) == "etat" for e in fil[ids.index(entree_id) + 1 :])
 
 
 def _selftest() -> None:
@@ -128,17 +147,23 @@ def _selftest() -> None:
     assert suivi_corrige("ouvert", "etat", "résolu") == ("etat", "ouvert", "résolu")
     assert suivi_corrige("ouvert", "commentaire", "résolu") == ("commentaire", None, None)
     #  4. La dernière transition propage ; une ancienne ne défait pas la récente.
-    assert doit_propager_statut(4, "résolu", fil, "résolu")
-    assert not doit_propager_statut(2, "en_cours", fil, "résolu")
+    assert doit_propager_statut(4, "résolu", fil, "résolu", devient_transition=True)
+    assert not doit_propager_statut(2, "en_cours", fil, "résolu", devient_transition=True)
     #  5. Un commentaire après la dernière transition propage aussi (il en devient une).
-    assert doit_propager_statut(3, "en_cours", [c1, t2, c3], "en_cours")
-    #  6. L'affaire a changé d'état depuis, hors fil : on ne l'écrase pas.
-    assert not doit_propager_statut(4, "résolu", fil, "fermé")
+    assert doit_propager_statut(3, "en_cours", [c1, t2, c3], "en_cours", devient_transition=True)
+    #  6. L'état réel, posé hors du fil (crayon du titre, lot), cède à la dernière
+    #     transition (#2715)…
+    assert doit_propager_statut(4, "résolu", fil, "chez_prestataire", devient_transition=True)
+    #     …mais la ramener à un commentaire ne fait pas revenir l'état ancien du fil.
+    assert not doit_propager_statut(4, "résolu", fil, "fermé", devient_transition=False)
+    #     Dans l'état qu'elle donnait, la ramener à un commentaire propage, comme avant.
+    assert doit_propager_statut(4, "résolu", fil, "résolu", devient_transition=False)
     #  7. Cas zéro.
-    assert not doit_propager_statut(None, "résolu", fil, "résolu")
-    assert not doit_propager_statut(9, "résolu", fil, "résolu")
+    assert not doit_propager_statut(None, "résolu", fil, "résolu", devient_transition=True)
+    assert not doit_propager_statut(9, "résolu", fil, "résolu", devient_transition=True)
+    assert suivie_d_une_transition(3, fil) and not suivie_d_une_transition(4, fil)
     assert resultat(t4, "en_cours") == "résolu" and resultat(c3, "en_cours") == "en_cours"
-    print("OK suivi_fil : 13 cas verifies.")
+    print("OK suivi_fil : 17 cas verifies.")
 
 
 if __name__ == "__main__":

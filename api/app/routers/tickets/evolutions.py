@@ -142,8 +142,7 @@ def update_evolution(
     #  🔄 Toutes les sections d'une Suite se corrigent (01/10/2026) — le Suivi
     #  d'abord : il corrige l'entrée, et l'affaire seulement si c'est sa dernière
     #  transition (`utils/suivi_fil.py`). Le reste, comme à l'ajout.
-    if body.type is not None:
-        corriger_suivi(session, ticket, evol, body, user)
+    issue = corriger_suivi(session, ticket, evol, body, user) if body.type is not None else None
     appliquer_sections_suite(session, ticket, evol, body, user)
     if body.affaires_liees:
         ajouter_liens(session, ticket, body.affaires_liees, user)
@@ -155,13 +154,20 @@ def update_evolution(
         .where(TicketEvolution.ticket_id == ticket_id)
         .order_by(TicketEvolution.cree_le)
     ).all()
-    return evol_read(
+    lue = evol_read(
         evol,
         session,
         statuts_avant(fil, etat_de_la_suite(ticket)).get(evol.id),
         ticket=ticket,
         lecteur=user,
     )
+    #  🔴 Ce que l'affaire a fait de la correction se DIT (#2715) : un état qui
+    #  n'a pas suivi n'est plus un silence.
+    if issue is not None:
+        lue.affaire_suivie = issue.affaire_suivie
+        lue.affaire_suivie_libelle = issue.libelle
+        lue.etat_propose = issue.etat_propose
+    return lue
 
 
 @router.delete("/{ticket_id}/evolutions/{evol_id}", status_code=204)

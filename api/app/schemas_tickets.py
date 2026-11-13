@@ -129,6 +129,20 @@ class TicketEvolutionRead(EvolutionLue):
     #  défaut : une entrée rendue sans lecteur n'offre aucun geste.
     peut_modifier: bool = False
     peut_supprimer: bool = False
+    #  🔄 Ce que la CORRECTION du Suivi a fait de l'affaire (#2715) — servi par le
+    #  seul `PATCH` qui corrige le Suivi (`suite_sections.corriger_suivi`), `None`
+    #  ailleurs. `False` : l'affaire n'a pas pris l'état de la Suite, le libellé dit
+    #  pourquoi, et `etat_propose` est l'état que l'écran propose de lui appliquer
+    #  (`None` : aucun geste ne le peut — le suivi d'une actualité).
+    affaire_suivie: Optional[bool] = None
+    affaire_suivie_libelle: str = ""
+    etat_propose: Optional[str] = None
+
+    @computed_field  # type: ignore[prop-decorator]
+    @property
+    def etat_propose_libelle(self) -> str:
+        """L'état proposé à l'affaire, en clair — vide sans proposition (#2715)."""
+        return libelle_etat(self.etat_propose)
 
     @computed_field  # type: ignore[prop-decorator]
     @property

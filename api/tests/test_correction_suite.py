@@ -22,13 +22,15 @@ import uuid
 from datetime import datetime, timedelta
 
 import pytest
-from fastapi import HTTPException
+from fastapi import BackgroundTasks, HTTPException
 from sqlmodel import Session, select
 
 from app.database import engine
 from app.models.core import Ticket, TicketEvolution
 from app.routers.tickets.evolutions import get_evolutions, update_evolution
-from app.schemas import TicketEvolutionUpdate
+from app.routers.tickets.lot import LotDeVisites, creer_visites_en_lot
+from app.routers.tickets.mise_a_jour import update_ticket
+from app.schemas import TicketEvolutionUpdate, TicketUpdate
 from tests.aides_fil import cs, nettoyer_affaires  # noqa: F401
 
 T0 = datetime(2026, 9, 1, 9, 0)
@@ -68,7 +70,19 @@ def _entree(session, ticket, auteur_id, rang, ancien=None, nouveau=None) -> Tick
 
 
 def _corriger(session, cs, ticket, evol, **champs):
-    update_evolution(ticket.id, evol.id, TicketEvolutionUpdate(**champs), session=session, user=cs)
+    lu = update_evolution(
+        ticket.id, evol.id, TicketEvolutionUpdate(**champs), session=session, user=cs
+    )
+    session.expire_all()
+    return lu
+
+
+def _crayon_du_titre(session, cs, ticket, statut: str) -> None:
+    """L'état posé HORS du fil : le `PATCH` de l'affaire écrit une correction, pas
+    une transition (`test_correction_pas_transition.py`)."""
+    update_ticket(
+        ticket.id, TicketUpdate(statut=statut), BackgroundTasks(), session=session, user=cs
+    )
     session.expire_all()
 
 
@@ -201,3 +215,105 @@ def test_la_regle_pure_du_suivi_corrige():
     from app.utils.suivi_fil import _selftest
 
     _selftest()
+
+
+# ── #2715 : l'état posé hors du fil, et ce que l'affaire fait de la correction ──
+
+
+def test_la_derniere_suite_corrigee_l_emporte_sur_l_etat_pose_au_crayon(cs):
+    """Le cas du ticket (TK-E00066) : « Chez le prestataire » posé par le crayon du
+    titre, la dernière Suite corrigée en « Résolu » — l'affaire suit, et le dit."""
+    with Session(engine) as session:
+        t = _affaire(session, cs.id, "en_cours")
+        try:
+            e = _entree(session, t, cs.id, 1, "ouvert", "en_cours")
+            _crayon_du_titre(session, cs, t, "chez_prestataire")
+            lu = _corriger(session, cs, t, e, type="etat", nouveau_statut="résolu")
+            e, t = session.get(TicketEvolution, e.id), session.get(Ticket, t.id)
+            assert (e.ancien_statut, e.nouveau_statut) == ("ouvert", "résolu")
+            assert t.statut == "résolu" and t.ferme_le == e.cree_le
+            assert (lu.affaire_suivie, lu.affaire_suivie_libelle, lu.etat_propose) == (
+                True,
+                "",
+                None,
+            )
+        finally:
+            nettoyer_affaires(session, t.id)
+
+
+def test_une_suite_qui_n_est_pas_la_derniere_n_ecrase_rien_et_le_dit(cs):
+    """🔴 Ne pas écraser un état plus récent reste garanti — mais plus en silence."""
+    with Session(engine) as session:
+        t = _affaire(session, cs.id, "résolu")
+        try:
+            vieille = _entree(session, t, cs.id, 1, "ouvert", "en_cours")
+            _entree(session, t, cs.id, 2, "en_cours", "résolu")
+            lu = _corriger(session, cs, t, vieille, type="etat", nouveau_statut="annulé")
+            assert session.get(Ticket, t.id).statut == "résolu"
+            assert lu.affaire_suivie is False
+            assert lu.etat_propose == "annulé" and lu.etat_propose_libelle
+            assert "« Résolu »" in lu.affaire_suivie_libelle
+            assert "Suite plus récente" in lu.affaire_suivie_libelle
+        finally:
+            nettoyer_affaires(session, t.id)
+
+
+def test_ramenee_a_un_commentaire_la_derniere_suite_ne_restaure_pas_l_etat_ancien(cs):
+    """L'état réel posé au crayon est le plus récent : l'état d'avant du fil ne
+    l'écrase pas, et l'écran propose de l'appliquer."""
+    with Session(engine) as session:
+        t = _affaire(session, cs.id, "en_cours")
+        try:
+            e = _entree(session, t, cs.id, 1, "ouvert", "en_cours")
+            _crayon_du_titre(session, cs, t, "chez_prestataire")
+            lu = _corriger(session, cs, t, e, type="etat", nouveau_statut="ouvert")
+            assert session.get(TicketEvolution, e.id).type == "commentaire"
+            assert session.get(Ticket, t.id).statut == "chez_prestataire"
+            assert (lu.affaire_suivie, lu.etat_propose) == (False, "ouvert")
+            assert "hors de l'Historique" in lu.affaire_suivie_libelle
+        finally:
+            nettoyer_affaires(session, t.id)
+
+
+def test_une_visite_creee_en_lot_suit_la_correction_de_sa_suite(cs):
+    """La création en lot pose « Chez le prestataire » sans Suite (`lot.py`)."""
+    with Session(engine) as session:
+        creer_visites_en_lot(
+            LotDeVisites(
+                affaires=[
+                    {
+                        "titre": f"Visite {uuid.uuid4().hex[:6]}",
+                        "debut": datetime(2027, 1, 15, 9, 0),
+                        "perimetre_cible": ["résidence"],
+                    }
+                ]
+            ),
+            session=session,
+            user=cs,
+        )
+        t = session.exec(
+            select(Ticket).where(Ticket.auteur_id == cs.id).order_by(Ticket.id.desc())
+        ).first()
+        try:
+            assert t.statut == "chez_prestataire"
+            e = _entree(session, t, cs.id, 1)
+            lu = _corriger(session, cs, t, e, type="etat", nouveau_statut="résolu")
+            e = session.get(TicketEvolution, e.id)
+            assert (e.ancien_statut, e.nouveau_statut) == ("chez_prestataire", "résolu")
+            assert session.get(Ticket, t.id).statut == "résolu"
+            assert lu.affaire_suivie is True
+        finally:
+            nettoyer_affaires(session, t.id)
+
+
+def test_le_fil_ne_sert_pas_d_issue_hors_de_la_correction(cs):
+    """`affaire_suivie` ne parle que de la correction du Suivi : `None` ailleurs."""
+    with Session(engine) as session:
+        t = _affaire(session, cs.id, "en_cours")
+        try:
+            e = _entree(session, t, cs.id, 1, "ouvert", "en_cours")
+            assert _corriger(session, cs, t, e, contenu="<p>Texte</p>").affaire_suivie is None
+            lus = get_evolutions(t.id, session=session, user=cs)
+            assert [x.affaire_suivie for x in lus] == [None]
+        finally:
+            nettoyer_affaires(session, t.id)
