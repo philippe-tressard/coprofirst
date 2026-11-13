@@ -21,8 +21,9 @@ seul pose Destinataires et planification (`est_moderateur`).
 from __future__ import annotations
 
 import json
+from dataclasses import dataclass
 from datetime import datetime
-from typing import Any
+from typing import Any, Optional
 
 from fastapi import HTTPException
 from sqlmodel import Session, select
@@ -30,6 +31,7 @@ from sqlmodel import Session, select
 from app.auth.deps import est_moderateur
 from app.models.core import STATUTS_TICKET_CLOS, Ticket, TicketEvolution, Utilisateur
 from app.utils import horloge
+from app.utils.etat_affaire import libelle_etat
 from app.utils.evolutions import TYPES_SAISIS
 from app.utils.intervenant import appliquer_intervenant
 from app.utils.nature_affaire import est_actualite
@@ -37,7 +39,13 @@ from app.utils import suivi_actualite
 from app.utils.prochaine_visite import apres_cloture
 from app.utils.synthese_affaire.file import inscrire_si_eligible
 from app.utils.valeurs import valeur
-from app.utils.suivi_fil import doit_propager_statut, resultat, statuts_avant, suivi_corrige
+from app.utils.suivi_fil import (
+    doit_propager_statut,
+    resultat,
+    statuts_avant,
+    suivi_corrige,
+    suivie_d_une_transition,
+)
 from app.utils.visibility import destinataires_par_defaut, trace_droits, trace_lecture_par_defaut
 
 from .actualite import appliquer_acces
@@ -137,12 +145,29 @@ def appliquer_statut(
         inscrire_si_eligible(session, ticket, statut_avant=statut_avant)
 
 
+@dataclass(frozen=True)
+class IssueDuSuivi:
+    """Ce que la correction du Suivi a fait de l'AFFAIRE — servi par la route (#2715).
+
+    `affaire_suivie=False` : l'affaire n'a pas pris l'état que la Suite donne
+    désormais, et `libelle` dit pourquoi. `etat_propose` est l'état que l'écran
+    propose d'appliquer par le geste de changement d'état de l'affaire — `None`
+    pour une actualité, dont le suivi ne se règle que par une Suite.
+    """
+
+    affaire_suivie: bool
+    libelle: str = ""
+    etat_propose: Optional[str] = None
+
+
 def corriger_suivi(
     session: Session, ticket: Ticket, evol: TicketEvolution, body: Any, user: Utilisateur
-) -> None:
+) -> Optional[IssueDuSuivi]:
     """Corrige l'état que porte la Suite — la règle vit dans `utils/suivi_fil.py`.
 
-    La Suite garde sa date : une clôture qu'elle porte est datée d'elle.
+    La Suite garde sa date : une clôture qu'elle porte est datée d'elle. Rend
+    `None` quand le Suivi ne change pas ; sinon, ce que l'affaire en a fait —
+    🔴 jamais un écrasement silencieux, ni un refus silencieux (#2715).
     """
     if body.type not in TYPES_SAISIS:
         raise HTTPException(422, "Type invalide (commentaire ou etat)")
@@ -161,10 +186,25 @@ def corriger_suivi(
     resultat_avant = resultat(evol, avant)
     corrige = suivi_corrige(avant, body.type, demande)
     if corrige == (evol.type, evol.ancien_statut, evol.nouveau_statut):
-        return  # rien ne change : renvoyer l'état qu'on avait est muet
+        return None  # rien ne change : renvoyer l'état qu'on avait est muet
     evol.type, evol.ancien_statut, evol.nouveau_statut = corrige
     resultat_apres = resultat(evol, avant)
-    if resultat_apres != resultat_avant and doit_propager_statut(
-        evol.id, resultat_avant, fil, statut_affaire
+    if resultat_apres == statut_affaire:
+        return IssueDuSuivi(affaire_suivie=True)
+    if doit_propager_statut(
+        evol.id, resultat_avant, fil, statut_affaire, devient_transition=evol.type == "etat"
     ):
         appliquer_statut(session, ticket, evol, resultat_apres, evol.cree_le)
+        return IssueDuSuivi(affaire_suivie=True)
+    return IssueDuSuivi(
+        affaire_suivie=False,
+        libelle=(
+            f"L'affaire est restée « {libelle_etat(statut_affaire)} » : "
+            + (
+                "une Suite plus récente a changé son état depuis."
+                if suivie_d_une_transition(evol.id, fil)
+                else "son état a été corrigé depuis, hors de l'Historique."
+            )
+        ),
+        etat_propose=None if est_actualite(ticket) else resultat_apres,
+    )

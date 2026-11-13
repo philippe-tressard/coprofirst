@@ -349,6 +349,11 @@ ATTENDU_EVOLUTION = {
     #  Sans lecteur ni affaire, aucun geste n'est offert (#2646).
     "peut_modifier": False,
     "peut_supprimer": False,
+    #  Hors de la correction du Suivi, l'entrée ne dit rien de l'affaire (#2715).
+    "affaire_suivie": None,
+    "affaire_suivie_libelle": "",
+    "etat_propose": None,
+    "etat_propose_libelle": "",
 }
 ATTENDU_LOT = {
     "numero": "12",
