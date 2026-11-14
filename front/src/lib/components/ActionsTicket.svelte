@@ -70,13 +70,19 @@
 	>
 {/if}
 {#if peutSuivre}
+	<!--  Un bouton ÉCRIT, plus une icône (14/11/2026, #2723) : la bulle de « Répondre »
+	      et les flèches de « Ajouter une suite » se confondaient, et une réponse est
+	      partie à la place d'une suite. Maquette A, retenue à l'écran. Le libellé
+	      court (`SUITE.court`) prend la place du long sous 480 px, où le titre se lit
+	      avant ses actions (`EnteteCarte`). -->
 	<button
-		class="btn-icon"
+		class="btn-icon bouton-suite"
 		aria-pressed={mode === 'evolution'}
 		aria-label={SUITE.libelle}
 		title={SUITE.libelle}
 		on:click|stopPropagation={() => dispatch('evoluer_ouvrir')}
-		><IconeAction icone="refresh-cw" /></button
+		><IconeAction icone="plus" /><span class="suite-long" aria-hidden="true">{SUITE.libelle}</span
+		><span class="suite-court" aria-hidden="true">{SUITE.court}</span></button
 	>
 {/if}
 {#if peutCorriger}
@@ -129,3 +135,30 @@
 		on:click|stopPropagation={() => dispatch('supprimer')}><IconeAction icone="trash-2" /></button
 	>
 {/if}
+
+<style>
+	/*  `:global(.ec-droite--titre)` : l'en-tête borne ses boutons à 26 px de large
+	    et sans marge (`EnteteCarte`) — ici, le bouton porte un mot. */
+	:global(.ec-droite--titre) button.bouton-suite {
+		gap: 0.3rem;
+		padding: 0 0.55rem;
+		font-size: var(--fs-sm);
+		font-weight: 600;
+		color: var(--color-primary);
+	}
+	.suite-court {
+		display: none;
+	}
+	@media (max-width: 480px) {
+		.suite-long {
+			display: none;
+		}
+		.suite-court {
+			display: inline;
+		}
+		:global(.ec-droite--titre) button.bouton-suite {
+			height: 32px;
+			min-height: 32px;
+		}
+	}
+</style>

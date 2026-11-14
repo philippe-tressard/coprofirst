@@ -23,6 +23,10 @@
 	import { safeDescription } from '#lib/sanitize.ts';
 	import { estModerateur } from '#lib/stores/auth.ts';
 	import PiecesJointes from '#lib/components/PiecesJointes.svelte';
+	import IconeAction from '#lib/components/IconeAction.svelte';
+	import PiedFormulaire from '#lib/components/PiedFormulaire.svelte';
+	import RichEditor from '#lib/components/RichEditor.svelte';
+	import { confirmer } from '#lib/confirmation.ts';
 	import { TICKET } from '#lib/entites/ticket.ts';
 	import { conditionsDeLaSuite } from '#lib/formulaire-affaire.ts';
 	import { motifWhatsappInterdit } from '#lib/options-publication.ts';
@@ -47,6 +51,38 @@
 	export let newInterne = false;
 	/** Envoi en cours : désarme le bouton du formulaire. */
 	export let sending = false;
+
+	/**  Corriger ou retirer SON message (#2722) : la page appelle l'API, ce composant
+	 *   tient seulement le geste. `corriger` rend vrai quand c'est enregistré. */
+	export let corriger: (id: number, contenu: string) => Promise<boolean> = async () => false;
+	export let retirer: (id: number) => Promise<void> = async () => {};
+
+	/** Le message en cours de correction, et son texte. */
+	let enCorrection: number | null = null;
+	let texte = '';
+	let enregistre = false;
+
+	function commencer(m: TicketMessage) {
+		enCorrection = m.id;
+		texte = m.contenu;
+	}
+	async function enregistrer() {
+		if (enCorrection === null || !texte.trim() || enregistre) return;
+		enregistre = true;
+		try {
+			if (await corriger(enCorrection, texte)) enCorrection = null;
+		} finally {
+			enregistre = false;
+		}
+	}
+	async function supprimer(m: TicketMessage) {
+		const ok = await confirmer({
+			message: 'Supprimer ce message ? Il disparaît aussi de l’Historique.',
+			libelleConfirmer: 'Supprimer',
+			danger: true,
+		});
+		if (ok) await retirer(m.id);
+	}
 
 	//  L'ENVOI reste à la page : c'est elle qui appelle l'API, recharge le fil et
 	//  tient les erreurs. Ce composant rend le fil et transmet la saisie — il ne
@@ -90,7 +126,39 @@
 					{#if msg.interne}<span class="badge badge-yellow msg-badge">interne</span>{/if}
 					<span class="msg-time">{fmtDatetime(msg.cree_le)}</span>
 				</div>
-				<div class="msg-body">{@html safeDescription(msg.contenu)}</div>
+				{#if enCorrection === msg.id}
+					<RichEditor bind:value={texte} minHeight="80px" />
+					<PiedFormulaire
+						petit
+						soumission={false}
+						enCours={enregistre}
+						desactive={!texte.trim()}
+						on:enregistre={enregistrer}
+						on:annule={() => (enCorrection = null)}
+					/>
+				{:else}
+					<div class="msg-body">{@html safeDescription(msg.contenu)}</div>
+				{/if}
+				<!--  Son auteur seulement, tant que l'affaire est ouverte : la même règle que
+				      la route (`messages._message_de_l_auteur`) — le serveur refuse le reste. -->
+				{#if msg.est_auteur && !ticket.close && enCorrection !== msg.id}
+					<div class="msg-actions">
+						<button
+							type="button"
+							class="btn-icon"
+							aria-label="Modifier mon message"
+							title="Modifier"
+							on:click={() => commencer(msg)}><IconeAction icone="pencil" /></button
+						>
+						<button
+							type="button"
+							class="btn-icon-danger"
+							aria-label="Supprimer mon message"
+							title="Supprimer"
+							on:click={() => supprimer(msg)}><IconeAction icone="trash-2" /></button
+						>
+					</div>
+				{/if}
 				{#if msg.fichiers_urls?.length}
 					<div class="msg-pj">
 						<PiecesJointes urls={msg.fichiers_urls} size={80} />
@@ -193,6 +261,12 @@
 	.msg-time {
 		color: var(--color-text-muted);
 		margin-left: auto;
+	}
+	.msg-actions {
+		display: flex;
+		justify-content: flex-end;
+		gap: 0.4rem;
+		margin-top: 0.4rem;
 	}
 	.msg-body {
 		font-size: var(--fs-base);

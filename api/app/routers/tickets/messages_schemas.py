@@ -19,6 +19,13 @@ class MessageCreate(AssisteIAEntree):
     email_externe: Optional[str] = None  # adresse libre, CS/Admin uniquement
 
 
+class MessageUpdate(BaseModel):
+    """Corriger son message (#2722) : le texte, et les pièces si on les renvoie."""
+
+    contenu: str
+    fichiers_urls: Optional[List[str]] = None
+
+
 class MessageRead(BaseModel):
     id: int
     ticket_id: int

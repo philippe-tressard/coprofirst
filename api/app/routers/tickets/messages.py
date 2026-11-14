@@ -17,7 +17,7 @@ from app.models.core import (
     TicketEvolution,
     Utilisateur,
 )
-from app.routers.tickets.messages_schemas import MessageCreate, MessageRead
+from app.routers.tickets.messages_schemas import MessageCreate, MessageRead, MessageUpdate
 from app.utils.liens import lien_ticket
 from app.utils.photos import photos_json
 from app.utils.visibility import ticket_visible
@@ -28,7 +28,8 @@ from app.utils.destinataires import membres_cs_ou_admin
 from app.utils.html_sur import html_riche
 from app.utils.lecture import lire_objet
 from app.utils.noms import contexte_personne, nom_auteur
-from app.utils.recuperer import ou_rien
+from app.utils.etat_affaire import affaire_close
+from app.utils.recuperer import ou_404, ou_rien
 from app.utils.cloche import sonner
 from app.utils.fusion_affaires import refuser_si_absorbee
 
@@ -149,17 +150,16 @@ def add_message(
     #  apparaissait comme un en-tête sans corps, alors que le courriel envoyé au
     #  conseil, lui, la citait. Un message interne reste réduit à son mot : le
     #  texte d'une note ne s'écrit pas dans un fil que d'autres lisent.
-    session.add(
-        TicketEvolution(
-            ticket_id=ticket_id,
-            type="reponse",
-            contenu="Message interne" if body.interne else body.contenu,
-            auteur_id=user.id,
-            cree_le=horloge.maintenant(),
-            assiste_ia=body.assiste_ia,
-            fichiers_urls="[]" if body.interne else photos_json(body.fichiers_urls),
-        )
+    miroir = TicketEvolution(
+        ticket_id=ticket_id,
+        type="reponse",
+        contenu="Message interne" if body.interne else body.contenu,
+        auteur_id=user.id,
+        cree_le=horloge.maintenant(),
+        assiste_ia=body.assiste_ia,
+        fichiers_urls="[]" if body.interne else photos_json(body.fichiers_urls),
     )
+    session.add(miroir)
     ticket.mis_a_jour_le = horloge.maintenant()
     session.add(msg)
     session.add(ticket)
@@ -167,6 +167,7 @@ def add_message(
     #  ci-dessous ancrent leur lien dessus (`#msg-42`), pour déposer le lecteur
     #  sur la réponse qui a déclenché l'alerte et non en haut de page.
     session.flush()
+    msg.evolution_id = miroir.id  # #2722 : la correction ou le retrait du message la suit
 
     if not body.interne:
         cfg = config_site(session)
@@ -231,3 +232,73 @@ def add_message(
         )
 
     return message_lu(msg, session, user)
+
+
+def _message_de_l_auteur(
+    session: Session, ticket: Ticket, msg_id: int, user: Utilisateur
+) -> MessageTicket:
+    """Le message de cette affaire, si CE lecteur peut le corriger ou le retirer (#2722).
+
+    La règle arbitrée le 14/11/2026 : **son auteur**, **tant que l'affaire n'est
+    pas close**. Ni le conseil ni l'admin n'écrivent à la place de quelqu'un — le
+    retrait d'un propos d'autrui reste une affaire de modération, qui n'est pas
+    ouverte ici. Un auteur détaché (compte supprimé) n'est personne (`est_auteur`).
+
+    L'accès à l'affaire (`ticket_visible`) se pose DANS la route, comme aux deux
+    autres : `test_toute_route_d_une_affaire_controle_l_acces` le lit sur la route.
+    """
+    refuser_si_absorbee(ticket)
+    msg = ou_404(session, MessageTicket, msg_id, "Message", sous={"ticket_id": ticket.id})
+    if not est_auteur(msg, user):
+        raise HTTPException(403, "Seul l'auteur d'un message peut le modifier ou le supprimer")
+    if affaire_close(ticket.statut):
+        raise HTTPException(409, "Cette affaire est close : sa discussion ne se modifie plus")
+    return msg
+
+
+@router.patch("/{ticket_id}/messages/{msg_id}", response_model=MessageRead)
+def update_message(
+    ticket_id: int,
+    msg_id: int,
+    body: MessageUpdate,
+    session: Session = Depends(get_session),
+    user: Utilisateur = Depends(get_current_user),
+):
+    ticket = exiger_objet_autorise(session, Ticket, ticket_id, "Ticket", user, ticket_visible)
+    msg = _message_de_l_auteur(session, ticket, msg_id, user)
+    msg.contenu = body.contenu
+    if body.fichiers_urls is not None:
+        msg.fichiers_urls = photos_json(body.fichiers_urls)
+    miroir = session.get(TicketEvolution, msg.evolution_id) if msg.evolution_id else None
+    #  Une note interne n'a jamais écrit son texte dans l'Historique : elle n'y
+    #  réécrit rien non plus (même règle qu'à l'envoi).
+    if miroir and not msg.interne:
+        miroir.contenu = body.contenu
+        if body.fichiers_urls is not None:
+            miroir.fichiers_urls = photos_json(body.fichiers_urls)
+        session.add(miroir)
+    ticket.mis_a_jour_le = horloge.maintenant()
+    session.add(msg)
+    session.add(ticket)
+    session.commit()
+    session.refresh(msg)
+    return message_lu(msg, session, user)
+
+
+@router.delete("/{ticket_id}/messages/{msg_id}", status_code=204)
+def delete_message(
+    ticket_id: int,
+    msg_id: int,
+    session: Session = Depends(get_session),
+    user: Utilisateur = Depends(get_current_user),
+):
+    ticket = exiger_objet_autorise(session, Ticket, ticket_id, "Ticket", user, ticket_visible)
+    msg = _message_de_l_auteur(session, ticket, msg_id, user)
+    miroir_id = msg.evolution_id
+    #  Le message référence son miroir : il part le premier.
+    session.delete(msg)
+    session.flush()
+    miroir = session.get(TicketEvolution, miroir_id) if miroir_id else None
+    if miroir:
+        session.delete(miroir)
+    session.commit()

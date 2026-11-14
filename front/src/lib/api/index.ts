@@ -70,6 +70,7 @@ export * from './telemetrie';
 export * from './synthese';
 export * from './reglement';
 export * from './assistant';
+export * from './messages-ticket';
 export * from './services';
 export * from './instance';
 export * from './conservation';
