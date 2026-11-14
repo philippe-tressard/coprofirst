@@ -964,17 +964,10 @@
     }
     .appli-mobile-os { font-weight: 700; font-size: 1.05rem; margin-bottom: .25rem; }
     .appli-mobile-col p { color: var(--muted); font-size: .9rem; }
-    .appli-mobile-lien {
-      display: inline-block;
-      margin-top: .75rem;
-      padding: .5rem 1rem;
-      border-radius: 8px;
-      background: #111827;
-      color: #fff;
-      font-weight: 600;
-      text-decoration: none;
-    }
-    .appli-mobile-lien:hover { background: #1f2937; }
+    /*  Le badge officiel d'Apple, sans modification : sa hauteur d'origine (40 px),
+        et de l'air autour de lui (charte Apple). */
+    .appli-mobile-badge { display: inline-block; margin-top: .75rem; line-height: 0; }
+    .appli-mobile-badge-img { display: block; width: 126px; height: 40px; }
     .appli-mobile-avenir { opacity: .65; border-style: dashed; }
     @media (max-width: 768px) {
       .appli-mobile-grille { grid-template-columns: 1fr; }
@@ -1984,7 +1977,7 @@
         <div class="appli-mobile-col">
           <p class="appli-mobile-os">iPhone</p>
           <p>Disponible sur l'App Store.</p>
-          <a class="appli-mobile-lien" href="https://apps.apple.com/fr/app/coprofirst/id6834326392" rel="noopener">Télécharger sur l'App Store</a>
+          <a class="appli-mobile-badge" href="https://apps.apple.com/fr/app/coprofirst/id6834326392" rel="noopener"><img class="appli-mobile-badge-img" src="/badge-app-store-fr.svg" width="126" height="40" alt="Télécharger dans l'App Store"></a>
         </div>
         <div class="appli-mobile-col appli-mobile-avenir">
           <p class="appli-mobile-os">Android</p>
