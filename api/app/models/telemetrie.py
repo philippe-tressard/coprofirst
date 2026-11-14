@@ -17,6 +17,7 @@ disparaître de la création de schéma.
 """
 
 from app.utils import horloge
+from app.utils.canaux_audience import CANAL_PAR_DEFAUT
 from typing import Optional
 
 from sqlalchemy import UniqueConstraint
@@ -44,6 +45,8 @@ class TelemetryEvent(SQLModel, table=True):
     page: str = Field(index=True)  # ex: /actualites, /tickets
     action: str = "view"  # view | click | submit
     detail: Optional[str] = None  # ex: bouton cliqué, id ticket
+    #: Le canal d'accès (`utils/canaux_audience`) : le site par défaut (0335).
+    canal: str = Field(default=CANAL_PAR_DEFAUT)
     cree_le: NaiveDatetime = Field(default_factory=horloge.maintenant, index=True)
 
 
@@ -86,6 +89,38 @@ class TelemetryMonthly(SQLModel, table=True):
     utilisateurs_uniques: int = 0
     total: int = 0
     gestionnaire: Optional[bool] = Field(default=None, description=GESTIONNAIRE_DOC)
+
+
+class _AudienceCanal(SQLModel):
+    """Les vues d'une page par CANAL d'accès (site, app iPhone…) — 0335, 14/11/2026.
+
+    À part des agrégats `telemetry_daily|monthly`, qui restent ce qu'ils étaient :
+    les lecteurs existants n'ont pas à apprendre à ne pas additionner deux fois. Les
+    VUES seules — elles s'additionnent d'un canal à l'autre ; des uniques, non (qui
+    vient par les deux compterait deux fois). Même drapeau `gestionnaire` que les
+    agrégats, pour que « sans le gestionnaire du site » vaille aussi ici.
+    Écrites et lues par `utils/telemetrie_canaux`, purgées avec les agrégats.
+    """
+
+    id: Optional[int] = Field(default=None, primary_key=True)
+    page: str
+    canal: str
+    gestionnaire: Optional[bool] = Field(default=None, description=GESTIONNAIRE_DOC)
+    vues: int = 0
+
+
+class AudienceCanalJour(_AudienceCanal, table=True):
+    """Par jour — conservé 12 mois, comme `telemetry_daily`."""
+
+    __tablename__ = "audience_canal_jour"
+    jour: str = Field(index=True)  # YYYY-MM-DD
+
+
+class AudienceCanalMois(_AudienceCanal, table=True):
+    """Par mois — conservé 10 ans, comme `telemetry_monthly`."""
+
+    __tablename__ = "audience_canal_mois"
+    mois: str = Field(index=True)  # YYYY-MM
 
 
 class PresenceMensuelle(SQLModel, table=True):

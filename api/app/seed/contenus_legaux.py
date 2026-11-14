@@ -27,6 +27,7 @@ from app.seed.contenus_legaux_avis import AVIS_SITE_PRESENTATION
 from app.seed.contenus_legaux_cookies import COOKIES
 from app.seed.contenus_legaux_decisions_ag import DECISIONS_AG
 from app.seed.contenus_legaux_etat_descriptif import LECTURE_ETAT_DESCRIPTIF
+from app.seed.contenus_legaux_canal import TELEMETRIE_ACCES
 from app.seed.contenus_legaux_licence import PARAGRAPHE_LICENCE
 
 #  La phrase du point 6 sur ce qu'un compte fait depuis son profil (#2699) : elle
@@ -355,6 +356,7 @@ DEFAULT_LEGAL = {
         + TELEMETRIE_ERREURS
         + TELEMETRIE_PERFORMANCE
         + TELEMETRIE_ARRIVEES
+        + TELEMETRIE_ACCES
         + TELEMETRIE_GESTES
         + JOURNAL_SECURITE
         + "<h2>3. Finalités et bases légales</h2><ul><li><strong>Gestion de la copropriété</strong> — base\xa0: "
