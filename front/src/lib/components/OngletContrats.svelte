@@ -33,6 +33,7 @@
 	import { groupesParEquipement } from '#lib/equipements.ts';
 	import { equipementsStore } from '#lib/stores/equipements.ts';
 	import { nombreOuNull } from '#lib/utils.ts';
+	import type { Etat } from '#lib/notations.ts';
 	import CarteContrat from '#lib/components/CarteContrat.svelte';
 	import FormulaireContrat from '#lib/components/FormulaireContrat.svelte';
 	import FormulaireCreation from '#lib/components/FormulaireCreation.svelte';
@@ -55,30 +56,36 @@
 	//  se saisit depuis la fiche du prestataire, et son seul rattachement restant
 	//  est le CONTRAT. Le rattachement à un devis part avec l'objet qui le portait.
 	let showNotationForm: { prestataireId: number; contratId?: number } | null = null;
-	let notationNote: number | null = null;
+	//  Trois états (14/11/2026) : Mauvais, Neutre, Excellent — `FormulaireNotation`.
+	let notationEtat: Etat | null = null;
 	let notationCommentaire = '';
 	let notationSaving = false;
 
 	function openNotationForm(prestataireId: number, contratId?: number) {
 		showNotationForm = { prestataireId, contratId };
-		notationNote = null;
+		notationEtat = null;
 		notationCommentaire = '';
 	}
 
 	async function saveNotation() {
-		if (!showNotationForm || !notationNote || notationNote < 1 || notationNote > 5) {
-			toast('error', 'Sélectionnez une note entre 1 et 5');
+		if (!showNotationForm || !notationEtat) {
+			toast('error', "Choisissez l'état : Mauvais, Neutre ou Excellent");
+			return;
+		}
+		//  Un avis « Mauvais » se justifie : le serveur le refuse aussi, mais on le dit ici.
+		if (notationEtat === 'mauvais' && !notationCommentaire.trim()) {
+			toast('error', 'Un avis « Mauvais » doit être justifié par un commentaire');
 			return;
 		}
 		//  Capturés AVANT le rappel : à l'intérieur, rien ne garantit qu'ils n'ont
 		//  pas changé.
 		const cible = showNotationForm;
-		const note = notationNote;
+		const etat = notationEtat;
 		notationSaving = true;
 		await tenter(async () => {
 			const n = await prestApi.createNotation({
 				prestataire_id: cible.prestataireId,
-				note,
+				etat,
 				commentaire: notationCommentaire.trim() || undefined,
 				contrat_id: cible.contratId,
 			});
@@ -375,7 +382,7 @@
 					onEnregistrer={saveContrat}
 					onNoter={openNotationForm}
 					noteEnCours={showNotationForm?.contratId === c.id}
-					bind:noteValeur={notationNote}
+					bind:noteEtat={notationEtat}
 					bind:noteCommentaire={notationCommentaire}
 					noteSaving={notationSaving}
 					onAnnulerNote={() => (showNotationForm = null)}

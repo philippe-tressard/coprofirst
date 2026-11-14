@@ -14,7 +14,9 @@ from typing import Optional
 from fastapi import APIRouter, Depends, HTTPException, Request
 import json
 
-from pydantic import BaseModel, field_validator
+from typing import Literal
+
+from pydantic import BaseModel, model_validator
 from sqlmodel import Session, select
 
 #  ⚠️ `get_current_user` n'est plus importé : il ne servait qu'à `list_devis`,
@@ -54,7 +56,7 @@ from app.routers.prestataires_schemas import (
     PrestataireUpdate,
 )
 from app.utils.carnet_entretien import type_equipement_resolu
-from app.utils.notes_prestataires import note_moyenne
+from app.utils.notes_prestataires import NOTE_DE_ETAT, etat_de_note, note_moyenne
 from app.utils.remplacement_contrat import verifier_remplacement
 
 router = APIRouter(prefix="/prestataires", tags=["prestataires"])
@@ -274,22 +276,33 @@ class NotationCreate(BaseModel):
     #  rattachement, et un retour arriere du code doit les retrouver. Le schema
     #  ne l'expose simplement plus — on ne peut plus en creer, on n'efface rien.
     prestataire_id: int
-    note: int  # 1-5
+    #  🔴 TROIS ÉTATS (14/11/2026) : c'est `etat` qu'écrit l'écran. `note` (1 à 5)
+    #  reste accepté pour les clients qui l'envoient encore ; l'un ou l'autre suffit.
+    etat: Optional[Literal["mauvais", "neutre", "excellent"]] = None
+    note: Optional[int] = None  # ancien format, 1-5
     commentaire: Optional[str] = None
     contrat_id: Optional[int] = None
 
-    @field_validator("note")
-    @classmethod
-    def validate_note(cls, v):
-        if v < 1 or v > 5:
-            raise ValueError("La note doit être entre 1 et 5")
-        return v
+    @model_validator(mode="after")
+    def valider_etat(self):
+        if self.etat is None:
+            if self.note is None:
+                raise ValueError("Indiquez l'état de l'intervention")
+            if not 1 <= self.note <= 5:
+                raise ValueError("La note doit être entre 1 et 5")
+            self.etat = etat_de_note(self.note)
+        #  Un mauvais avis se justifie : sans commentaire, l'historique ne dit pas pourquoi.
+        if self.etat == "mauvais" and not (self.commentaire or "").strip():
+            raise ValueError("Un avis « Mauvais » doit être justifié par un commentaire")
+        return self
 
 
 class NotationRead(BaseModel):
     id: int
     prestataire_id: int
     note: int
+    #  L'état LU de la note (`etat_de_note`) : l'écran ne lit jamais le chiffre.
+    etat: str = ""
     commentaire: Optional[str] = None
     contrat_id: Optional[int] = None
     auteur_id: Optional[int] = None  # compte supprimé (#1821)
@@ -315,6 +328,7 @@ def list_notations(
     for n in notations:
         auteur = ou_rien(session, Utilisateur, n.auteur_id)
         nr = NotationRead.model_validate(n)
+        nr.etat = etat_de_note(n.note)
         nr.auteur_nom = nom_auteur(auteur)
         result.append(nr)
     return result
@@ -329,7 +343,7 @@ def create_notation(
     ou_404(session, Prestataire, body.prestataire_id, "Prestataire")
     n = NotationPrestataire(
         prestataire_id=body.prestataire_id,
-        note=body.note,
+        note=NOTE_DE_ETAT[body.etat],
         commentaire=body.commentaire,
         contrat_id=body.contrat_id,
         auteur_id=user.id,
@@ -338,6 +352,7 @@ def create_notation(
     session.commit()
     session.refresh(n)
     nr = NotationRead.model_validate(n)
+    nr.etat = body.etat
     nr.auteur_nom = nom_affiche(user.prenom, user.nom)
     return nr
 
@@ -382,6 +397,7 @@ def get_prestataire_synthese(
             {
                 "id": n.id,
                 "note": n.note,
+                "etat": etat_de_note(n.note),
                 "commentaire": n.commentaire,
                 "contrat_id": n.contrat_id,
                 "auteur_nom": nom_auteur(auteur),
