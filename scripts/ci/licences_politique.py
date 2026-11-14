@@ -318,4 +318,18 @@ CONTENUS_TIERS = (
             "pour désigner le canal WhatsApp de la résidence est À VALIDER par l'auteur."
         ),
     },
+    {
+        "nom": "Badge « Télécharger dans l'App Store » — Apple",
+        "origine": "https://toolbox.marketingtools.apple.com — badge officiel en français, sans modification",
+        "licences": ("LicenseRef-Apple-App-Store-Badge",),
+        "titulaires": ("Apple Inc.",),
+        "icones": None,
+        "sans_empreinte": True,  # une image : aucun tracé du catalogue à retrouver
+        "fichiers": ("front/static/badge-app-store-fr.svg",),
+        "detail": (
+            "Œuvre et marque d'Apple, hors de l'AGPL : seul le manuel utilisateur le "
+            "montre, comme lien vers l'application iOS (conditions : Apple Marketing "
+            "Guidelines)."
+        ),
+    },
 )

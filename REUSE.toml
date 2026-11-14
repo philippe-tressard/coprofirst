@@ -77,6 +77,14 @@ precedence = "override"
 SPDX-FileCopyrightText = "2026 Philippe TRESSARD"
 SPDX-License-Identifier = "LicenseRef-CoproFirst-Logo"
 
+#  Le badge « Télécharger dans l'App Store » : œuvre d'Apple, reprise sans modification,
+#  hors de l'AGPL (voir `LICENSES/LicenseRef-Apple-App-Store-Badge.txt`).
+[[annotations]]
+path = "front/static/badge-app-store-fr.svg"
+precedence = "override"
+SPDX-FileCopyrightText = "Apple Inc."
+SPDX-License-Identifier = "LicenseRef-Apple-App-Store-Badge"
+
 #  Le manuel utilisateur (deux exemplaires) et la page de maintenance
 #  Cloudflare : texte du projet, pictogrammes Lucide en SVG en ligne.
 [[annotations]]

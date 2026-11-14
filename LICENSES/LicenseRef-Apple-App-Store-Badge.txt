@@ -1,0 +1,22 @@
+Badge « Télécharger dans l'App Store » — Apple Inc.
+
+Copyright © Apple Inc. Tous droits réservés.
+
+Ce texte couvre le fichier front/static/badge-app-store-fr.svg, que REUSE.toml
+lui attribue : le badge officiel d'Apple en français (« Download_on_the_App_Store_
+Badge_FR_RGB_blk »), repris SANS MODIFICATION depuis l'outil marketing d'Apple :
+https://toolbox.marketingtools.apple.com
+
+Ce fichier n'est PAS couvert par la GNU Affero General Public License du reste du
+dépôt, et le projet n'a aucun droit sur lui. « App Store » et le badge sont des
+marques d'Apple Inc. Leur usage est régi par les conditions d'Apple, en vigueur à
+la date de lecture : « Apple Marketing Guidelines »,
+https://developer.apple.com/app-store/marketing/guidelines/ — notamment : badge non
+modifié, ni recoloré ni déformé, espace libre autour de lui, et lien vers la page de
+l'application dans l'App Store.
+
+Il est présent ici pour une seule raison : le manuel utilisateur de CoproFirst le
+montre, comme lien vers l'application iOS CoproFirst
+(https://apps.apple.com/fr/app/coprofirst/id6834326392). Qui réutilise ce dépôt pour
+une autre application doit retirer ce fichier, ou le remplacer par le badge de la
+sienne, obtenu auprès d'Apple.
