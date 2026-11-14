@@ -6,7 +6,8 @@
  *
  *  1. rien n'est demandé tant que la fiche n'est pas dépliée ;
  *  2. dépliée : l'effectif, l'étape « Chez le prestataire » en jours ouvrés, les
- *     tuiles, et la table par exercice, le plus récent d'abord ;
+ *     tuiles, et chaque exercice, le plus récent d'abord, qui se déplie sur ses
+ *     affaires closes (R3d) ;
  *  3. sans affaire close, la fiche le dit — jamais « 0 j » ;
  *  4. au bureau comme au téléphone, la page ne défile pas en largeur.
  */
@@ -41,8 +42,21 @@ const METRIQUES = {
 	prestataire_id: 1,
 	ensemble: resume(3, 2, 3),
 	exercices: [
-		{ annee: 2026, libelle: '2026', ...resume(2, 2, 3) },
-		{ annee: 2025, libelle: '2025', ...resume(1, 2, 3) },
+		{
+			annee: 2026,
+			libelle: '2026',
+			...resume(2, 2, 3),
+			affaires: [
+				{ id: 12, titre: 'Remplacement du barillet', cloture: '2026-11-12', issue: 'résolu' },
+				{ id: 11, titre: 'Fuite sur le chauffe-eau', cloture: '2026-10-21', issue: 'annulé' },
+			],
+		},
+		{
+			annee: 2025,
+			libelle: '2025',
+			...resume(1, 2, 3),
+			affaires: [{ id: 5, titre: 'Dépannage du portail', cloture: '2025-06-03', issue: 'résolu' }],
+		},
 	],
 };
 
@@ -88,10 +102,22 @@ test('dépliée : l’étape « Chez le prestataire », les tuiles et chaque exe
 	await expect(bloc).toContainText('Étape « Chez le prestataire » : 2 j en moyenne (jours ouvrés)');
 	await expect(bloc.getByRole('list', { name: /Moyennes/ })).toContainText('Durée moyenne');
 
-	const parExercice = bloc.locator('table', { hasText: 'Par exercice comptable' });
-	const lignes = parExercice.getByRole('row');
-	await expect(lignes.nth(1)).toContainText('2026');
-	await expect(lignes.nth(2)).toContainText('2025');
+	//  Chaque exercice est un bouton, le plus récent d'abord ; replié, il ne montre pas ses affaires.
+	const exercices = bloc.locator('.exercice-entete');
+	await expect(exercices).toHaveCount(2);
+	await expect(exercices.nth(0)).toContainText('2026');
+	await expect(exercices.nth(1)).toContainText('2025');
+	await expect(exercices.nth(0)).toHaveAttribute('aria-expanded', 'false');
+	await expect(bloc.getByText('Remplacement du barillet')).toHaveCount(0); //  cas zéro
+
+	//  Déplié : ses affaires, la plus récente d'abord, avec leur issue.
+	await exercices.nth(0).click();
+	await expect(exercices.nth(0)).toHaveAttribute('aria-expanded', 'true');
+	const affaires = bloc.locator('.affaire');
+	await expect(affaires.nth(0)).toContainText('Remplacement du barillet');
+	await expect(affaires.nth(0)).toContainText('résolue');
+	await expect(affaires.nth(1)).toContainText('Fuite sur le chauffe-eau');
+	await expect(affaires.nth(1)).toContainText('annulée');
 
 	await elargirLeTexte(page);
 	await attendreSansDefilementHorizontal(page);

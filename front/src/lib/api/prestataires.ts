@@ -18,10 +18,18 @@ import type { Equipement } from '#lib/equipements.ts';
 
 /**  Les affaires closes d'un prestataire (#1646) — `routers/prestataires_metriques`.
  *   L'ensemble, puis chaque exercice comptable, le plus récent d'abord. */
+/** Une affaire close d'un exercice — `AffaireExercice` (`routers/prestataires_metriques.py`). */
+export interface AffaireExercice {
+	id: number;
+	titre: string;
+	cloture: string | null;
+	issue: string;
+}
+
 export interface MetriquesPrestataire {
 	prestataire_id: number;
 	ensemble: ResumeAffaires;
-	exercices: (ResumeAffaires & ExerciceLu)[];
+	exercices: (ResumeAffaires & ExerciceLu & { affaires: AffaireExercice[] })[];
 }
 
 //  ── Ce que le serveur RENVOIE (#1572) ───────────────────────────────────────────
@@ -163,8 +171,10 @@ export interface CompteurConfig {
 export interface Notation {
 	id: number;
 	prestataire_id: number;
-	/** De 1 à 5. */
+	/** De 1 à 5 — l'ancien format, gardé pour les notes existantes. */
 	note: number;
+	/** L'état lu : Mauvais, Neutre ou Excellent (`etat_de_note` côté serveur). */
+	etat: 'mauvais' | 'neutre' | 'excellent';
 	commentaire: string | null;
 	contrat_id: number | null;
 	/** Vide quand le compte de l'auteur a été supprimé (#1821). */
@@ -239,7 +249,7 @@ export const prestataires = {
 		),
 	createNotation: (data: {
 		prestataire_id: number;
-		note: number;
+		etat: 'mauvais' | 'neutre' | 'excellent';
 		commentaire?: string;
 		contrat_id?: number;
 	}) => api.post<Notation>('/prestataires/notations', data),

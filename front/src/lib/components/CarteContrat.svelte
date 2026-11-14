@@ -47,7 +47,8 @@
 	import FormulaireContrat from './FormulaireContrat.svelte';
 	import GesteEnPlace from './GesteEnPlace.svelte';
 	import IconeIA from './IconeIA.svelte';
-	import NoteEtoiles from './NoteEtoiles.svelte';
+	import FormulaireNotation from './FormulaireNotation.svelte';
+	import type { Etat } from '#lib/notations.ts';
 
 	export let contrat: ContratEntretien;
 	export let prest: Prestataire | null | undefined = null;
@@ -88,7 +89,7 @@
 	/**  La notation ouverte sur CE contrat — l'état vit dans la page, qui porte
 	 *   l'appel réseau ; la carte ne fait que le rendre au bon endroit. */
 	export let noteEnCours = false;
-	export let noteValeur: number | null = null;
+	export let noteEtat: Etat | null = null;
 	export let noteCommentaire = '';
 	export let noteSaving = false;
 	export let onAnnulerNote: () => void = () => {};
@@ -340,9 +341,8 @@
 					>
 				{/if}
 				<!--  🔴 Le geste s'ouvre DANS la carte (#889) : il était en fenêtre, pour
-				      cinq étoiles et un commentaire. Les étoiles viennent de
-				      `NoteEtoiles` en mode saisie — saisir et lire une note sont deux
-				      rendus du même objet (R3), pas deux composants. -->
+				      trois états et un commentaire. La saisie vit dans
+				      `FormulaireNotation` (14/11/2026). -->
 				{#if noteEnCours}
 					<div role="presentation" on:click|stopPropagation on:keydown|stopPropagation>
 						<GesteEnPlace
@@ -350,11 +350,11 @@
 							onAnnuler={onAnnulerNote}
 							onValider={onEnregistrerNote}
 						>
-							<NoteEtoiles saisie bind:note={noteValeur} />
-							<label class="field">
-								Commentaire
-								<textarea bind:value={noteCommentaire} rows="3"></textarea>
-							</label>
+							<FormulaireNotation
+								id="notation-{contrat.id}"
+								bind:etat={noteEtat}
+								bind:commentaire={noteCommentaire}
+							/>
 						</GesteEnPlace>
 					</div>
 				{/if}

@@ -1,25 +1,68 @@
 /**
- * La note d'un prestataire — comment elle se calcule et comment elle s'écrit.
+ * La notation d'un prestataire — ses trois états, leur libellé, et le commentaire
+ * qui justifie l'état.
  *
- * ## Pourquoi ce module (#807, 06/09/2026)
+ * ## Trois états depuis le 14/11/2026 (arbitré)
  *
- * `avgNote()` et `starsDisplay()` vivaient dans `prestataires/+page.svelte`, à
- * côté du badge qui les affiche. En livrant la liste des avis, elles ont été
- * nécessaires **à deux endroits** — le badge de la carte et le détail de chaque
- * avis — et c'est le moment où une fonction se recopie.
+ * Mauvais · Neutre · Excellent, au lieu des cinq étoiles. Le serveur écrit 1, 3 ou 5
+ * (`api/app/utils/notes_prestataires.py`) et lit les anciennes notes 1 à 5 par
+ * `etat_de_note` : 1-2 → Mauvais, 3 → Neutre, 4-5 → Excellent. Cette table est la
+ * SEULE du front : rien ne recopie les seuils.
  *
- * ⚠️ Elles ne sont pas montées ici « par précaution » : elles y sont montées
- * parce qu'un second appelant est apparu. Une fonction extraite avant d'avoir
- * deux usages est une indirection, pas une factorisation.
+ * ## Le commentaire : généré, puis libre
+ *
+ * Les cases cochées (points forts, points faibles) composent une phrase ; le
+ * commentaire libre s'ajoute après. Le texte enregistré est la somme des deux.
  */
 
-//  🔴 `moyenneNotes` est PARTIE le 04/11/2026 (#2507) : la moyenne des avis est SERVIE
-//  avec le prestataire (`note_moyenne`, `api/app/utils/notes_prestataires.py`), que
-//  l'app iOS lit aussi. L'onglet Reporting en portait une seconde copie, à la main,
-//  et la synthèse une troisième, dont l'arrondi différait.
+import { parAttribut } from './table-statuts.ts';
 
-/** `4.2` → `★★★★☆`. La note est arrondie à l'entier le plus proche. */
-export function etoiles(note: number): string {
-	const pleines = Math.max(0, Math.min(5, Math.round(note)));
-	return '★'.repeat(pleines) + '☆'.repeat(5 - pleines);
+export const ETATS = ['mauvais', 'neutre', 'excellent'] as const;
+export type Etat = (typeof ETATS)[number];
+
+/**
+ * Libellé et teinte de chaque état — UNE table, les colonnes s'en déduisent
+ * (`#lib/table-statuts`). Le libellé porte le sens, la teinte (`<Badge>`) le confirme.
+ */
+export const { libelle: LIBELLE_ETAT, badge: TEINTE_ETAT } = parAttribut({
+	mauvais: { libelle: 'Mauvais', badge: 'badge-red' },
+	neutre: { libelle: 'Neutre', badge: 'badge-gray' },
+	excellent: { libelle: 'Excellent', badge: 'badge-green' },
+});
+
+/**
+ * L'état d'une MOYENNE (1 à 5, décimale) — pour la carte du prestataire.
+ * Seuils déclarés ici : `< 2,5` mauvais · `< 4` neutre · sinon excellent.
+ */
+export function etatDeMoyenne(moyenne: number): Etat {
+	if (moyenne < 2.5) return 'mauvais';
+	if (moyenne < 4) return 'neutre';
+	return 'excellent';
+}
+
+/** Les motifs à cocher, par nature — la liste est ce qui compose la phrase. */
+export const POINTS_FORTS = [
+	'délai respecté',
+	'travail soigné',
+	'pièces fournies',
+	'interlocuteur réactif',
+] as const;
+export const POINTS_FAIBLES = [
+	'retard',
+	'travail à refaire',
+	'facture contestée',
+	'intervenant injoignable',
+] as const;
+
+/** La phrase générée d'après les cases cochées. Vide si rien n'est coché. */
+export function phraseGeneree(forts: readonly string[], faibles: readonly string[]): string {
+	const morceaux: string[] = [];
+	if (forts.length) morceaux.push(`Points forts : ${forts.join(', ')}.`);
+	if (faibles.length) morceaux.push(`Points faibles : ${faibles.join(', ')}.`);
+	return morceaux.join(' ');
+}
+
+/** Le commentaire enregistré : la phrase générée, puis le texte libre. */
+export function commentaireComplet(genere: string, libre: string): string {
+	return [genere, libre.trim()].filter((s) => s.length > 0).join('\n');
 }

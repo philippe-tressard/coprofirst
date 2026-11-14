@@ -19,6 +19,8 @@ approche les 500 lignes (modularité, rang 1). Même préfixe — l'URL dit l'ob
 le fichier dit le sujet, comme `compteurs.py` et `prestataires_archivage.py`.
 """
 
+from typing import Optional
+
 from fastapi import APIRouter, Depends
 from pydantic import BaseModel
 from sqlmodel import Session
@@ -33,8 +35,19 @@ from app.utils.synthese_affaire.agregats import bilan_prestataire
 router = APIRouter(prefix="/prestataires", tags=["prestataires"])
 
 
+class AffaireExercice(BaseModel):
+    """Une affaire close d'un exercice, listée sous lui (R3d)."""
+
+    id: int
+    titre: str
+    cloture: Optional[str] = None
+    issue: str
+
+
 class ResumeExercice(ResumeAffaires, ExerciceLu):
-    """Les moyennes d'un exercice comptable."""
+    """Les moyennes d'un exercice comptable, et ses affaires (la plus récente d'abord)."""
+
+    affaires: list[AffaireExercice] = []
 
 
 class MetriquesPrestataire(BaseModel):
