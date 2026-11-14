@@ -1,5 +1,4 @@
 import { api, BASE } from './client';
-import { messagesTicket } from './messages-ticket';
 import type {
 	AnnonceHall,
 	AnnonceHallInput,
@@ -71,6 +70,7 @@ export * from './telemetrie';
 export * from './synthese';
 export * from './reglement';
 export * from './assistant';
+export * from './messages-ticket';
 export * from './services';
 export * from './instance';
 export * from './conservation';
@@ -267,7 +267,6 @@ export const tickets = {
 			assiste_ia?: boolean;
 		},
 	) => api.post<TicketMessage>(`/tickets/${id}/messages`, data),
-	...messagesTicket,
 	evolutions: (id: number) => api.get<TicketEvolution[]>(`/tickets/${id}/evolutions`),
 	//  L'aperçu de ce qui partira, avant de confirmer la diffusion (#498). Il ne
 	//  crée rien : le brouillon est composé par les MÊMES fonctions que l'envoi.

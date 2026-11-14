@@ -18,6 +18,7 @@
 	import { isAdmin } from '#lib/stores/auth.ts';
 	import {
 		tickets as ticketsApi,
+		messagesTicket,
 		ApiError,
 		type Ticket,
 		type TicketMessage,
@@ -130,7 +131,7 @@
 	//  route refuse le reste ; le fil de la carte se relit, comme à l'envoi.
 	async function corrigerMessage(id: number, contenu: string): Promise<boolean> {
 		try {
-			const maj = await ticketsApi.modifierMessage(ticketId, id, { contenu });
+			const maj = await messagesTicket.modifierMessage(ticketId, id, { contenu });
 			messages = messages.map((m) => (m.id === id ? maj : m));
 			await affaires.chargerFil(ticketId);
 			return true;
@@ -141,7 +142,7 @@
 	}
 	async function retirerMessage(id: number) {
 		try {
-			await ticketsApi.supprimerMessage(ticketId, id);
+			await messagesTicket.supprimerMessage(ticketId, id);
 			messages = messages.filter((m) => m.id !== id);
 			await affaires.chargerFil(ticketId);
 		} catch (err) {
