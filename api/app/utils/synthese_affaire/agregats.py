@@ -90,6 +90,11 @@ class Mesure:
     exercice: Exercice
     issue: str
     metriques: dict
+    #: Identifiant, titre et clôture de l'affaire — pour lister les affaires d'un
+    #: exercice (fiche prestataire, R3d). Facultatifs : les autres lecteurs ne les lisent pas.
+    affaire_id: int = 0
+    titre: str = ""
+    cloture: Optional[date] = None
 
 
 def exercice_de(jour: date, mois_debut: Optional[int]) -> Exercice:
@@ -143,6 +148,9 @@ def mesurer(session: Session, tickets: list[Ticket]) -> list[Mesure]:
                 exercice=exercice_de(horloge.jour_civil(t.ferme_le), mois_debut),
                 issue=met["issue"],
                 metriques=met,
+                affaire_id=t.id,
+                titre=t.titre,
+                cloture=horloge.jour_civil(t.ferme_le),
             )
         )
     return mesures
@@ -291,8 +299,25 @@ def bilan_prestataire(session: Session, prestataire_id: int) -> dict:
     return {
         "prestataire_id": prestataire_id,
         "ensemble": resumer(mesures),
-        "exercices": [{**_exercice_lu(e), **resumer(ms)} for e, ms in par_exercice(mesures)],
+        "exercices": [
+            {**_exercice_lu(e), **resumer(ms), "affaires": _affaires_lues(ms)}
+            for e, ms in par_exercice(mesures)
+        ],
     }
+
+
+def _affaires_lues(mesures: list[Mesure]) -> list[dict]:
+    """Les affaires d'un exercice, la plus récente close d'abord."""
+    ordre = sorted(mesures, key=lambda x: x.cloture or date.min, reverse=True)
+    return [
+        {
+            "id": x.affaire_id,
+            "titre": x.titre,
+            "cloture": x.cloture.isoformat() if x.cloture else None,
+            "issue": x.issue,
+        }
+        for x in ordre
+    ]
 
 
 def _exercice_lu(exercice: Exercice) -> dict:

@@ -19,6 +19,10 @@
  * divergence dans ce fichier sans que personne l'ait décidé.
  */
 export const EXCEPTIONS = {
+	//  Corps de saisie d'une notation (14/11/2026) : le geste Annuler / Enregistrer est porté
+	//  par `GesteEnPlace`, dans la carte du contrat — ce composant ne rend que les champs.
+	'lib/components/FormulaireNotation.svelte':
+		'corps de saisie : le geste Annuler / Enregistrer vit dans GesteEnPlace, côté carte',
 	//  🔴 Deux DÉCLARATIONS au choix, pas un formulaire (29/09/2026, #779) : le
 	//  résident dit « je suis un nouvel arrivant » ou « je suis déjà résident ».
 	//  Chaque bouton EST la réponse ; « Enregistrer » ne dirait plus laquelle.

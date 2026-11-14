@@ -38,7 +38,9 @@
 	import { toast } from '#lib/components/Toast.svelte';
 	import { confirmer } from '#lib/confirmation.ts';
 	import { fmtDate } from '#lib/date.ts';
-	import { etoiles } from '#lib/notations.ts';
+	import { LIBELLE_ETAT, TEINTE_ETAT, etatDeMoyenne } from '#lib/notations.ts';
+	import Badge from './Badge.svelte';
+	import { SEPARATEUR } from '#lib/separateurs.ts';
 	import IconeAction from './IconeAction.svelte';
 
 	/** Les notations de CE prestataire, déjà filtrées par l'appelant. */
@@ -57,6 +59,12 @@
 
 	const dispatch = createEventDispatcher<{ supprimee: number }>();
 
+	/** L'avis dont le commentaire est déplié — un seul à la fois, sinon la liste s'allonge. */
+	let ouvert: number | null = null;
+	function basculer(id: number) {
+		ouvert = ouvert === id ? null : id;
+	}
+
 	//  Les plus récentes d'abord : un avis vieux de deux ans n'est pas ce qu'on
 	//  vient lire quand on ouvre une fiche.
 	$: triees = [...notations].sort(
@@ -67,7 +75,7 @@
 		const ok = await confirmer({
 			titre: 'Retirer cet avis',
 			message:
-				`Note ${fmtNombre(n.note)}/5 de ${n.auteur_nom ?? 'un membre du CS'}` +
+				`État « ${LIBELLE_ETAT[n.etat]} » de ${n.auteur_nom ?? 'un membre du CS'}` +
 				(n.commentaire ? ` — « ${n.commentaire} »` : '') +
 				'\n\nLa suppression est définitive, et la moyenne du prestataire sera recalculée.',
 			libelleConfirmer: 'Retirer l’avis',
@@ -91,8 +99,7 @@
 	      distances. -->
 	{#if moyenne !== null}
 		<span class="not-badge badge" title="{fmtNombre(moyenne)}/5 ({nbAvis} avis)">
-			{etoiles(moyenne)}
-			{fmtNombre(moyenne)}
+			{LIBELLE_ETAT[etatDeMoyenne(moyenne)]}{SEPARATEUR.point}{fmtNombre(moyenne)}/5
 		</span>
 	{/if}
 {:else if triees.length}
@@ -101,7 +108,20 @@
 		{#each triees as n (n.id)}
 			<div class="not-item">
 				<div class="not-entete">
-					<span class="not-etoiles" aria-label="{fmtNombre(n.note)} sur 5">{etoiles(n.note)}</span>
+					{#if n.commentaire}
+						<button
+							type="button"
+							class="not-etat-bouton"
+							aria-expanded={ouvert === n.id}
+							aria-label="{LIBELLE_ETAT[n.etat]}, {ouvert === n.id
+								? 'masquer'
+								: 'afficher'} le commentaire"
+							on:click|stopPropagation={() => basculer(n.id)}
+							><Badge teinte={TEINTE_ETAT[n.etat]}>{LIBELLE_ETAT[n.etat]}</Badge></button
+						>
+					{:else}
+						<Badge teinte={TEINTE_ETAT[n.etat]}>{LIBELLE_ETAT[n.etat]}</Badge>
+					{/if}
 					<span class="not-auteur">{n.auteur_nom ?? '—'}</span>
 					<span class="not-date">{fmtDate(n.cree_le)}</span>
 					{#if peutSupprimer}
@@ -114,7 +134,7 @@
 						>
 					{/if}
 				</div>
-				{#if n.commentaire}
+				{#if n.commentaire && ouvert === n.id}
 					<p class="not-commentaire">{n.commentaire}</p>
 				{/if}
 			</div>
@@ -144,9 +164,11 @@
 		flex-wrap: wrap;
 		font-size: var(--fs-md);
 	}
-	.not-etoiles {
-		color: var(--color-warning-texte);
-		letter-spacing: 0.05em;
+	.not-etat-bouton {
+		border: 0;
+		background: none;
+		padding: 0;
+		cursor: pointer;
 	}
 	.not-auteur {
 		font-weight: 600;
