@@ -65,10 +65,35 @@ class Baton(BaseModel):
     uniques: Optional[int] = None
 
 
+class VuesCanal(BaseModel):
+    """Les vues d'une page par un canal d'accès (`utils/canaux_audience`)."""
+
+    canal: str
+    libelle: str
+    vues: int
+
+
 class PageTop(BaseModel):
     page: str
     total: int
     uniques: int
+    #: Ses vues par canal (14/11/2026) — seuls ceux qui en ont.
+    canaux: list[VuesCanal] = []
+
+
+class PartCanal(BaseModel):
+    """Un canal d'accès dans la répartition de la portée (`utils/telemetrie_canaux`).
+
+    `part` : en pour cent des vues, calculée par le serveur. `visiteurs` : les comptes
+    venus par ce canal — ne s'additionnent pas d'un canal à l'autre ; `null` au-delà
+    des 30 jours d'évènements (Année, Total).
+    """
+
+    canal: str
+    libelle: str
+    vues: int
+    part: int
+    visiteurs: Optional[int] = None
 
 
 class UtilisateurTop(BaseModel):
@@ -195,3 +220,5 @@ class TableauTelemetrie(BaseModel):
     adoption: Optional[Adoption] = None
     retour: Retour
     filtre_gestionnaire: FiltreGestionnaire
+    #: La répartition des vues par canal d'accès (14/11/2026).
+    canaux: list[PartCanal] = []

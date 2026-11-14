@@ -99,10 +99,30 @@ export interface BatonTelemetrie {
 }
 
 /** Une page du palmarès. */
+/** Les vues d'une page par un canal d'accès (`utils/canaux_audience`, 14/11/2026). */
+export interface VuesCanal {
+	canal: string;
+	libelle: string;
+	vues: number;
+}
+
 export interface PageTelemetrie {
 	page: string;
 	total: number;
 	uniques: number;
+	/** Ses vues par canal — seuls ceux qui en ont. */
+	canaux?: VuesCanal[];
+}
+
+/** Un canal d'accès dans la répartition de la vue (`utils/telemetrie_canaux.servir`). */
+export interface PartCanal {
+	canal: string;
+	libelle: string;
+	vues: number;
+	/** En pour cent des vues, calculée par le serveur. */
+	part: number;
+	/** Comptes venus par ce canal — ne s'additionnent pas ; `null` en Année et Total. */
+	visiteurs: number | null;
 }
 
 /** Un utilisateur du palmarès (`telemetrie_calculs._palmares`). */
@@ -202,4 +222,6 @@ export interface TableauTelemetrie {
 	/** Dormants et arrivants, à seuils fixes quelle que soit la vue (#1629). */
 	retour: RetourComptes;
 	filtre_gestionnaire: EtatFiltreGestionnaire;
+	/** Les vues par canal d'accès : site web, app iPhone… (14/11/2026). */
+	canaux?: PartCanal[];
 }

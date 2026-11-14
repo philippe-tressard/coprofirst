@@ -7,15 +7,15 @@ renvoi, on le chercherait par la date, que le message et son entrée ne partagen
 Colonne additive et nullable : un message d'avant ce lot n'a pas de renvoi, et l'image
 précédente l'ignore (#1757).
 
-Revision ID: 0335
-Revises: 0334
+Revision ID: 0337
+Revises: 0336
 """
 
 import sqlalchemy as sa
 from alembic import op
 
-revision = "0335"
-down_revision = "0334"
+revision = "0337"
+down_revision = "0336"
 branch_labels = None
 depends_on = None
 
