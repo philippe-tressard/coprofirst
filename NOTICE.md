@@ -83,6 +83,10 @@ dans `scripts/ci/licences_politique.py`.
   au domaine public sous CC0-1.0 ([`LICENSES/CC0-1.0.txt`](LICENSES/CC0-1.0.txt)).
   CC0 ne cède aucun droit de marque : le logo reste une marque de son titulaire.
 
+- **Badge « Télécharger dans l'App Store »** — œuvre et marque d'Apple Inc., reprise sans
+  modification dans `front/static/badge-app-store-fr.svg` pour le manuel utilisateur. Hors de
+  l'AGPL : [`LICENSES/LicenseRef-Apple-App-Store-Badge.txt`](LICENSES/LicenseRef-Apple-App-Store-Badge.txt).
+
 L'attribution de ces fichiers est déclarée dans `REUSE.toml`, et contrôlée par
 `scripts/ci/contenus_tiers.py`.
 

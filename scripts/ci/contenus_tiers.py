@@ -172,10 +172,14 @@ def main() -> int:
         textes = textes_versionnes()
         mesures = []
         for contenu in politique.CONTENUS_TIERS:
+            echecs += verifier_attribution(contenu, attributions)
+            if contenu.get("sans_empreinte"):
+                #  Une image : le sens 1 (attribution) la juge ; le sens 2 n'a rien à retrouver.
+                mesures.append(f"{contenu['nom']} {len(contenu['fichiers'])} fichier(s)")
+                continue
             traces = empreintes(catalogue, contenu["icones"])
             if not traces:  # cas zéro : sans empreinte, le sens 2 ne verrait rien
                 raise Inconnu(f"{contenu['nom']} : aucune empreinte tirée du catalogue")
-            echecs += verifier_attribution(contenu, attributions)
             echecs += verifier_presence(contenu, traces, textes)
             mesures.append(f"{contenu['nom']} {len(contenu['fichiers'])} fichier(s)")
     except (Inconnu, OSError, ValueError) as e:
