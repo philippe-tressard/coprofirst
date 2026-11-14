@@ -16,8 +16,9 @@
 	import PanneauTelemetrie from '#lib/components/PanneauTelemetrie.svelte';
 	import { fmtNombre, fmtPartEnPourcent } from '#lib/utils.ts';
 	import { SEPARATEUR } from '#lib/separateurs.ts';
+	import type { PageTelemetrie } from '#lib/api/index.ts';
 
-	export let pages: { page: string; total: number; uniques: number }[] = [];
+	export let pages: PageTelemetrie[] = [];
 
 	/** Vues comptées ici mais rattachées à aucun utilisateur (#354).
 	    Ce tableau compte TOUTES les vues ; celui des utilisateurs n'en retient que
@@ -33,6 +34,11 @@
 	//  s'afficher 0, pas 1 (`standards/04` : ne pas présenter une valeur de repli
 	//  comme une mesure).
 	$: diviseur = totalVues || 1;
+	//  La colonne « Accès » (14/11/2026) n'apparaît que si la période en a PLUSIEURS :
+	//  « Site web » sur chaque ligne ne dirait rien.
+	const accesDe = (p: PageTelemetrie) =>
+		(p.canaux ?? []).map((c) => `${c.libelle}\u00a0${fmtNombre(c.vues)}`).join(SEPARATEUR.point);
+	$: plusieursCanaux = new Set(pages.flatMap((p) => (p.canaux ?? []).map((c) => c.canal))).size > 1;
 </script>
 
 {#if pages.length > 0}
@@ -45,6 +51,7 @@
 						<th class="num">Vues</th>
 						<th class="num">Utilisateurs</th>
 						<th class="num">%</th>
+						{#if plusieursCanaux}<th>Accès</th>{/if}
 					</tr>
 				</thead>
 				<tbody>
@@ -54,6 +61,9 @@
 							<td class="num-fort">{fmtNombre(p.total)}</td>
 							<td class="num-attenue">{fmtNombre(p.uniques)}</td>
 							<td class="num-attenue">{fmtPartEnPourcent(p.total, diviseur, 1)}</td>
+							{#if plusieursCanaux}
+								<td class="acces">{accesDe(p)}</td>
+							{/if}
 						</tr>
 					{/each}
 				</tbody>
@@ -78,6 +88,7 @@
 						<td class="num-attenue">
 							{fmtPartEnPourcent(totalVues, totalVues, 1)}
 						</td>
+						{#if plusieursCanaux}<td></td>{/if}
 					</tr>
 				</tfoot>
 			</table>
@@ -119,6 +130,9 @@
 	}
 	.num-attenue {
 		text-align: right;
+		color: var(--color-text-muted);
+	}
+	.acces {
 		color: var(--color-text-muted);
 	}
 </style>

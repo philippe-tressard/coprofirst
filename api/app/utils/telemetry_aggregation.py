@@ -6,6 +6,8 @@ Rétention, par table :
   - Agrégation journalière (telemetry_daily) : 12 mois, en DEUX séries
     (`gestionnaire` : le gestionnaire du site, les autres)
   - Agrégation mensuelle (telemetry_monthly) : 10 ans, mêmes deux séries
+  - Vues par canal d'accès (audience_canal_jour, audience_canal_mois) : 12 mois et
+    10 ans, comme les deux agrégats (0335, `utils/telemetrie_canaux`)
   - Présence mensuelle (presence_mensuelle) : 12 mois — par compte et par mois,
     le seul fait « venu » ; c'est ce qui donne « Qui vient » à la vue Année (#1628)
   - Dernière visite (derniere_visite) : un jour par compte, effacé après 12 mois
@@ -52,7 +54,7 @@ from app.models.core import (
     TelemetryEvent,
     TelemetryMonthly,
 )
-from app.utils import horloge
+from app.utils import horloge, telemetrie_canaux
 from app.utils.declenchement import AUTOMATIQUE
 from app.utils.destinataires import site_manager_user_id
 from app.utils.erreurs_navigateur import purger_erreurs
@@ -111,6 +113,8 @@ def _agreger_jour(session: Session, jour_paris: datetime, gestionnaire_id: Optio
         .where(*fenetre)
         .group_by(TelemetryEvent.page, TelemetryEvent.action, serie)
     ).all()
+    #  La répartition par canal d'accès (0335), mêmes bornes et même série.
+    telemetrie_canaux.agreger_jour(session, jour_str, fenetre, serie)
     for page, action, gestionnaire, total, uniques in rows:
         session.add(
             TelemetryDaily(
@@ -196,6 +200,7 @@ def _mois_suivant(mois: str) -> str:
 def _agreger_mois(session: Session, mois_str: str) -> bool:
     """(Ré)écrit les lignes de `telemetry_monthly` d'UN mois depuis le journalier ; True si des vues."""
     session.exec(delete(TelemetryMonthly).where(TelemetryMonthly.mois == mois_str))
+    telemetrie_canaux.agreger_mois(session, mois_str)
     rows = session.exec(
         select(
             TelemetryDaily.page,
@@ -282,6 +287,8 @@ def run_telemetry_aggregation(entry_id: int | None = None) -> dict:
         "events_purges": 0,
         "daily_purges": 0,
         "monthly_purges": 0,
+        "canaux_jour_purges": 0,
+        "canaux_mois_purges": 0,
         "presences_purgees": 0,
         "dernieres_visites_purgees": 0,
         "erreurs_navigateur_purgees": 0,
@@ -333,6 +340,19 @@ def run_telemetry_aggregation(entry_id: int | None = None) -> dict:
             rapport,
             "monthly_purges",
             "DELETE FROM telemetry_monthly WHERE mois < :cutoff",
+            cutoff=(now_paris - timedelta(days=RETENTION_MONTHLY_JOURS)).strftime("%Y-%m"),
+        )
+        #  La répartition par canal (0335) vit ce que vivent les agrégats.
+        _purger(
+            rapport,
+            "canaux_jour_purges",
+            "DELETE FROM audience_canal_jour WHERE jour < :cutoff",
+            cutoff=cutoff_daily,
+        )
+        _purger(
+            rapport,
+            "canaux_mois_purges",
+            "DELETE FROM audience_canal_mois WHERE mois < :cutoff",
             cutoff=(now_paris - timedelta(days=RETENTION_MONTHLY_JOURS)).strftime("%Y-%m"),
         )
         _purger(

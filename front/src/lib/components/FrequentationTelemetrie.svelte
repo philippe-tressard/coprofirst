@@ -17,6 +17,7 @@
 	 */
 	import PanneauTelemetrie from '#lib/components/PanneauTelemetrie.svelte';
 	import TopPages from '#lib/components/TopPages.svelte';
+	import CanauxAcces from '#lib/components/CanauxAcces.svelte';
 	import EcransNonVisites from '#lib/components/EcransNonVisites.svelte';
 	import type { TableauTelemetrie } from '#lib/api/index.ts';
 	import { fmtDate, fmtDatetimeShort as fmt, fmtMoisCourt, fmtMonthYear } from '#lib/date.ts';
@@ -250,6 +251,8 @@
 			</div>
 		</div>
 	</PanneauTelemetrie>
+
+	<CanauxAcces canaux={donnees.canaux ?? []} />
 
 	<TopPages pages={donnees.top_pages} vuesNonAttribuees={donnees.kpi.vues_non_attribuees ?? 0} />
 
