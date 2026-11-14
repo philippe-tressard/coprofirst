@@ -159,8 +159,8 @@
 	{#if filtre === 'sans' && telemetryData}
 		<p class="aide">
 			Les vues du gestionnaire du site sont écartées des indicateurs, du graphe, de la répartition
-			par accès, des pages, des utilisateurs, de « Qui vient » et des arrivées par notification. Les erreurs, les gestes et
-			les durées d’affichage, sans compte, ne changent pas.
+			par accès, des pages, des utilisateurs, de « Qui vient » et des arrivées par notification. Les
+			erreurs, les gestes et les durées d’affichage, sans compte, ne changent pas.
 			{#if telemetryData.filtre_gestionnaire.non_distingue_jusqu_au}
 				Jusqu’au {fmtDate(telemetryData.filtre_gestionnaire.non_distingue_jusqu_au)}, les agrégats
 				ne distinguaient pas le gestionnaire : ses vues y restent comptées.
