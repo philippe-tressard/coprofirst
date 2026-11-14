@@ -67,6 +67,9 @@ URL_MANUEL_INTERNE = "http://front:3000/manuel-utilisateur.html"
 #: navigation, qui n'ont aucun sens sur un feuillet imprimé.
 _MAIN = re.compile(r"<main[^>]*>(.*?)</main>", re.S | re.I)
 _TITRES = re.compile(r"<h([23])([^>]*)>(.*?)</h\1>", re.S | re.I)
+_BADGE_APP_STORE = re.compile(
+    r"""<img\b[^>]*\bclass="appli-mobile-badge-img"[^>]*\balt="([^"]*)"[^>]*>""", re.I
+)
 _BALISES = re.compile(r"<[^>]+>")
 _ID = re.compile(r"""\bid\s*=\s*["']([^"']+)["']""", re.I)
 
@@ -131,6 +134,9 @@ def corps_du_manuel(html: str) -> str:
     trouve = _MAIN.search(html)
     corps = trouve.group(1) if trouve else html
     corps = re.sub(r"<script.*?</script>", "", corps, flags=re.S | re.I)
+    #  Le badge de l'App Store est une image servie par le site : le PDF n'en charge
+    #  aucune au rendu. Il y devient son texte alternatif, dans le même lien.
+    corps = _BADGE_APP_STORE.sub(lambda m: m.group(1), corps)
     corps = re.sub(
         r"<details[^>]*>.*?</details>",
         f'<p class="{CLASSE_RENVOI}">{RENVOI_EN_LIGNE}</p>',

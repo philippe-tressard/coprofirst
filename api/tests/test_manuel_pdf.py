@@ -461,3 +461,19 @@ def test_le_manuel_et_la_garde_lient_l_app_store_depuis_la_meme_adresse(manuel, 
     )
     assert "Version à venir" in garde
     assert ".garde-appli {" in css_du_pdf("")
+
+
+def test_le_badge_de_l_app_store_est_celui_d_apple_et_le_PDF_n_en_charge_aucune_image(
+    manuel, document
+):
+    """Web : le badge officiel (fichier servi, hors AGPL). PDF : son texte, sans image.
+
+    Le PDF ne charge aucune ressource au rendu ; l'image y redevient son texte
+    alternatif, dans le même lien.
+    """
+    assert 'class="appli-mobile-badge-img" src="/badge-app-store-fr.svg"' in manuel
+    badge = _RACINE / "front" / "static" / "badge-app-store-fr.svg"
+    assert badge.is_file(), "le manuel montre un badge que le site ne sert pas"
+    assert "Download_on_the_App_Store_Badge_FR" in badge.read_text(encoding="utf-8")
+    assert "badge-app-store-fr.svg" not in document
+    assert "Télécharger dans l'App Store" in document
