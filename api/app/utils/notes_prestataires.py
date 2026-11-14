@@ -30,6 +30,24 @@ class NoteDuPrestataire(NamedTuple):
 
 SANS_AVIS = NoteDuPrestataire(None, 0)
 
+#  🔴 TROIS ÉTATS depuis le 14/11/2026 (arbitré par l'utilisateur) : Mauvais, Neutre,
+#  Excellent. La colonne `note` reste un entier, pour que la moyenne et les seuils
+#  existants ne bougent pas : un état NOUVEAU s'écrit 1, 3 ou 5. Les anciennes notes
+#  (1 à 5) ne sont PAS réécrites : `etat_de_note` les lit à la volée, 1-2 → Mauvais,
+#  3 → Neutre, 4-5 → Excellent. Aucune donnée perdue, et un retour arrière du code
+#  relit les mêmes lignes.
+ETATS = ("mauvais", "neutre", "excellent")
+NOTE_DE_ETAT = {"mauvais": 1, "neutre": 3, "excellent": 5}
+
+
+def etat_de_note(note: int) -> str:
+    """L'état d'une note entière (1 à 5) — la conversion lue, sans réécriture."""
+    if note <= 2:
+        return "mauvais"
+    if note == 3:
+        return "neutre"
+    return "excellent"
+
 
 def note_moyenne(somme: int, nombre: int) -> Optional[float]:
     """La moyenne arrondie au dixième, la moitié vers le haut (4,25 → 4,3) — `None` sans avis."""
@@ -56,4 +74,12 @@ def notes_des_prestataires(session: Session, ids: Iterable[int]) -> dict[int, No
     return {pid: NoteDuPrestataire(note_moyenne(int(s), int(n)), int(n)) for pid, s, n in lignes}
 
 
-__all__ = ["NoteDuPrestataire", "SANS_AVIS", "note_moyenne", "notes_des_prestataires"]
+__all__ = [
+    "ETATS",
+    "NOTE_DE_ETAT",
+    "NoteDuPrestataire",
+    "SANS_AVIS",
+    "etat_de_note",
+    "note_moyenne",
+    "notes_des_prestataires",
+]
