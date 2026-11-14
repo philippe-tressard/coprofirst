@@ -24,6 +24,7 @@
 	import { estModerateur } from '#lib/stores/auth.ts';
 	import PiecesJointes from '#lib/components/PiecesJointes.svelte';
 	import IconeAction from '#lib/components/IconeAction.svelte';
+	import PiedFormulaire from '#lib/components/PiedFormulaire.svelte';
 	import RichEditor from '#lib/components/RichEditor.svelte';
 	import { confirmer } from '#lib/confirmation.ts';
 	import { TICKET } from '#lib/entites/ticket.ts';
@@ -127,19 +128,14 @@
 				</div>
 				{#if enCorrection === msg.id}
 					<RichEditor bind:value={texte} minHeight="80px" />
-					<div class="msg-actions">
-						<button
-							type="button"
-							class="btn btn-outline btn-sm"
-							on:click={() => (enCorrection = null)}>Annuler</button
-						>
-						<button
-							type="button"
-							class="btn btn-primary btn-sm"
-							disabled={!texte.trim() || enregistre}
-							on:click={enregistrer}>Enregistrer</button
-						>
-					</div>
+					<PiedFormulaire
+						petit
+						soumission={false}
+						enCours={enregistre}
+						desactive={!texte.trim()}
+						on:enregistre={enregistrer}
+						on:annule={() => (enCorrection = null)}
+					/>
 				{:else}
 					<div class="msg-body">{@html safeDescription(msg.contenu)}</div>
 				{/if}

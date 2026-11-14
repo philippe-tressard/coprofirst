@@ -1,4 +1,5 @@
 import { api, BASE } from './client';
+import { messagesTicket } from './messages-ticket';
 import type {
 	AnnonceHall,
 	AnnonceHallInput,
@@ -266,11 +267,7 @@ export const tickets = {
 			assiste_ia?: boolean;
 		},
 	) => api.post<TicketMessage>(`/tickets/${id}/messages`, data),
-	/** Corriger SON message, tant que l'affaire n'est pas close (#2722). */
-	modifierMessage: (id: number, msgId: number, data: { contenu: string }) =>
-		api.patch<TicketMessage>(`/tickets/${id}/messages/${msgId}`, data),
-	/** Retirer SON message — et son entrée d'Historique (#2722). */
-	supprimerMessage: (id: number, msgId: number) => api.delete(`/tickets/${id}/messages/${msgId}`),
+	...messagesTicket,
 	evolutions: (id: number) => api.get<TicketEvolution[]>(`/tickets/${id}/evolutions`),
 	//  L'aperçu de ce qui partira, avant de confirmer la diffusion (#498). Il ne
 	//  crée rien : le brouillon est composé par les MÊMES fonctions que l'envoi.
