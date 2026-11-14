@@ -235,23 +235,25 @@ def add_message(
 
 
 def _message_de_l_auteur(
-    session: Session, ticket_id: int, msg_id: int, user: Utilisateur
-) -> tuple[Ticket, MessageTicket]:
-    """Le message, si CE lecteur peut le corriger ou le retirer (#2722).
+    session: Session, ticket: Ticket, msg_id: int, user: Utilisateur
+) -> MessageTicket:
+    """Le message de cette affaire, si CE lecteur peut le corriger ou le retirer (#2722).
 
     La règle arbitrée le 14/11/2026 : **son auteur**, **tant que l'affaire n'est
     pas close**. Ni le conseil ni l'admin n'écrivent à la place de quelqu'un — le
     retrait d'un propos d'autrui reste une affaire de modération, qui n'est pas
     ouverte ici. Un auteur détaché (compte supprimé) n'est personne (`est_auteur`).
+
+    L'accès à l'affaire (`ticket_visible`) se pose DANS la route, comme aux deux
+    autres : `test_toute_route_d_une_affaire_controle_l_acces` le lit sur la route.
     """
-    ticket = exiger_objet_autorise(session, Ticket, ticket_id, "Ticket", user, ticket_visible)
     refuser_si_absorbee(ticket)
-    msg = ou_404(session, MessageTicket, msg_id, "Message", sous={"ticket_id": ticket_id})
+    msg = ou_404(session, MessageTicket, msg_id, "Message", sous={"ticket_id": ticket.id})
     if not est_auteur(msg, user):
         raise HTTPException(403, "Seul l'auteur d'un message peut le modifier ou le supprimer")
     if affaire_close(ticket.statut):
         raise HTTPException(409, "Cette affaire est close : sa discussion ne se modifie plus")
-    return ticket, msg
+    return msg
 
 
 @router.patch("/{ticket_id}/messages/{msg_id}", response_model=MessageRead)
@@ -262,7 +264,8 @@ def update_message(
     session: Session = Depends(get_session),
     user: Utilisateur = Depends(get_current_user),
 ):
-    ticket, msg = _message_de_l_auteur(session, ticket_id, msg_id, user)
+    ticket = exiger_objet_autorise(session, Ticket, ticket_id, "Ticket", user, ticket_visible)
+    msg = _message_de_l_auteur(session, ticket, msg_id, user)
     msg.contenu = body.contenu
     if body.fichiers_urls is not None:
         msg.fichiers_urls = photos_json(body.fichiers_urls)
@@ -289,7 +292,8 @@ def delete_message(
     session: Session = Depends(get_session),
     user: Utilisateur = Depends(get_current_user),
 ):
-    _, msg = _message_de_l_auteur(session, ticket_id, msg_id, user)
+    ticket = exiger_objet_autorise(session, Ticket, ticket_id, "Ticket", user, ticket_visible)
+    msg = _message_de_l_auteur(session, ticket, msg_id, user)
     miroir_id = msg.evolution_id
     #  Le message référence son miroir : il part le premier.
     session.delete(msg)
