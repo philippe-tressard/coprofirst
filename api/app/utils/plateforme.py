@@ -36,6 +36,11 @@ DEPOT_SOURCE = "https://github.com/philippe-tressard/coprofirst"
 #: mentions légales. Le front le lie aussi (pied de page, `plateforme.ts`).
 SITE_PLATEFORME = "https://coprofirst.fr"
 
+#: L'application iOS de la plateforme, sur l'App Store (soumise le 14/11/2026). Le manuel
+#: (page de garde du PDF, fin de page) et l'encart de la page de connexion la lient ;
+#: `front/src/lib/plateforme.ts` porte la même adresse.
+APPLI_IOS = "https://apps.apple.com/fr/app/coprofirst/id6834326392"
+
 #: La licence, telle qu'on l'identifie, la nomme et la lie. Le texte qui fait
 #: foi est l'officiel, en anglais (`LICENSE`).
 LICENCE_SPDX = "AGPL-3.0-or-later"

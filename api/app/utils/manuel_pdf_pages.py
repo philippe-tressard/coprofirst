@@ -13,7 +13,26 @@ from html import escape
 
 from app.utils.dates_fr import date_longue
 from app.utils.pdf_theme import FONT_SERIF, logo_html, qr_data_uri
-from app.utils.plateforme import LICENCE_NOM, LICENCE_SPDX, NOM_PLATEFORME
+from app.utils.plateforme import APPLI_IOS, LICENCE_NOM, LICENCE_SPDX, NOM_PLATEFORME
+
+
+def _bloc_appli_mobile() -> str:
+    """L'application mobile, sur la garde : iPhone à gauche, Android (à venir) à droite.
+
+    Le feuillet s'imprime : l'adresse de l'App Store s'y lit aussi en QR code, et
+    elle vient de `plateforme.APPLI_IOS` — la même que celle du manuel en ligne.
+    """
+    qr = qr_data_uri(APPLI_IOS)
+    image = f'<img src="{qr}" alt="">' if qr else ""
+    return f"""<div class="garde-appli">
+    <div class="garde-appli-col">
+      {image}
+      <p><strong>iPhone</strong><br>Télécharger sur l'App Store<br>{escape(APPLI_IOS)}</p>
+    </div>
+    <div class="garde-appli-col garde-appli-avenir">
+      <p><strong>Android</strong><br>Version à venir</p>
+    </div>
+  </div>"""
 
 
 def garde(
@@ -40,6 +59,7 @@ def garde(
      Trouver vite ce dont vous avez besoin.</p>
   <div class="garde-filet"></div>
   {bloc_qr}
+  {_bloc_appli_mobile()}
   <p class="garde-pied">Édition du {date_longue(edite_le)}</p>
 </section>
 """
@@ -165,6 +185,37 @@ def css_des_pages_ajoutees() -> str:
   margin-top: 4mm;
 }}
 .garde-qr strong {{ color: #fff; }}
+/*  L'application mobile : deux colonnes, iPhone (QR et adresse) à gauche, Android
+    (à venir, atténué) à droite — posées au-dessus de la date d'édition. */
+.garde-appli {{
+  position: absolute;
+  left: 22mm; right: 22mm; bottom: 34mm;
+  display: flex;
+  gap: 8mm;
+  text-align: left;
+}}
+.garde-appli-col {{
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 4mm;
+  padding: 3mm 4mm;
+  border: 1px solid rgba(255, 255, 255, .18);
+  border-radius: 3mm;
+  font-size: 8pt;
+  color: #C7D2E0;
+  line-height: 1.45;
+  overflow-wrap: anywhere;
+}}
+.garde-appli-col img {{
+  width: 20mm; height: 20mm;
+  flex: none;
+  background: #fff;
+  padding: 1.5mm;
+  border-radius: 2mm;
+}}
+.garde-appli-col strong {{ color: #fff; font-size: 10pt; }}
+.garde-appli-avenir {{ opacity: .6; border-style: dashed; }}
 .garde-pied {{
   position: absolute;
   left: 0; right: 0; bottom: 20mm;
