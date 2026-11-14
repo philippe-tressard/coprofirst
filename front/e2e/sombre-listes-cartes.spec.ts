@@ -252,7 +252,9 @@ const ECRANS: {
 		route: '/tickets',
 		temoin: '.carte-corps',
 		geste: async (p) => {
-			await p.locator('.carte-liste').first().click();
+			//  Le TITRE, non le centre de la carte : selon la rangée d'actions, le centre
+			//  tombait sur une icône (le lien copié, au lieu de la carte dépliée).
+			await p.locator('.carte-liste .ec-titre').first().click();
 			await p.getByRole('button', { name: /La synthèse/ }).click();
 		},
 	},
