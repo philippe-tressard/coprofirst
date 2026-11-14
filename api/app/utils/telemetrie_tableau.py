@@ -32,7 +32,8 @@ from sqlmodel import Session, select
 
 from app import dialecte
 from app.models.core import TelemetryDaily, TelemetryEvent, TelemetryMonthly
-from app.utils import horloge
+from app.models.telemetrie import AudienceCanalJour, AudienceCanalMois
+from app.utils import horloge, telemetrie_canaux
 from app.utils.destinataires import site_manager_user_id
 from app.utils.telemetrie_calculs import (
     _cumul_par_page,
@@ -342,6 +343,51 @@ def non_distingue_jusqu_au(session: Session, scope: str) -> Optional[str]:
     return jour or None
 
 
+# ── La répartition par canal d'accès (14/11/2026) ────────────────────────────
+
+
+def _repartition(session: Session, lecture: Lecture, top_pages: list[dict]) -> list[dict]:
+    """Les vues par canal, sur les MÊMES lignes que les vues de la portée — le total
+    tombe sur l'indicateur « Pages vues ». Pose aussi `canaux` sur chaque top page."""
+    visiteurs = None
+    if lecture.scope == "jour":
+        conditions = [TelemetryEvent.cree_le >= lecture.today_start_utc, *lecture.evenements()]
+        par_page = telemetrie_canaux.vues_evenements(session, conditions)
+        visiteurs = telemetrie_canaux.visiteurs_par_canal(session, conditions)
+    elif lecture.scope == "mois":
+        depuis = _minuit_il_y_a(lecture, 30)
+        par_page = telemetrie_canaux.vues_agregees(
+            session,
+            AudienceCanalJour,
+            [AudienceCanalJour.jour >= depuis, *lecture.agregats(AudienceCanalJour)],
+        )
+        visiteurs = telemetrie_canaux.visiteurs_par_canal(
+            session, [TelemetryEvent.cree_le >= depuis, *lecture.evenements()]
+        )
+    else:
+        depuis_mois = mois_il_y_a(lecture.now_paris, 11 if lecture.scope == "annee" else 120)
+        par_page = telemetrie_canaux.fusionner(
+            telemetrie_canaux.vues_agregees(
+                session,
+                AudienceCanalMois,
+                [
+                    AudienceCanalMois.mois >= depuis_mois,
+                    AudienceCanalMois.mois < lecture.mois_courant,
+                    *lecture.agregats(AudienceCanalMois),
+                ],
+            ),
+            telemetrie_canaux.vues_agregees(
+                session,
+                AudienceCanalJour,
+                [
+                    AudienceCanalJour.jour.startswith(lecture.mois_courant),
+                    *lecture.agregats(AudienceCanalJour),
+                ],
+            ),
+        )
+    return telemetrie_canaux.servir(par_page, top_pages, visiteurs)
+
+
 # ── La réponse ───────────────────────────────────────────────────────────────
 
 
@@ -368,10 +414,12 @@ def tableau(session: Session, scope: str, filtre: str) -> dict:
         corps = _portee_longue(session, lecture, mois_il_y_a(now_paris, 11), par_annee=False)
     else:
         corps = _portee_longue(session, lecture, mois_il_y_a(now_paris, 120), par_annee=True)
+    canaux = _repartition(session, lecture, corps["top_pages"])
     return {
         "scope": scope,
         **corps,
         **communs(session, lecture),
+        "canaux": canaux,
         "filtre_gestionnaire": {
             "propose": propose,
             #  Faux : aucun administrateur n'est désigné gestionnaire (Copropriété › Fonctionnement) —

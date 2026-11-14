@@ -70,6 +70,12 @@ EXIGENCES = [
         ("télémétrie", "telemetrie", "mesure d'audience", "audience"),
     ),
     (
+        #  14/11/2026 : chaque page vue garde l'accès utilisé — site ou application.
+        "le canal d'accès joint à la page vue",
+        ("models/telemetrie.py", "canal: str"),
+        ("accès utilisé",),
+    ),
+    (
         "les photos téléversées",
         ("models/core.py", "photo_url"),
         ("photo", "image"),

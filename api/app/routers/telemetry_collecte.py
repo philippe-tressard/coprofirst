@@ -27,6 +27,12 @@ base : plafond par minute ET par jour (`LIMITE_COLLECTE_AUDIENCE`), lot borné e
 nombre, champs bornés en taille — refusés en bloc (422), pas tronqués : le
 client du site n'envoie rien de tel, une charge hors norme vient d'ailleurs.
 
+## Le canal d'accès (14/11/2026)
+
+Le lot dit d'où il vient — le site, l'app iPhone, plus tard l'app Android
+(`canal`, `utils/canaux_audience`) ; chaque page vue le garde. Seules les pages
+vues le portent : erreurs, durées et gestes restent comptés sans lui.
+
 ## Les erreurs, les durées d'affichage et les gestes passent par ici (#1631, #1632, #1633)
 
 Même route, même plafond, même refus du profil — mais chacune dans sa table
@@ -42,6 +48,7 @@ from app.auth.deps import utilisateur_ou_anonyme
 from app.database import get_session
 from app.models.core import TelemetryEvent, Utilisateur
 from app.utils import horloge
+from app.utils.canaux_audience import CANAL_PAR_DEFAUT, Canal
 from app.utils.erreurs_navigateur import ACTION_ERREUR, enregistrer_erreur
 from app.utils.gestes_formulaire import (
     ACTION_ENVOI,
@@ -78,6 +85,9 @@ class EvenementAudience(BaseModel):
 
 class LotAudience(BaseModel):
     events: list[EvenementAudience] = Field(max_length=EVENEMENTS_PAR_LOT)
+    #: Le canal d'accès du client qui poste (`utils/canaux_audience`) : le site s'il
+    #: ne le dit pas — c'est le cas du front, seul client avant le 14/11/2026.
+    canal: Canal = CANAL_PAR_DEFAUT
 
 
 @router.post("/collect", status_code=204)
@@ -100,7 +110,12 @@ def collect(
             continue
         session.add(
             TelemetryEvent(
-                user_id=user_id, page=ev.page, action=ev.action, detail=ev.detail, cree_le=now
+                user_id=user_id,
+                page=ev.page,
+                action=ev.action,
+                detail=ev.detail,
+                canal=body.canal,
+                cree_le=now,
             )
         )
     session.commit()
