@@ -16,6 +16,7 @@
 	import ChampMotDePasse from '#lib/components/ChampMotDePasse.svelte';
 	import EtoileRequis from '#lib/components/EtoileRequis.svelte';
 	import AiguillageCopropriete from '#lib/components/AiguillageCopropriete.svelte';
+	import EncartAppIos from '#lib/components/EncartAppIos.svelte';
 	import { NOM_PLATEFORME } from '#lib/plateforme.ts';
 
 	//  L'hôte COMMUN d'une installation à plusieurs copropriétés (#1894) : l'écran
@@ -147,6 +148,8 @@
 				</div>
 			{/if}
 		{/if}
+
+		<EncartAppIos />
 
 		<div class="auth-legal">
 			<a href="/mentions-legales">Mentions légales</a>

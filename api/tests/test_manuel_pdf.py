@@ -43,7 +43,7 @@ from app.utils.manuel_pdf import (
     titres_ancres,
 )
 from app.utils.manuel_pdf_css import css_du_pdf
-from app.utils.plateforme import LICENCE_SPDX
+from app.utils.plateforme import APPLI_IOS, LICENCE_SPDX
 from tests.aides_caddy import bloc_handle, caddyfile
 
 _RACINE = Path(__file__).resolve().parents[2]
@@ -437,3 +437,27 @@ def test_le_bouton_du_menu_telephone_est_DESSINE_et_EXPLIQUE(manuel):
         "l'explication du bouton n'a pas de style dans le PDF — elle s'y "
         "afficherait comme un paragraphe ordinaire, détachée de son bouton"
     )
+
+
+# ── L'application mobile : iPhone à gauche, Android (à venir) à droite ───────
+
+
+def test_le_manuel_et_la_garde_lient_l_app_store_depuis_la_meme_adresse(manuel, document):
+    """Une seule adresse, `plateforme.APPLI_IOS` : le manuel en ligne, la garde du PDF
+    et l'encart de la connexion (`test_plateforme.py`) ne peuvent pas diverger.
+
+    Le manuel HTML est une copie statique, qui ne lit pas l'API : c'est ce test qui
+    la tient à la constante. La garde dit aussi qu'Android n'est pas encore là.
+    """
+    assert f'href="{APPLI_IOS}"' in manuel, "le manuel ne lie plus l'App Store à l'adresse déclarée"
+    assert "appli-mobile-avenir" in manuel
+    assert "Version à venir" in manuel
+    garde = document.split('<section class="garde">', 1)[1].split("</section>", 1)[0]
+    assert "garde-appli" in garde and APPLI_IOS in garde, (
+        "la page de garde ne porte plus l'App Store"
+    )
+    assert garde.index("iPhone") < garde.index("Android"), (
+        "iPhone se lit à gauche, Android à droite"
+    )
+    assert "Version à venir" in garde
+    assert ".garde-appli {" in css_du_pdf("")

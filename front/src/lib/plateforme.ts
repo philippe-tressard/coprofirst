@@ -30,6 +30,10 @@ export const DEPOT_SOURCE = 'https://github.com/philippe-tressard/coprofirst';
  *  mentions légales (`api/app/utils/plateforme.py`). */
 export const SITE_PLATEFORME = 'https://coprofirst.fr';
 
+/** L'application iOS de la plateforme, sur l'App Store — le manuel et l'encart de la
+ *  page de connexion la lient (`api/app/utils/plateforme.py` porte la même adresse). */
+export const APPLI_IOS = 'https://apps.apple.com/fr/app/coprofirst/id6834326392';
+
 /** La licence, telle qu'on l'identifie, la nomme et la lie. Le texte qui fait
  *  foi est l'officiel, en anglais (`LICENSE`). */
 export const LICENCE_SPDX = 'AGPL-3.0-or-later';
