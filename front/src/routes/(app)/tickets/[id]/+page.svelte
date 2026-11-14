@@ -125,6 +125,29 @@
 			sending = false;
 		}
 	}
+
+	//  Corriger ou retirer SON message, tant que l'affaire est ouverte (#2722) : la
+	//  route refuse le reste ; le fil de la carte se relit, comme à l'envoi.
+	async function corrigerMessage(id: number, contenu: string): Promise<boolean> {
+		try {
+			const maj = await ticketsApi.modifierMessage(ticketId, id, { contenu });
+			messages = messages.map((m) => (m.id === id ? maj : m));
+			await affaires.chargerFil(ticketId);
+			return true;
+		} catch (err) {
+			toast('error', messageErreur(err));
+			return false;
+		}
+	}
+	async function retirerMessage(id: number) {
+		try {
+			await ticketsApi.supprimerMessage(ticketId, id);
+			messages = messages.filter((m) => m.id !== id);
+			await affaires.chargerFil(ticketId);
+		} catch (err) {
+			toast('error', messageErreur(err));
+		}
+	}
 </script>
 
 <svelte:head><title>{TICKET.libelle} #{ticketId} — {_siteNom}</title></svelte:head>
@@ -172,6 +195,8 @@
 			bind:repondreOuvert
 			bind:newInterne
 			on:envoyer={(e) => sendMessage(e)}
+			corriger={corrigerMessage}
+			retirer={retirerMessage}
 		/>
 	{/if}
 {/if}

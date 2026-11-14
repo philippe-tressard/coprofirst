@@ -387,6 +387,10 @@ class MessageTicket(SQLModel, table=True):
     interne: bool = False  # True = visible CS seulement
     fichiers_urls: str = "[]"  # JSON array d'URLs de fichiers joints
     auteur_qualite: Optional[str] = None  # l'auteur détaché par la conservation (#2014)
+    #  L'entrée « réponse » que ce message a inscrite dans l'Historique (#2722) :
+    #  modifier ou supprimer le message la suit, sans la chercher par sa date.
+    #  `None` pour un message d'avant ce lot — il se corrige, son miroir reste tel quel.
+    evolution_id: Optional[int] = Field(default=None, foreign_key="ticket_evolution.id")
 
     ticket: Optional[Ticket] = Relationship(back_populates="messages")
 
