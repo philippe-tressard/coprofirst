@@ -12,7 +12,9 @@
 -->
 <script lang="ts">
 	import { createEventDispatcher } from 'svelte';
-	import { prestataires as prestApi, type Notation } from '#lib/api/index.ts';
+	import { prestataires as prestApi, type AffaireANoter, type Notation } from '#lib/api/index.ts';
+	import { essayer } from '#lib/chargement.ts';
+	import { nombreOuNull } from '#lib/utils.ts';
 	import { tenter } from '#lib/erreurs.ts';
 	import { toast } from '#lib/components/Toast.svelte';
 	import type { Etat } from '#lib/notations.ts';
@@ -30,11 +32,17 @@
 	let etat: Etat | null = null;
 	let commentaire = '';
 	let enCours = false;
+	//  L'affaire jugée (15/11/2026) : on note le couple prestataire / affaire. Les affaires
+	//  du prestataire se lisent à l'ouverture, pas avant ; « aucune » = un avis général.
+	let affaires: AffaireANoter[] = [];
+	let affaireId = '';
 
-	function ouvrir() {
+	async function ouvrir() {
 		ouvert = true;
 		etat = null;
 		commentaire = '';
+		affaireId = '';
+		[affaires] = await essayer(prestApi.affaires(prestataireId), []);
 	}
 
 	async function enregistrer() {
@@ -56,6 +64,7 @@
 				etat: choisi,
 				commentaire: commentaire.trim() || undefined,
 				contrat_id: contratId,
+				ticket_id: nombreOuNull(affaireId) ?? undefined,
 			});
 			ouvert = false;
 			dispatch('cree', n);
@@ -74,6 +83,15 @@
 	{#if ouvert}
 		<div role="presentation" on:click|stopPropagation on:keydown|stopPropagation>
 			<GesteEnPlace {enCours} onAnnuler={() => (ouvert = false)} onValider={enregistrer}>
+				<label class="field" for="affaire-{prestataireId}-{contratId ?? 'sans-contrat'}">
+					<span>Affaire concernée</span>
+					<select id="affaire-{prestataireId}-{contratId ?? 'sans-contrat'}" bind:value={affaireId}>
+						<option value="">Aucune — un avis général sur le prestataire</option>
+						{#each affaires as a (a.id)}
+							<option value={String(a.id)}>{a.titre}</option>
+						{/each}
+					</select>
+				</label>
 				<FormulaireNotation
 					id="notation-{prestataireId}-{contratId ?? 'sans-contrat'}"
 					bind:etat

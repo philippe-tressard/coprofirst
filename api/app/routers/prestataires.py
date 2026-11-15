@@ -34,6 +34,7 @@ from app.models.core import (
     ContratEntretien,
     NotationPrestataire,
     Prestataire,
+    Ticket,
     Utilisateur,
 )
 
@@ -57,6 +58,10 @@ from app.routers.prestataires_schemas import (
 )
 from app.utils.carnet_entretien import type_equipement_resolu
 from app.utils.notes_prestataires import NOTE_DE_ETAT, etat_de_note, note_moyenne
+from app.utils import horloge
+from app.utils.prestataires_affaire import prestataires_de
+from app.utils.synthese_affaire.agregats import exercice_de
+from app.utils.synthese_affaire.rassemblement import mois_debut_exercice
 from app.utils.remplacement_contrat import verifier_remplacement
 
 router = APIRouter(prefix="/prestataires", tags=["prestataires"])
@@ -282,6 +287,8 @@ class NotationCreate(BaseModel):
     note: Optional[int] = None  # ancien format, 1-5
     commentaire: Optional[str] = None
     contrat_id: Optional[int] = None
+    #  L'affaire jugée : le couple prestataire / affaire (15/11/2026). Facultative.
+    ticket_id: Optional[int] = None
 
     @model_validator(mode="after")
     def valider_etat(self):
@@ -303,6 +310,12 @@ class NotationRead(BaseModel):
     note: int
     #  L'état LU de la note (`etat_de_note`) : l'écran ne lit jamais le chiffre.
     etat: str = ""
+    #  L'exercice comptable de l'avis — la règle de l'exercice (mois de début réglé) vit
+    #  ici, au serveur : l'écran regroupe les avis par exercice sans la recopier (R3d).
+    exercice_annee: Optional[int] = None
+    exercice_libelle: Optional[str] = None
+    ticket_id: Optional[int] = None
+    ticket_titre: Optional[str] = None
     commentaire: Optional[str] = None
     contrat_id: Optional[int] = None
     auteur_id: Optional[int] = None  # compte supprimé (#1821)
@@ -311,6 +324,27 @@ class NotationRead(BaseModel):
 
     class Config:
         from_attributes = True
+
+
+def _poser_exercice(nr: "NotationRead", n: NotationPrestataire, mois_debut) -> None:
+    """L'exercice comptable du jour de l'avis — `exercice_de`, la règle des métriques."""
+    exercice = exercice_de(horloge.jour_civil(n.cree_le), mois_debut)
+    nr.exercice_annee = exercice.annee
+    nr.exercice_libelle = exercice.libelle
+
+
+def _exiger_affaire_du_prestataire(session: Session, ticket_id: int, prestataire_id: int) -> None:
+    """On note un prestataire sur une affaire où il est intervenant désigné — sinon 400."""
+    ticket = ou_404(session, Ticket, ticket_id, "Affaire")
+    if prestataire_id not in prestataires_de(session, ticket):
+        raise HTTPException(400, "Ce prestataire n'est pas intervenant sur cette affaire")
+
+
+def _poser_affaire(session: Session, nr: "NotationRead", n: NotationPrestataire) -> None:
+    """Le titre de l'affaire jugée, lu à la lecture : il suit une correction du titre."""
+    if n.ticket_id is not None:
+        ticket = ou_rien(session, Ticket, n.ticket_id)
+        nr.ticket_titre = ticket.titre if ticket else None
 
 
 @router.get("/notations", response_model=list[NotationRead])
@@ -324,11 +358,14 @@ def list_notations(
         q = q.where(NotationPrestataire.prestataire_id == prestataire_id)
     q = q.order_by(NotationPrestataire.cree_le.desc())
     notations = session.exec(q).all()
+    mois_debut = mois_debut_exercice(session)
     result = []
     for n in notations:
         auteur = ou_rien(session, Utilisateur, n.auteur_id)
         nr = NotationRead.model_validate(n)
         nr.etat = etat_de_note(n.note)
+        _poser_exercice(nr, n, mois_debut)
+        _poser_affaire(session, nr, n)
         nr.auteur_nom = nom_auteur(auteur)
         result.append(nr)
     return result
@@ -341,11 +378,14 @@ def create_notation(
     user: Utilisateur = Depends(require_cs_or_admin),
 ):
     ou_404(session, Prestataire, body.prestataire_id, "Prestataire")
+    if body.ticket_id is not None:
+        _exiger_affaire_du_prestataire(session, body.ticket_id, body.prestataire_id)
     n = NotationPrestataire(
         prestataire_id=body.prestataire_id,
         note=NOTE_DE_ETAT[body.etat],
         commentaire=body.commentaire,
         contrat_id=body.contrat_id,
+        ticket_id=body.ticket_id,
         auteur_id=user.id,
     )
     session.add(n)
@@ -353,6 +393,8 @@ def create_notation(
     session.refresh(n)
     nr = NotationRead.model_validate(n)
     nr.etat = body.etat
+    _poser_exercice(nr, n, mois_debut_exercice(session))
+    _poser_affaire(session, nr, n)
     nr.auteur_nom = nom_affiche(user.prenom, user.nom)
     return nr
 

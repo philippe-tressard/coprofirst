@@ -16,6 +16,7 @@
  */
 
 import { parAttribut } from './table-statuts.ts';
+import type { Notation } from './api/index.ts';
 
 export const ETATS = ['mauvais', 'neutre', 'excellent'] as const;
 export type Etat = (typeof ETATS)[number];
@@ -65,4 +66,41 @@ export function phraseGeneree(forts: readonly string[], faibles: readonly string
 /** Le commentaire enregistré : la phrase générée, puis le texte libre. */
 export function commentaireComplet(genere: string, libre: string): string {
 	return [genere, libre.trim()].filter((s) => s.length > 0).join('\n');
+}
+
+/** Les avis d'un exercice comptable, et combien de chaque état (R3d). */
+export interface ExerciceAvis {
+	annee: number | null;
+	libelle: string;
+	avis: Notation[];
+	compte: Record<Etat, number>;
+}
+
+/**
+ * Les avis rangés par exercice, le plus récent d'abord ; dans un exercice, l'avis le
+ * plus récent d'abord. L'exercice vient du serveur (`exercice_annee`) : la règle du
+ * mois de début n'est pas recopiée ici.
+ */
+export function avisParExercice(notations: readonly Notation[]): ExerciceAvis[] {
+	const groupes = new Map<number | null, ExerciceAvis>();
+	for (const n of notations) {
+		const cle = n.exercice_annee ?? null;
+		let g = groupes.get(cle);
+		if (!g) {
+			g = {
+				annee: cle,
+				libelle: n.exercice_libelle ?? 'Exercice non renseigné',
+				avis: [],
+				compte: { mauvais: 0, neutre: 0, excellent: 0 },
+			};
+			groupes.set(cle, g);
+		}
+		g.avis.push(n);
+		g.compte[n.etat] += 1;
+	}
+	const liste = [...groupes.values()];
+	for (const g of liste) {
+		g.avis.sort((a, b) => new Date(b.cree_le).getTime() - new Date(a.cree_le).getTime());
+	}
+	return liste.sort((a, b) => (b.annee ?? -Infinity) - (a.annee ?? -Infinity));
 }

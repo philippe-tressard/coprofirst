@@ -38,7 +38,14 @@
 	import { toast } from '#lib/components/Toast.svelte';
 	import { confirmer } from '#lib/confirmation.ts';
 	import { fmtDate } from '#lib/date.ts';
-	import { LIBELLE_ETAT, TEINTE_ETAT, etatDeMoyenne } from '#lib/notations.ts';
+	import {
+		ETATS,
+		LIBELLE_ETAT,
+		TEINTE_ETAT,
+		avisParExercice,
+		etatDeMoyenne,
+	} from '#lib/notations.ts';
+	import { basculer as basculerUn } from '#lib/accordeon.ts';
 	import Badge from './Badge.svelte';
 	import { SEPARATEUR } from '#lib/separateurs.ts';
 	import IconeAction from './IconeAction.svelte';
@@ -65,11 +72,11 @@
 		ouvert = ouvert === id ? null : id;
 	}
 
-	//  Les plus récentes d'abord : un avis vieux de deux ans n'est pas ce qu'on
-	//  vient lire quand on ouvre une fiche.
-	$: triees = [...notations].sort(
-		(a, b) => new Date(b.cree_le).getTime() - new Date(a.cree_le).getTime(),
-	);
+	//  R3d : les avis rangés par exercice comptable, le plus récent d'abord, chacun avec
+	//  son compte d'états. L'exercice le plus récent s'ouvre seul ; les autres se déplient.
+	$: exercices = avisParExercice(notations);
+	let exerciceOuvert: number | null | undefined = undefined;
+	$: if (exerciceOuvert === undefined && exercices.length) exerciceOuvert = exercices[0].annee;
 
 	async function supprimer(n: Notation) {
 		const ok = await confirmer({
@@ -102,40 +109,68 @@
 			{LIBELLE_ETAT[etatDeMoyenne(moyenne)]}{SEPARATEUR.point}{fmtNombre(moyenne)}/5
 		</span>
 	{/if}
-{:else if triees.length}
+{:else if notations.length}
 	<div class="not-liste">
-		<span class="detail-label">Avis du conseil syndical ({triees.length})</span>
-		{#each triees as n (n.id)}
-			<div class="not-item">
-				<div class="not-entete">
-					{#if n.commentaire}
-						<button
-							type="button"
-							class="not-etat-bouton"
-							aria-expanded={ouvert === n.id}
-							aria-label="{LIBELLE_ETAT[n.etat]}, {ouvert === n.id
-								? 'masquer'
-								: 'afficher'} le commentaire"
-							on:click|stopPropagation={() => basculer(n.id)}
-							><Badge teinte={TEINTE_ETAT[n.etat]}>{LIBELLE_ETAT[n.etat]}</Badge></button
-						>
-					{:else}
-						<Badge teinte={TEINTE_ETAT[n.etat]}>{LIBELLE_ETAT[n.etat]}</Badge>
-					{/if}
-					<span class="not-auteur">{n.auteur_nom ?? '—'}</span>
-					<span class="not-date">{fmtDate(n.cree_le)}</span>
-					{#if peutSupprimer}
-						<button
-							type="button"
-							class="btn-icon-danger"
-							title="Retirer cet avis"
-							aria-label="Retirer l’avis de {n.auteur_nom ?? 'ce membre'}"
-							on:click|stopPropagation={() => supprimer(n)}><IconeAction icone="trash-2" /></button
-						>
-					{/if}
-				</div>
-				{#if n.commentaire && ouvert === n.id}
-					<p class="not-commentaire">{n.commentaire}</p>
+		<span class="detail-label">Avis du conseil syndical ({notations.length})</span>
+		{#each exercices as ex (ex.annee)}
+			<div class="not-exercice">
+				<button
+					type="button"
+					class="not-exercice-entete"
+					aria-expanded={exerciceOuvert === ex.annee}
+					on:click|stopPropagation={() =>
+						(exerciceOuvert = basculerUn(exerciceOuvert ?? null, ex.annee))}
+				>
+					<span class="chevron" aria-hidden="true">{exerciceOuvert === ex.annee ? '▾' : '▸'}</span>
+					<strong>Exercice {ex.libelle}</strong>
+					<span class="not-exercice-nombre">{ex.avis.length} avis</span>
+					<span class="not-exercice-compte">
+						{#each ETATS as e (e)}
+							{#if ex.compte[e]}
+								<Badge teinte={TEINTE_ETAT[e]}>{ex.compte[e]} {LIBELLE_ETAT[e]}</Badge>
+							{/if}
+						{/each}
+					</span>
+				</button>
+				{#if exerciceOuvert === ex.annee}
+					{#each ex.avis as n (n.id)}
+						<div class="not-item">
+							<div class="not-entete">
+								{#if n.commentaire}
+									<button
+										type="button"
+										class="not-etat-bouton"
+										aria-expanded={ouvert === n.id}
+										aria-label="{LIBELLE_ETAT[n.etat]}, {ouvert === n.id
+											? 'masquer'
+											: 'afficher'} le commentaire"
+										on:click|stopPropagation={() => basculer(n.id)}
+										><Badge teinte={TEINTE_ETAT[n.etat]}>{LIBELLE_ETAT[n.etat]}</Badge></button
+									>
+								{:else}
+									<Badge teinte={TEINTE_ETAT[n.etat]}>{LIBELLE_ETAT[n.etat]}</Badge>
+								{/if}
+								<span class="not-auteur">{n.auteur_nom ?? '—'}</span>
+								{#if n.ticket_id}
+									<a href="/tickets/{n.ticket_id}">{n.ticket_titre ?? 'Affaire'}</a>
+								{/if}
+								<span class="not-date">{fmtDate(n.cree_le)}</span>
+								{#if peutSupprimer}
+									<button
+										type="button"
+										class="btn-icon-danger"
+										title="Retirer cet avis"
+										aria-label="Retirer l’avis de {n.auteur_nom ?? 'ce membre'}"
+										on:click|stopPropagation={() => supprimer(n)}
+										><IconeAction icone="trash-2" /></button
+									>
+								{/if}
+							</div>
+							{#if n.commentaire && ouvert === n.id}
+								<p class="not-commentaire">{n.commentaire}</p>
+							{/if}
+						</div>
+					{/each}
 				{/if}
 			</div>
 		{/each}
@@ -152,6 +187,35 @@
 		flex-direction: column;
 		gap: 0.4rem;
 		margin-top: 0.75rem;
+	}
+	.not-exercice {
+		border: 1px solid var(--color-border);
+		border-radius: 0.5rem;
+		padding: 0 0.75rem;
+	}
+	.not-exercice-entete {
+		width: 100%;
+		display: flex;
+		align-items: center;
+		flex-wrap: wrap;
+		gap: 0.5rem;
+		min-height: 44px;
+		border: 0;
+		background: none;
+		padding: 0.4rem 0;
+		text-align: left;
+		color: inherit;
+		font-family: inherit;
+		cursor: pointer;
+	}
+	.not-exercice-nombre {
+		color: var(--color-text-muted);
+	}
+	.not-exercice-compte {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 0.3rem;
+		margin-left: auto;
 	}
 	.not-item {
 		border-top: 1px solid var(--color-border);

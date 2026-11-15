@@ -75,3 +75,19 @@ def test_la_creation_ecrit_la_note_de_l_etat_et_la_relit(session):
     ]
     assert [n.etat for n in lues] == ["mauvais"]
     assert lues[0].commentaire == "Retard de 3 jours"
+
+
+def test_chaque_avis_porte_son_exercice_comptable(session):
+    """L'écran regroupe les avis par exercice (R3d) : le serveur le calcule, l'écran ne le recopie pas."""
+    suffixe = uuid.uuid4().hex[:6]
+    p = Prestataire(nom=f"Gerber {suffixe}", specialite="serrurerie")
+    session.add(p)
+    session.commit()
+    compte = _compte(session, "Cs")
+    create_notation(
+        body=NotationCreate(prestataire_id=p.id, etat="excellent"), session=session, user=compte
+    )
+    lues = [n for n in list_notations(prestataire_id=p.id, session=session, _=compte)]
+    assert len(lues) == 1
+    assert lues[0].exercice_annee is not None
+    assert lues[0].exercice_libelle
