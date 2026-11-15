@@ -1,19 +1,18 @@
 /*
- *  **« Répondre » est sur la carte de l'affaire** (23/10/2026, demandé à l'écran).
+ *  **« Répondre » vit sous le fil des messages, plus sur la carte** (15/11/2026, #2733).
  *
- *  Capture de la liste Affaires à l'appui : *« je ne vois pas l'icône répondre »*,
- *  puis *« cette icône doit être sur l'affaire »*. Le geste n'existait que sous le
- *  fil des messages de la page `/tickets/[id]`. L'icône rejoint la rangée de la
- *  carte (`ActionsTicket`), par la même règle (`gesteReponse`) :
+ *  L'icône 💬 avait rejoint la carte le 23/10/2026 (*« cette icône doit être sur
+ *  l'affaire »*). Posée à côté de 🔄 « Ajouter une suite », elle s'est confondue
+ *  avec elle : *« j'ai par erreur fait répondre au lieu d'une suite »*. Maquette A
+ *  retenue à l'écran : la Suite s'écrit en toutes lettres sur la carte, et Répondre
+ *  quitte la carte pour le seul bouton sous le fil (`FilMessagesTicket`).
  *
- *  - dans la LISTE, elle mène à la page de l'affaire, formulaire déjà ouvert et
- *    curseur dans le texte — c'est là que vivent le fil des messages et l'envoi ;
- *  - sur la page de l'affaire, elle ouvre ce formulaire sur place ;
- *  - l'envoi crée bien un message (`POST /tickets/{id}/messages`) ;
- *  - ↩️ « Rouvrir la discussion » sur une affaire close ; rien sur une actualité
- *    ni sur une affaire absorbée (#1704) ;
- *  - au téléphone (360 px), la rangée la plus longue — l'auteur au conseil :
- *    six icônes — laisse la place au titre et ne fait pas défiler la page.
+ *  - aucune carte ne porte plus d'icône Répondre, ni dans la liste ni sur la page ;
+ *  - sous le fil, le bouton ouvre le formulaire, curseur dans le texte, et l'envoi
+ *    crée le message (`POST /tickets/{id}/messages`) ;
+ *  - ↩️ « Rouvrir la discussion » sous le fil d'une affaire close ; rien sous celui
+ *    d'une affaire absorbée (#1704) ;
+ *  - au téléphone (360 px), la rangée la plus longue laisse sa place au titre.
  */
 import type { Page } from '@playwright/test';
 import { attendreHydratation, expect, simulerApi, test } from './aides';
@@ -102,40 +101,33 @@ async function simuler(page: Page): Promise<unknown[]> {
 const icone = (page: Page, id: number, nom: string) =>
 	page.locator(`#ticket-${id}`).getByRole('button', { name: nom, exact: true });
 
-test('l’icône est sur la carte de la liste, selon l’affaire', async ({ page }) => {
+test('aucune carte ne porte plus l’icône Répondre', async ({ page }) => {
 	await simuler(page);
 	await page.goto('/tickets');
 	await attendreHydratation(page);
 
-	await expect(icone(page, 7, 'Répondre')).toBeVisible();
-	await expect(icone(page, 7, 'Répondre')).toHaveAttribute('title', 'Répondre');
-	//  Absorbée : la discussion vit dans la principale. Actualité : elle informe.
-	await expect(page.locator('#ticket-9')).toBeVisible();
-	await expect(icone(page, 9, 'Répondre')).toHaveCount(0);
-	await expect(icone(page, 9, 'Rouvrir la discussion')).toHaveCount(0);
-	await expect(page.locator('#ticket-10')).toBeVisible();
-	await expect(icone(page, 10, 'Répondre')).toHaveCount(0);
+	for (const id of [7, 8, 9, 10]) {
+		await expect(page.locator(`#ticket-${id}`)).toBeVisible();
+		await expect(icone(page, id, 'Répondre')).toHaveCount(0);
+		await expect(icone(page, id, 'Rouvrir la discussion')).toHaveCount(0);
+	}
+	//  La Suite, elle, reste sur la carte — écrite.
+	await expect(icone(page, 7, 'Ajouter une suite')).toBeVisible();
 });
 
-test('une affaire close : ↩️ « Rouvrir la discussion », comme sous le fil', async ({ page }) => {
-	await simuler(page);
-	await page.goto('/tickets/8');
-	await attendreHydratation(page);
-
-	await expect(icone(page, 8, 'Rouvrir la discussion')).toBeVisible();
-	await expect(icone(page, 8, 'Répondre')).toHaveCount(0);
-	await expect(page.locator('.carte-repondre')).toContainText('Rouvrir la discussion');
-});
-
-test('depuis la liste : la page de l’affaire, formulaire ouvert, et l’envoi crée le message', async ({
+test('sous le fil : le bouton ouvre le formulaire, et l’envoi crée le message', async ({
 	page,
 }) => {
 	const envois = await simuler(page);
-	await page.goto('/tickets');
+	await page.goto('/tickets/7');
 	await attendreHydratation(page);
 
-	await icone(page, 7, 'Répondre').click();
-	await expect(page).toHaveURL(/\/tickets\/7\?repondre=1$/);
+	await expect(icone(page, 7, 'Répondre')).toHaveCount(0);
+	await expect(page.getByRole('group', { name: 'Répondre' })).toHaveCount(0);
+	await page
+		.locator('.carte-repondre')
+		.getByRole('button', { name: /Répondre/ })
+		.click();
 	const formulaire = page.getByRole('group', { name: 'Répondre' });
 	const texte = formulaire.locator('[contenteditable="true"]');
 	//  Le curseur est DANS le texte : on écrit sans chercher le champ.
@@ -151,31 +143,36 @@ test('depuis la liste : la page de l’affaire, formulaire ouvert, et l’envoi 
 	await expect(formulaire).toHaveCount(0);
 });
 
-test('sur la page de l’affaire : l’icône ouvre le formulaire sur place', async ({ page }) => {
+test('une affaire close : ↩️ « Rouvrir la discussion » sous le fil', async ({ page }) => {
 	await simuler(page);
-	await page.goto('/tickets/7');
+	await page.goto('/tickets/8');
 	await attendreHydratation(page);
 
-	await expect(page.getByRole('group', { name: 'Répondre' })).toHaveCount(0);
-	await icone(page, 7, 'Répondre').click();
-	await expect(page).toHaveURL(/\/tickets\/7$/);
-	const formulaire = page.getByRole('group', { name: 'Répondre' });
-	await expect(formulaire.locator('[contenteditable="true"]')).toBeFocused();
-	//  UN formulaire : le bouton du bas a laissé sa place.
+	await expect(page.locator('.carte-repondre')).toContainText('Rouvrir la discussion');
+	await expect(icone(page, 8, 'Rouvrir la discussion')).toHaveCount(0);
+});
+
+test('une affaire absorbée : rien à répondre sous son fil', async ({ page }) => {
+	await simuler(page);
+	await page.goto('/tickets/9');
+	await attendreHydratation(page);
+
+	await expect(page.locator('#ticket-9')).toBeVisible();
 	await expect(page.locator('.carte-repondre')).toHaveCount(0);
 });
 
-test('au téléphone, six icônes laissent sa place au titre @mise-en-page', async ({ page }) => {
+test('au téléphone, la rangée d’actions laisse sa place au titre @mise-en-page', async ({
+	page,
+}) => {
 	await page.setViewportSize({ width: 360, height: 740 });
 	await simuler(page);
 	await page.goto('/tickets');
 	await attendreHydratation(page);
 
 	const carte = page.locator('#ticket-7');
-	await expect(icone(page, 7, 'Répondre')).toBeVisible();
-	await expect(carte.locator('.ec-droite--titre button')).toHaveCount(6);
+	await expect(carte.locator('.ec-droite--titre button')).toHaveCount(5);
 	await attendreSansDefilementHorizontal(page);
 	const titre = await carte.getByRole('button', { name: /Ascenseur en panne/ }).boundingBox();
 	expect(titre?.width ?? 0).toBeGreaterThanOrEqual(160);
-	await page.screenshot({ path: 'test-results/repondre-depuis-la-carte-360.png' });
+	await page.screenshot({ path: 'test-results/repondre-sous-le-fil-360.png' });
 });

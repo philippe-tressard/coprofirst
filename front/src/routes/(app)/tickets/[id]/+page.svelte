@@ -9,8 +9,7 @@
 	//  partout ailleurs ; la corbeille, par les Archives (`ux-patterns` §8).
 	//
 	//  Ce qui lui reste PROPRE : le fil de MESSAGES, que la carte ne porte pas —
-	//  les notifications de réponse pointent un message (`#msg-42`), et
-	//  `?repondre=1` ouvre l'éditeur d'emblée.
+	//  les notifications de réponse pointent un message (`#msg-42`).
 	import { onMount, tick } from 'svelte';
 	import { writable } from 'svelte/store';
 	import { goto } from '$app/navigation';
@@ -44,11 +43,8 @@
 	//  liste, sans en écrire une seconde. Une suppression la vide — on rejoint
 	//  alors la liste, la page n'a plus d'objet.
 	const liste = writable<Ticket[]>([]);
-	//  💬 L'icône de la carte ouvre le formulaire de réponse SUR PLACE, sous la
-	//  carte : c'est ici qu'il vit, avec son envoi (`sendMessage`).
 	const affaires = affairesEnListe(liste, {
 		apresSuppression: () => goto('/tickets'),
-		repondre: () => (repondreOuvert = true),
 	});
 	const { etat, gestes } = affaires;
 	$: ticket = $liste[0] ?? null;
@@ -64,16 +60,12 @@
 
 	// ── Lire d'abord, écrire ensuite ───────────────────────────────────────
 	// On vient ici pour LIRE : le bloc de réponse est replié derrière un bouton,
-	// et ne s'ouvre d'emblée que sur une intention explicite (`?repondre=1`),
-	// que les liens de notification ne portent pas.
+	// ouvert par son bouton, sous le fil (`FilMessagesTicket`).
 	let repondreOuvert = false;
 	$: if (repondreOuvert) ouvrirGeste('affaire.repondre'); //  Le geste mesuré (#1633).
 	let msgVise: number | null = null;
 
 	onMount(async () => {
-		//  `$lieu.url`, pas `window.location` : on arrive ici par l'icône 💬 d'une
-		//  liste (`lienReponse`), une navigation du client.
-		repondreOuvert = $lieu.url.searchParams.get('repondre') === '1';
 		// Ancre `#msg-42` : les notifications de réponse pointent sur le message
 		// qui a déclenché l'alerte — on y descend, plutôt qu'en haut d'un fil long.
 		const ancre = window.location.hash.match(/^#msg-(\d+)$/);

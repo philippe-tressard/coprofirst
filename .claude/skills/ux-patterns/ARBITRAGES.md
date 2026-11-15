@@ -617,3 +617,10 @@ vers un numéro absent, et un `lint:*` ou un fichier de test de « Tenu par » q
 - **Pourquoi** : « interdire de niveau 4 ou plus » ; « autoriser un niveau 3 similaire au niveau précédent ». Qualifié par son seul parent, un espace de niveau 3 se lisait « Logement › Terrasses Balcons » dans tous les bâtiments — le défaut des toits du 18/08/2026, un niveau plus bas.
 - **Écarté** : compter le regroupement (« Bâtiment 1 » serait au niveau 2) ; supprimer ou masquer les nœuds déjà trop profonds (aucun en production le 10/11/2026) ; une règle de clic propre au niveau 3.
 - **Tenu par** : `api/tests/test_perimetres_niveaux.py`, `test_perimetre_label_batiment.py` et `npm run lint:libelle-perimetre` (même chaîne de niveau 3), `front/e2e/perimetre-niveau-3.spec.ts`.
+
+### n° 83 · en vigueur — « Répondre » vit sous le fil des messages, « Ajouter une suite » s'écrit sur la carte
+14–15/11/2026 · #2723 #2733 · l'utilisateur, sur maquette (A « Libellés écrits », parmi cinq) · §3
+- **Décidé** : la carte d'une affaire porte « + Ajouter une suite » écrit (« Suite » sous 480 px), et plus aucune icône Répondre. Répondre (ou ↩️ Rouvrir la discussion) n'est offert que par le bouton sous le fil des messages de la page de l'affaire (`FilMessagesTicket`, règle `gesteReponse`). La liste n'ouvre plus le formulaire à distance (`?repondre=1` retiré).
+- **Pourquoi** : « l'icône répondre et l'icône ajouter une suite sont trop confusantes ; j'ai par erreur fait répondre au lieu d'une suite » — deux icônes muettes côte à côte, même taille, même couleur.
+- **Écarté** : B, Répondre en champ dans le fil (la tête garde « Suite » seul, à peu près ce qui est retenu, sans le champ toujours ouvert) ; C, un menu « + Ajouter » (un clic de plus pour les deux gestes courants) ; D, deux familles visuelles (deux codes à apprendre) ; E, le choix au moment d'écrire (un clic de plus, un défaut qui peut tromper). Remplace l'icône 💬 de la carte posée le 23/10/2026.
+- **Tenu par** : `front/e2e/repondre-sous-le-fil.spec.ts`, `front/e2e/message-corriger-supprimer.spec.ts`.

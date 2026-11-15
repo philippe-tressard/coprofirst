@@ -130,8 +130,8 @@ async function ouvrirLaReponse(page: Page): Promise<{ formulaire: Locator; envoi
 	);
 	await page.goto('/tickets/7');
 	await attendreHydratation(page);
-	//  Le bouton sous le fil des messages : l'icône de la carte (exactement
-	//  « Répondre ») ouvre le même formulaire — `repondre-depuis-la-carte.spec.ts`.
+	//  Le bouton sous le fil des messages — le seul qui ouvre ce formulaire depuis
+	//  que l'icône a quitté la carte (#2733, `repondre-sous-le-fil.spec.ts`).
 	await page
 		.locator('.carte-repondre')
 		.getByRole('button', { name: /Répondre/ })
