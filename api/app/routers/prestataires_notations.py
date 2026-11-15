@@ -12,7 +12,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel, model_validator
 from sqlmodel import Session, select
 
-from app.auth.deps import require_cs_or_admin
+from app.auth.deps import est_auteur, require_cs_or_admin
 from app.database import get_session
 from app.models.core import Prestataire, Ticket, Utilisateur
 from app.models.prestataires import NotationPrestataire
@@ -155,7 +155,7 @@ def list_notations(
         _poser_exercice(nr, n, mois_debut)
         _poser_affaire(session, nr, n)
         nr.auteur_nom = nom_auteur(auteur)
-        nr.peut_modifier = n.auteur_id is not None and n.auteur_id == _.id
+        nr.peut_modifier = est_auteur(n, _)
         result.append(nr)
     return result
 
@@ -207,7 +207,7 @@ def update_notation(
     Seul l'auteur : un autre membre ne réécrit pas l'avis d'un collègue (il peut le retirer).
     """
     n = ou_404(session, NotationPrestataire, n_id, "Notation")
-    if n.auteur_id != user.id:
+    if not est_auteur(n, user):
         raise HTTPException(403, "Seul l'auteur de l'avis peut le modifier")
     champs = body.model_fields_set
     if "ticket_id" in champs and body.ticket_id is not None:

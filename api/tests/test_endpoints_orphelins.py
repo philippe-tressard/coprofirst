@@ -37,6 +37,8 @@ ROUTEURS = RACINE / "api" / "app" / "routers"
 #: ici est une décision consciente : si la raison ne tient pas en une ligne,
 #: c'est probablement que la route doit être supprimée.
 SANS_CONSOMMATEUR_FRONT = {
+    "/prestataires/{p_id}/affaires": "annoncée au retrait (`contrat/retraits.RETRAITS`, v3.100.0) : "
+    "l'écran lit `affaires-a-noter` ; gardée une version pour les clients générés",
     "/admin/db/integrite": "appelée à la main pendant un incident (skill infra-rpi) ; "
     "l'écran lit la même mesure par le contrôle de santé (`health_monitor`)",
     "/acces/admin/imports/{import_id}/refuser-locataire": "pendant de `resoudre` documenté dans specs/architecture/api.md, "
