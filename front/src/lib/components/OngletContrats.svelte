@@ -33,7 +33,6 @@
 	import { groupesParEquipement } from '#lib/equipements.ts';
 	import { equipementsStore } from '#lib/stores/equipements.ts';
 	import { nombreOuNull } from '#lib/utils.ts';
-	import type { Etat } from '#lib/notations.ts';
 	import CarteContrat from '#lib/components/CarteContrat.svelte';
 	import FormulaireContrat from '#lib/components/FormulaireContrat.svelte';
 	import FormulaireCreation from '#lib/components/FormulaireCreation.svelte';
@@ -50,50 +49,6 @@
 	//  remis à un élément, déclaré en exception jusqu'au 01/10/2026 (#779).
 	let ouvert: number | null = null;
 	let submitting = false;
-
-	// ── Notation ──────────────────────────────────────────────────
-	//  ⚠️ La notation SURVIT au retrait des prestations ponctuelles (#603) : elle
-	//  se saisit depuis la fiche du prestataire, et son seul rattachement restant
-	//  est le CONTRAT. Le rattachement à un devis part avec l'objet qui le portait.
-	let showNotationForm: { prestataireId: number; contratId?: number } | null = null;
-	//  Trois états (14/11/2026) : Mauvais, Neutre, Excellent — `FormulaireNotation`.
-	let notationEtat: Etat | null = null;
-	let notationCommentaire = '';
-	let notationSaving = false;
-
-	function openNotationForm(prestataireId: number, contratId?: number) {
-		showNotationForm = { prestataireId, contratId };
-		notationEtat = null;
-		notationCommentaire = '';
-	}
-
-	async function saveNotation() {
-		if (!showNotationForm || !notationEtat) {
-			toast('error', "Choisissez l'état : Mauvais, Neutre ou Excellent");
-			return;
-		}
-		//  Un avis « Mauvais » se justifie : le serveur le refuse aussi, mais on le dit ici.
-		if (notationEtat === 'mauvais' && !notationCommentaire.trim()) {
-			toast('error', 'Un avis « Mauvais » doit être justifié par un commentaire');
-			return;
-		}
-		//  Capturés AVANT le rappel : à l'intérieur, rien ne garantit qu'ils n'ont
-		//  pas changé.
-		const cible = showNotationForm;
-		const etat = notationEtat;
-		notationSaving = true;
-		await tenter(async () => {
-			const n = await prestApi.createNotation({
-				prestataire_id: cible.prestataireId,
-				etat,
-				commentaire: notationCommentaire.trim() || undefined,
-				contrat_id: cible.contratId,
-			});
-			notations = [n, ...notations];
-			showNotationForm = null;
-		}, 'Notation enregistrée');
-		notationSaving = false;
-	}
 
 	// ── Formulaire ────────────────────────────────────────────────
 	/**  Documents choisis avant que le contrat existe (#921) — vidés à chaque
@@ -380,13 +335,7 @@
 					onAjouteDoc={rechargerDocs}
 					onAnnuler={closeContratForm}
 					onEnregistrer={saveContrat}
-					onNoter={openNotationForm}
-					noteEnCours={showNotationForm?.contratId === c.id}
-					bind:noteEtat={notationEtat}
-					bind:noteCommentaire={notationCommentaire}
-					noteSaving={notationSaving}
-					onAnnulerNote={() => (showNotationForm = null)}
-					onEnregistrerNote={saveNotation}
+					onNotee={(n) => (notations = [n, ...notations])}
 				/>
 			{/each}
 		{/each}
