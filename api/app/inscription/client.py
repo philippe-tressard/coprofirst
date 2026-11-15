@@ -12,6 +12,9 @@ depuis la référence ; l'installation l'appelle, sous son nom dédié
 - Sans renouvellement depuis 3 jours, l'opérateur est alerté (D19).
 - `envoyer_rapport` : le rapport nocturne (R3, `inscription/rapport.py`), dans la
   même tâche, après le bail — que le bail ait été renouvelé ou non.
+- `run_annonce_version` : au démarrage, le bail redemandé si la version qui tourne
+  n'est pas celle que le registre a reçue (#2750) — sinon il garde, une nuit durant,
+  la version d'AVANT une mise à jour (`mise-a-jour.sh` demande le bail avant d'installer).
 
 Ni la référence, ni une installation d'ESSAI n'appellent le registre (règles 7 et
 9) ; le mode essai n'est cru que pour un hôte local ou une base en mémoire.
@@ -21,6 +24,7 @@ from __future__ import annotations
 
 import json
 import logging
+from datetime import timedelta
 from urllib.parse import urlsplit
 
 import httpx
@@ -191,6 +195,7 @@ def renouveler() -> EtatLocal:
     etat.etat_inscription = recu.bail.etat
     etat.plus_haute_epoque = max(etat.plus_haute_epoque, recu.bail.epoque)
     etat.dernier_renouvellement_le = horloge.maintenant().isoformat(timespec="seconds")
+    etat.version_annoncee = demande.version_logicielle
     etat.derniere_erreur = None
     depot.ecrire(etat)
     return etat
@@ -217,7 +222,7 @@ def constat_pour_la_mise_a_jour() -> constat.Constat:
     La signature se vérifie ICI (`constat.bail_valide`), jamais dans le script :
     `deploiement/standard/mise-a-jour.sh` ne lit que la version que ce constat rend.
     """
-    if not installation.est_reference() and not essai_admis() and depot.lire().identifiant:
+    if _appelle_le_registre():
         try:
             renouveler()
         except RegistreInjoignable as exc:
@@ -225,9 +230,35 @@ def constat_pour_la_mise_a_jour() -> constat.Constat:
     return constat_courant()
 
 
+def _appelle_le_registre() -> bool:
+    """Une réplique inscrite, ni la référence ni un essai (règles 7 et 9)."""
+    return not installation.est_reference() and not essai_admis() and bool(depot.lire().identifiant)
+
+
+def run_annonce_version() -> None:
+    """Au démarrage : le registre reçoit la version qui tourne, si ce n'est pas déjà fait.
+
+    La mise à jour nocturne demande le bail AVANT d'installer : le registre en gardait la
+    version d'avant jusqu'au bail suivant (#2750, CF-000003 en « v3.91.1 » quand la démo
+    servait v3.96.0). L'API qui démarre sur une version neuve la porte au registre, quelle
+    que soit la voie de la mise à jour. Injoignable : le bail de la nuit le fera — un
+    démarrage ne dépend jamais du registre.
+    """
+    if not _appelle_le_registre():
+        return
+    version = installation.version_logicielle()
+    if depot.lire().version_annoncee == version:
+        return
+    try:
+        renouveler()
+        logger.info("inscription : version %s annoncée au registre", version)
+    except RegistreInjoignable as exc:
+        logger.warning("inscription : version non annoncée au démarrage (%s)", exc)
+
+
 def run_renouvellement_bail() -> None:
     """Tâche de la plateforme : le bail puis le rapport ; alerter l'opérateur après 3 jours."""
-    if installation.est_reference() or essai_admis() or not depot.lire().identifiant:
+    if not _appelle_le_registre():
         return
     try:
         renouveler()
@@ -252,8 +283,17 @@ def run_renouvellement_bail() -> None:
 
 
 def enregistrer(scheduler) -> None:
-    """Pose la tâche — chaque nuit vers 04:20, étalée sur une demi-heure : les
-    installations n'appellent pas la référence toutes à la même seconde."""
+    """Pose les tâches — le bail chaque nuit vers 04:20, étalé sur une demi-heure (les
+    installations n'appellent pas la référence toutes à la même seconde), et l'annonce de
+    la version, une fois, 30 s après le démarrage (#2750)."""
     scheduler.add_job(
         run_renouvellement_bail, "cron", hour=4, minute=20, jitter=1800, id="bail_installation"
+    )
+    scheduler.add_job(
+        run_annonce_version,
+        "date",
+        #  Conscient, donc indépendant du fuseau du planificateur (#1565) ; différé pour
+        #  que le démarrage rende la main à Caddy avant d'appeler dehors.
+        run_date=horloge.a_paris(horloge.maintenant()) + timedelta(seconds=30),
+        id="annonce_version_installation",
     )
