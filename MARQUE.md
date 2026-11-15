@@ -64,9 +64,13 @@ Elle permet, sans modification :
   auteur (icône, écrans, page du magasin), et dans une copie de son dépôt
   (`philippe-tressard/coprofirst-ios`) — ajouté le 02/11/2026. Redimensionner ou
   poser sur le fond qu'exige l'icône n'est pas une modification ; changer le
-  dessin ou les couleurs en est une.
+  dessin ou les couleurs en est une ;
+- de les porter de même dans l'**application Android CoproFirst** telle que publiée
+  par son auteur (icône, écrans, page du magasin), et dans une copie de son dépôt
+  (`philippe-tressard/coprofirst-android`) — ajouté le 15/11/2026, aux mêmes
+  conditions.
 
-Une **version modifiée** — du logiciel comme de l'application — remplace ces fichiers par les siens. Elle n'a pas à toucher
+Une **version modifiée** — du logiciel comme des applications — remplace ces fichiers par les siens. Elle n'a pas à toucher
 au code pour cela : chaque installation peut aussi téléverser le logo de sa
 résidence (*Admin › Paramétrage site*), qui prend alors la place du logo neutre.
 
