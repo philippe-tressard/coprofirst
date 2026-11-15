@@ -2112,6 +2112,13 @@ tiennent :
   ⚠️ **L'accueil seulement.** `/tickets/kanban` est l'écran dédié : il a la
   place, et y borner les colonnes cacherait ce qu'on vient y chercher.
 
+- **la légende des bâtiments est DANS l'en-tête**, entre le titre et le lien
+  (variante B parmi cinq, arbitrée à l'écran le 16/11/2026) : `LegendeBatiments`,
+  pastilles rondes de `.graphique-legende`, libellé SERVI (`batiment_libelle` de
+  `GET /perimetres`, « Bât. 1 (D) » — la lettre de l'acte ne vit qu'en base), couleur
+  par `couleurPerimetre` comme les briques. Au téléphone elle passe sous le titre.
+  🔒 `e2e/legende-batiments-kanban.spec.ts`.
+
 La grille est donc en **flex** et non en `grid` : une grille donne la même part
 à toutes ses colonnes, et c'est exactement ce qu'on ne veut plus.
 

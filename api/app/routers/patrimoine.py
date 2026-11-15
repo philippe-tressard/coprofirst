@@ -40,10 +40,12 @@ from app.database import get_session
 from app.models.perimetre import Perimetre
 from app.models.core import (
     AnnonceHall,
+    Batiment,
     Evenement,
     Ticket,
     Utilisateur,
 )
+from app.utils.batiments import libelle_batiment
 from app.utils.lecture import lire_objet
 from app.utils.acces_choix import fixer_acces, types_fixes_par_code
 from app.utils.perimetres import (
@@ -169,6 +171,7 @@ def _lu(
     racine: Optional[str],
     par_id: dict[int, Perimetre],
     noeuds: list[Perimetre],
+    batiments: dict[int, str],
 ) -> PerimetreRead:
     """Un nœud lu sur le modèle, avec ce que l'arbre seul sait dire.
 
@@ -194,7 +197,15 @@ def _lu(
         deplacements=deplacements,
         acces_fixes=fixes.get(noeud.code, []),
         par_defaut=racine is not None and noeud.code == racine,
+        batiment_libelle=batiments.get(noeud.batiment_id) if noeud.batiment_id else None,
     )
+
+
+def _libelles_batiments(session: Session) -> dict[int, str]:
+    """« Bât. 1 (D) » par identifiant de bâtiment — `libelle_batiment`, seule écriture."""
+    return {
+        b.id: libelle_batiment(b) for b in session.exec(select(Batiment)).all() if b.id is not None
+    }
 
 
 def _en_lecture(
@@ -202,6 +213,7 @@ def _en_lecture(
     cites: set[str],
     fixes: Optional[dict[str, list[str]]] = None,
     racine: Optional[str] = None,
+    batiments: Optional[dict[int, str]] = None,
 ) -> list[PerimetreRead]:
     """L'arborescence à plat, en ordre d'affichage (parcours en profondeur).
 
@@ -210,6 +222,7 @@ def _en_lecture(
     le périmètre par défaut (`code_par_defaut`), qui ne change pas de niveau.
     """
     fixes = fixes or {}
+    batiments = batiments or {}
     par_id = {n.id: n for n in noeuds}
     profondeur = _profondeurs(noeuds)
 
@@ -237,6 +250,7 @@ def _en_lecture(
                     racine,
                     par_id,
                     noeuds,
+                    batiments,
                 )
             )
             descendre(noeud.id)
@@ -259,6 +273,7 @@ def _en_lecture(
                     racine,
                     par_id,
                     noeuds,
+                    batiments,
                 )
             )
     return sortie
@@ -271,7 +286,13 @@ def _un(session: Session, noeud: Perimetre) -> PerimetreRead:
     toujours à zéro : ces deux valeurs ne se déduisent pas d'une ligne seule.
     """
     tous = list(session.exec(select(Perimetre)).all())
-    lus = _en_lecture(tous, _codes_cites(session), types_fixes_par_code(session), code_par_defaut())
+    lus = _en_lecture(
+        tous,
+        _codes_cites(session),
+        types_fixes_par_code(session),
+        code_par_defaut(),
+        _libelles_batiments(session),
+    )
     for lu in lus:
         if lu.id == noeud.id:
             return lu
@@ -314,7 +335,11 @@ def lister_perimetres(
 ):
     noeuds = session.exec(select(Perimetre)).all()
     return _en_lecture(
-        list(noeuds), _codes_cites(session), types_fixes_par_code(session), code_par_defaut()
+        list(noeuds),
+        _codes_cites(session),
+        types_fixes_par_code(session),
+        code_par_defaut(),
+        _libelles_batiments(session),
     )
 
 

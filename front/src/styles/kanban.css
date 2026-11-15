@@ -186,8 +186,10 @@
    d'interrupteur — c'est la forme qui a échoué deux fois. */
 .kb-header {
 	display: flex;
+	flex-wrap: wrap;
 	justify-content: space-between;
 	align-items: center;
+	gap: 0.35rem 1rem;
 	margin-bottom: 0.6rem;
 }
 .kb-voir-lien {

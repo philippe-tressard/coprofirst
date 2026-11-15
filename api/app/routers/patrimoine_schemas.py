@@ -22,6 +22,11 @@ class PerimetreRead(BaseModel):
     description: str
     icone: Optional[str]
     batiment_id: Optional[int]
+    #: Le libellé du bâtiment que ce nœud représente — « Bât. 1 (D) », la lettre de
+    #: l'acte comprise (`utils/batiments.libelle_batiment`, seule écriture) ; nul pour
+    #: un nœud qui ne représente pas un bâtiment. La légende des couleurs du kanban
+    #: d'accueil le lit : l'arbre ne connaît que « Bât. 1 », la lettre vit en base.
+    batiment_libelle: Optional[str] = None
     profondeur: int
     #: Le niveau lu par l'administrateur — 1 pour une tête de rangée (« Bâtiment 1 »,
     #: « Parking »), 0 pour un regroupement (« Bâtiments ») — et combien de niveaux
