@@ -39,6 +39,8 @@ async function ouvrirLaFiche(page: Page) {
 	await simulerApi(page, (api) => {
 		if (api === '/api/prestataires') return [OTIS];
 		if (api === '/api/prestataires/contrats') return []; //  aucun contrat
+		if (api === '/api/prestataires/1/affaires')
+			return [{ id: 42, titre: 'Barillet de la porte du parking', statut: 'resolu' }];
 	});
 	//  La création : une route plus récente, essayée avant celle du simulateur.
 	await page.route('**/api/prestataires/notations', (route) => {
@@ -95,4 +97,20 @@ test('un avis « Mauvais » sans commentaire n’est pas envoyé', async ({ page
 	await carte.getByRole('button', { name: 'Enregistrer' }).click();
 	await expect.poll(() => envoyes.length).toBe(1);
 	expect(envoyes[0]).toMatchObject({ etat: 'mauvais', commentaire: 'Points faibles : retard.' });
+});
+
+test('on note le couple prestataire / affaire : l’affaire choisie part avec l’avis', async ({
+	page,
+}) => {
+	const { carte, envoyes } = await ouvrirLaFiche(page);
+
+	await carte.getByRole('button', { name: '⭐ Noter' }).click();
+	await carte
+		.getByLabel('Affaire concernée')
+		.selectOption({ label: 'Barillet de la porte du parking' });
+	await carte.getByRole('button', { name: 'Neutre', exact: true }).click();
+	await carte.getByRole('button', { name: 'Enregistrer' }).click();
+
+	await expect.poll(() => envoyes.length).toBe(1);
+	expect(envoyes[0]).toMatchObject({ prestataire_id: 1, etat: 'neutre', ticket_id: 42 });
 });

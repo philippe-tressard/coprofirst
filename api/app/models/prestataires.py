@@ -165,5 +165,8 @@ class NotationPrestataire(SQLModel, table=True):
     #  notations posées sur un devis gardent leur rattachement, et un retour
     #  arrière du code le retrouve. On cesse de la lire ; on n'efface rien.
     contrat_id: Optional[int] = Field(default=None, foreign_key="contrat_entretien.id")
+    #: L'affaire jugée (0338, 15/11/2026) : on note le couple prestataire / affaire, et
+    #: plusieurs membres peuvent noter le même couple. Absente : un avis général.
+    ticket_id: Optional[int] = Field(default=None, foreign_key="ticket.id")
     auteur_id: Optional[int] = Field(default=None, foreign_key="utilisateur.id")
     cree_le: NaiveDatetime = Field(default_factory=horloge.maintenant)

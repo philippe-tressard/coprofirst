@@ -151,6 +151,9 @@
 									<Badge teinte={TEINTE_ETAT[n.etat]}>{LIBELLE_ETAT[n.etat]}</Badge>
 								{/if}
 								<span class="not-auteur">{n.auteur_nom ?? '—'}</span>
+								{#if n.ticket_id}
+									<a href="/tickets/{n.ticket_id}">{n.ticket_titre ?? 'Affaire'}</a>
+								{/if}
 								<span class="not-date">{fmtDate(n.cree_le)}</span>
 								{#if peutSupprimer}
 									<button
