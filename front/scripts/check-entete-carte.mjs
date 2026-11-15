@@ -128,6 +128,9 @@ const TAILLE_LIBRE = {
 	'not-entete': 'liste des avis (NotationsPrestataire sans `resume`), dans le corps',
 	'not-date': 'liste des avis (NotationsPrestataire sans `resume`), dans le corps',
 	'not-commentaire': 'liste des avis (NotationsPrestataire sans `resume`), dans le corps',
+	//  Le chevron d'un badge d'avis (#2745) ramène le `.chevron` partagé (`--fs-2xl`,
+	//  taillé pour un en-tête) à la taille du badge qui le porte.
+	'not-chevron': 'chevron du badge d’un avis (NotationsPrestataire sans `resume`), dans le corps',
 	//  Le choix d'affaire d'un avis (GesteNoter → ChoixAffaireAvis) montre l'extrait de la
 	//  recherche détaillée : il s'ouvre dans le CORPS, jamais dans la ligne (15/11/2026).
 	origine: 'extrait de recherche du choix d’affaire d’un avis (ExtraitRecherche), dans le corps',
