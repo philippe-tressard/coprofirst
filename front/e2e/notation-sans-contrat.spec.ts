@@ -43,6 +43,7 @@ async function ouvrirLaFiche(page: Page) {
 			return [
 				{
 					id: 42,
+					numero: 'TK-000042',
 					titre: 'Barillet de la porte du parking',
 					statut: 'resolu',
 					intervient: true,
@@ -50,10 +51,23 @@ async function ouvrirLaFiche(page: Page) {
 				},
 				{
 					id: 43,
+					numero: 'TK-000043',
 					titre: 'Fuite sur le chauffe-eau',
 					statut: 'ouvert',
 					intervient: false,
 					intervenants: '',
+				},
+			];
+		//  La recherche détaillée de la page Affaires : « remplacé » est dans une suite de la 43.
+		if (api === '/api/tickets/recherche')
+			return [
+				{
+					ticket_id: 43,
+					ou: 'suite',
+					extrait: [
+						{ texte: 'Joint ', surligne: false },
+						{ texte: 'remplacé', surligne: true },
+					],
 				},
 			];
 	});
@@ -120,9 +134,7 @@ test('on note le couple prestataire / affaire : l’affaire choisie part avec l�
 	const { carte, envoyes } = await ouvrirLaFiche(page);
 
 	await carte.getByRole('button', { name: '⭐ Noter' }).click();
-	await carte
-		.getByLabel('Affaire concernée')
-		.selectOption({ label: 'Barillet de la porte du parking' });
+	await carte.getByRole('button', { name: /Barillet de la porte du parking/ }).click();
 	await carte.getByRole('button', { name: 'Neutre', exact: true }).click();
 	await carte.getByRole('button', { name: 'Enregistrer' }).click();
 
@@ -136,7 +148,7 @@ test('une affaire où le prestataire n’intervient pas exige la confirmation de
 	const { carte, envoyes } = await ouvrirLaFiche(page);
 
 	await carte.getByRole('button', { name: '⭐ Noter' }).click();
-	await carte.getByLabel('Affaire concernée').selectOption({ label: 'Fuite sur le chauffe-eau' });
+	await carte.getByRole('button', { name: /Fuite sur le chauffe-eau/ }).click();
 	await carte.getByRole('button', { name: 'Neutre', exact: true }).click();
 	await carte.getByRole('button', { name: 'Enregistrer' }).click();
 	//  Pas de confirmation : rien n'est envoyé.
@@ -147,4 +159,22 @@ test('une affaire où le prestataire n’intervient pas exige la confirmation de
 	await carte.getByRole('button', { name: 'Enregistrer' }).click();
 	await expect.poll(() => envoyes.length).toBe(1);
 	expect(envoyes[0]).toMatchObject({ ticket_id: 43, confirmer_ajout: true });
+});
+
+test('les affaires du prestataire se proposent d’abord, et la recherche fouille le suivi', async ({
+	page,
+}) => {
+	const { carte } = await ouvrirLaFiche(page);
+	await carte.getByRole('button', { name: '⭐ Noter' }).click();
+
+	const siennes = carte.getByRole('list', { name: 'Avec Ascenseurs Témoin' });
+	const autres = carte.getByRole('list', { name: 'Autres affaires' });
+	await expect(siennes).toContainText('Barillet de la porte du parking');
+	await expect(autres).toContainText('Fuite sur le chauffe-eau');
+
+	//  Un mot du suivi, absent des titres : la recherche détaillée trouve la 43, et dit où.
+	await carte.getByLabel('Recherche').fill('remplacé');
+	await expect(siennes).toHaveCount(0);
+	await expect(autres).toContainText('Fuite sur le chauffe-eau');
+	await expect(autres).toContainText('Trouvé dans une suite');
 });

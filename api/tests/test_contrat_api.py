@@ -63,9 +63,17 @@ def test_une_operation_retiree_sans_annonce_est_refusee():
 
 
 def test_un_retrait_annonce_dans_la_meme_version_est_refuse():
+    """L'annonce part avec le train (3.1.0, la production en 3.0.0) : pas encore livrée."""
     courant = {"GET /x": _REF["GET /x"]}
-    messages = inv.refus(inv.comparer(_REF, courant), {"POST /y": ("3.0.0", "essai")}, "3.0.0")
+    messages = inv.refus(inv.comparer(_REF, courant), {"POST /y": ("3.1.0", "essai")}, "3.0.0")
     assert len(messages) == 1 and "même version" in messages[0]
+
+
+def test_un_retrait_annonce_dans_la_version_servie_passe():
+    """La version se pose à la MEP (#2631) : `package.json` est la version EN PRODUCTION.
+    Annoncée par elle, l'annonce est livrée ; le lot qui retire partira après."""
+    courant = {"GET /x": _REF["GET /x"]}
+    assert inv.refus(inv.comparer(_REF, courant), {"POST /y": ("3.0.0", "essai")}, "3.0.0") == []
 
 
 def test_un_retrait_annonce_dans_une_version_anterieure_passe():

@@ -128,6 +128,9 @@ const TAILLE_LIBRE = {
 	'not-entete': 'liste des avis (NotationsPrestataire sans `resume`), dans le corps',
 	'not-date': 'liste des avis (NotationsPrestataire sans `resume`), dans le corps',
 	'not-commentaire': 'liste des avis (NotationsPrestataire sans `resume`), dans le corps',
+	//  Le choix d'affaire d'un avis (GesteNoter → ChoixAffaireAvis) montre l'extrait de la
+	//  recherche détaillée : il s'ouvre dans le CORPS, jamais dans la ligne (15/11/2026).
+	origine: 'extrait de recherche du choix d’affaire d’un avis (ExtraitRecherche), dans le corps',
 	//  `Badge` (#1571) se rend dans la ligne SANS `compact` : le cran `--fs-2xs`
 	//  ne sert qu'aux listes denses hors carte (Accès, baux). Le contrôle lit le
 	//  composant entier, comme pour `NotationsPrestataire`.

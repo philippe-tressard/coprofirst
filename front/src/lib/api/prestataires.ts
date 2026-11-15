@@ -21,10 +21,31 @@ import type { Equipement } from '#lib/equipements.ts';
 /** Une affaire qu'on peut juger — `AffaireAvis` (`prestataires_notations.py`). */
 export interface AffaireAvis {
 	id: number;
+	numero: string;
 	titre: string;
 	statut: string;
 	intervient: boolean;
 	intervenants: string;
+}
+
+/** Une intervention du prestataire et les avis de ce couple — `Intervention` (R3d). */
+export interface Intervention {
+	ticket_id: number;
+	numero: string;
+	titre: string;
+	date: string;
+	avis: Notation[];
+}
+
+/** Un exercice du récapitulatif par intervention — `ExerciceInterventions` (R3d). */
+export interface ExerciceInterventions {
+	annee: number;
+	libelle: string;
+	nb_interventions: number;
+	nb_notees: number;
+	compte: Record<'mauvais' | 'neutre' | 'excellent', number>;
+	interventions: Intervention[];
+	avis_generaux: Notation[];
 }
 
 /** Une affaire close d'un exercice — `AffaireExercice` (`routers/prestataires_metriques.py`). */
@@ -285,6 +306,9 @@ export const prestataires = {
 	/** Toutes les affaires, à noter avec ce prestataire — `intervient` dit s'il y figure déjà. */
 	affairesAnoter: (prestataireId: number) =>
 		api.get<AffaireAvis[]>(`/prestataires/affaires-a-noter?prestataire_id=${prestataireId}`),
+	/** Le récapitulatif R3d : les interventions par exercice, et leurs avis. */
+	interventions: (prestataireId: number) =>
+		api.get<ExerciceInterventions[]>(`/prestataires/${prestataireId}/interventions`),
 	//  ✅ Appelée par `NotationsPrestataire.svelte` depuis le 06/09/2026 (#807).
 	//  Elle a porté la déclaration « sans appelant » quelques heures : l'endpoint
 	//  existait, réservé au CS, et aucun écran ne l'appelait — l'écran ne montrait

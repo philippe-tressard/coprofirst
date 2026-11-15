@@ -11,15 +11,19 @@ from fastapi import HTTPException
 
 from app.models.core import RoleUtilisateur
 from app.routers.prestataires import NotationCreate, create_notation, list_notations
-from app.routers.prestataires_metriques import lire_affaires_du_prestataire
 from tests.aides_affaire import _compte, _creer, _prestataire, session  # noqa: F401
 
 CS = RoleUtilisateur.conseil_syndical
 
 
 def _noter(session, qui, p, affaire, etat="neutre"):
+    #  « mauvais_justifie » : un Mauvais, avec le commentaire qu'il exige.
+    commentaire = "Travail à refaire." if etat == "mauvais_justifie" else None
+    etat = "mauvais" if etat == "mauvais_justifie" else etat
     return create_notation(
-        body=NotationCreate(prestataire_id=p.id, etat=etat, ticket_id=affaire.id),
+        body=NotationCreate(
+            prestataire_id=p.id, etat=etat, ticket_id=affaire.id, commentaire=commentaire
+        ),
         session=session,
         user=qui,
     )
@@ -106,14 +110,42 @@ def test_les_affaires_a_noter_marquent_celles_ou_le_prestataire_intervient(sessi
     assert b.id in lues  # toutes les affaires se proposent
 
 
-def test_les_affaires_proposees_sont_celles_du_prestataire(session):
+def test_les_affaires_du_prestataire_se_proposent_en_premier(session):
+    from app.routers.prestataires_notations import lire_affaires_a_noter
+
     cs = _compte(session, role=CS)
     p, q = _prestataire(session), _prestataire(session)
     a = _creer(session, cs, categorie="panne", prestataire_id=p.id)
     b = _creer(session, cs, categorie="panne", prestataire_id=q.id)
-    ids = [x.id for x in lire_affaires_du_prestataire(p_id=p.id, session=session, _=cs)]
-    assert a.id in ids
-    assert b.id not in ids
+    lues = lire_affaires_a_noter(prestataire_id=p.id, session=session, _=cs)
+    ids = [x.id for x in lues]
+    #  b est plus récente, mais a porte le prestataire : elle passe devant.
+    assert ids.index(a.id) < ids.index(b.id)
+    assert lues[0].intervient is True
+    assert lues[0].numero
+
+
+def test_le_recapitulatif_range_les_interventions_par_exercice(session):
+    """R3d : une ligne par affaire du prestataire, notée ou non ; un avis sans affaire à part."""
+    from app.routers.prestataires_notations import lire_interventions
+
+    cs, autre = _compte(session, role=CS), _compte(session, role=CS)
+    p = _prestataire(session)
+    notee = _creer(session, cs, categorie="panne", prestataire_id=p.id)
+    _creer(session, cs, categorie="panne", prestataire_id=p.id)  # non notée
+    _noter(session, cs, p, notee, etat="excellent")
+    _noter(session, autre, p, notee, etat="mauvais_justifie")
+    create_notation(
+        body=NotationCreate(prestataire_id=p.id, etat="neutre"), session=session, user=cs
+    )
+    exercices = lire_interventions(p_id=p.id, session=session, user=cs)
+    assert len(exercices) == 1
+    ex = exercices[0]
+    assert (ex.nb_interventions, ex.nb_notees) == (2, 1)
+    assert ex.compte == {"mauvais": 1, "neutre": 1, "excellent": 1}
+    par_id = {i.ticket_id: i for i in ex.interventions}
+    assert sorted(a.etat for a in par_id[notee.id].avis) == ["excellent", "mauvais"]
+    assert [a.etat for a in ex.avis_generaux] == ["neutre"]
 
 
 def test_le_droit_de_modifier_est_servi_a_l_auteur_seul(session):
