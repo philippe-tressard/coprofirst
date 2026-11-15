@@ -84,6 +84,9 @@ TACHES_PERMANENTES: dict[str, str] = {
     "bail_installation": "le renouvellement nocturne du bail de l'installation (#1878) — le "
     "bail échoit en 30 jours et l'installation se constate limitée, sans que l'opérateur "
     "soit prévenu",
+    "annonce_version_installation": "la version qui tourne portée au registre 30 s après le "
+    "démarrage (#2750) — la fiche de l'installation garde, jusqu'au bail de la nuit, la "
+    "version d'avant sa mise à jour",
     "conservation_registre": "l'effacement, à leur échéance, des coordonnées (12 mois) et du "
     "contrat archivé (5 ans) d'une installation résiliée — les durées promises par les "
     "conditions d'inscription (§4) redeviennent fictives",
@@ -121,6 +124,8 @@ TACHES_DE_LA_PLATEFORME: dict[str, str] = {
     "n'appartient à aucune copropriété (§4.11, règle 7) (#1892)",
     "bail_installation": "le bail de l'INSTALLATION auprès du registre, qui n'appartient à "
     "aucune copropriété (§4.11) (#1878)",
+    "annonce_version_installation": "la version de l'INSTALLATION au registre, qui "
+    "n'appartient à aucune copropriété (§4.11) (#2750)",
     "conservation_registre": "la base `plateforme` (registre des installations), qui "
     "n'appartient à aucune copropriété (§4.11, règle 7)",
     "canaux_registre": "les versions publiées du registre des installations, relues sur "
