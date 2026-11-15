@@ -30,7 +30,7 @@ const NOTATION = {
 	commentaire: 'Points forts : délai respecté.\nTrès réactif.',
 	contrat_id: null,
 	auteur_id: 1,
-	auteur_nom: 'Membre du conseil',
+	auteur_nom: null,
 	cree_le: '2026-11-14T10:00:00',
 };
 
