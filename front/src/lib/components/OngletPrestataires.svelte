@@ -221,6 +221,10 @@
 						notations = [e.detail, ...notations];
 						relirePrestataires();
 					}}
+					on:modifiee={(e) => {
+						notations = notations.map((x) => (x.id === e.detail.id ? e.detail : x));
+						relirePrestataires();
+					}}
 				/>
 			{/each}
 		{/each}
