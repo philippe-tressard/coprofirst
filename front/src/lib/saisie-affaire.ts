@@ -68,7 +68,8 @@ export const SECTIONS_ESSENTIELLES_PAR_CATEGORIE: Readonly<Record<string, readon
 	actualite: ['quand', 'destinataires', 'diffusion'],
 };
 
-/** Les entrées du sélecteur du Profil, dans leur ordre d'affichage. */
+/** Les entrées du sélecteur du Profil, dans leur ordre d'affichage.
+ *  🔒 Table PUBLIÉE aux clients (`optionsSaisie`, #2755) — littérale. */
 export const OPTIONS_SAISIE: readonly { val: ChoixSaisie; label: string; desc: string }[] = [
 	{ val: 'essentielle', label: 'Essentielle', desc: 'Les champs qu’il faut, rien de plus' },
 	{ val: 'complete', label: 'Complète', desc: 'Toutes les sections, pour qualifier et suivre' },

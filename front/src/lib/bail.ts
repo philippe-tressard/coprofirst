@@ -124,3 +124,40 @@ export function nomLocataire(bail: { locataire_nom_affiche?: string | null }): s
 	//  « Prénom NOM » rendu par le serveur (`BailOut.locataire_nom_affiche`, #2633).
 	return bail.locataire_nom_affiche || 'Locataire non renseigné';
 }
+
+/*  ══════════════════════════════════════════════════════════════════════════
+    L'INVENTAIRE d'un bail — ce qui est remis au locataire (#2756)
+
+    Ces deux tables vivaient DANS `InventaireBail.svelte` : les apps natives, qui ne
+    lisent que ce que la release publie, les recopiaient à la main (iOS
+    `ProvisoireAcces.swift`, Android `LibellesMonLot.kt`). Publiées, elles se
+    génèrent ; le composant les lit ici.
+    ══════════════════════════════════════════════════════════════════════════ */
+
+//  🔒 Table PUBLIÉE aux clients (`typesObjetBail`) — littérale. Une liste de 4, donc
+//  des pastilles (`ChoixPastilles`, seuil des listes courtes), dans cet ordre.
+export const TYPES_OBJET_BAIL = [
+	{ val: 'cle', label: '🔑 Clé' },
+	{ val: 'telecommande', label: '📡 Télécommande' },
+	{ val: 'vigik', label: '🏷\u{FE0F} Vigik' },
+	{ val: 'autre', label: '📦 Autre' },
+] as const;
+
+/** « cle » → « 🔑 Clé ». */
+export const LIBELLE_TYPE_OBJET: Record<string, string> = Object.fromEntries(
+	TYPES_OBJET_BAIL.map((t) => [t.val, t.label]),
+);
+
+//  🔒 Table PUBLIÉE aux clients (`statutsObjetBail`) — littérale.
+export const STATUTS_OBJET_BAIL = {
+	en_possession: { libelle: 'En possession', badge: 'badge-green' },
+	rendu: { libelle: 'Rendu', badge: 'badge-blue' },
+	perdu: { libelle: 'Perdu', badge: 'badge-red' },
+	non_remis: { libelle: 'Non remis', badge: 'badge-gray' },
+};
+
+const STATUT_OBJET = parAttribut(STATUTS_OBJET_BAIL);
+
+/** Le libellé et la teinte de l'état d'un objet remis. */
+export const LIBELLE_STATUT_OBJET: Record<string, string> = STATUT_OBJET.libelle;
+export const BADGE_STATUT_OBJET: Record<string, string> = STATUT_OBJET.badge;

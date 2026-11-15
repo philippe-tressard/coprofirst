@@ -464,7 +464,7 @@ routeur vit à côté de lui. `schemas_communs.py` n'importe RIEN du projet (cyc
   (constantes LITTÉRALES de `#lib`, lues dans l'arbre syntaxique), jointe à la release. Une
   table que l'app lit vit dans `#lib` en constante NOMMÉE (`parAttribut(ATTRIBUTS_ROLE)`), et
   le code qui la sert la LIT (`aRole($u, ...ROLES_DU_DROIT.cs)`) ; jetons de la charte et
-  palettes se publient par leur règle CSS (`<feuille>.css@<sélecteur>`). Retirer ou changer de
+  palettes se publient par leur règle CSS (`<feuille>.css@<sélecteur>`) ; une table CALCULÉE depuis d'autres (`derivee: true`, `palettesResolues`, #2754) vit dans `tables-clients.derivees.mjs`, jugée contre le rendu du site par `e2e/palettes-resolues.spec.ts`. Retirer ou changer de
   forme s'annonce dans `RETRAITS`. 🔒 `npm run lint:tables-clients`.
 - **Une règle d'affichage que le site ET l'app montrent se calcule dans l'API** (#2501,
   `standards/09` §8) : dans `app/utils/` (ou un prédicat d'`auth/`), servie en champ que le
