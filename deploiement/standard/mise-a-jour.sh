@@ -12,7 +12,9 @@
 #   1. la version à installer : celle que porte le BAIL de l'installation, signé
 #      par la référence (R5 #1881) — l'API le renouvelle, le vérifie et rend sa
 #      version cible (`POST /admin/maintenance/bail`). Le canal (Urgence ou une
-#      version choisie) et la vague sont décidés à la référence, et seulement là ;
+#      version choisie) et la vague sont décidés à la référence, et seulement là.
+#      Ce bail porte au registre la version D'AVANT : la nouvelle y est annoncée
+#      par l'API, 30 s après son démarrage (`client.run_annonce_version`, #2750) ;
 #   2. décider (fonction PURE `decider_cible`) : à jour, épinglée ici, sans bail
 #      valide (D18 : pas de mise à jour automatique), sans version cible,
 #      version illisible, mettre à jour, ou revenir — sur ordre signé seulement ;
