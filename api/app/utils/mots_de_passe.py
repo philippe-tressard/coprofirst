@@ -13,12 +13,16 @@ import re
 
 from fastapi import HTTPException
 
+#: Publiée aux apps (`contrat/constantes_clients`, #2755) : elles disent ce qui manque
+#: avant l'envoi.
+LONGUEUR_MIN_MOT_DE_PASSE = 8
+
 
 def verifier_robustesse(password: str) -> None:
     """Vérifie la complexité du mot de passe. Lève HTTPException 400 si les critères ne sont pas satisfaits."""
     errors = []
-    if len(password) < 8:
-        errors.append("au moins 8 caractères")
+    if len(password) < LONGUEUR_MIN_MOT_DE_PASSE:
+        errors.append(f"au moins {LONGUEUR_MIN_MOT_DE_PASSE} caractères")
     if not re.search(r"[A-Z]", password):
         errors.append("une lettre majuscule")
     if not re.search(r"\d", password):

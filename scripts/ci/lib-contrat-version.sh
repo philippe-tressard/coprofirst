@@ -14,6 +14,9 @@
 #    · tables-clients.json — les tables du site que l'app génère (libellés,
 #                           pastilles, ordres), produites par
 #                           `front/scripts/tables-clients.mjs` (#2634).
+#    · constantes-clients.json — les constantes de l'API que l'app génère (notes,
+#                           défauts, longueur d'un mot de passe, schémas de lien),
+#                           produites par `api/app/contrat/constantes_clients.py` (#2686).
 #  `/api/openapi.json` reste fermé en production (`ENABLE_API_DOCS=false`) : le
 #  schéma part ici, jamais sur le site.
 #
@@ -32,6 +35,7 @@ FICHIERS_CONTRAT=(
 #: lui, que la référence existe et soit à jour à chaque PR.
 FICHIERS_CONTRAT_DEPUIS=(
     front/tables-clients.json   # #2634
+    api/app/contrat/constantes-clients.json   # #2686
 )
 
 #: La référence du contrat : elle porte la version que le schéma doit annoncer.
@@ -95,6 +99,7 @@ if [ "${BASH_SOURCE[0]}" = "$0" ] && [ "${1:-}" = "--selftest" ]; then
         echo 'exportateur' > scripts/ci/exporter_openapi.py
         git add -A && git commit -q -m contrat
         echo '{"tables": {}}' > front/tables-clients.json
+        echo '{"constantes": {}}' > api/app/contrat/constantes-clients.json
         git add -A && git commit -q -m tables
         git rm -q front/src/styles/socle.css && git commit -q -m incomplet
     )
@@ -110,8 +115,8 @@ if [ "${BASH_SOURCE[0]}" = "$0" ] && [ "${1:-}" = "--selftest" ]; then
         rm -rf "$s"
     }
     echo "== self-test : le contrat d'API joint à une version =="
-    essai "contrat complet : cinq fichiers"                   ok    "$(commit 1)"
-    essai "d'avant les tables publiées : quatre fichiers"     ok    "$(commit 2)"
+    essai "contrat complet : six fichiers"                    ok    "$(commit 1)"
+    essai "d'avant les tables et constantes : quatre fichiers" ok    "$(commit 2)"
     essai "un fichier manque au commit : refusé"              refus "$(commit 0)"
     essai "commit d'avant le contrat : rien à joindre"        ok    "$(commit 3)"
     SCHEMA_SIMULE='{"info": {"version": "1.1.0"}, "servers": [{"url": "/api"}], "paths": {"/x": {}}}'
@@ -132,8 +137,8 @@ if [ "${BASH_SOURCE[0]}" = "$0" ] && [ "${1:-}" = "--selftest" ]; then
     s=$(mktemp -d); exporter_dans_image() { echo "$SCHEMA_SIMULE" > "$3/openapi.json"; }
     SCHEMA_SIMULE='{"info": {"version": "1.2.0"}, "servers": [{"url": "/api"}], "paths": {"/x": {}}}'
     (cd "$DEPOT" && preparer_contrat "$(commit 1)" image "$s") >/dev/null
-    if [ "$(cd "$s" && ls | sort | tr '\n' ' ')" = "openapi.json pages.ts palette-sombre.css socle.css tables-clients.json " ]; then
-        echo "PASS  les noms joints : openapi.json pages.ts palette-sombre.css socle.css tables-clients.json"
+    if [ "$(cd "$s" && ls | sort | tr '\n' ' ')" = "constantes-clients.json openapi.json pages.ts palette-sombre.css socle.css tables-clients.json " ]; then
+        echo "PASS  les noms joints : constantes-clients.json openapi.json pages.ts palette-sombre.css socle.css tables-clients.json"
     else echo "FAIL  noms joints : $(ls "$s")"; fail=1; fi
     rm -rf "$DEPOT" "$s"
     exit "$fail"
