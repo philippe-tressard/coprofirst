@@ -14,13 +14,13 @@
   les recalculer ici en ferait une seconde lecture de la même règle.
 
   🔴 L'ORDRE des icônes est celui de tout le site — 🔗 · 🔄 · ✏️ · options · 🗑️ —
-  arbitré le 18/08/2026 sur cette carte précisément. 💬 Répondre (23/10/2026,
-  *« cette icône doit être sur l'affaire »*) se range après 🔗 : les deux gestes
-  qui mènent à la page de l'affaire, puis ceux qui la changent.
+  arbitré le 18/08/2026 sur cette carte précisément. 💬 Répondre n'y est plus
+  (15/11/2026, #2733) : posé le 23/10 à côté de 🔄, il se confondait avec la Suite,
+  et une réponse est partie à la place d'une suite. Il vit sous le fil des messages
+  de la page de l'affaire (`FilMessagesTicket`), et seulement là.
 -->
 <script lang="ts">
 	import { SUITE } from '#lib/gestes.ts';
-	import { gesteReponse } from '#lib/tickets.ts';
 	import { createEventDispatcher } from 'svelte';
 	import BoutonLien from './BoutonLien.svelte';
 	import BoutonOptions from './BoutonOptions.svelte';
@@ -37,11 +37,7 @@
 	/** Rendue aux Archives : 🗑️ y remplace 📦 (`ux-patterns` §8). */
 	export let archive = false;
 
-	//  Qui peut répondre, et ce que le bouton dit : la règle du fil des messages.
-	$: reponse = gesteReponse(ticket);
-
 	const dispatch = createEventDispatcher<{
-		repondre: void;
 		evoluer_ouvrir: void;
 		modifier: void;
 		options_ouvrir: void;
@@ -60,15 +56,6 @@
 	      dans une liste que le destinataire n'a peut-être pas le droit de voir
 	      en entier. Même adresse que `lien_ticket()` côté API. -->
 <BoutonLien chemin="/tickets/{ticket.id}" quoi="l'affaire" />
-{#if reponse}
-	<button
-		class="btn-icon"
-		aria-label={reponse.libelle}
-		title={reponse.libelle}
-		on:click|stopPropagation={() => dispatch('repondre')}
-		><IconeAction icone={reponse.icone} /></button
-	>
-{/if}
 {#if peutSuivre}
 	<!--  Un bouton ÉCRIT, plus une icône (14/11/2026, #2723) : la bulle de « Répondre »
 	      et les flèches de « Ajouter une suite » se confondaient, et une réponse est

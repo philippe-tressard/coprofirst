@@ -414,7 +414,7 @@
 		    (`auto`) : s'il ne tient pas entier à côté des icônes, la rangée passe
 		    sous lui, à droite, et il reprend la ligne. Un titre court les garde à
 		    côté — la carte ne grandit que là où le titre se serait coupé.
-		    🔒 `e2e/repondre-depuis-la-carte.spec.ts`, `e2e/gouttiere-nature`. */
+		    🔒 `e2e/repondre-sous-le-fil.spec.ts`, `e2e/gouttiere-nature`. */
 		.ec-ligne-titre {
 			flex-wrap: wrap;
 			row-gap: 0.25rem;
