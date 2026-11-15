@@ -38,6 +38,7 @@ import {
 	moduleImporte,
 } from './tables-clients.lecture.mjs';
 import { SOURCE_CSS, valeurCss } from './tables-clients.css.mjs';
+import { DERIVATIONS, selftestDerivees } from './tables-clients.derivees.mjs';
 import { RETRAITS, TABLES } from './tables-clients.registre.mjs';
 
 const FRONT = fileURLToPath(new URL('../', import.meta.url));
@@ -71,7 +72,8 @@ export function lireTables(tables, lire) {
 		return valeur(chemin, exportee, true, sans);
 	};
 	const sortie = {};
-	for (const nom of noms) {
+	const derivees = noms.filter((nom) => tables[nom].derivee);
+	for (const nom of noms.filter((n) => !tables[n].derivee)) {
 		const { source, sans } = tables[nom];
 		sourcesDe(nom, source);
 		if (sans !== undefined && (typeof source !== 'string' || !Array.isArray(sans) || !sans.length))
@@ -84,7 +86,18 @@ export function lireTables(tables, lire) {
 						valeur: Object.fromEntries(Object.entries(source).map(([c, s]) => [c, une(s)])),
 					};
 	}
-	return sortie;
+	//  Une table DÉRIVÉE se calcule depuis des tables publiées (`tables-clients.derivees.mjs`,
+	//  #2754), après elles ; sa source dit lesquelles.
+	for (const nom of derivees) {
+		const derivation = DERIVATIONS[nom];
+		if (!derivation) throw new Refus(`${nom} : dérivée, mais aucune dérivation ne porte ce nom`);
+		const manquantes = derivation.depuis.filter((d) => !(d in sortie));
+		if (manquantes.length)
+			throw new Refus(`${nom} : dérivée de tables non publiées (${manquantes.join(', ')})`);
+		const lues = Object.fromEntries(derivation.depuis.map((d) => [d, sortie[d].valeur]));
+		sortie[nom] = { source: `dérivée de ${derivation.depuis.join(', ')}`, valeur: derivation.calcul(lues) };
+	}
+	return Object.fromEntries(noms.map((nom) => [nom, sortie[nom]]));
 }
 
 /** La FORME d'une valeur : chemin → type. Les clés d'un objet en font partie, les
@@ -380,6 +393,15 @@ function selftest() {
 	cas('version : retrait → majeure', versionSuivante('1.4.2', ancien, {}, sansU) === '2.0.0');
 	cas('version : ajout → mineure', versionSuivante('1.4.2', {}, ancien, {}) === '1.5.0');
 	cas('version : rien → inchangée', versionSuivante('1.4.2', ancien, ancien, {}) === '1.4.2');
+	cas(
+		'dérivée sans dérivation refusée',
+		leve(() => lireTables({ t: { source: 'src/lib/m.ts#T' }, inventee: { derivee: true } }, () => src)),
+	);
+	cas(
+		'dérivée dont une table manque refusée',
+		leve(() => lireTables({ t: { source: 'src/lib/m.ts#T' }, palettesResolues: { derivee: true } }, () => src)),
+	);
+	selftestDerivees(cas, leve);
 	console.log(echecs ? `== ${echecs} ÉCHEC(S) ==` : '== TOUS OK ==');
 	return echecs === 0;
 }

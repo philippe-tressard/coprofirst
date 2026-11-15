@@ -20,6 +20,9 @@
  * - `quoi` — ce que la table dit, en une ligne ;
  * - `lecteur` — le générateur de coprofirst-ios qui la lit.
  *
+ * - `derivee: true` (à la place de `source`) — une table CALCULÉE depuis d'autres
+ *   tables publiées, par la dérivation de même nom (`tables-clients.derivees.mjs`).
+ *
  * Une source peut aussi être une règle CSS : `src/styles/<feuille>.css@<sélecteur>` ou
  * le `<style>` d'un composant, `src/lib/…/X.svelte@<sélecteur>` — ses déclarations ;
  * un `*` dans le sélecteur publie une famille, par code (`tables-clients.css.mjs`).
@@ -357,9 +360,9 @@ export const TABLES = {
 	},
 
 	//  ── Lot C : la charte visuelle (jetons CSS, palettes, tracé) ──────────────
-	//  Une valeur garde son texte (`var(--…)`, `color-mix(…)`) : l'app résout elle-même
-	//  la cascade — au sombre, la charte sombre sur la palette claire, puis la palette
-	//  sombre par-dessus.
+	//  Une valeur garde son texte (`var(--…)`, `color-mix(…)`). La cascade résolue — au
+	//  sombre, la charte sombre sur la palette claire, puis la palette sombre par-dessus —
+	//  est publiée une fois, `palettesResolues` (#2754) : les apps n'ont plus à la refaire.
 	jetonsCharte: {
 		source: 'src/styles/socle.css@:root',
 		quoi: 'les jetons de la charte au clair (couleurs, tailles, rayons…), palette « seine »',
@@ -378,6 +381,11 @@ export const TABLES = {
 	palettesSombres: {
 		source: "src/styles/palettes.css@:root[data-palette='*'][data-theme='dark']",
 		quoi: 'les jetons que chaque palette redéfinit au sombre, par code',
+		lecteur: 'scripts/generateurs/palettes.py',
+	},
+	palettesResolues: {
+		derivee: true,
+		quoi: 'les jetons --color-*, --fil-*, --kanban-*, --serie-* et --palier-* de chaque palette (seine comprise), au clair et au sombre, déjà résolus en #rrggbb ou rgba(…) : la cascade et les var() du site, calculées une fois (#2754)',
 		lecteur: 'scripts/generateurs/palettes.py',
 	},
 	teinteNature: {
