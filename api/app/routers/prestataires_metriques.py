@@ -30,9 +30,7 @@ from app.database import get_session
 from app.models.core import Prestataire, Utilisateur
 from app.schemas_synthese import ExerciceLu, ResumeAffaires
 from app.utils.recuperer import ou_404
-from app.utils.prestataires_affaire import affaires_du_prestataire
 from app.utils.synthese_affaire.agregats import bilan_prestataire
-from app.utils.valeurs import valeur
 
 router = APIRouter(prefix="/prestataires", tags=["prestataires"])
 
@@ -69,28 +67,3 @@ def lire_metriques_prestataire(
     """Les métriques des affaires closes où ce prestataire était l'intervenant désigné."""
     ou_404(session, Prestataire, p_id, "Prestataire")
     return bilan_prestataire(session, p_id)
-
-
-class AffaireANoter(BaseModel):
-    """Une affaire où le prestataire est intervenant — ce qu'on peut noter avec lui."""
-
-    id: int
-    titre: str
-    statut: str
-
-
-@router.get("/{p_id}/affaires", response_model=list[AffaireANoter], deprecated=True)
-def lire_affaires_du_prestataire(
-    p_id: int,
-    session: Session = Depends(get_session),
-    _: Utilisateur = Depends(require_cs_or_admin),
-):
-    """ANNONCÉE AU RETRAIT (v3.100.0) : remplacée par `GET /prestataires/affaires-a-noter`.
-
-    Les affaires où ce prestataire est intervenant désigné, la plus récente d'abord —
-    le choix proposé quand le conseil syndical note le couple prestataire / affaire."""
-    ou_404(session, Prestataire, p_id, "Prestataire")
-    return [
-        AffaireANoter(id=t.id, titre=t.titre, statut=valeur(t.statut))
-        for t in affaires_du_prestataire(session, p_id)
-    ]

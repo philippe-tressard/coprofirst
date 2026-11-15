@@ -10,7 +10,7 @@ from typing import Literal, Optional
 
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel, model_validator
-from sqlmodel import Session, select
+from sqlmodel import Session, col, select
 
 from app.auth.deps import est_auteur, require_cs_or_admin
 from app.database import get_session
@@ -18,12 +18,19 @@ from app.models.core import Prestataire, Ticket, Utilisateur
 from app.models.prestataires import NotationPrestataire
 from app.models.tickets import TicketEvolution
 from app.utils import horloge
-from app.utils.noms import nom_affiche, nom_auteur
-from app.utils.notes_prestataires import NOTE_DE_ETAT, etat_de_note
-from app.utils.prestataires_affaire import par_affaire, poser, prestataires_de
+from app.utils.noms import nom_auteur
+from app.utils.notes_prestataires import ETATS, NOTE_DE_ETAT, etat_de_note
+from app.utils.prestataires_affaire import (
+    affaires_du_prestataire,
+    noms,
+    par_affaire,
+    poser,
+    prestataires_de,
+)
 from app.utils.recuperer import ou_404, ou_rien
 from app.utils.synthese_affaire.agregats import exercice_de
 from app.utils.synthese_affaire.rassemblement import mois_debut_exercice
+from app.utils.valeurs import valeur
 
 router = APIRouter(
     tags=["prestataires"]
@@ -135,6 +142,19 @@ def _poser_affaire(session: Session, nr: "NotationRead", n: NotationPrestataire)
         nr.ticket_titre = ticket.titre if ticket else None
 
 
+def _lire(
+    session: Session, n: NotationPrestataire, lecteur: Utilisateur, mois_debut
+) -> NotationRead:
+    """Un avis tel qu'on le lit : son état, son exercice, son affaire, son auteur, le droit."""
+    nr = NotationRead.model_validate(n)
+    nr.etat = etat_de_note(n.note)
+    _poser_exercice(nr, n, mois_debut)
+    _poser_affaire(session, nr, n)
+    nr.auteur_nom = nom_auteur(ou_rien(session, Utilisateur, n.auteur_id))
+    nr.peut_modifier = est_auteur(n, lecteur)
+    return nr
+
+
 @router.get("/notations", response_model=list[NotationRead])
 def list_notations(
     prestataire_id: Optional[int] = None,
@@ -145,19 +165,8 @@ def list_notations(
     if prestataire_id is not None:
         q = q.where(NotationPrestataire.prestataire_id == prestataire_id)
     q = q.order_by(NotationPrestataire.cree_le.desc())
-    notations = session.exec(q).all()
     mois_debut = mois_debut_exercice(session)
-    result = []
-    for n in notations:
-        auteur = ou_rien(session, Utilisateur, n.auteur_id)
-        nr = NotationRead.model_validate(n)
-        nr.etat = etat_de_note(n.note)
-        _poser_exercice(nr, n, mois_debut)
-        _poser_affaire(session, nr, n)
-        nr.auteur_nom = nom_auteur(auteur)
-        nr.peut_modifier = est_auteur(n, _)
-        result.append(nr)
-    return result
+    return [_lire(session, n, _, mois_debut) for n in session.exec(q).all()]
 
 
 @router.post("/notations", response_model=NotationRead, status_code=201)
@@ -180,12 +189,7 @@ def create_notation(
     session.add(n)
     session.commit()
     session.refresh(n)
-    nr = NotationRead.model_validate(n)
-    nr.etat = body.etat
-    _poser_exercice(nr, n, mois_debut_exercice(session))
-    _poser_affaire(session, nr, n)
-    nr.auteur_nom = nom_affiche(user.prenom, user.nom)
-    return nr
+    return _lire(session, n, user, mois_debut_exercice(session))
 
 
 class NotationUpdate(BaseModel):
@@ -223,13 +227,7 @@ def update_notation(
     session.add(n)
     session.commit()
     session.refresh(n)
-    nr = NotationRead.model_validate(n)
-    nr.etat = etat_de_note(n.note)
-    nr.auteur_nom = nom_auteur(ou_rien(session, Utilisateur, n.auteur_id))
-    _poser_exercice(nr, n, mois_debut_exercice(session))
-    _poser_affaire(session, nr, n)
-    nr.peut_modifier = True  # l'auteur, qui vient d'écrire ou de corriger
-    return nr
+    return _lire(session, n, user, mois_debut_exercice(session))
 
 
 @router.delete("/notations/{n_id}", status_code=204)
@@ -247,6 +245,7 @@ class AffaireAvis(BaseModel):
     """Une affaire qu'on peut juger — `intervient` dit si le prestataire y figure déjà."""
 
     id: int
+    numero: str
     titre: str
     statut: str
     intervient: bool
@@ -259,26 +258,101 @@ def lire_affaires_a_noter(
     session: Session = Depends(get_session),
     _: Utilisateur = Depends(require_cs_or_admin),
 ):
-    """Toutes les affaires de la copropriété, la plus récente d'abord — pour noter le couple
-    prestataire / affaire, même quand le prestataire n'y figure pas encore (15/11/2026).
-    Le choix d'une affaire où il n'intervient pas exige la confirmation de l'ajout."""
-    ou_404(session, Prestataire, prestataire_id, "Prestataire")
-    from app.utils.recuperer import ou_404 as _  # noqa: F401  (même module, lu une fois)
-    from app.utils.valeurs import valeur
-    from app.models.tickets import Ticket as TicketModel
+    """Toutes les affaires de la copropriété : d'abord celles où le prestataire intervient,
+    puis les autres, chaque groupe de la plus récente à la plus ancienne (15/11/2026).
 
-    affaires = session.exec(select(TicketModel).order_by(TicketModel.id.desc()).limit(200)).all()
+    Pour noter le couple prestataire / affaire, même quand il n'y figure pas encore : ce
+    choix-là exige la confirmation de l'ajout. La recherche détaillée (suivi, messages,
+    pièces) est celle de la page Affaires, `GET /tickets/recherche` : elle n'est pas
+    refaite ici, et l'écran la croise avec cette liste."""
+    ou_404(session, Prestataire, prestataire_id, "Prestataire")
+    affaires = session.exec(select(Ticket).order_by(col(Ticket.id).desc())).all()
     listes = par_affaire(session, affaires)
-    lignes = []
-    for t in affaires:
-        noms_ = [p.nom for i in listes[t.id] if (p := session.get(Prestataire, i))]
-        lignes.append(
-            AffaireAvis(
-                id=t.id,
-                titre=t.titre,
-                statut=valeur(t.statut),
-                intervient=prestataire_id in listes[t.id],
-                intervenants=", ".join(noms_),
-            )
+    lignes = [
+        AffaireAvis(
+            id=t.id,
+            numero=t.numero,
+            titre=t.titre,
+            statut=valeur(t.statut),
+            intervient=prestataire_id in listes[t.id],
+            intervenants=", ".join(noms(session, listes[t.id])),
         )
-    return lignes
+        for t in affaires
+    ]
+    #  Tri stable : l'ordre de récence se garde dans chaque groupe.
+    return sorted(lignes, key=lambda a: not a.intervient)
+
+
+# ── Le récapitulatif par intervention (R3d, 15/11/2026) ─────────────────────
+
+
+class Intervention(BaseModel):
+    """Une affaire du prestataire, et les avis portés sur ce couple (aucun : « non notée »)."""
+
+    ticket_id: int
+    numero: str
+    titre: str
+    date: datetime
+    avis: list[NotationRead] = []
+
+
+class ExerciceInterventions(BaseModel):
+    """Un exercice comptable : ses interventions, ses avis sans affaire, le compte des états."""
+
+    annee: int
+    libelle: str
+    nb_interventions: int = 0
+    nb_notees: int = 0
+    compte: dict[str, int] = {}
+    interventions: list[Intervention] = []
+    avis_generaux: list[NotationRead] = []
+
+
+@router.get("/{p_id}/interventions", response_model=list[ExerciceInterventions])
+def lire_interventions(
+    p_id: int,
+    session: Session = Depends(get_session),
+    user: Utilisateur = Depends(require_cs_or_admin),
+):
+    """Les interventions du prestataire rangées par exercice, le plus récent d'abord (R3d).
+
+    Une intervention est une affaire où il est intervenant désigné — ou qu'un avis juge :
+    retiré de l'affaire ensuite, il garde l'avis qu'on y a porté. Elle se range dans
+    l'exercice de son OUVERTURE ; un avis sans affaire, dans celui de sa date. La règle de
+    l'exercice est celle des métriques (`exercice_de`) : l'écran ne la recopie pas."""
+    ou_404(session, Prestataire, p_id, "Prestataire")
+    mois_debut = mois_debut_exercice(session)
+    notations = session.exec(
+        select(NotationPrestataire)
+        .where(NotationPrestataire.prestataire_id == p_id)
+        .order_by(col(NotationPrestataire.cree_le).desc())
+    ).all()
+    lues = [_lire(session, n, user, mois_debut) for n in notations]
+    affaires = {t.id: t for t in affaires_du_prestataire(session, p_id)}
+    for nr in lues:
+        if nr.ticket_id is not None and nr.ticket_id not in affaires:
+            if (t := ou_rien(session, Ticket, nr.ticket_id)) is not None:
+                affaires[t.id] = t
+    exercices: dict[int, ExerciceInterventions] = {}
+
+    def exercice(jour) -> ExerciceInterventions:
+        ex = exercice_de(horloge.jour_civil(jour), mois_debut)
+        if ex.annee not in exercices:
+            exercices[ex.annee] = ExerciceInterventions(annee=ex.annee, libelle=ex.libelle)
+        return exercices[ex.annee]
+
+    for t in sorted(affaires.values(), key=lambda t: t.cree_le, reverse=True):
+        avis = [nr for nr in lues if nr.ticket_id == t.id]
+        ex = exercice(t.cree_le)
+        ex.interventions.append(
+            Intervention(ticket_id=t.id, numero=t.numero, titre=t.titre, date=t.cree_le, avis=avis)
+        )
+    for nr in lues:
+        if nr.ticket_id is None or nr.ticket_id not in affaires:
+            exercice(nr.cree_le).avis_generaux.append(nr)
+    for ex in exercices.values():
+        ex.nb_interventions = len(ex.interventions)
+        ex.nb_notees = sum(1 for i in ex.interventions if i.avis)
+        tous = [a for i in ex.interventions for a in i.avis] + ex.avis_generaux
+        ex.compte = {e: sum(1 for a in tous if a.etat == e) for e in ETATS}
+    return sorted(exercices.values(), key=lambda e: e.annee, reverse=True)

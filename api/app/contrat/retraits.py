@@ -6,10 +6,12 @@ réponse se fait donc en DEUX temps, jamais dans la même version :
 
 1. **Annoncer** (version V) : la route prend `deprecated=True`, le champ
    `Field(json_schema_extra={"deprecated": True})`, et la cible s'écrit ici avec V,
-   la version de l'application du lot (`front/package.json`, bumpée en dernier
-   commit). Le contrat publié le dit : le générateur Swift l'avertit.
-2. **Retirer**, dans une version ULTÉRIEURE à V : `--ecrire-reference` l'accepte, et
-   la version du contrat prend une majeure.
+   la version qui LIVRERA l'annonce — au-delà de `front/package.json`, puisque la
+   version se pose à la MEP (#2631). Le contrat publié le dit : le générateur Swift
+   l'avertit.
+2. **Retirer**, une fois V livrée (`front/package.json` ≥ V) : le lot partira dans
+   une version ULTÉRIEURE. `--ecrire-reference` l'accepte, et la version du contrat
+   prend une majeure.
 
 Une cible : `"GET /chemin"` (l'opération) ou `"GET /chemin → $.champ"` (un champ de
 réponse et tout ce qu'il porte). L'entrée reste après le retrait : c'est sa trace.

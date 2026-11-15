@@ -16,7 +16,6 @@
  */
 
 import { parAttribut } from './table-statuts.ts';
-import type { Notation } from './api/index.ts';
 
 export const ETATS = ['mauvais', 'neutre', 'excellent'] as const;
 export type Etat = (typeof ETATS)[number];
@@ -68,39 +67,34 @@ export function commentaireComplet(genere: string, libre: string): string {
 	return [genere, libre.trim()].filter((s) => s.length > 0).join('\n');
 }
 
-/** Les avis d'un exercice comptable, et combien de chaque état (R3d). */
-export interface ExerciceAvis {
-	annee: number | null;
-	libelle: string;
-	avis: Notation[];
-	compte: Record<Etat, number>;
+/** Un commentaire relu : les cases qu'il cochait, et le texte libre qui suit. */
+export interface CommentaireDecompose {
+	forts: string[];
+	faibles: string[];
+	libre: string;
 }
 
+const PHRASE = /^(?:Points forts : (.+?)\.)?\s*(?:Points faibles : (.+?)\.)?$/;
+
 /**
- * Les avis rangés par exercice, le plus récent d'abord ; dans un exercice, l'avis le
- * plus récent d'abord. L'exercice vient du serveur (`exercice_annee`) : la règle du
- * mois de début n'est pas recopiée ici.
+ * L'inverse de `commentaireComplet` (15/11/2026) : corriger un avis RECOCHE ses cases.
+ * La première ligne n'est reprise comme phrase générée que si chacun de ses motifs est
+ * dans les listes — sinon c'est un texte libre qui y ressemble, et il reste libre.
  */
-export function avisParExercice(notations: readonly Notation[]): ExerciceAvis[] {
-	const groupes = new Map<number | null, ExerciceAvis>();
-	for (const n of notations) {
-		const cle = n.exercice_annee ?? null;
-		let g = groupes.get(cle);
-		if (!g) {
-			g = {
-				annee: cle,
-				libelle: n.exercice_libelle ?? 'Exercice non renseigné',
-				avis: [],
-				compte: { mauvais: 0, neutre: 0, excellent: 0 },
-			};
-			groupes.set(cle, g);
-		}
-		g.avis.push(n);
-		g.compte[n.etat] += 1;
-	}
-	const liste = [...groupes.values()];
-	for (const g of liste) {
-		g.avis.sort((a, b) => new Date(b.cree_le).getTime() - new Date(a.cree_le).getTime());
-	}
-	return liste.sort((a, b) => (b.annee ?? -Infinity) - (a.annee ?? -Infinity));
+export function decomposerCommentaire(
+	commentaire: string | null | undefined,
+): CommentaireDecompose {
+	const texte = commentaire ?? '';
+	const [premiere, ...suite] = texte.split('\n');
+	const m = PHRASE.exec(premiere.trim());
+	const motifs = (liste: string | undefined) => (liste ? liste.split(', ') : []);
+	const forts = motifs(m?.[1]);
+	const faibles = motifs(m?.[2]);
+	const reconnus =
+		m !== null &&
+		forts.length + faibles.length > 0 &&
+		forts.every((f) => (POINTS_FORTS as readonly string[]).includes(f)) &&
+		faibles.every((f) => (POINTS_FAIBLES as readonly string[]).includes(f));
+	if (!reconnus) return { forts: [], faibles: [], libre: texte };
+	return { forts, faibles, libre: suite.join('\n') };
 }

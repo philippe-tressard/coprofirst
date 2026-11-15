@@ -15,6 +15,7 @@
 		POINTS_FAIBLES,
 		POINTS_FORTS,
 		commentaireComplet,
+		decomposerCommentaire,
 		phraseGeneree,
 		type Etat,
 	} from '#lib/notations.ts';
@@ -25,12 +26,11 @@
 	export let commentaire = '';
 	/** Identifiant préfixant les champs, pour que deux saisies ne se confondent pas. */
 	export let id = 'notation';
-	/** Le texte libre d'un avis qu'on corrige (15/11/2026) : repris tel quel. */
-	export let libreInitial = '';
+	/** Le commentaire d'un avis qu'on corrige (15/11/2026) : ses cases se RECOCHENT, et
+	 *  seul le texte libre revient dans la zone de saisie (`decomposerCommentaire`). */
+	export let initial = '';
 
-	let forts: string[] = [];
-	let faibles: string[] = [];
-	let libre = libreInitial;
+	let { forts, faibles, libre } = decomposerCommentaire(initial);
 
 	$: genere = phraseGeneree(forts, faibles);
 	$: commentaire = commentaireComplet(genere, libre);
