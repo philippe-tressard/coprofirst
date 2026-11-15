@@ -105,6 +105,9 @@ DU_PROCESSUS = {
     ("utils/pdf_theme.py", "_icones_cache"): (
         "le catalogue d'icônes, lu d'un fichier versionné avec le code"
     ),
+    ("utils/pdf_theme.py", "_police_lisible_cache"): (
+        "les @font-face de la police lisible, lus des fichiers versionnés avec le code (#2776)"
+    ),
     ("utils/pdf_rendu.py", "dernier_temoin"): (
         "diagnostic du dernier rendu PDF, lu par les tests seulement ; aucune route ne le rend"
     ),
