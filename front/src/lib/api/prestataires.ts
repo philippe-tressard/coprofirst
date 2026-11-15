@@ -18,6 +18,13 @@ import type { Equipement } from '#lib/equipements.ts';
 
 /**  Les affaires closes d'un prestataire (#1646) — `routers/prestataires_metriques`.
  *   L'ensemble, puis chaque exercice comptable, le plus récent d'abord. */
+/** Une affaire où le prestataire est intervenant — `AffaireANoter` (`prestataires_metriques.py`). */
+export interface AffaireANoter {
+	id: number;
+	titre: string;
+	statut: string;
+}
+
 /** Une affaire close d'un exercice — `AffaireExercice` (`routers/prestataires_metriques.py`). */
 export interface AffaireExercice {
 	id: number;
@@ -175,6 +182,12 @@ export interface Notation {
 	note: number;
 	/** L'état lu : Mauvais, Neutre ou Excellent (`etat_de_note` côté serveur). */
 	etat: 'mauvais' | 'neutre' | 'excellent';
+	/** L'exercice comptable de l'avis, calculé au serveur (R3d). */
+	exercice_annee: number | null;
+	exercice_libelle: string | null;
+	/** L'affaire jugée — le couple prestataire / affaire ; `null` pour un avis général. */
+	ticket_id: number | null;
+	ticket_titre: string | null;
 	commentaire: string | null;
 	contrat_id: number | null;
 	/** Vide quand le compte de l'auteur a été supprimé (#1821). */
@@ -252,7 +265,12 @@ export const prestataires = {
 		etat: 'mauvais' | 'neutre' | 'excellent';
 		commentaire?: string;
 		contrat_id?: number;
+		ticket_id?: number;
 	}) => api.post<Notation>('/prestataires/notations', data),
+	/**  Les affaires où il est intervenant désigné — le choix proposé quand on note le
+	 *   couple prestataire / affaire (conseil syndical seul). */
+	affaires: (prestataireId: number) =>
+		api.get<AffaireANoter[]>(`/prestataires/${prestataireId}/affaires`),
 	//  ✅ Appelée par `NotationsPrestataire.svelte` depuis le 06/09/2026 (#807).
 	//  Elle a porté la déclaration « sans appelant » quelques heures : l'endpoint
 	//  existait, réservé au CS, et aucun écran ne l'appelait — l'écran ne montrait

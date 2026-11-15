@@ -174,7 +174,37 @@ def supprimer_de(session: Session, ticket_id: int) -> int:
     return len(lignes)
 
 
+def affaires_du_prestataire(session: Session, prestataire_id: int, limite: int = 200) -> list[Any]:
+    """Les affaires où ce prestataire est intervenant désigné, la plus récente d'abord.
+
+    Pour noter le couple prestataire / affaire (15/11/2026). La liste EFFECTIVE tranche,
+    comme pour les métriques : une ligne laissée par une version antérieure ne compte pas.
+    """
+    from sqlmodel import col, or_
+
+    from app.models.tickets import Ticket
+
+    candidates = session.exec(
+        select(Ticket)
+        .where(
+            or_(
+                col(Ticket.prestataire_id) == prestataire_id,
+                col(Ticket.id).in_(
+                    select(TicketPrestataire.ticket_id).where(
+                        TicketPrestataire.prestataire_id == prestataire_id
+                    )
+                ),
+            )
+        )
+        .order_by(col(Ticket.id).desc())
+        .limit(limite)
+    ).all()
+    listes = par_affaire(session, candidates)
+    return [t for t in candidates if prestataire_id in listes[t.id]]
+
+
 __all__ = [
+    "affaires_du_prestataire",
     "exiger_prestataires",
     "historique",
     "libelle",
