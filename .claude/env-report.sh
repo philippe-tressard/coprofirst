@@ -5,16 +5,75 @@
 # lancement, pas du contenu de la demande : une session ouverte ailleurs et
 # pilotée en chemins absolus écrit ses mémoires au mauvais endroit et n'exécute
 # pas ce pré-flight (constaté le 31/07/2026).
+#
+# Les répertoires du projet sont la liste ATTENDUS (poste Windows et poste Mac).
+# Chaque chemin porte sa banque de mémoire : `case` ci-dessous. Un répertoire
+# hors liste n'est pas une erreur en soi : il déclenche l'alerte.
+# Garde-fou : `bash .claude/env-report.sh --selftest` (#2746).
 set -uo pipefail
-ATTENDU="/c/Dev/5hostachy"
+
+ATTENDUS=(
+  "/c/Dev/5hostachy"               # Git Bash, poste Windows
+  "/volumes/data/dev/5hostachy"    # Mac (minuscules : comparaison insensible à la casse)
+)
+
+# Banque de mémoire du poste pour un répertoire donné. Le nom Windows est
+# constaté ; le nom Mac suit la convention de Claude Code (chemin à « - ») et
+# reste à confirmer par `ls ~/.claude/projects/` sur le Mac.
+memoire_pour() {
+  case "${1,,}" in
+    /c/dev/5hostachy)            echo "C--Dev-5hostachy" ;;
+    /volumes/data/dev/5hostachy) echo "-Volumes-Data-Dev-5hostachy" ;;
+    *)                           echo "" ;;
+  esac
+}
+
+# Vrai si le répertoire donné est l'un des répertoires attendus du projet.
+dans_le_projet() {
+  local a
+  for a in "${ATTENDUS[@]}"; do
+    [ "${1,,}" = "${a,,}" ] && return 0
+  done
+  return 1
+}
+
+if [ "${1:-}" = "--selftest" ]; then
+  echo_ok=0; echo_ko=0
+  verifier() { # verifier <attendu-vrai|faux> <répertoire>
+    local attendu="$1" r="$2" obtenu=faux
+    dans_le_projet "$r" && obtenu=vrai
+    if [ "$attendu" = "$obtenu" ]; then echo_ok=$((echo_ok+1)); else
+      echo_ko=$((echo_ko+1)); echo "KO : « $r » attendu $attendu, obtenu $obtenu" >&2; fi
+  }
+  verifier vrai  "/c/Dev/5hostachy"
+  verifier vrai  "/Volumes/Data/Dev/5hostachy"
+  verifier vrai  "/VOLUMES/data/dev/5HOSTACHY"
+  verifier faux  "/Volumes/Data/Dev/List-dons"
+  verifier faux  "/home/user/coprofirst"
+  verifier faux  "/c/Dev/5hostachy-test"
+  [ "$(memoire_pour /Volumes/Data/Dev/5hostachy)" = "-Volumes-Data-Dev-5hostachy" ] \
+    || { echo_ko=$((echo_ko+1)); echo "KO : banque Mac" >&2; }
+  [ "$(memoire_pour /c/Dev/5hostachy)" = "C--Dev-5hostachy" ] \
+    || { echo_ko=$((echo_ko+1)); echo "KO : banque Windows" >&2; }
+  echo "env-report --selftest : $echo_ok OK, $echo_ko KO"
+  [ "$echo_ko" -eq 0 ]
+  exit $?
+fi
+
 COURANT=$(pwd)
 echo "═══════════════ ENVIRONNEMENT DE TRAVAIL ═══════════════"
 echo "  Projet        : 5Hostachy (copropriété — prod HA sur 2 RPi)"
 echo "  Étiquette     : 5Hostachy — <sujet>"
 echo "  Répertoire    : $COURANT"
 echo "  Dépôt/branche : $(git config --get remote.origin.url 2>/dev/null) [$(git branch --show-current 2>/dev/null)]"
-[ "${CLAUDE_CODE_REMOTE:-}" = "true" ] \
-  || echo "  Mémoire       : ~/.claude/projects/C--Dev-5hostachy/memory/"
+if [ "${CLAUDE_CODE_REMOTE:-}" != "true" ]; then
+  MEMOIRE=$(memoire_pour "$COURANT")
+  if [ -n "$MEMOIRE" ]; then
+    echo "  Mémoire       : ~/.claude/projects/$MEMOIRE/memory/"
+  else
+    echo "  Mémoire       : 🔴 répertoire hors projet — la banque ne se devine pas"
+  fi
+fi
 if [ "${CLAUDE_CODE_REMOTE:-}" = "true" ]; then
   # Session CLOUD (claude.ai/code) — le répertoire attendu n'y a pas de sens.
   # Ce bloc est le contrôle de `.claude/cloud/setup.sh` : il relit à CHAQUE
@@ -36,10 +95,12 @@ if [ "${CLAUDE_CODE_REMOTE:-}" = "true" ]; then
     echo "  Garde-fou git : 🔴 ABSENT — RIEN ne refuse \`git reset --hard\`, \`clean -f\`,"
     echo "                  \`push --force\` : ces gestes restent INTERDITS sans l'accord de Philippe."
   fi
-elif [ "${COURANT,,}" != "${ATTENDU,,}" ]; then
-  echo "  ⚠️  RÉPERTOIRE INATTENDU (attendu $ATTENDU) — signale-le à l'utilisateur"
+elif ! dans_le_projet "$COURANT"; then
+  echo "  ⚠️  RÉPERTOIRE INATTENDU (attendus : ${ATTENDUS[*]}) — signale-le à l'utilisateur"
   echo "      AVANT d'agir : mémoires et étiquette partiront au mauvais endroit."
 fi
-echo "  → Reprends cette ligne en tête de ta 1ʳᵉ réponse ; si la demande porte"
-echo "    sur List-dons, dis-le et propose de relancer depuis C:\\Dev\\List-dons."
+if ! dans_le_projet "$COURANT"; then
+  echo "  → Si la demande porte sur List-dons, dis-le et propose de relancer depuis C:\\Dev\\List-dons."
+fi
+echo "  → Reprends cette ligne en tête de ta 1ʳᵉ réponse."
 echo "════════════════════════════════════════════════════════"
