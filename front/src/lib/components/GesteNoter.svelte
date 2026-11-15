@@ -14,6 +14,7 @@
 	import { createEventDispatcher } from 'svelte';
 	import { prestataires as prestApi, type AffaireANoter, type Notation } from '#lib/api/index.ts';
 	import { essayer } from '#lib/chargement.ts';
+	import { nombreOuNull } from '#lib/utils.ts';
 	import { tenter } from '#lib/erreurs.ts';
 	import { toast } from '#lib/components/Toast.svelte';
 	import type { Etat } from '#lib/notations.ts';
@@ -63,7 +64,7 @@
 				etat: choisi,
 				commentaire: commentaire.trim() || undefined,
 				contrat_id: contratId,
-				ticket_id: affaireId ? Number(affaireId) : undefined,
+				ticket_id: nombreOuNull(affaireId) ?? undefined,
 			});
 			ouvert = false;
 			dispatch('cree', n);
