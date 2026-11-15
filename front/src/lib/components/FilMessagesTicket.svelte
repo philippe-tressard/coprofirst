@@ -89,12 +89,11 @@
 	//  décide de rien.
 	const dispatch = createEventDispatcher<{ envoyer: unknown }>();
 
-	//  Le bouton dit ce que dit l'icône de la carte — une règle, `gesteReponse`.
+	//  Qui peut répondre, et ce que le bouton dit — une règle, `gesteReponse`.
 	$: reponse = gesteReponse(ticket);
 
 	/**  Le formulaire OUVERT se met sous les yeux, curseur dans le texte : on l'ouvre
-	 *   depuis l'icône de la carte, en haut, ou depuis la liste (`?repondre=1`), et
-	 *   il naît plus bas, hors de l'écran au téléphone. L'éditeur arrive en différé
+	 *   par son bouton, et il naît plus bas, hors de l'écran au téléphone. L'éditeur arrive en différé
 	 *   (`ChargementDiffere`, puis l'éditeur riche) : on l'attend, sans délai écrit. */
 	function auPremierPlan(noeud: HTMLElement) {
 		const viser = () => {

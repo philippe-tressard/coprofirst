@@ -9,7 +9,7 @@
  *  `scrollWidth > clientWidth` lu une fois, la même avec un pixel de tolérance
  *  (`squelette`), `scrollWidth <= clientWidth` dans une aide locale
  *  (`import-recherche`, `bilan-carnet`), et `scrollWidth <= 360` contre une
- *  largeur recopiée (`repondre-depuis-la-carte`). Toutes lisaient l'INSTANT —
+ *  largeur recopiée (`repondre-sous-le-fil`). Toutes lisaient l'INSTANT —
  *  ce que `lint:e2e-lectures` refuse ailleurs — et aucune ne pouvait élargir le
  *  texte : le débordement d'Admin › Lots, que seules les polices de macOS et
  *  d'iOS révélaient, leur échappait à toutes.
