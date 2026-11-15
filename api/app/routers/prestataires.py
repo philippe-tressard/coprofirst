@@ -57,6 +57,9 @@ from app.routers.prestataires_schemas import (
 )
 from app.utils.carnet_entretien import type_equipement_resolu
 from app.utils.notes_prestataires import NOTE_DE_ETAT, etat_de_note, note_moyenne
+from app.utils import horloge
+from app.utils.synthese_affaire.agregats import exercice_de
+from app.utils.synthese_affaire.rassemblement import mois_debut_exercice
 from app.utils.remplacement_contrat import verifier_remplacement
 
 router = APIRouter(prefix="/prestataires", tags=["prestataires"])
@@ -303,6 +306,10 @@ class NotationRead(BaseModel):
     note: int
     #  L'état LU de la note (`etat_de_note`) : l'écran ne lit jamais le chiffre.
     etat: str = ""
+    #  L'exercice comptable de l'avis — la règle de l'exercice (mois de début réglé) vit
+    #  ici, au serveur : l'écran regroupe les avis par exercice sans la recopier (R3d).
+    exercice_annee: Optional[int] = None
+    exercice_libelle: Optional[str] = None
     commentaire: Optional[str] = None
     contrat_id: Optional[int] = None
     auteur_id: Optional[int] = None  # compte supprimé (#1821)
@@ -311,6 +318,13 @@ class NotationRead(BaseModel):
 
     class Config:
         from_attributes = True
+
+
+def _poser_exercice(nr: "NotationRead", n: NotationPrestataire, mois_debut) -> None:
+    """L'exercice comptable du jour de l'avis — `exercice_de`, la règle des métriques."""
+    exercice = exercice_de(horloge.jour_civil(n.cree_le), mois_debut)
+    nr.exercice_annee = exercice.annee
+    nr.exercice_libelle = exercice.libelle
 
 
 @router.get("/notations", response_model=list[NotationRead])
@@ -324,11 +338,13 @@ def list_notations(
         q = q.where(NotationPrestataire.prestataire_id == prestataire_id)
     q = q.order_by(NotationPrestataire.cree_le.desc())
     notations = session.exec(q).all()
+    mois_debut = mois_debut_exercice(session)
     result = []
     for n in notations:
         auteur = ou_rien(session, Utilisateur, n.auteur_id)
         nr = NotationRead.model_validate(n)
         nr.etat = etat_de_note(n.note)
+        _poser_exercice(nr, n, mois_debut)
         nr.auteur_nom = nom_auteur(auteur)
         result.append(nr)
     return result
@@ -353,6 +369,7 @@ def create_notation(
     session.refresh(n)
     nr = NotationRead.model_validate(n)
     nr.etat = body.etat
+    _poser_exercice(nr, n, mois_debut_exercice(session))
     nr.auteur_nom = nom_affiche(user.prenom, user.nom)
     return nr
 

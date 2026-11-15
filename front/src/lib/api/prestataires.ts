@@ -175,6 +175,9 @@ export interface Notation {
 	note: number;
 	/** L'état lu : Mauvais, Neutre ou Excellent (`etat_de_note` côté serveur). */
 	etat: 'mauvais' | 'neutre' | 'excellent';
+	/** L'exercice comptable de l'avis, calculé au serveur (R3d). */
+	exercice_annee: number | null;
+	exercice_libelle: string | null;
 	commentaire: string | null;
 	contrat_id: number | null;
 	/** Vide quand le compte de l'auteur a été supprimé (#1821). */
