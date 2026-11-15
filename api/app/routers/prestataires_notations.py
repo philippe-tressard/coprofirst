@@ -25,7 +25,9 @@ from app.utils.recuperer import ou_404, ou_rien
 from app.utils.synthese_affaire.agregats import exercice_de
 from app.utils.synthese_affaire.rassemblement import mois_debut_exercice
 
-router = APIRouter(tags=["prestataires"])  # sans préfixe : `routers/prestataires` l'inclut sous le sien
+router = APIRouter(
+    tags=["prestataires"]
+)  # sans préfixe : `routers/prestataires` l'inclut sous le sien
 
 
 # ── Notations prestataires ─────────────────────────────────────────────────
