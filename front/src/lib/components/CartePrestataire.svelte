@@ -34,6 +34,7 @@
 	import type { ContratEntretien, Notation, Prestataire } from '#lib/api/index.ts';
 	import { safeDescription } from '#lib/sanitize.ts';
 	import CarteModifiable from './CarteModifiable.svelte';
+	import GesteNoter from './GesteNoter.svelte';
 	import NotationsPrestataire from './NotationsPrestataire.svelte';
 	import MetriquesPrestataire from './MetriquesPrestataire.svelte';
 	import { estModerateur } from '#lib/stores/auth.ts';
@@ -181,6 +182,12 @@
 		      que la MOYENNE, dans un badge : impossible de savoir qui avait
 		      noté quoi, et donc impossible de retirer une note posée par
 		      erreur — alors que l'endpoint de suppression existait. -->
+		<!--  On note un prestataire SANS contrat (une intervention ponctuelle) : le geste est
+		      sur la fiche, pas seulement sur un contrat (14/11/2026). Il est réservé au conseil
+		      syndical, comme l'endpoint (`require_cs_or_admin`). -->
+		{#if peutModifier && !archive}
+			<GesteNoter prestataireId={p.id} on:cree />
+		{/if}
 		<NotationsPrestataire {notations} peutSupprimer={peutModifier} on:supprimee />
 		<!--  📊 Les affaires qu'il a traitées, en chiffres (#1646) — le conseil seul,
 		      comme les avis. Chargées à l'ouverture de la fiche, pas avant. -->

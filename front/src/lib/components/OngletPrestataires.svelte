@@ -217,6 +217,10 @@
 						notations = notations.filter((n) => n.id !== e.detail);
 						relirePrestataires();
 					}}
+					on:cree={(e) => {
+						notations = [e.detail, ...notations];
+						relirePrestataires();
+					}}
 				/>
 			{/each}
 		{/each}

@@ -37,7 +37,7 @@
 	import { fmtNombre } from '#lib/utils.ts';
 	import { type FormulaireContratData } from '#lib/prestataires.ts';
 	import { classeDEquipement } from '#lib/stores/equipements.ts';
-	import type { ContratEntretien, Document, Prestataire } from '#lib/api/index.ts';
+	import type { ContratEntretien, Document, Notation, Prestataire } from '#lib/api/index.ts';
 	import { fmtDateShort } from '#lib/date.ts';
 	import { safeHtml } from '#lib/sanitize.ts';
 	import { SEPARATEUR } from '#lib/separateurs.ts';
@@ -45,10 +45,8 @@
 	import CarteModifiable from './CarteModifiable.svelte';
 	import ListeDocuments from './ListeDocuments.svelte';
 	import FormulaireContrat from './FormulaireContrat.svelte';
-	import GesteEnPlace from './GesteEnPlace.svelte';
 	import IconeIA from './IconeIA.svelte';
-	import FormulaireNotation from './FormulaireNotation.svelte';
-	import type { Etat } from '#lib/notations.ts';
+	import GesteNoter from './GesteNoter.svelte';
 
 	export let contrat: ContratEntretien;
 	export let prest: Prestataire | null | undefined = null;
@@ -85,15 +83,9 @@
 	 *   toutes. Une carte qui sait se déplier n'a pas besoin qu'on le lui dise. */
 	let notesOuvertes = false;
 
-	export let onNoter: (prestataireId: number, contratId: number) => void = () => {};
-	/**  La notation ouverte sur CE contrat — l'état vit dans la page, qui porte
-	 *   l'appel réseau ; la carte ne fait que le rendre au bon endroit. */
-	export let noteEnCours = false;
-	export let noteEtat: Etat | null = null;
-	export let noteCommentaire = '';
-	export let noteSaving = false;
-	export let onAnnulerNote: () => void = () => {};
-	export let onEnregistrerNote: () => void = () => {};
+	/**  Une note vient d'être posée sur le prestataire de ce contrat — la page l'ajoute à sa
+	 *   liste. Le geste (état, motifs, commentaire, appel réseau) vit dans `GesteNoter`. */
+	export let onNotee: (n: Notation) => void = () => {};
 
 	/**  🔴 Le geste ✨ — MANUEL, et il le reste (11/09/2026, demandé à l'écran :
 	 *   « comment on lance l'IA ? cela doit être manuel par une icône »).
@@ -320,44 +312,18 @@
 				onSupprimer={(docId) => onSupprimerDoc(contrat.id, docId)}
 			/>
 		</div>
-		{#if peutModifier}
+		{#if peutModifier && contrat.prestataire_id}
+			<!--  🔴 « Noter » ne vivait QUE dans `CarteVisite`, donc dans le seul onglet Visites :
+			      retirer cet onglet sans porter le geste ici aurait rendu la notation d'un
+			      prestataire IMPOSSIBLE à saisir (#603). Sans intervenant, il n'y a personne à
+			      noter : le bouton n'apparaît pas. Le geste, lui, est `GesteNoter` — le même que
+			      sur la fiche d'un prestataire sans contrat (14/11/2026). -->
 			<div class="gestes-notation">
-				<!--  🔴 « Noter » ne vivait QUE dans `CarteVisite`, donc dans le
-				      seul onglet Visites : retirer cet onglet sans porter le geste
-				      ici aurait rendu la notation d'un prestataire IMPOSSIBLE à
-				      saisir, alors que la fiche et le reporting continuaient d'en
-				      afficher la moyenne. Un affichage sans son geste de saisie ne
-				      se voit pas — rien ne lève, la note reste simplement à jamais
-				      celle d'hier (#603).
-				      Sans intervenant, il n'y a personne à noter : le bouton
-				      n'apparaît pas plutôt que d'ouvrir une modale sans cible. -->
-				{#if contrat.prestataire_id}
-					<button
-						class="btn btn-sm btn-outline contrat-noter"
-						aria-pressed={noteEnCours}
-						on:click|stopPropagation={() =>
-							noteEnCours ? onAnnulerNote() : onNoter(contrat.prestataire_id, contrat.id)}
-						>⭐ Noter</button
-					>
-				{/if}
-				<!--  🔴 Le geste s'ouvre DANS la carte (#889) : il était en fenêtre, pour
-				      trois états et un commentaire. La saisie vit dans
-				      `FormulaireNotation` (14/11/2026). -->
-				{#if noteEnCours}
-					<div role="presentation" on:click|stopPropagation on:keydown|stopPropagation>
-						<GesteEnPlace
-							enCours={noteSaving}
-							onAnnuler={onAnnulerNote}
-							onValider={onEnregistrerNote}
-						>
-							<FormulaireNotation
-								id="notation-{contrat.id}"
-								bind:etat={noteEtat}
-								bind:commentaire={noteCommentaire}
-							/>
-						</GesteEnPlace>
-					</div>
-				{/if}
+				<GesteNoter
+					prestataireId={contrat.prestataire_id}
+					contratId={contrat.id}
+					on:cree={(e) => onNotee(e.detail)}
+				/>
 			</div>
 		{/if}
 	</svelte:fragment>
@@ -369,9 +335,6 @@
 	    là-bas. C'est la régression de #356, et ce sont `lint:css-orphelin` et
 	    `lint:classes-nues` qui l'ont refusée — la relecture, elle, ne l'avait pas
 	    vue. */
-	.contrat-noter {
-		color: var(--color-warning-texte);
-	}
 	/*  `.contrat-detail-body` est partie avec le corps, dans `CarteModifiable`
 	    (`teinte`, #1539). */
 	.contrat-section {
