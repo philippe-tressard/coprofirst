@@ -224,6 +224,21 @@ export const TABLES = {
 		quoi: "le libellé et la pastille de l'état d'un bail",
 		lecteur: 'scripts/generateurs/acces_prestataires.py',
 	},
+	typesObjetBail: {
+		source: 'src/lib/bail.ts#TYPES_OBJET_BAIL',
+		quoi: "les types d'un objet remis au locataire (clé, télécommande…), dans l'ordre, avec libellé (#2756)",
+		lecteur: 'scripts/generateurs/acces_prestataires.py',
+	},
+	statutsObjetBail: {
+		source: 'src/lib/bail.ts#STATUTS_OBJET_BAIL',
+		quoi: "le libellé et la pastille de l'état d'un objet remis au locataire (#2756)",
+		lecteur: 'scripts/generateurs/acces_prestataires.py',
+	},
+	gravitesConstat: {
+		source: 'src/lib/constats.ts#GRAVITES_CONSTAT',
+		quoi: "la gravité d'un constat sur les lots, du plus grave au moins grave, avec libellé et pastille (#2756)",
+		lecteur: 'scripts/generateurs/acces_prestataires.py',
+	},
 	typesPrestataire: {
 		source: 'src/lib/prestataires.ts#TYPES_PRESTATAIRE',
 		quoi: "les types d'un prestataire",
@@ -294,6 +309,11 @@ export const TABLES = {
 	optionsTheme: {
 		source: 'src/lib/theme.ts#OPTIONS_THEME',
 		quoi: 'les choix du thème (automatique, clair, sombre)',
+		lecteur: 'scripts/generateurs/communaute_profil.py',
+	},
+	optionsSaisie: {
+		source: 'src/lib/saisie-affaire.ts#OPTIONS_SAISIE',
+		quoi: "les choix de la saisie d'une affaire (essentielle, complète), dans l'ordre du Profil, avec leur détail (#2755)",
 		lecteur: 'scripts/generateurs/communaute_profil.py',
 	},
 	cookieTheme: {

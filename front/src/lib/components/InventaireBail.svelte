@@ -40,13 +40,13 @@
   laisser les appels aurait dispersé quatre gestes sur deux fichiers, dont un de
   1 600 lignes — c'est le contraire de ce que l'extraction cherche.
 
-  ⚠️ Les trois tables de libellés (`typeLabel`, `statutObjetBadge`,
-  `statutObjetLabel`) partent AVEC le balisage qui les emploie : les laisser
-  derrière aurait produit un tableau nu, le défaut de `standards/02` §4 ter.
+  Les tables de libellés (types et états d'un objet remis) vivent dans
+  `#lib/bail.ts` depuis #2756 : les apps natives les lisent dans
+  `tables-clients.json`, qui ne publie pas ce qu'un composant déclare.
 
   ## 🔴 Ce fichier n'est PAS mesuré par `lint:css-orphelin` (#810)
 
-  Il porte `class="badge {statutObjetBadge[objet.statut] ?? …}"`. Devant une
+  Il portait `class="badge {statutObjetBadge[objet.statut] ?? …}"`. Devant une
   classe interpolée, Svelte ne peut pas résoudre ce qui sera rendu : il cesse de
   déclarer des sélecteurs inutilisés **pour tout le fichier**.
 
@@ -72,7 +72,12 @@
 	import CadreFormulaire from '#lib/components/CadreFormulaire.svelte';
 	import ChampsObjetRemis from '#lib/components/ChampsObjetRemis.svelte';
 	import PiedFormulaire from '#lib/components/PiedFormulaire.svelte';
-	import { parAttribut } from '#lib/table-statuts.ts';
+	import {
+		TYPES_OBJET_BAIL,
+		LIBELLE_TYPE_OBJET,
+		LIBELLE_STATUT_OBJET,
+		BADGE_STATUT_OBJET,
+	} from '#lib/bail.ts';
 
 	/** Le bail dont on tient l'inventaire. */
 	export let bailId: number;
@@ -82,24 +87,6 @@
 	export let modifiable = true;
 
 	const dispatch = createEventDispatcher<{ change: ObjetRemis[] }>();
-
-	//  Les quatre types — une liste de 4, donc des pastilles (`ux-patterns`, seuil
-	//  des listes courtes). `ChoixPastilles` la rend, plutôt qu'un `<select>` nu.
-	const TYPES = [
-		{ val: 'cle', label: '\u{1F511} Clé' },
-		{ val: 'telecommande', label: '\u{1F4E1} Télécommande' },
-		{ val: 'vigik', label: '\u{1F3F7}\u{FE0F} Vigik' },
-		{ val: 'autre', label: '\u{1F4E6} Autre' },
-	] as const;
-
-	const typeLabel: Record<string, string> = Object.fromEntries(TYPES.map((t) => [t.val, t.label]));
-
-	const { libelle: statutObjetLabel, badge: statutObjetBadge } = parAttribut({
-		en_possession: { libelle: 'En possession', badge: 'badge-green' },
-		rendu: { libelle: 'Rendu', badge: 'badge-blue' },
-		perdu: { libelle: 'Perdu', badge: 'badge-red' },
-		non_remis: { libelle: 'Non remis', badge: 'badge-gray' },
-	});
 
 	//  ── La saisie ────────────────────────────────────────────────────────────
 	//  `null` = fermée · `{id: null}` = création · `{id: n}` = correction. Un seul
@@ -231,7 +218,7 @@
 	<CadreFormulaire encadre={false} {titre} on:fermer={() => (saisie = null)}>
 		<form class:largeur-saisie={largeur} on:submit|preventDefault={enregistrer}>
 			<ChampsObjetRemis
-				types={TYPES}
+				types={TYPES_OBJET_BAIL}
 				bind:fType
 				bind:fLibelle
 				bind:fQuantite
@@ -300,13 +287,13 @@
 				<tbody>
 					{#each objets as objet (objet.id)}
 						<tr>
-							<td>{typeLabel[objet.type] ?? objet.type}</td>
+							<td>{LIBELLE_TYPE_OBJET[objet.type] ?? objet.type}</td>
 							<td>{objet.libelle}</td>
 							<td class="cellule-quantite">{fmtNombre(objet.quantite)}</td>
 							<td>{objet.reference ?? '—'}</td>
 							<td>
-								<Badge teinte={statutObjetBadge[objet.statut] ?? 'badge-gray'}>
-									{statutObjetLabel[objet.statut] ?? objet.statut}
+								<Badge teinte={BADGE_STATUT_OBJET[objet.statut] ?? 'badge-gray'}>
+									{LIBELLE_STATUT_OBJET[objet.statut] ?? objet.statut}
 								</Badge>
 							</td>
 							<td>{fmtDate(objet.remis_le)}</td>

@@ -1,6 +1,6 @@
 {
   "format": 1,
-  "version": "1.0.0",
+  "version": "1.1.0",
   "tables": {
     "attributsAdmis": {
       "source": "front/src/lib/sanitize.ts#ALLOWED_ATTR",
@@ -499,6 +499,27 @@
         }
       ]
     },
+    "gravitesConstat": {
+      "source": "front/src/lib/constats.ts#GRAVITES_CONSTAT",
+      "valeur": {
+        "bloquant": {
+          "libelle": "Bloquant",
+          "badge": "badge-red"
+        },
+        "inconnu": {
+          "libelle": "Inconnu",
+          "badge": "badge-gray"
+        },
+        "avertissement": {
+          "libelle": "À savoir",
+          "badge": "badge-orange"
+        },
+        "information": {
+          "libelle": "Information",
+          "badge": "badge-blue"
+        }
+      }
+    },
     "groupesSuivi": {
       "source": "front/src/lib/tickets.ts#GROUPES_SUIVI",
       "valeur": [
@@ -981,6 +1002,21 @@
           "action": "Visibilité réservée au conseil syndical",
           "etat": "Conseil syndical",
           "aide": "Seul le conseil syndical le voit. La notification du conseil à la création, elle, ne dépend pas de cette case."
+        }
+      ]
+    },
+    "optionsSaisie": {
+      "source": "front/src/lib/saisie-affaire.ts#OPTIONS_SAISIE",
+      "valeur": [
+        {
+          "val": "essentielle",
+          "label": "Essentielle",
+          "desc": "Les champs qu’il faut, rien de plus"
+        },
+        {
+          "val": "complete",
+          "label": "Complète",
+          "desc": "Toutes les sections, pour qualifier et suivre"
         }
       ]
     },
@@ -1766,6 +1802,27 @@
         }
       ]
     },
+    "statutsObjetBail": {
+      "source": "front/src/lib/bail.ts#STATUTS_OBJET_BAIL",
+      "valeur": {
+        "en_possession": {
+          "libelle": "En possession",
+          "badge": "badge-green"
+        },
+        "rendu": {
+          "libelle": "Rendu",
+          "badge": "badge-blue"
+        },
+        "perdu": {
+          "libelle": "Perdu",
+          "badge": "badge-red"
+        },
+        "non_remis": {
+          "libelle": "Non remis",
+          "badge": "badge-gray"
+        }
+      }
+    },
     "statutsTache": {
       "source": "front/src/lib/taches.ts#STATUTS_TACHE",
       "valeur": {
@@ -2019,6 +2076,27 @@
         {
           "val": "recherche",
           "label": "🔍 Recherche"
+        }
+      ]
+    },
+    "typesObjetBail": {
+      "source": "front/src/lib/bail.ts#TYPES_OBJET_BAIL",
+      "valeur": [
+        {
+          "val": "cle",
+          "label": "🔑 Clé"
+        },
+        {
+          "val": "telecommande",
+          "label": "📡 Télécommande"
+        },
+        {
+          "val": "vigik",
+          "label": "🏷️ Vigik"
+        },
+        {
+          "val": "autre",
+          "label": "📦 Autre"
         }
       ]
     },

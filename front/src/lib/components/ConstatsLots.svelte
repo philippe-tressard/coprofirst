@@ -4,8 +4,8 @@
   lots qu'il cite. Le modèle est un seul côté serveur (`utils/constats`), le rendu
   l'est ici.
 
-  Ordre : ce qui bloque ou ne se calcule pas d'abord, puis ce qu'il faut savoir.
-  Au-delà de douze lots cités, le compte suffit à agir.
+  Ordre : ce qui bloque ou ne se calcule pas d'abord, puis ce qu'il faut savoir
+  (`#lib/constats.ts`, table publiée aux apps, #2756). Au-delà de douze lots cités, le compte suffit à agir.
 
   ⚠️ À ne pas confondre avec `ListeConstats`, qui lit les lignes textuelles de
   `check-reliability.sh` (« [FAIL] … ») : autre source, autre forme.
@@ -13,27 +13,15 @@
 <script lang="ts">
 	import Badge from '#lib/components/Badge.svelte';
 	import type { ConstatPatrimoine } from '#lib/api/index.ts';
-	import { parAttribut } from '#lib/table-statuts.ts';
+	import { BADGE_GRAVITE, LIBELLE_GRAVITE, rangGravite } from '#lib/constats.ts';
 
 	export let constats: ConstatPatrimoine[] = [];
 	/** Ce qu'on dit quand il n'y en a aucun. */
 	export let videTexte = 'Aucun constat.';
 
-	const { libelle: GRAVITE, badge: TEINTE } = parAttribut({
-		bloquant: { libelle: 'Bloquant', badge: 'badge-red' },
-		inconnu: { libelle: 'Inconnu', badge: 'badge-gray' },
-		avertissement: { libelle: 'À savoir', badge: 'badge-orange' },
-		information: { libelle: 'Information', badge: 'badge-blue' },
-	});
-	const RANG: Record<string, number> = {
-		bloquant: 0,
-		inconnu: 1,
-		avertissement: 2,
-		information: 3,
-	};
 	const LOTS_MONTRES = 12;
 
-	$: ordonnes = [...constats].sort((a, b) => (RANG[a.gravite] ?? 9) - (RANG[b.gravite] ?? 9));
+	$: ordonnes = [...constats].sort((a, b) => rangGravite(a.gravite) - rangGravite(b.gravite));
 </script>
 
 {#if ordonnes.length === 0}
@@ -42,7 +30,7 @@
 	<ul class="constats">
 		{#each ordonnes as c (c.code + c.message)}
 			<li>
-				<Badge teinte={TEINTE[c.gravite]}>{GRAVITE[c.gravite] ?? c.gravite}</Badge>
+				<Badge teinte={BADGE_GRAVITE[c.gravite]}>{LIBELLE_GRAVITE[c.gravite] ?? c.gravite}</Badge>
 				<div>
 					<p class="constat-message">{c.message}</p>
 					{#if c.lots.length}
