@@ -238,9 +238,13 @@ def refus(ecarts: Ecarts, retraits: dict[str, tuple[str, str]], version_app: str
         annonce = _annonce(cible, retraits)
         if annonce is None:
             messages.append(f"{cible} : retiré sans avoir été annoncé (`retraits.RETRAITS`)")
-        elif _version(retraits[annonce][0]) >= _version(version_app):
+        #  La version se pose À LA MEP (#2631) : `front/package.json` est celle que la
+        #  production sert, et ce lot partira dans une version ULTÉRIEURE. L'annonce est
+        #  donc livrée si elle ne la dépasse pas ; au-delà, elle part dans ce train-ci.
+        elif _version(retraits[annonce][0]) > _version(version_app):
             messages.append(
                 f"{cible} : annoncé en {retraits[annonce][0]}, retiré dans la même version — "
+                f"l'annonce n'est pas encore livrée (production en {version_app}) ; "
                 "le retrait vient dans une version ultérieure"
             )
     messages += [

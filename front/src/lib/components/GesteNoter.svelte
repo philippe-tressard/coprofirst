@@ -4,9 +4,10 @@
   (une intervention, avec ou sans contrat). Il sert aussi à CORRIGER son propre avis
   (`notation` renseigné) : seul l'auteur le voit ouvert, le serveur le refuse sinon.
 
-  On note le couple prestataire / affaire : on choisit l'affaire, parmi toutes celles
-  de la copropriété. Si le prestataire n'y figure pas, il faut confirmer son ajout à
-  l'affaire — sans cette case, l'avis ne part pas.
+  On note le couple prestataire / affaire : on choisit l'affaire (`ChoixAffaireAvis`),
+  celles du prestataire d'abord, puis les autres, avec la recherche détaillée de la page
+  Affaires. Si le prestataire n'y figure pas, il faut confirmer son ajout à l'affaire —
+  sans cette case, l'avis ne part pas.
 
   Réservé au conseil syndical et à l'administration, comme le serveur.
 -->
@@ -18,6 +19,7 @@
 	import { tenter } from '#lib/erreurs.ts';
 	import { toast } from '#lib/components/Toast.svelte';
 	import type { Etat } from '#lib/notations.ts';
+	import ChoixAffaireAvis from './ChoixAffaireAvis.svelte';
 	import FormulaireNotation from './FormulaireNotation.svelte';
 	import GesteEnPlace from './GesteEnPlace.svelte';
 	import IconeAction from './IconeAction.svelte';
@@ -34,7 +36,7 @@
 
 	const cle = `${prestataireId}-${contratId ?? 'sans-contrat'}-${notation?.id ?? 'nouveau'}`;
 
-	let ouvert = notation !== null;
+	let ouvert = false;
 	let etat: Etat | null = notation?.etat ?? null;
 	let commentaire = notation?.commentaire ?? '';
 	let enCours = false;
@@ -126,15 +128,7 @@
 	{#if ouvert}
 		<div role="presentation" on:click|stopPropagation on:keydown|stopPropagation>
 			<GesteEnPlace {enCours} onAnnuler={() => (ouvert = false)} onValider={enregistrer}>
-				<label class="field" for="affaire-{cle}">
-					<span>Affaire concernée</span>
-					<select id="affaire-{cle}" bind:value={affaireId}>
-						<option value="">Aucune — un avis général sur le prestataire</option>
-						{#each affaires as a (a.id)}
-							<option value={String(a.id)}>{a.titre}</option>
-						{/each}
-					</select>
-				</label>
+				<ChoixAffaireAvis id="affaire-{cle}" {affaires} {prestataireNom} bind:affaireId />
 				{#if ajoutRequis}
 					<label class="confirmer-ajout">
 						<input type="checkbox" bind:checked={confirmeAjout} />
@@ -147,7 +141,7 @@
 					id="notation-{cle}"
 					bind:etat
 					bind:commentaire
-					libreInitial={commentaire}
+					initial={notation?.commentaire ?? ''}
 				/>
 			</GesteEnPlace>
 		</div>

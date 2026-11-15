@@ -29,23 +29,32 @@
 
   ⚠️ **L'auteur est affiché**, lui, et c'est ce qui rend la modération
   responsable : on voit qui a noté avant de retirer.
+
+  ## Le récapitulatif PAR INTERVENTION (maquette R3d, 15/11/2026)
+
+  Un exercice par bloc, le plus récent ouvert : « Exercice 2026 · 5 interventions ·
+  4 notées », et le compte des états. Dedans, une ligne par affaire du prestataire —
+  sa date, son titre, le badge de chaque avis porté sur ce couple, « non notée » sinon —,
+  puis les avis sans affaire. Un badge déplie l'avis : son auteur, son commentaire,
+  la correction (l'auteur) et le retrait (le conseil), SOUS la ligne et sur toute la
+  largeur. Le regroupement est servi par l'API (`GET /prestataires/{id}/interventions`) :
+  l'exercice d'une affaire et la règle « notée » ne sont pas recopiés ici.
 -->
 <script lang="ts">
 	import { fmtNombre } from '#lib/utils.ts';
 	import { createEventDispatcher } from 'svelte';
-	import { prestataires as prestApi, type Notation } from '#lib/api/index.ts';
+	import {
+		prestataires as prestApi,
+		type ExerciceInterventions,
+		type Notation,
+	} from '#lib/api/index.ts';
+	import { essayer } from '#lib/chargement.ts';
 	import { messageErreur } from '#lib/erreurs.ts';
 	import { toast } from '#lib/components/Toast.svelte';
 	import { confirmer } from '#lib/confirmation.ts';
 	import { fmtDate } from '#lib/date.ts';
 	import GesteNoter from './GesteNoter.svelte';
-	import {
-		ETATS,
-		LIBELLE_ETAT,
-		TEINTE_ETAT,
-		avisParExercice,
-		etatDeMoyenne,
-	} from '#lib/notations.ts';
+	import { ETATS, LIBELLE_ETAT, TEINTE_ETAT, etatDeMoyenne } from '#lib/notations.ts';
 	import { basculer as basculerUn } from '#lib/accordeon.ts';
 	import Badge from './Badge.svelte';
 	import { SEPARATEUR } from '#lib/separateurs.ts';
@@ -55,8 +64,8 @@
 	export let notations: Notation[] = [];
 	/** Vrai pour le conseil syndical et l'administration — ce que l'endpoint exige. */
 	export let peutSupprimer = false;
-	/**  `true` = le badge de moyenne (dans l'en-tête de la carte) · `false` = la
-	 *   liste détaillée (dans le corps déplié). Deux vues de la même donnée, donc
+	/**  `true` = le badge de moyenne (dans l'en-tête de la carte) · `false` = le
+	 *   récapitulatif (dans le corps déplié). Deux vues de la même donnée, donc
 	 *   un seul composant : les séparer aurait donné deux endroits où changer la
 	 *   façon d'écrire une note. */
 	export let resume = false;
@@ -66,21 +75,45 @@
 	export let nbAvis = 0;
 
 	const dispatch = createEventDispatcher<{ supprimee: number; modifiee: Notation }>();
-	/** Le prestataire de ces avis — pour corriger son propre avis (15/11/2026). */
+	/** Le prestataire de ces avis — son récapitulatif, et corriger son propre avis. */
 	export let prestataireId: number | undefined = undefined;
 	export let prestataireNom = '';
 
-	/** L'avis dont le commentaire est déplié — un seul à la fois, sinon la liste s'allonge. */
-	let ouvert: number | null = null;
-	function basculer(id: number) {
-		ouvert = ouvert === id ? null : id;
+	/** Le récapitulatif servi ; rechargé quand les avis changent (ajout, correction, retrait). */
+	let exercices: ExerciceInterventions[] = [];
+	let demande = 0;
+	async function charger(id: number) {
+		const numero = ++demande;
+		const [lus] = await essayer(prestApi.interventions(id), []);
+		if (numero === demande) exercices = lus;
+	}
+	$: if (!resume && prestataireId !== undefined) void (notations, charger(prestataireId));
+
+	/** Les lignes d'un exercice : ses interventions, puis ses avis sans affaire. */
+	function lignes(ex: ExerciceInterventions) {
+		const l = ex.interventions.map((i) => ({
+			cle: `t${i.ticket_id}`,
+			date: i.date as string | null,
+			ticketId: i.ticket_id as number | null,
+			titre: i.titre,
+			avis: i.avis,
+		}));
+		if (ex.avis_generaux.length)
+			l.push({
+				cle: 'generaux',
+				date: null,
+				ticketId: null,
+				titre: 'Avis sans affaire',
+				avis: ex.avis_generaux,
+			});
+		return l;
 	}
 
-	//  R3d : les avis rangés par exercice comptable, le plus récent d'abord, chacun avec
-	//  son compte d'états. L'exercice le plus récent s'ouvre seul ; les autres se déplient.
-	$: exercices = avisParExercice(notations);
 	let exerciceOuvert: number | null | undefined = undefined;
 	$: if (exerciceOuvert === undefined && exercices.length) exerciceOuvert = exercices[0].annee;
+
+	/** L'avis déplié — un seul à la fois, sinon la liste s'allonge. */
+	let ouvert: number | null = null;
 
 	async function supprimer(n: Notation) {
 		const ok = await confirmer({
@@ -96,6 +129,7 @@
 		try {
 			await prestApi.deleteNotation(n.id);
 			toast('success', 'Avis retiré.');
+			ouvert = null;
 			dispatch('supprimee', n.id);
 		} catch (e) {
 			toast('error', messageErreur(e, 'Suppression impossible'));
@@ -113,7 +147,7 @@
 			{LIBELLE_ETAT[etatDeMoyenne(moyenne)]}{SEPARATEUR.point}{fmtNombre(moyenne)}/5
 		</span>
 	{/if}
-{:else if notations.length}
+{:else if exercices.length}
 	<div class="not-liste">
 		<span class="detail-label">Avis du conseil syndical ({notations.length})</span>
 		{#each exercices as ex (ex.annee)}
@@ -127,61 +161,82 @@
 				>
 					<span class="chevron" aria-hidden="true">{exerciceOuvert === ex.annee ? '▾' : '▸'}</span>
 					<strong>Exercice {ex.libelle}</strong>
-					<span class="not-exercice-nombre">{ex.avis.length} avis</span>
+					<span class="not-exercice-nombre"
+						>{fmtNombre(ex.nb_interventions)}
+						{ex.nb_interventions > 1
+							? 'interventions'
+							: 'intervention'}{SEPARATEUR.point}{fmtNombre(ex.nb_notees)}
+						{ex.nb_notees > 1 ? 'notées' : 'notée'}</span
+					>
 					<span class="not-exercice-compte">
 						{#each ETATS as e (e)}
 							{#if ex.compte[e]}
-								<Badge teinte={TEINTE_ETAT[e]}>{ex.compte[e]} {LIBELLE_ETAT[e]}</Badge>
+								<Badge teinte={TEINTE_ETAT[e]}>{fmtNombre(ex.compte[e])} {LIBELLE_ETAT[e]}</Badge>
 							{/if}
 						{/each}
 					</span>
 				</button>
 				{#if exerciceOuvert === ex.annee}
-					{#each ex.avis as n (n.id)}
+					{#each lignes(ex) as l (l.cle)}
 						<div class="not-item">
 							<div class="not-entete">
-								{#if n.commentaire}
-									<button
-										type="button"
-										class="not-etat-bouton"
-										aria-expanded={ouvert === n.id}
-										aria-label="{LIBELLE_ETAT[n.etat]}, {ouvert === n.id
-											? 'masquer'
-											: 'afficher'} le commentaire"
-										on:click|stopPropagation={() => basculer(n.id)}
-										><Badge teinte={TEINTE_ETAT[n.etat]}>{LIBELLE_ETAT[n.etat]}</Badge></button
-									>
-								{:else}
-									<Badge teinte={TEINTE_ETAT[n.etat]}>{LIBELLE_ETAT[n.etat]}</Badge>
-								{/if}
-								<span class="not-auteur">{n.auteur_nom ?? '—'}</span>
-								{#if n.ticket_id}
-									<a href="/tickets/{n.ticket_id}">{n.ticket_titre ?? 'Affaire'}</a>
-								{/if}
-								<span class="not-date">{fmtDate(n.cree_le)}</span>
-								{#if n.peut_modifier && prestataireId !== undefined}
-									<GesteNoter
-										{prestataireId}
-										{prestataireNom}
-										contratId={n.contrat_id ?? undefined}
-										notation={n}
-										on:modifie={(e) => dispatch('modifiee', e.detail)}
-									/>
-								{/if}
-								{#if peutSupprimer}
-									<button
-										type="button"
-										class="btn-icon-danger"
-										title="Retirer cet avis"
-										aria-label="Retirer l’avis de {n.auteur_nom ?? 'ce membre'}"
-										on:click|stopPropagation={() => supprimer(n)}
-										><IconeAction icone="trash-2" /></button
-									>
-								{/if}
+								<span class="not-intervention">
+									{#if l.date}<span class="not-date">{fmtDate(l.date)}</span>{SEPARATEUR.point}{/if}
+									{#if l.ticketId !== null}
+										<a href="/tickets/{l.ticketId}">{l.titre}</a>
+									{:else}
+										<span class="not-generaux">{l.titre}</span>
+									{/if}
+								</span>
+								<span class="not-avis">
+									{#each l.avis as n (n.id)}
+										<button
+											type="button"
+											class="not-etat-bouton"
+											aria-expanded={ouvert === n.id}
+											aria-label="{LIBELLE_ETAT[n.etat]} — {ouvert === n.id
+												? 'masquer'
+												: 'afficher'} l’avis de {n.auteur_nom ?? 'un membre du CS'}"
+											on:click|stopPropagation={() => (ouvert = basculerUn(ouvert, n.id))}
+											><Badge teinte={TEINTE_ETAT[n.etat]}>{LIBELLE_ETAT[n.etat]}</Badge></button
+										>
+									{:else}
+										<span class="not-non-notee">non notée</span>
+									{/each}
+								</span>
 							</div>
-							{#if n.commentaire && ouvert === n.id}
-								<p class="not-commentaire">{n.commentaire}</p>
-							{/if}
+							{#each l.avis as n (n.id)}
+								{#if ouvert === n.id}
+									<div class="not-detail">
+										<div class="not-detail-entete">
+											<span class="not-auteur">{n.auteur_nom ?? '—'}</span>
+											<span class="not-date">{fmtDate(n.cree_le)}</span>
+											{#if peutSupprimer}
+												<button
+													type="button"
+													class="btn-icon-danger"
+													title="Retirer cet avis"
+													aria-label="Retirer l’avis de {n.auteur_nom ?? 'ce membre'}"
+													on:click|stopPropagation={() => supprimer(n)}
+													><IconeAction icone="trash-2" /></button
+												>
+											{/if}
+										</div>
+										{#if n.commentaire}
+											<p class="not-commentaire">{n.commentaire}</p>
+										{/if}
+										{#if n.peut_modifier && prestataireId !== undefined}
+											<GesteNoter
+												{prestataireId}
+												{prestataireNom}
+												contratId={n.contrat_id ?? undefined}
+												notation={n}
+												on:modifie={(e) => dispatch('modifiee', e.detail)}
+											/>
+										{/if}
+									</div>
+								{/if}
+							{/each}
 						</div>
 					{/each}
 				{/if}
@@ -232,7 +287,7 @@
 	}
 	.not-item {
 		border-top: 1px solid var(--color-border);
-		padding-top: 0.4rem;
+		padding: 0.4rem 0;
 	}
 	.not-entete {
 		display: flex;
@@ -241,24 +296,57 @@
 		flex-wrap: wrap;
 		font-size: var(--fs-md);
 	}
+	.not-intervention {
+		flex: 1 1 12rem;
+		min-width: 0;
+	}
+	.not-generaux {
+		font-style: italic;
+	}
+	.not-avis {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 0.3rem;
+	}
 	.not-etat-bouton {
 		border: 0;
 		background: none;
 		padding: 0;
 		cursor: pointer;
+		min-height: 32px;
 	}
-	.not-auteur {
-		font-weight: 600;
+	.not-non-notee {
+		color: var(--color-text-muted);
 	}
 	.not-date {
 		color: var(--color-text-muted);
 		font-size: var(--fs-sm);
-		/*  Pousse le bouton à droite sans le coller à la date sur un écran étroit,
-		    où la ligne se replie. */
+	}
+	/*  L'avis déplié : SOUS sa ligne, sur toute la largeur — la correction s'y ouvre
+	    sans se tasser entre la date et les boutons (15/11/2026). */
+	.not-detail {
+		margin-top: 0.4rem;
+		padding: 0.5rem 0.75rem;
+		border-radius: 0.5rem;
+		background: var(--color-bg);
+		display: flex;
+		flex-direction: column;
+		gap: 0.3rem;
+	}
+	.not-detail-entete {
+		display: flex;
+		align-items: center;
+		gap: 0.5rem;
+		flex-wrap: wrap;
+	}
+	.not-detail-entete .not-date {
 		margin-right: auto;
 	}
+	.not-auteur {
+		font-weight: 600;
+	}
 	.not-commentaire {
-		margin: 0.2rem 0 0;
+		margin: 0;
 		font-size: var(--fs-md);
 		color: var(--color-text-muted);
 		/*  Le commentaire vient d'un humain : les retours à la ligne comptent, et
