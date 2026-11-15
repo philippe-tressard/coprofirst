@@ -186,9 +186,16 @@
 		      sur la fiche, pas seulement sur un contrat (14/11/2026). Il est réservé au conseil
 		      syndical, comme l'endpoint (`require_cs_or_admin`). -->
 		{#if peutModifier && !archive}
-			<GesteNoter prestataireId={p.id} on:cree />
+			<GesteNoter prestataireId={p.id} prestataireNom={p.nom} on:cree />
 		{/if}
-		<NotationsPrestataire {notations} peutSupprimer={peutModifier} on:supprimee />
+		<NotationsPrestataire
+			{notations}
+			peutSupprimer={peutModifier}
+			prestataireId={p.id}
+			prestataireNom={p.nom}
+			on:supprimee
+			on:modifiee
+		/>
 		<!--  📊 Les affaires qu'il a traitées, en chiffres (#1646) — le conseil seul,
 		      comme les avis. Chargées à l'ouverture de la fiche, pas avant. -->
 		{#if $estModerateur}

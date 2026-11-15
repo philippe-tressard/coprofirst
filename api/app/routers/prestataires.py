@@ -8,15 +8,14 @@ prestataire ni d'un contrat, il parle d'un compteur. Coupé le 29/08/2026, la
 modularité (rang 1) refusant que ce fichier grossisse encore.
 """
 
-from datetime import date, datetime
+from datetime import date
 from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Request
 import json
 
-from typing import Literal
 
-from pydantic import BaseModel, model_validator
+from pydantic import BaseModel
 from sqlmodel import Session, select
 
 #  ⚠️ `get_current_user` n'est plus importé : il ne servait qu'à `list_devis`,
@@ -34,12 +33,12 @@ from app.models.core import (
     ContratEntretien,
     NotationPrestataire,
     Prestataire,
-    Ticket,
     Utilisateur,
 )
 
+
 from app.utils.equipements import AUTRE, exiger_equipement
-from app.utils.noms import nom_affiche, nom_auteur
+from app.utils.noms import nom_auteur
 from app.utils.recuperer import ou_rien
 from app.utils.assiste_ia import marquer
 from app.utils.recuperer import ou_404
@@ -57,11 +56,7 @@ from app.routers.prestataires_schemas import (
     PrestataireUpdate,
 )
 from app.utils.carnet_entretien import type_equipement_resolu
-from app.utils.notes_prestataires import NOTE_DE_ETAT, etat_de_note, note_moyenne
-from app.utils import horloge
-from app.utils.prestataires_affaire import prestataires_de
-from app.utils.synthese_affaire.agregats import exercice_de
-from app.utils.synthese_affaire.rassemblement import mois_debut_exercice
+from app.utils.notes_prestataires import etat_de_note, note_moyenne
 from app.utils.remplacement_contrat import verifier_remplacement
 
 router = APIRouter(prefix="/prestataires", tags=["prestataires"])
@@ -272,142 +267,16 @@ def update_contrat(
     return lire_contrat(session, c)
 
 
-# ── Notations prestataires ─────────────────────────────────────────────────
-
-
-class NotationCreate(BaseModel):
-    #  ⚠️ `devis_id` a disparu avec la prestation ponctuelle (#603). La COLONNE,
-    #  elle, reste en base : les notations deja posees sur un devis gardent leur
-    #  rattachement, et un retour arriere du code doit les retrouver. Le schema
-    #  ne l'expose simplement plus — on ne peut plus en creer, on n'efface rien.
-    prestataire_id: int
-    #  🔴 TROIS ÉTATS (14/11/2026) : c'est `etat` qu'écrit l'écran. `note` (1 à 5)
-    #  reste accepté pour les clients qui l'envoient encore ; l'un ou l'autre suffit.
-    etat: Optional[Literal["mauvais", "neutre", "excellent"]] = None
-    note: Optional[int] = None  # ancien format, 1-5
-    commentaire: Optional[str] = None
-    contrat_id: Optional[int] = None
-    #  L'affaire jugée : le couple prestataire / affaire (15/11/2026). Facultative.
-    ticket_id: Optional[int] = None
-
-    @model_validator(mode="after")
-    def valider_etat(self):
-        if self.etat is None:
-            if self.note is None:
-                raise ValueError("Indiquez l'état de l'intervention")
-            if not 1 <= self.note <= 5:
-                raise ValueError("La note doit être entre 1 et 5")
-            self.etat = etat_de_note(self.note)
-        #  Un mauvais avis se justifie : sans commentaire, l'historique ne dit pas pourquoi.
-        if self.etat == "mauvais" and not (self.commentaire or "").strip():
-            raise ValueError("Un avis « Mauvais » doit être justifié par un commentaire")
-        return self
-
-
-class NotationRead(BaseModel):
-    id: int
-    prestataire_id: int
-    note: int
-    #  L'état LU de la note (`etat_de_note`) : l'écran ne lit jamais le chiffre.
-    etat: str = ""
-    #  L'exercice comptable de l'avis — la règle de l'exercice (mois de début réglé) vit
-    #  ici, au serveur : l'écran regroupe les avis par exercice sans la recopier (R3d).
-    exercice_annee: Optional[int] = None
-    exercice_libelle: Optional[str] = None
-    ticket_id: Optional[int] = None
-    ticket_titre: Optional[str] = None
-    commentaire: Optional[str] = None
-    contrat_id: Optional[int] = None
-    auteur_id: Optional[int] = None  # compte supprimé (#1821)
-    auteur_nom: Optional[str] = None
-    cree_le: datetime
-
-    class Config:
-        from_attributes = True
-
-
-def _poser_exercice(nr: "NotationRead", n: NotationPrestataire, mois_debut) -> None:
-    """L'exercice comptable du jour de l'avis — `exercice_de`, la règle des métriques."""
-    exercice = exercice_de(horloge.jour_civil(n.cree_le), mois_debut)
-    nr.exercice_annee = exercice.annee
-    nr.exercice_libelle = exercice.libelle
-
-
-def _exiger_affaire_du_prestataire(session: Session, ticket_id: int, prestataire_id: int) -> None:
-    """On note un prestataire sur une affaire où il est intervenant désigné — sinon 400."""
-    ticket = ou_404(session, Ticket, ticket_id, "Affaire")
-    if prestataire_id not in prestataires_de(session, ticket):
-        raise HTTPException(400, "Ce prestataire n'est pas intervenant sur cette affaire")
-
-
-def _poser_affaire(session: Session, nr: "NotationRead", n: NotationPrestataire) -> None:
-    """Le titre de l'affaire jugée, lu à la lecture : il suit une correction du titre."""
-    if n.ticket_id is not None:
-        ticket = ou_rien(session, Ticket, n.ticket_id)
-        nr.ticket_titre = ticket.titre if ticket else None
-
-
-@router.get("/notations", response_model=list[NotationRead])
-def list_notations(
-    prestataire_id: Optional[int] = None,
-    session: Session = Depends(get_session),
-    _: Utilisateur = Depends(require_cs_or_admin),
-):
-    q = select(NotationPrestataire)
-    if prestataire_id is not None:
-        q = q.where(NotationPrestataire.prestataire_id == prestataire_id)
-    q = q.order_by(NotationPrestataire.cree_le.desc())
-    notations = session.exec(q).all()
-    mois_debut = mois_debut_exercice(session)
-    result = []
-    for n in notations:
-        auteur = ou_rien(session, Utilisateur, n.auteur_id)
-        nr = NotationRead.model_validate(n)
-        nr.etat = etat_de_note(n.note)
-        _poser_exercice(nr, n, mois_debut)
-        _poser_affaire(session, nr, n)
-        nr.auteur_nom = nom_auteur(auteur)
-        result.append(nr)
-    return result
-
-
-@router.post("/notations", response_model=NotationRead, status_code=201)
-def create_notation(
-    body: NotationCreate,
-    session: Session = Depends(get_session),
-    user: Utilisateur = Depends(require_cs_or_admin),
-):
-    ou_404(session, Prestataire, body.prestataire_id, "Prestataire")
-    if body.ticket_id is not None:
-        _exiger_affaire_du_prestataire(session, body.ticket_id, body.prestataire_id)
-    n = NotationPrestataire(
-        prestataire_id=body.prestataire_id,
-        note=NOTE_DE_ETAT[body.etat],
-        commentaire=body.commentaire,
-        contrat_id=body.contrat_id,
-        ticket_id=body.ticket_id,
-        auteur_id=user.id,
-    )
-    session.add(n)
-    session.commit()
-    session.refresh(n)
-    nr = NotationRead.model_validate(n)
-    nr.etat = body.etat
-    _poser_exercice(nr, n, mois_debut_exercice(session))
-    _poser_affaire(session, nr, n)
-    nr.auteur_nom = nom_affiche(user.prenom, user.nom)
-    return nr
-
-
-@router.delete("/notations/{n_id}", status_code=204)
-def delete_notation(
-    n_id: int,
-    session: Session = Depends(get_session),
-    _: Utilisateur = Depends(require_cs_or_admin),
-):
-    n = ou_404(session, NotationPrestataire, n_id, "Notation")
-    session.delete(n)
-    session.commit()
+# ── Notations : dans `prestataires_notations` (module à part, modularité, 15/11/2026) ──
+from app.routers.prestataires_notations import (  # noqa: E402,F401  (ré-exporté : les tests et `main` le lisent ici)
+    NotationCreate,
+    NotationRead,
+    NotationUpdate,
+    create_notation,
+    delete_notation,
+    list_notations,
+    update_notation,
+)
 
 
 @router.get("/synthese/{p_id}")

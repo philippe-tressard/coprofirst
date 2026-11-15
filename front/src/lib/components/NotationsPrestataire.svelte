@@ -38,6 +38,8 @@
 	import { toast } from '#lib/components/Toast.svelte';
 	import { confirmer } from '#lib/confirmation.ts';
 	import { fmtDate } from '#lib/date.ts';
+	import { currentUser } from '#lib/stores/auth.ts';
+	import GesteNoter from './GesteNoter.svelte';
 	import {
 		ETATS,
 		LIBELLE_ETAT,
@@ -64,7 +66,10 @@
 	export let moyenne: number | null = null;
 	export let nbAvis = 0;
 
-	const dispatch = createEventDispatcher<{ supprimee: number }>();
+	const dispatch = createEventDispatcher<{ supprimee: number; modifiee: Notation }>();
+	/** Le prestataire de ces avis — pour corriger son propre avis (15/11/2026). */
+	export let prestataireId: number | undefined = undefined;
+	export let prestataireNom = '';
 
 	/** L'avis dont le commentaire est déplié — un seul à la fois, sinon la liste s'allonge. */
 	let ouvert: number | null = null;
@@ -155,6 +160,24 @@
 									<a href="/tickets/{n.ticket_id}">{n.ticket_titre ?? 'Affaire'}</a>
 								{/if}
 								<span class="not-date">{fmtDate(n.cree_le)}</span>
+								{#if n.auteur_id !== null && n.auteur_id === $currentUser?.id && prestataireId !== undefined}
+									<GesteNoter
+										{prestataireId}
+										{prestataireNom}
+										contratId={n.contrat_id ?? undefined}
+										notation={n}
+										on:modifie={(e) => dispatch('modifiee', e.detail)}
+									/>
+								{/if}
+								{#if n.auteur_id !== null && n.auteur_id === $currentUser?.id && prestataireId !== undefined}
+									<GesteNoter
+										{prestataireId}
+										{prestataireNom}
+										contratId={n.contrat_id ?? undefined}
+										notation={n}
+										on:modifie={(e) => dispatch('modifiee', e.detail)}
+									/>
+								{/if}
 								{#if peutSupprimer}
 									<button
 										type="button"
