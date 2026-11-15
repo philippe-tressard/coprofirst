@@ -25,7 +25,11 @@ function canaux(couleur: string): number[] {
 	if (couleur.startsWith('#'))
 		return [1, 3, 5].map((i) => parseInt(couleur.slice(i, i + 2), 16)).concat(1);
 	const n = (couleur.match(/[\d.]+/g) ?? []).map(Number);
-	if (couleur.startsWith('color(srgb')) return n.slice(0, 3).map((v) => v * 255).concat(n[3] ?? 1);
+	if (couleur.startsWith('color(srgb'))
+		return n
+			.slice(0, 3)
+			.map((v) => v * 255)
+			.concat(n[3] ?? 1);
 	return n.length === 3 ? n.concat(1) : n;
 }
 

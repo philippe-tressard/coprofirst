@@ -95,7 +95,10 @@ export function lireTables(tables, lire) {
 		if (manquantes.length)
 			throw new Refus(`${nom} : dérivée de tables non publiées (${manquantes.join(', ')})`);
 		const lues = Object.fromEntries(derivation.depuis.map((d) => [d, sortie[d].valeur]));
-		sortie[nom] = { source: `dérivée de ${derivation.depuis.join(', ')}`, valeur: derivation.calcul(lues) };
+		sortie[nom] = {
+			source: `dérivée de ${derivation.depuis.join(', ')}`,
+			valeur: derivation.calcul(lues),
+		};
 	}
 	return Object.fromEntries(noms.map((nom) => [nom, sortie[nom]]));
 }
@@ -395,11 +398,18 @@ function selftest() {
 	cas('version : rien → inchangée', versionSuivante('1.4.2', ancien, ancien, {}) === '1.4.2');
 	cas(
 		'dérivée sans dérivation refusée',
-		leve(() => lireTables({ t: { source: 'src/lib/m.ts#T' }, inventee: { derivee: true } }, () => src)),
+		leve(() =>
+			lireTables({ t: { source: 'src/lib/m.ts#T' }, inventee: { derivee: true } }, () => src),
+		),
 	);
 	cas(
 		'dérivée dont une table manque refusée',
-		leve(() => lireTables({ t: { source: 'src/lib/m.ts#T' }, palettesResolues: { derivee: true } }, () => src)),
+		leve(() =>
+			lireTables(
+				{ t: { source: 'src/lib/m.ts#T' }, palettesResolues: { derivee: true } },
+				() => src,
+			),
+		),
 	);
 	selftestDerivees(cas, leve);
 	console.log(echecs ? `== ${echecs} ÉCHEC(S) ==` : '== TOUS OK ==');

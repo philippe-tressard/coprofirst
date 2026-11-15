@@ -66,9 +66,11 @@ function melanger(a, p, b) {
 
 /** La valeur de `nom` dans `jetons`, réduite à ses canaux. PURE. */
 export function resoudre(nom, jetons, pile = []) {
-	if (pile.includes(nom)) throw new Refus(`palettesResolues : ${[...pile, nom].join(' → ')} se cite lui-même`);
+	if (pile.includes(nom))
+		throw new Refus(`palettesResolues : ${[...pile, nom].join(' → ')} se cite lui-même`);
 	const brut = jetons[nom];
-	if (brut === undefined) throw new Refus(`palettesResolues : ${nom} n'est déclaré nulle part (${pile.join(' → ')})`);
+	if (brut === undefined)
+		throw new Refus(`palettesResolues : ${nom} n'est déclaré nulle part (${pile.join(' → ')})`);
 	return reduire(String(brut), jetons, [...pile, nom]);
 }
 
@@ -81,10 +83,13 @@ function reduire(valeur, jetons, pile) {
 		return resoudre(seule[1], jetons, pile); // lève en le nommant
 	}
 	const mix = v.match(MIX);
-	if (mix) return melanger(reduire(mix[1], jetons, pile), +mix[2] / 100, reduire(mix[3], jetons, pile));
+	if (mix)
+		return melanger(reduire(mix[1], jetons, pile), +mix[2] / 100, reduire(mix[3], jetons, pile));
 	const c = canaux(v);
 	if (c) return c;
-	throw new Refus(`palettesResolues : ${pile.at(-1)} vaut « ${v} », que la résolution ne réduit pas`);
+	throw new Refus(
+		`palettesResolues : ${pile.at(-1)} vaut « ${v} », que la résolution ne réduit pas`,
+	);
 }
 
 /**
@@ -92,8 +97,16 @@ function reduire(valeur, jetons, pile) {
  * → `{ <code>: { clair: { --jeton: couleur }, sombre: { … } } }`, codes dans l'ordre
  *   (« seine » d'abord, puis ceux de `palettesClaires`), jetons triés.
  */
-export function palettesResolues({ jetonsCharte, jetonsCharteSombre, palettesClaires, palettesSombres }) {
-	const codes = [PALETTE_PAR_DEFAUT, ...Object.keys(palettesClaires).filter((c) => c !== PALETTE_PAR_DEFAUT)];
+export function palettesResolues({
+	jetonsCharte,
+	jetonsCharteSombre,
+	palettesClaires,
+	palettesSombres,
+}) {
+	const codes = [
+		PALETTE_PAR_DEFAUT,
+		...Object.keys(palettesClaires).filter((c) => c !== PALETTE_PAR_DEFAUT),
+	];
 	const publier = (jetons) =>
 		Object.fromEntries(
 			Object.keys(jetons)
@@ -108,7 +121,12 @@ export function palettesResolues({ jetonsCharte, jetonsCharteSombre, palettesCla
 				code,
 				{
 					clair: publier({ ...jetonsCharte, ...claire }),
-					sombre: publier({ ...jetonsCharte, ...claire, ...jetonsCharteSombre, ...(palettesSombres[code] ?? {}) }),
+					sombre: publier({
+						...jetonsCharte,
+						...claire,
+						...jetonsCharteSombre,
+						...(palettesSombres[code] ?? {}),
+					}),
 				},
 			];
 		}),
@@ -127,14 +145,44 @@ export const DERIVATIONS = {
 export function selftestDerivees(ok, leve) {
 	ok('hexadécimal court déplié', ecrire(canaux('#AbC')) === '#aabbcc');
 	ok('rgba gardé', ecrire(canaux('rgba(0, 0, 0, 0.45)')) === 'rgba(0, 0, 0, 0.45)');
-	ok('var() suivi en chaîne', ecrire(resoudre('--color-a', { '--color-a': 'var(--b)', '--b': 'var(--c)', '--c': '#102030' })) === '#102030');
-	ok('var() et son repli', ecrire(resoudre('--color-a', { '--color-a': 'var(--absent, #fff)' })) === '#ffffff');
-	ok('color-mix calculé', ecrire(resoudre('--color-a', { '--color-a': 'color-mix(in srgb, var(--b) 85%, black)', '--b': '#ffffff' })) === '#d9d9d9');
-	ok('jeton absent refusé', leve(() => resoudre('--color-a', { '--color-a': 'var(--absent)' })));
-	ok('cycle refusé', leve(() => resoudre('--color-a', { '--color-a': 'var(--b)', '--b': 'var(--color-a)' })));
-	ok('forme inconnue refusée', leve(() => resoudre('--color-a', { '--color-a': 'hsl(10 20% 30%)' })));
+	ok(
+		'var() suivi en chaîne',
+		ecrire(
+			resoudre('--color-a', { '--color-a': 'var(--b)', '--b': 'var(--c)', '--c': '#102030' }),
+		) === '#102030',
+	);
+	ok(
+		'var() et son repli',
+		ecrire(resoudre('--color-a', { '--color-a': 'var(--absent, #fff)' })) === '#ffffff',
+	);
+	ok(
+		'color-mix calculé',
+		ecrire(
+			resoudre('--color-a', {
+				'--color-a': 'color-mix(in srgb, var(--b) 85%, black)',
+				'--b': '#ffffff',
+			}),
+		) === '#d9d9d9',
+	);
+	ok(
+		'jeton absent refusé',
+		leve(() => resoudre('--color-a', { '--color-a': 'var(--absent)' })),
+	);
+	ok(
+		'cycle refusé',
+		leve(() => resoudre('--color-a', { '--color-a': 'var(--b)', '--b': 'var(--color-a)' })),
+	);
+	ok(
+		'forme inconnue refusée',
+		leve(() => resoudre('--color-a', { '--color-a': 'hsl(10 20% 30%)' })),
+	);
 	const p = palettesResolues({
-		jetonsCharte: { '--color-fond': '#ffffff', '--color-primaire': 'var(--teinte)', '--teinte': '#000080', '--autre': '#123456' },
+		jetonsCharte: {
+			'--color-fond': '#ffffff',
+			'--color-primaire': 'var(--teinte)',
+			'--teinte': '#000080',
+			'--autre': '#123456',
+		},
 		jetonsCharteSombre: { '--color-fond': '#000000' },
 		palettesClaires: { roi: { '--teinte': '#002060' } },
 		palettesSombres: { roi: { '--teinte': '#4060c0' } },
