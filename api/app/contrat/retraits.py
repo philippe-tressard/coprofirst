@@ -20,4 +20,10 @@ qui l'annonce, et une annonce dont la cible servie n'est pas dépréciée.
 from __future__ import annotations
 
 #: cible → (version de l'application qui l'annonce, pourquoi)
-RETRAITS: dict[str, tuple[str, str]] = {}
+RETRAITS: dict[str, tuple[str, str]] = {
+    "GET /prestataires/{p_id}/affaires": (
+        "3.100.0",
+        "remplacée par GET /prestataires/affaires-a-noter, qui propose toutes les affaires "
+        "(noter une affaire où le prestataire n'intervient pas encore)",
+    ),
+}

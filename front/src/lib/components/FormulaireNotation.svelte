@@ -25,10 +25,12 @@
 	export let commentaire = '';
 	/** Identifiant préfixant les champs, pour que deux saisies ne se confondent pas. */
 	export let id = 'notation';
+	/** Le texte libre d'un avis qu'on corrige (15/11/2026) : repris tel quel. */
+	export let libreInitial = '';
 
 	let forts: string[] = [];
 	let faibles: string[] = [];
-	let libre = '';
+	let libre = libreInitial;
 
 	$: genere = phraseGeneree(forts, faibles);
 	$: commentaire = commentaireComplet(genere, libre);
@@ -155,14 +157,12 @@
 	}
 	.genere {
 		margin: 0;
-		font-size: var(--fs-md);
 		line-height: 1.5;
 	}
 	.libre {
 		display: flex;
 		flex-direction: column;
 		gap: 0.3rem;
-		font-size: var(--fs-md);
 	}
 	.libre textarea {
 		resize: vertical;

@@ -18,11 +18,13 @@ import type { Equipement } from '#lib/equipements.ts';
 
 /**  Les affaires closes d'un prestataire (#1646) — `routers/prestataires_metriques`.
  *   L'ensemble, puis chaque exercice comptable, le plus récent d'abord. */
-/** Une affaire où le prestataire est intervenant — `AffaireANoter` (`prestataires_metriques.py`). */
-export interface AffaireANoter {
+/** Une affaire qu'on peut juger — `AffaireAvis` (`prestataires_notations.py`). */
+export interface AffaireAvis {
 	id: number;
 	titre: string;
 	statut: string;
+	intervient: boolean;
+	intervenants: string;
 }
 
 /** Une affaire close d'un exercice — `AffaireExercice` (`routers/prestataires_metriques.py`). */
@@ -188,6 +190,8 @@ export interface Notation {
 	/** L'affaire jugée — le couple prestataire / affaire ; `null` pour un avis général. */
 	ticket_id: number | null;
 	ticket_titre: string | null;
+	/** Servi : l'utilisateur est l'auteur de cet avis, il peut le corriger. */
+	peut_modifier: boolean;
 	commentaire: string | null;
 	contrat_id: number | null;
 	/** Vide quand le compte de l'auteur a été supprimé (#1821). */
@@ -266,11 +270,21 @@ export const prestataires = {
 		commentaire?: string;
 		contrat_id?: number;
 		ticket_id?: number;
+		confirmer_ajout?: boolean;
 	}) => api.post<Notation>('/prestataires/notations', data),
-	/**  Les affaires où il est intervenant désigné — le choix proposé quand on note le
-	 *   couple prestataire / affaire (conseil syndical seul). */
-	affaires: (prestataireId: number) =>
-		api.get<AffaireANoter[]>(`/prestataires/${prestataireId}/affaires`),
+	/** Seul l'auteur corrige son avis (`PATCH`, 15/11/2026). */
+	updateNotation: (
+		id: number,
+		data: {
+			etat?: 'mauvais' | 'neutre' | 'excellent';
+			commentaire?: string | null;
+			ticket_id?: number | null;
+			confirmer_ajout?: boolean;
+		},
+	) => api.patch<Notation>(`/prestataires/notations/${id}`, data),
+	/** Toutes les affaires, à noter avec ce prestataire — `intervient` dit s'il y figure déjà. */
+	affairesAnoter: (prestataireId: number) =>
+		api.get<AffaireAvis[]>(`/prestataires/affaires-a-noter?prestataire_id=${prestataireId}`),
 	//  ✅ Appelée par `NotationsPrestataire.svelte` depuis le 06/09/2026 (#807).
 	//  Elle a porté la déclaration « sans appelant » quelques heures : l'endpoint
 	//  existait, réservé au CS, et aucun écran ne l'appelait — l'écran ne montrait

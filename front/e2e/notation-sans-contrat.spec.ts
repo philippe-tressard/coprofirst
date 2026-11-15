@@ -39,8 +39,23 @@ async function ouvrirLaFiche(page: Page) {
 	await simulerApi(page, (api) => {
 		if (api === '/api/prestataires') return [OTIS];
 		if (api === '/api/prestataires/contrats') return []; //  aucun contrat
-		if (api === '/api/prestataires/1/affaires')
-			return [{ id: 42, titre: 'Barillet de la porte du parking', statut: 'resolu' }];
+		if (api === '/api/prestataires/affaires-a-noter')
+			return [
+				{
+					id: 42,
+					titre: 'Barillet de la porte du parking',
+					statut: 'resolu',
+					intervient: true,
+					intervenants: 'Ascenseurs Témoin',
+				},
+				{
+					id: 43,
+					titre: 'Fuite sur le chauffe-eau',
+					statut: 'ouvert',
+					intervient: false,
+					intervenants: '',
+				},
+			];
 	});
 	//  La création : une route plus récente, essayée avant celle du simulateur.
 	await page.route('**/api/prestataires/notations', (route) => {
@@ -113,4 +128,23 @@ test('on note le couple prestataire / affaire : l’affaire choisie part avec l�
 
 	await expect.poll(() => envoyes.length).toBe(1);
 	expect(envoyes[0]).toMatchObject({ prestataire_id: 1, etat: 'neutre', ticket_id: 42 });
+});
+
+test('une affaire où le prestataire n’intervient pas exige la confirmation de son ajout', async ({
+	page,
+}) => {
+	const { carte, envoyes } = await ouvrirLaFiche(page);
+
+	await carte.getByRole('button', { name: '⭐ Noter' }).click();
+	await carte.getByLabel('Affaire concernée').selectOption({ label: 'Fuite sur le chauffe-eau' });
+	await carte.getByRole('button', { name: 'Neutre', exact: true }).click();
+	await carte.getByRole('button', { name: 'Enregistrer' }).click();
+	//  Pas de confirmation : rien n'est envoyé.
+	await expect(page.locator('.toast-error')).toContainText("Confirmez l'ajout");
+	expect(envoyes).toEqual([]);
+
+	await carte.getByLabel(/Ajouter Ascenseurs Témoin comme intervenant/).check();
+	await carte.getByRole('button', { name: 'Enregistrer' }).click();
+	await expect.poll(() => envoyes.length).toBe(1);
+	expect(envoyes[0]).toMatchObject({ ticket_id: 43, confirmer_ajout: true });
 });

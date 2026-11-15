@@ -79,13 +79,15 @@ class AffaireANoter(BaseModel):
     statut: str
 
 
-@router.get("/{p_id}/affaires", response_model=list[AffaireANoter])
+@router.get("/{p_id}/affaires", response_model=list[AffaireANoter], deprecated=True)
 def lire_affaires_du_prestataire(
     p_id: int,
     session: Session = Depends(get_session),
     _: Utilisateur = Depends(require_cs_or_admin),
 ):
-    """Les affaires où ce prestataire est intervenant désigné, la plus récente d'abord —
+    """ANNONCÉE AU RETRAIT (v3.100.0) : remplacée par `GET /prestataires/affaires-a-noter`.
+
+    Les affaires où ce prestataire est intervenant désigné, la plus récente d'abord —
     le choix proposé quand le conseil syndical note le couple prestataire / affaire."""
     ou_404(session, Prestataire, p_id, "Prestataire")
     return [
