@@ -1635,6 +1635,14 @@ Quand un sélecteur multiple a un défaut ou une sélection résumable, il porte
 Inauguré par le sondage ; l'utilisateur a demandé de l'étendre au **standard** —
 donc à `PerimetrePicker` et au sélecteur de destinataires, partout.
 
+### 9 quater bis. Un badge qui se déplie le dit
+
+Un badge est lu comme une **étiquette** : s'il est le bouton qui déplie un détail, il
+porte le chevron `.chevron` **dans** le badge (▸ fermé, ▾ ouvert), la main au survol
+et l'appui à 97 %. Sans lui, les gestes repliés derrière — corriger, retirer — sont
+introuvables (#2745, l'avis d'un prestataire). Le motif vit dans
+`NotationsPrestataire.svelte` (`.not-etat-bouton`) ; 🔒 `e2e/recap-avis-exercice.spec.ts`.
+
 ### 9 sexies. L'ORDRE des champs est imposé — il ne se discute pas par écran
 
 | # | Section | Qui l'écrit |
