@@ -114,3 +114,16 @@ def test_les_affaires_proposees_sont_celles_du_prestataire(session):
     ids = [x.id for x in lire_affaires_du_prestataire(p_id=p.id, session=session, _=cs)]
     assert a.id in ids
     assert b.id not in ids
+
+
+def test_le_droit_de_modifier_est_servi_a_l_auteur_seul(session):
+    cs, autre = _compte(session, role=CS), _compte(session, role=CS)
+    p = _prestataire(session)
+    affaire = _creer(session, cs, categorie="panne", prestataire_id=p.id)
+    _noter(session, cs, p, affaire)
+    assert [
+        n.peut_modifier for n in list_notations(prestataire_id=p.id, session=session, _=cs)
+    ] == [True]
+    assert [
+        n.peut_modifier for n in list_notations(prestataire_id=p.id, session=session, _=autre)
+    ] == [False]

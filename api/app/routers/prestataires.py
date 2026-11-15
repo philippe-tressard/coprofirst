@@ -333,5 +333,5 @@ def get_prestataire_synthese(
     }
 
 
-# Les avis : même routeur, module à part (modularité). Chemins complets dans `prestataires_notations`.
+# Les avis : même routeur et même préfixe, module à part (modularité, `prestataires_notations`).
 router.include_router(_notations_router)

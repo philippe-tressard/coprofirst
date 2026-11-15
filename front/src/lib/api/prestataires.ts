@@ -190,6 +190,8 @@ export interface Notation {
 	/** L'affaire jugée — le couple prestataire / affaire ; `null` pour un avis général. */
 	ticket_id: number | null;
 	ticket_titre: string | null;
+	/** Servi : l'utilisateur est l'auteur de cet avis, il peut le corriger. */
+	peut_modifier: boolean;
 	commentaire: string | null;
 	contrat_id: number | null;
 	/** Vide quand le compte de l'auteur a été supprimé (#1821). */

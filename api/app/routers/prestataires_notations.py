@@ -25,7 +25,7 @@ from app.utils.recuperer import ou_404, ou_rien
 from app.utils.synthese_affaire.agregats import exercice_de
 from app.utils.synthese_affaire.rassemblement import mois_debut_exercice
 
-router = APIRouter(tags=["prestataires"])  # chemins complets : inclus par `routers/prestataires`
+router = APIRouter(tags=["prestataires"])  # sans préfixe : `routers/prestataires` l'inclut sous le sien
 
 
 # ── Notations prestataires ─────────────────────────────────────────────────
@@ -75,6 +75,8 @@ class NotationRead(BaseModel):
     exercice_libelle: Optional[str] = None
     ticket_id: Optional[int] = None
     ticket_titre: Optional[str] = None
+    #  Le droit SERVI : l'écran ne recompose pas « c'est mon avis » (15/11/2026).
+    peut_modifier: bool = False
     commentaire: Optional[str] = None
     contrat_id: Optional[int] = None
     auteur_id: Optional[int] = None  # compte supprimé (#1821)
@@ -131,7 +133,7 @@ def _poser_affaire(session: Session, nr: "NotationRead", n: NotationPrestataire)
         nr.ticket_titre = ticket.titre if ticket else None
 
 
-@router.get("/prestataires/notations", response_model=list[NotationRead])
+@router.get("/notations", response_model=list[NotationRead])
 def list_notations(
     prestataire_id: Optional[int] = None,
     session: Session = Depends(get_session),
@@ -151,11 +153,12 @@ def list_notations(
         _poser_exercice(nr, n, mois_debut)
         _poser_affaire(session, nr, n)
         nr.auteur_nom = nom_auteur(auteur)
+        nr.peut_modifier = n.auteur_id is not None and n.auteur_id == _.id
         result.append(nr)
     return result
 
 
-@router.post("/prestataires/notations", response_model=NotationRead, status_code=201)
+@router.post("/notations", response_model=NotationRead, status_code=201)
 def create_notation(
     body: NotationCreate,
     session: Session = Depends(get_session),
@@ -190,7 +193,7 @@ class NotationUpdate(BaseModel):
     confirmer_ajout: bool = False
 
 
-@router.patch("/prestataires/notations/{n_id}", response_model=NotationRead)
+@router.patch("/notations/{n_id}", response_model=NotationRead)
 def update_notation(
     n_id: int,
     body: NotationUpdate,
@@ -223,10 +226,11 @@ def update_notation(
     nr.auteur_nom = nom_auteur(ou_rien(session, Utilisateur, n.auteur_id))
     _poser_exercice(nr, n, mois_debut_exercice(session))
     _poser_affaire(session, nr, n)
+    nr.peut_modifier = True  # l'auteur, qui vient d'écrire ou de corriger
     return nr
 
 
-@router.delete("/prestataires/notations/{n_id}", status_code=204)
+@router.delete("/notations/{n_id}", status_code=204)
 def delete_notation(
     n_id: int,
     session: Session = Depends(get_session),
@@ -247,7 +251,7 @@ class AffaireAvis(BaseModel):
     intervenants: str
 
 
-@router.get("/prestataires/affaires-a-noter", response_model=list[AffaireAvis])
+@router.get("/affaires-a-noter", response_model=list[AffaireAvis])
 def lire_affaires_a_noter(
     prestataire_id: int,
     session: Session = Depends(get_session),

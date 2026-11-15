@@ -38,7 +38,6 @@
 	import { toast } from '#lib/components/Toast.svelte';
 	import { confirmer } from '#lib/confirmation.ts';
 	import { fmtDate } from '#lib/date.ts';
-	import { currentUser } from '#lib/stores/auth.ts';
 	import GesteNoter from './GesteNoter.svelte';
 	import {
 		ETATS,
@@ -160,16 +159,7 @@
 									<a href="/tickets/{n.ticket_id}">{n.ticket_titre ?? 'Affaire'}</a>
 								{/if}
 								<span class="not-date">{fmtDate(n.cree_le)}</span>
-								{#if n.auteur_id !== null && n.auteur_id === $currentUser?.id && prestataireId !== undefined}
-									<GesteNoter
-										{prestataireId}
-										{prestataireNom}
-										contratId={n.contrat_id ?? undefined}
-										notation={n}
-										on:modifie={(e) => dispatch('modifiee', e.detail)}
-									/>
-								{/if}
-								{#if n.auteur_id !== null && n.auteur_id === $currentUser?.id && prestataireId !== undefined}
+								{#if n.peut_modifier && prestataireId !== undefined}
 									<GesteNoter
 										{prestataireId}
 										{prestataireNom}
