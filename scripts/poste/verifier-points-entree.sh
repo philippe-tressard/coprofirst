@@ -12,6 +12,8 @@
 #  CE QU'IL NE FAIT PAS : écrire quoi que ce soit sur un nœud. Poser un crontab
 #  reste un geste explicite, un nœud à la fois.
 #
+#  Sur le POSTE, le lien du Bureau qui lance la copie hors site (#2708).
+#
 #  Usage : bash scripts/poste/verifier-points-entree.sh [ptressard@IP …]
 #          bash scripts/poste/verifier-points-entree.sh --selftest
 # =============================================================================
@@ -32,7 +34,16 @@ NOEUDS_DEFAUT="ptressard@192.168.1.222 ptressard@192.168.1.223"
 # shellcheck source=../lib/lib-points-entree.sh
 . "$(dirname "$0")/../lib/lib-points-entree.sh"
 
-if [ "${1:-}" = "--selftest" ]; then points_entree_selftest; exit $?; fi
+#  Le lien du Bureau qui lance la copie hors site (#2708) : un point d'entrée du
+#  POSTE, que rien ne vérifiait — `lib-lien-bureau.sh`.
+# shellcheck source=../lib/lib-lien-bureau.sh
+. "$(dirname "$0")/../lib/lib-lien-bureau.sh"
+
+if [ "${1:-}" = "--selftest" ]; then
+  points_entree_selftest; r=$?
+  lien_bureau_selftest || r=1
+  exit "$r"
+fi
 
 # ── Exécution ────────────────────────────────────────────────────────────────
 
@@ -76,6 +87,11 @@ for noeud in ${*:-$NOEUDS_DEFAUT}; do
   printf "  %-26s %s\n" "  → service activé" "${etat:-INCONNU} ($v)"
   note "$v" "$noeud service activé"
 done
+
+echo "═══ poste ═══"
+lien=$(lien_bureau_releve "$RACINE_DEPOT")
+printf "  %-26s %s — %s\n" "lien du Bureau" "${lien%%|*}" "${lien#*|}"
+note "${lien%%|*}" "poste lien du Bureau"
 
 bilan=$(printf '%s' "$verdicts" | agreger_points_entree)
 case "${bilan%%|*}" in

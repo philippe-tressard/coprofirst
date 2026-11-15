@@ -216,6 +216,9 @@ cloudflared` tel quel dans une réponse, un ticket ou un journal : masquer d'abo
   sous Windows). Elle exécute donc le script de ce clone, jamais celui d'un worktree :
   après une MEP qui change un nom lu par elle, le geste qui la met à jour est
   `git -C /Volumes/Data/Dev/5hostachy fetch origin && git -C /Volumes/Data/Dev/5hostachy merge --ff-only origin/dev`.
+  Le point 17 du pré-check vérifie que ce lien vise le lanceur du clone principal, et
+  qu'il existe (`lib-lien-bureau.sh`, #2708) : un worktree retiré ou un lanceur déplacé
+  rend l'écart ; un lien absent, INCONNU.
   Un clone resté en arrière ne lit que l'ancien préfixe : il recopie une archive
   vieillissante, puis n'en trouve plus — la santé le dit (« périmée » au-delà de
   7 j + 6 h, `sante_taches`).
