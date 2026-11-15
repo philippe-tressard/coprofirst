@@ -247,7 +247,7 @@ AUTOUR d'un verdict faux est un contrôle qu'on finit par ne plus lire.
 | 12 | **Chaque conteneur sert l'image bâtie sur SON commit** (api, front, bridge, Caddy) — deux faits par service, jamais une date : les images contiennent-elles le dernier commit de son répertoire, et le conteneur tourne-t-il sur le manifeste de l'image étiquetée ? Le détail donne la commande de recréation ; pourquoi pas l'ID d'image : `lib-images-servies.sh` (#1675) | OK · FAIL · INCONNU |
 | 13 | Canal d'alerte non muet | OK · FAIL |
 | 14 | Hygiène disque sur les **2** nœuds | OK · FAIL |
-| 17 | **Points d'entrée conformes au dépôt** (crons, unité systemd) | OK · FAIL · INCONNU |
+| 17 | **Points d'entrée conformes au dépôt** (crons, unité systemd ; sur le poste, le lien du Bureau vers le lanceur de la copie hors site, #2708) | OK · FAIL · INCONNU |
 | 18 | **Images du standby bâties sur son code** — le point 10 compare deux HEAD, pas ce qu'un failover démarre (#511) | OK · FAIL · INCONNU |
 | 19 | **Liens des courriels servis par la production** | OK · ÉCART · FAIL · INCONNU |
 | 20 | **Ordre du menu servi** (`pages_order`) — un fantôme rend ÉCART, une répétition FAIL (#1114) | OK · ÉCART · FAIL · INCONNU |
