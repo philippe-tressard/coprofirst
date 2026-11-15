@@ -453,6 +453,12 @@ routeur vit à côté de lui. `schemas_communs.py` n'importe RIEN du projet (cyc
   par `GET /config`). Retirer une route ou un champ : `deprecated` + une entrée dans
   `app/contrat/retraits.RETRAITS` (version V), puis le retrait dans une version ultérieure.
   L'`operationId` vient du chemin (`contrat.identifiant_operation`). 🔒 `test_contrat_api.py`.
+- **Ni tant qu'une version publiée d'une app s'en sert** (#2744) : `app/contrat/circulation.py`
+  déclare les versions en circulation (`EN_CIRCULATION`), leur contrat est figé dans
+  `app/contrat/circulation/<app>-<version>.json` (la référence à leur plancher), et chaque
+  PR est jugée contre eux par `inventaire.comparer`. Une dérogation se déclare datée, avec
+  son échéance (`DEROGATIONS`). Une version publiée de plus : une entrée et son contrat figé.
+  🔒 `test_contrat_versions_en_circulation.py`.
 - **Tables du site que l'app iOS lit** (#2634) : `front/tables-clients.json`, GÉNÉRÉE par
   `node front/scripts/tables-clients.mjs --ecrire` depuis `tables-clients.registre.mjs`
   (constantes LITTÉRALES de `#lib`, lues dans l'arbre syntaxique), jointe à la release. Une
