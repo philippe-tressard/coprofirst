@@ -460,6 +460,12 @@ routeur vit à côté de lui. `schemas_communs.py` n'importe RIEN du projet (cyc
   le code qui la sert la LIT (`aRole($u, ...ROLES_DU_DROIT.cs)`) ; jetons de la charte et
   palettes se publient par leur règle CSS (`<feuille>.css@<sélecteur>`). Retirer ou changer de
   forme s'annonce dans `RETRAITS`. 🔒 `npm run lint:tables-clients`.
+- **Constantes de l'API que les apps compilent** (une note, un défaut, une longueur minimale,
+  #2686) : `api/app/contrat/constantes-clients.json`, GÉNÉRÉE par `python
+  scripts/ci/exporter_openapi.py --ecrire-constantes` depuis le registre `CONSTANTES` de
+  `app/contrat/constantes_clients.py` (une constante NOMMÉE de son module, lue, jamais
+  recopiée), jointe à la release. Un retrait s'annonce dans `RETRAITS_CONSTANTES`.
+  🔒 `test_constantes_clients.py`.
 - **Une règle d'affichage que le site ET l'app montrent se calcule dans l'API** (#2501,
   `standards/09` §8) : dans `app/utils/` (ou un prédicat d'`auth/`), servie en champ que le
   front LIT. Chacune se déclare dans `front/scripts/check-regles-partagees.regles.mjs` ; celles
