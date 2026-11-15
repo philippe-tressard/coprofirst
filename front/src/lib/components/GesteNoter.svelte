@@ -20,6 +20,7 @@
 	import type { Etat } from '#lib/notations.ts';
 	import FormulaireNotation from './FormulaireNotation.svelte';
 	import GesteEnPlace from './GesteEnPlace.svelte';
+	import IconeAction from './IconeAction.svelte';
 
 	/** Le prestataire noté, et son nom — pour la confirmation de l'ajout à une affaire. */
 	export let prestataireId: number;
@@ -114,9 +115,12 @@
 	{:else}
 		<button
 			type="button"
-			class="btn btn-sm btn-outline"
+			class="btn-icon-edit"
+			aria-label="Modifier cet avis"
+			title="Modifier cet avis"
 			aria-pressed={ouvert}
-			on:click|stopPropagation={() => (ouvert ? (ouvert = false) : ouvrir())}>✏️ Modifier</button
+			on:click|stopPropagation={() => (ouvert ? (ouvert = false) : ouvrir())}
+			><IconeAction icone="pencil" /></button
 		>
 	{/if}
 	{#if ouvert}

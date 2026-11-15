@@ -64,7 +64,6 @@ from app.routers import (
     prestataires,
     prestataires_archivage,
     prestataires_metriques,
-    prestataires_notations,
     compteurs,
     sondages,
     idees,
@@ -396,7 +395,6 @@ app.include_router(compteurs.router)
 app.include_router(prestataires_archivage.router)
 #  Les métriques des affaires d'un prestataire (#1646), même préfixe.
 app.include_router(prestataires_metriques.router)
-app.include_router(prestataires_notations.router)
 #  Les routeurs sans particularité de montage (aucun chemin commun) : un `include_router` chacun.
 _SANS_PARTICULARITE = (sondages, idees, avis, annonces, annonces_hall, courriels_affaires)
 for _routeur in (*_SANS_PARTICULARITE, manuel, noms, auth_suppression, uploads, faq, bailleur):

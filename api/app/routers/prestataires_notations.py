@@ -25,7 +25,7 @@ from app.utils.recuperer import ou_404, ou_rien
 from app.utils.synthese_affaire.agregats import exercice_de
 from app.utils.synthese_affaire.rassemblement import mois_debut_exercice
 
-router = APIRouter(prefix="/prestataires", tags=["prestataires"])
+router = APIRouter(tags=["prestataires"])  # chemins complets : inclus par `routers/prestataires`
 
 
 # ── Notations prestataires ─────────────────────────────────────────────────
@@ -131,7 +131,7 @@ def _poser_affaire(session: Session, nr: "NotationRead", n: NotationPrestataire)
         nr.ticket_titre = ticket.titre if ticket else None
 
 
-@router.get("/notations", response_model=list[NotationRead])
+@router.get("/prestataires/notations", response_model=list[NotationRead])
 def list_notations(
     prestataire_id: Optional[int] = None,
     session: Session = Depends(get_session),
@@ -155,7 +155,7 @@ def list_notations(
     return result
 
 
-@router.post("/notations", response_model=NotationRead, status_code=201)
+@router.post("/prestataires/notations", response_model=NotationRead, status_code=201)
 def create_notation(
     body: NotationCreate,
     session: Session = Depends(get_session),
@@ -190,7 +190,7 @@ class NotationUpdate(BaseModel):
     confirmer_ajout: bool = False
 
 
-@router.patch("/notations/{n_id}", response_model=NotationRead)
+@router.patch("/prestataires/notations/{n_id}", response_model=NotationRead)
 def update_notation(
     n_id: int,
     body: NotationUpdate,
@@ -226,7 +226,7 @@ def update_notation(
     return nr
 
 
-@router.delete("/notations/{n_id}", status_code=204)
+@router.delete("/prestataires/notations/{n_id}", status_code=204)
 def delete_notation(
     n_id: int,
     session: Session = Depends(get_session),
@@ -247,7 +247,7 @@ class AffaireAvis(BaseModel):
     intervenants: str
 
 
-@router.get("/affaires-a-noter", response_model=list[AffaireAvis])
+@router.get("/prestataires/affaires-a-noter", response_model=list[AffaireAvis])
 def lire_affaires_a_noter(
     prestataire_id: int,
     session: Session = Depends(get_session),

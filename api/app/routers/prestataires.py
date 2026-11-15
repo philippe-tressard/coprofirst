@@ -268,6 +268,7 @@ def update_contrat(
 
 
 # ── Notations : dans `prestataires_notations` (module à part, modularité, 15/11/2026) ──
+from app.routers.prestataires_notations import router as _notations_router  # noqa: E402
 from app.routers.prestataires_notations import (  # noqa: E402,F401  (ré-exporté : les tests et `main` le lisent ici)
     NotationCreate,
     NotationRead,
@@ -330,3 +331,7 @@ def get_prestataire_synthese(
             if c.prochaine_visite
         ],
     }
+
+
+# Les avis : même routeur, module à part (modularité). Chemins complets dans `prestataires_notations`.
+router.include_router(_notations_router)
