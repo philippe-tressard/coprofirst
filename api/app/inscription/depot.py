@@ -60,6 +60,8 @@ class EtatLocal(BaseModel):
     inscrite_le: Optional[str] = None
     dernier_renouvellement_le: Optional[str] = None
     dernier_rapport_le: Optional[str] = None  #: le dernier rapport nocturne accepté (R3)
+    #: la version que le dernier bail ACCEPTÉ a portée au registre — relue au démarrage (#2750)
+    version_annoncee: Optional[str] = None
     derniere_erreur: Optional[str] = None
     #: vrai quand le fichier existait mais ne se lisait pas
     illisible: bool = False
