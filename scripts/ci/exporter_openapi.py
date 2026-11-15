@@ -8,6 +8,9 @@
         régénère `api/app/contrat/reference.json` et en calcule la version
         (`app/contrat/__init__.py`) ; refuse, sans rien écrire, un retrait non
         annoncé ou une entrée requise neuve.
+    python scripts/ci/exporter_openapi.py --ecrire-constantes
+        régénère `api/app/contrat/constantes-clients.json`, les constantes de l'API
+        que les apps génèrent (`app/contrat/constantes_clients.py`, #2686).
 
 Le schéma se génère DANS le processus : importer l'application ne se connecte à
 rien (le moteur SQLAlchemy est paresseux, le démarrage — `lifespan` — ne tourne
@@ -100,10 +103,20 @@ def main() -> int:
     parser.add_argument("--api", type=Path, default=_RACINE / "api")
     parser.add_argument("--sortie", type=Path)
     parser.add_argument("--ecrire-reference", action="store_true")
+    parser.add_argument("--ecrire-constantes", action="store_true")
     args = parser.parse_args()
     app = _application(args.api)
     if args.ecrire_reference:
         return ecrire_reference(app.openapi())
+    if args.ecrire_constantes:
+        #  Les constantes publiées aux apps (#2686) : leurs modules lisent les réglages,
+        #  posés ici comme pour le schéma.
+        from app.contrat.constantes_clients import juger
+
+        echecs = juger(ecrire=True)
+        for m in echecs:
+            print(f"✗ {m}", file=sys.stderr)
+        return 1 if echecs else 0
     from app.contrat import contrat_publie
 
     texte = json.dumps(contrat_publie(app.openapi()), ensure_ascii=False, indent=1) + "\n"

@@ -95,9 +95,9 @@ precheck_points_infra() {
   #      C18 les compare entre eux, ce qui laisse passer la dérive commune.
   PE=$(bash "$RACINE_DEPOT/scripts/poste/verifier-points-entree.sh" 2>&1)
   case "$?" in
-    0) V17=OK;      D17="cron et systemd conformes sur les 2 nœuds" ;;
+    0) V17=OK;      D17="cron et systemd conformes sur les 2 nœuds, lien du Bureau au lanceur hors site" ;;
     2) V17=INCONNU; D17="au moins un point non lisible (sudo refusé ? hôte injoignable ?)" ;;
-    *) V17=FAIL;    D17=$(printf '%s' "$PE" | grep -m1 -E '^\s+(cron|hostachy)' | sed 's/^ *//') ;;
+    *) V17=FAIL;    D17=$(printf '%s' "$PE" | grep -m1 -E '^\s+(cron|hostachy|lien du Bureau)' | sed 's/^ *//') ;;
   esac
   rapporter 17 "$V17" "Points d'entrée conformes au dépôt" "$D17"
 

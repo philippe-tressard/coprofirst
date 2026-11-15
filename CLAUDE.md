@@ -132,9 +132,12 @@ Chaque notion a **une** porte ; le détail, les pièges et les exceptions sont d
 - **PDF** : `app/utils/pdf_theme.py`, rendu hors du process par `app/utils/pdf_rendu.py`
   (enfant `spawn`, jamais `fork`).
 - **Tâches planifiées** : `app/utils/taches.TACHES_PERMANENTES`, enregistrées par copropriété.
-- **Contrat de l'API** (`api/app/contrat/reference.json`) et tables publiées pour l'app iOS
-  (`front/tables-clients.json`) : générés, jamais édités ; un retrait s'annonce dans
-  `RETRAITS`. Une règle d'affichage que le site et l'app montrent se calcule dans l'API.
+- **Contrat de l'API** (`api/app/contrat/reference.json`), tables publiées pour les apps
+  (`front/tables-clients.json`) et constantes de l'API publiées pour elles
+  (`api/app/contrat/constantes-clients.json`) : générés, jamais édités ; un retrait s'annonce dans
+  `RETRAITS` — et jamais tant qu'une version publiée d'une app s'en sert : son contrat est
+  figé dans `app/contrat/circulation/` (🔒 `test_contrat_versions_en_circulation.py`, #2744).
+  Une règle d'affichage que le site et l'app montrent se calcule dans l'API.
 
 ### Migrations Alembic
 - **Deux chaînes, deux bases** : `alembic/` migre la base d'une copropriété ;

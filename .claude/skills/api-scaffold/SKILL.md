@@ -453,13 +453,25 @@ routeur vit à côté de lui. `schemas_communs.py` n'importe RIEN du projet (cyc
   par `GET /config`). Retirer une route ou un champ : `deprecated` + une entrée dans
   `app/contrat/retraits.RETRAITS` (version V), puis le retrait dans une version ultérieure.
   L'`operationId` vient du chemin (`contrat.identifiant_operation`). 🔒 `test_contrat_api.py`.
+- **Ni tant qu'une version publiée d'une app s'en sert** (#2744) : `app/contrat/circulation.py`
+  déclare les versions en circulation (`EN_CIRCULATION`), leur contrat est figé dans
+  `app/contrat/circulation/<app>-<version>.json` (la référence à leur plancher), et chaque
+  PR est jugée contre eux par `inventaire.comparer`. Une dérogation se déclare datée, avec
+  son échéance (`DEROGATIONS`). Une version publiée de plus : une entrée et son contrat figé.
+  🔒 `test_contrat_versions_en_circulation.py`.
 - **Tables du site que l'app iOS lit** (#2634) : `front/tables-clients.json`, GÉNÉRÉE par
   `node front/scripts/tables-clients.mjs --ecrire` depuis `tables-clients.registre.mjs`
   (constantes LITTÉRALES de `#lib`, lues dans l'arbre syntaxique), jointe à la release. Une
   table que l'app lit vit dans `#lib` en constante NOMMÉE (`parAttribut(ATTRIBUTS_ROLE)`), et
   le code qui la sert la LIT (`aRole($u, ...ROLES_DU_DROIT.cs)`) ; jetons de la charte et
-  palettes se publient par leur règle CSS (`<feuille>.css@<sélecteur>`). Retirer ou changer de
+  palettes se publient par leur règle CSS (`<feuille>.css@<sélecteur>`) ; une table CALCULÉE depuis d'autres (`derivee: true`, `palettesResolues`, #2754) vit dans `tables-clients.derivees.mjs`, jugée contre le rendu du site par `e2e/palettes-resolues.spec.ts`. Retirer ou changer de
   forme s'annonce dans `RETRAITS`. 🔒 `npm run lint:tables-clients`.
+- **Constantes de l'API que les apps compilent** (une note, un défaut, une longueur minimale,
+  #2686) : `api/app/contrat/constantes-clients.json`, GÉNÉRÉE par `python
+  scripts/ci/exporter_openapi.py --ecrire-constantes` depuis le registre `CONSTANTES` de
+  `app/contrat/constantes_clients.py` (une constante NOMMÉE de son module, lue, jamais
+  recopiée), jointe à la release. Un retrait s'annonce dans `RETRAITS_CONSTANTES`.
+  🔒 `test_constantes_clients.py`.
 - **Une règle d'affichage que le site ET l'app montrent se calcule dans l'API** (#2501,
   `standards/09` §8) : dans `app/utils/` (ou un prédicat d'`auth/`), servie en champ que le
   front LIT. Chacune se déclare dans `front/scripts/check-regles-partagees.regles.mjs` ; celles

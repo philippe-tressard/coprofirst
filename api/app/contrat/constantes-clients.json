@@ -1,0 +1,50 @@
+{
+  "format": 1,
+  "version": "1.0.0",
+  "constantes": {
+    "defautsPreferences": {
+      "source": "api/app/utils/preferences_mail.py#DEFAUTS",
+      "quoi": "la valeur d'une préférence de notification jamais réglée, par clé (#2755)",
+      "valeur": {
+        "mon_batiment_mail": true,
+        "autres_batiments_mail": false,
+        "mon_batiment_app": true,
+        "autres_batiments_app": true
+      }
+    },
+    "longueurMinMotDePasse": {
+      "source": "api/app/utils/mots_de_passe.py#LONGUEUR_MIN_MOT_DE_PASSE",
+      "quoi": "le nombre de caractères qu'un mot de passe doit atteindre (#2755)",
+      "valeur": 8
+    },
+    "noteMax": {
+      "source": "api/app/utils/avis.py#NOTE_MAX",
+      "quoi": "la note la plus haute d'un avis",
+      "valeur": 5
+    },
+    "noteMin": {
+      "source": "api/app/utils/avis.py#NOTE_MIN",
+      "quoi": "la note la plus basse d'un avis",
+      "valeur": 1
+    },
+    "notePubliable": {
+      "source": "api/app/utils/avis.py#NOTE_PUBLIABLE",
+      "quoi": "à partir de cette note, l'auteur dit s'il accepte que l'avis paraisse",
+      "valeur": 4
+    },
+    "noteRemarque": {
+      "source": "api/app/utils/avis.py#NOTE_REMARQUE",
+      "quoi": "sous cette note, l'avis dit ce qui a manqué",
+      "valeur": 3
+    },
+    "schemasDeLien": {
+      "source": "api/app/utils/html_sur.py#SCHEMAS_URL",
+      "quoi": "les schémas qu'un lien du texte riche peut porter (le relatif en plus) (#2757)",
+      "valeur": [
+        "http",
+        "https",
+        "mailto"
+      ]
+    }
+  }
+}
