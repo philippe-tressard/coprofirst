@@ -35,8 +35,8 @@
   Un exercice par bloc, le plus récent ouvert : « Exercice 2026 · 5 interventions ·
   4 notées », et le compte des états. Dedans, une ligne par affaire du prestataire —
   sa date, son titre, le badge de chaque avis porté sur ce couple, « non notée » sinon —,
-  puis les avis sans affaire. Un badge déplie l'avis : son auteur, son commentaire,
-  la correction (l'auteur) et le retrait (le conseil), SOUS la ligne et sur toute la
+  puis les avis sans affaire. Un badge déplie l'avis — son chevron ▸/▾ le dit, #2745 — : son
+  auteur, son commentaire, la correction (l'auteur) et le retrait (le conseil), SOUS la ligne et sur toute la
   largeur. Le regroupement est servi par l'API (`GET /prestataires/{id}/interventions`) :
   l'exercice d'une affaire et la règle « notée » ne sont pas recopiés ici.
 -->
@@ -198,7 +198,11 @@
 												? 'masquer'
 												: 'afficher'} l’avis de {n.auteur_nom ?? 'un membre du CS'}"
 											on:click|stopPropagation={() => (ouvert = basculerUn(ouvert, n.id))}
-											><Badge teinte={TEINTE_ETAT[n.etat]}>{LIBELLE_ETAT[n.etat]}</Badge></button
+											><Badge teinte={TEINTE_ETAT[n.etat]}
+												>{LIBELLE_ETAT[n.etat]}<span class="chevron not-chevron" aria-hidden="true"
+													>{ouvert === n.id ? '▾' : '▸'}</span
+												></Badge
+											></button
 										>
 									{:else}
 										<span class="not-non-notee">non notée</span>
@@ -308,12 +312,33 @@
 		flex-wrap: wrap;
 		gap: 0.3rem;
 	}
+	/*  Le badge d'un avis est un BOUTON qui déplie l'avis (#2745) : rien ne le disait, il
+	    passait pour une étiquette. Le chevron ▸/▾ de la ligne d'exercice, DANS le badge —
+	    il ne prend pas de place à la ligne au téléphone —, la main au survol, et
+	    l'appui à 97 % des boutons de la charte (`composants.css`). */
 	.not-etat-bouton {
 		border: 0;
 		background: none;
 		padding: 0;
 		cursor: pointer;
 		min-height: 32px;
+		border-radius: 0.375rem;
+		transition: transform var(--duree-geste) var(--ease-out);
+	}
+	.not-etat-bouton:active {
+		transform: scale(0.97);
+	}
+	@media (hover: hover) and (pointer: fine) {
+		.not-etat-bouton:hover :global(.badge) {
+			box-shadow: inset 0 0 0 1px currentColor;
+		}
+	}
+	/*  Le chevron partagé (`.chevron`) est taillé pour un en-tête : ici il prend la
+	    taille et la couleur du badge qui le porte. */
+	.not-chevron {
+		font-size: 1.1em;
+		color: inherit;
+		margin-left: 0.3em;
 	}
 	.not-non-notee {
 		color: var(--color-text-muted);

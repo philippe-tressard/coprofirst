@@ -133,3 +133,40 @@ test('corriger son avis recoche les cases, et le formulaire s’ouvre sous la li
 	const largeurDetail = (await detail.boundingBox())?.width ?? 0;
 	expect(largeurDetail).toBeGreaterThan(largeurLigne * 0.9);
 });
+
+//  #2745 (15/11/2026) : le badge d'un avis déplie son auteur, son commentaire, la
+//  correction et le retrait — mais rien ne disait qu'il s'ouvrait, il passait pour une
+//  étiquette. Chaque badge, d'une affaire comme des avis sans affaire, porte donc le
+//  chevron ▸/▾ de la ligne d'exercice, et la main de la souris.
+test('chaque badge d’avis se voit dépliable, et seul l’auteur y trouve « Modifier »', async ({
+	page,
+}) => {
+	const carte = await ouvrirLaFiche(page);
+
+	const badges = carte.locator('.not-avis').getByRole('button');
+	await expect(badges).toHaveCount(3);
+	for (const badge of await badges.all()) {
+		await expect(badge).toHaveAttribute('aria-expanded', 'false');
+		await expect(badge.locator('.chevron')).toBeVisible();
+		await expect(badge.locator('.chevron')).toHaveText('▸');
+		await expect(badge).toHaveCSS('cursor', 'pointer');
+	}
+
+	//  L'avis sans affaire d'un autre membre : il s'ouvre, le chevron le dit, sans « Modifier ».
+	//  Visés par leur rang : leur nom passe d'« afficher » à « masquer » au clic.
+	const autre = badges.nth(2);
+	await expect(autre).toHaveAccessibleName(/^Neutre — afficher/);
+	await autre.click();
+	await expect(autre).toHaveAttribute('aria-expanded', 'true');
+	await expect(autre.locator('.chevron')).toHaveText('▾');
+	const detail = carte.locator('.not-detail');
+	await expect(detail).toBeVisible();
+	await expect(detail.getByRole('button', { name: 'Modifier cet avis' })).toHaveCount(0);
+
+	//  L'avis de l'auteur : une fois ouvert, le geste « Modifier » apparaît.
+	const sien = badges.nth(0);
+	await expect(sien).toHaveAccessibleName(/^Excellent — afficher/);
+	await sien.click();
+	await expect(sien.locator('.chevron')).toHaveText('▾');
+	await expect(detail.getByRole('button', { name: 'Modifier cet avis' })).toBeVisible();
+});
