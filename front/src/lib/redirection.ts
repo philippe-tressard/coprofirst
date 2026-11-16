@@ -18,8 +18,8 @@ export const APRES_CONNEXION_PAR_DEFAUT = '/tableau-de-bord';
 /**
  * Chemin interne du même site ?
  *
- * Accepté : `/actualites#pub-22`. Refusé : `//exemple.fr` et `/\exemple.fr` (que les
- * navigateurs traitent comme des URL absolues), `https://exemple.fr`, et tout ce qui
+ * Accepté : `/actualites#pub-22`. Refusé : `//exemple.test` et `/\exemple.test` (que les
+ * navigateurs traitent comme des URL absolues), `https://exemple.test`, et tout ce qui
  * ramène vers l'authentification — une cible `/auth/…` boucle sur elle-même.
  */
 export function estCibleInterne(chemin: string | null | undefined): boolean {

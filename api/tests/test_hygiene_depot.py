@@ -155,7 +155,7 @@ def _boites_reelles(texte: str) -> list[str]:
 
 def test_la_sonde_de_boites_reelles_distingue_le_reel_du_fictif():
     assert _boites_reelles("jean@gmail.com et p@iCloud.com") == ["@gmail.com", "@iCloud.com"]
-    assert _boites_reelles("jean@exemple.test, a@example.org, b@copro-orange.fr") == []
+    assert _boites_reelles("jean@exemple.test, a@example.org, b@copro-orange.test") == []
     assert _boites_reelles("") == []  # cas zéro
 
 

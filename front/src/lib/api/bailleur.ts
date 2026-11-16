@@ -88,7 +88,7 @@ export interface AccesBail {
 /**  Un compte locataire proposé au bailleur — `LocataireInfo` (`routers/bailleur/baux.py`).
  *
  *   Monté de `RechercheLocataire` (#1044), qui le déclarait sous le nom `Compte`.
- *   🔴 L'adresse arrive MASQUÉE (`p***@domaine.fr`, #2153) : entière, elle faisait
+ *   🔴 L'adresse arrive MASQUÉE (`p***@domaine.test`, #2153) : entière, elle faisait
  *   de la recherche un annuaire de la résidence pour tout copropriétaire. */
 export interface LocataireTrouve {
 	id: number;

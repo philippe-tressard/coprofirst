@@ -23,7 +23,7 @@
 		{ cle: 'fonction', libelle: 'Fonction', type: 'text', exemple: 'Chef de chantier' },
 		{ cle: 'entreprise', libelle: 'Entreprise', type: 'text', exemple: 'Étanchéité Sud' },
 		{ cle: 'telephone', libelle: 'Téléphone', type: 'tel', exemple: '06 12 34 56 78' },
-		{ cle: 'email', libelle: 'Courriel', type: 'email', exemple: 'p.leroy@exemple.fr' },
+		{ cle: 'email', libelle: 'Courriel', type: 'email', exemple: 'p.leroy@example.com' },
 	] as const;
 	type Cle = (typeof CHAMPS)[number]['cle'];
 

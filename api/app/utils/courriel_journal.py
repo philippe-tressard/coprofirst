@@ -76,9 +76,9 @@ def nombre_affiche(session: Session) -> int:
 def nom_de_l_expediteur(brut: str) -> str:
     """Le NOM d'un `From:` — jamais l'adresse (une donnée personnelle).
 
-    >>> nom_de_l_expediteur('Gestionnaire <gestion@syndic.fr>')
+    >>> nom_de_l_expediteur('Gestionnaire <gestion@syndic.test>')
     'Gestionnaire'
-    >>> nom_de_l_expediteur('gestion@syndic.fr')
+    >>> nom_de_l_expediteur('gestion@syndic.test')
     '(sans nom)'
     """
     nom = parseaddr(brut or "")[0].strip()

@@ -373,7 +373,7 @@ function toggleItem(id: number) {
 
 - Identité visuelle de Croissy-sur-Seine : blanche, verte, institutionnelle.
 - Seine-et-Yvelines : sobriété, qualité résidentielle.
-- Applications de gestion d'immeuble de référence : Matera, Syndic.fr — épurées, rassurantes.
+- Applications de gestion d'immeuble de référence : Matera, Syndic.test — épurées, rassurantes.
 - Mouvement design : Material Design 3 (tokens, accessibilité) et French Government Design System (DSFR) pour l'aspect institutionnel.
 
 ---

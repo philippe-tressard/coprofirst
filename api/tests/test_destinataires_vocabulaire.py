@@ -91,7 +91,7 @@ def test_chaque_code_annonce_est_reellement_honore(code):
     temoin = Utilisateur(
         nom="X",
         prenom="Y",
-        email=f"{code}@test.fr",
+        email=f"{code}@test.test",
         statut=statut,
         roles_json=roles,
         actif=True,
@@ -126,7 +126,7 @@ def test_le_code_par_defaut_n_est_pas_dans_le_catalogue():
     quiconque = Utilisateur(
         nom="X",
         prenom="Y",
-        email="tous@test.fr",
+        email="tous@test.test",
         statut=StatutUtilisateur.locataire,
         roles_json="résident",
         actif=True,

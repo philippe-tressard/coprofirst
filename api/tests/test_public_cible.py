@@ -47,7 +47,7 @@ def _lecteur(statut: StatutUtilisateur, roles: str = "résident") -> Utilisateur
     return Utilisateur(
         nom="X",
         prenom="Y",
-        email=f"{statut.value}@test.fr",
+        email=f"{statut.value}@test.test",
         statut=statut,
         roles_json=roles,
         actif=True,

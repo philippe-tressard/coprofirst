@@ -40,7 +40,7 @@ from app.utils.whatsapp_message import construire_message
 from tests.aides_adresse import poser_adresse_du_site
 from tests.aides_base import compte, moteur_de_test
 
-SITE = "https://residence.exemple"
+SITE = "https://residence.example"
 
 
 @pytest.mark.parametrize(
@@ -63,9 +63,9 @@ def test_un_lien_du_site_recoit_l_etiquette_avant_l_ancre(lien, attendu):
 @pytest.mark.parametrize(
     "lien",
     [
-        "https://autre.exemple/page",
-        "mailto:conseil@residence.exemple",
-        "//autre.exemple/page",
+        "https://autre.example/page",
+        "mailto:conseil@residence.example",
+        "//autre.example/page",
         f"{SITE}/auth/reinitialisation-mdp?token=abc123",
         f"{SITE}/auth/verifier-email?token=abc123",
         f"{SITE}/tickets/34?src=whatsapp",

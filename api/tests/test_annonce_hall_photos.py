@@ -41,7 +41,7 @@ def _html(fmt: str, message: str, photos: int, monkeypatch, titre: str = _TITRE)
         perimetre_label="Copropriété entière",
         format_effectif=fmt,
         site_nom="Résidence",
-        site_url="https://exemple.fr",
+        site_url="https://exemple.test",
         logo_png=None,
         images=["/uploads/photos/capture.png"] * photos,
     )

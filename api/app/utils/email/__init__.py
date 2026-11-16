@@ -42,7 +42,7 @@ logger = logging.getLogger("email")
 
 
 def _masquer(adresse: str | None) -> str:
-    """`p***@domaine.fr` — assez pour diagnostiquer, pas assez pour ficher.
+    """`p***@domaine.test` — assez pour diagnostiquer, pas assez pour ficher.
 
     🔴 Les journaux portaient l'adresse ENTIÈRE (#777). Ces lignes partent dans
     les alertes du monitoring et dans les rapports qu'on recopie ailleurs : c'est

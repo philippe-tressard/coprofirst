@@ -129,24 +129,24 @@ def test_l_amorce_reproduit_le_repli_puis_la_base_decide_seule(session, monkeypa
     s = get_settings()
     for champ, valeur in (
         ("mail_enabled", True),
-        ("mail_server", "smtp.exemple.fr"),
+        ("mail_server", "smtp.exemple.test"),
         ("mail_port", 465),
         ("mail_username", "compte"),
         ("mail_password", "secret-du-env"),
         ("mail_starttls", False),
         ("mail_ssl_tls", True),
-        ("mail_from", "noreply@exemple.fr"),
+        ("mail_from", "noreply@example.com"),
     ):
         monkeypatch.setattr(s, champ, valeur)
     #  Une clé déjà réglée par l'administrateur, et une case décochée : jamais touchées.
-    session.add(ConfigSite(cle="smtp_server", valeur="smtp.choisi.fr"))
+    session.add(ConfigSite(cle="smtp_server", valeur="smtp.choisi.test"))
     session.add(ConfigSite(cle="smtp_starttls", valeur="0"))
     session.commit()
 
     assert smtp.amorcer(session) > 0
     session.commit()
     v = _valeurs(session)
-    assert v["smtp_server"] == "smtp.choisi.fr"
+    assert v["smtp_server"] == "smtp.choisi.test"
     assert v["smtp_starttls"] == "0"
     assert (v["smtp_port"], v["smtp_username"], v["smtp_password"]) == (
         "465",
@@ -162,11 +162,11 @@ def test_l_amorce_reproduit_le_repli_puis_la_base_decide_seule(session, monkeypa
     ligne.valeur = ""
     session.add(ligne)
     session.commit()
-    monkeypatch.setattr(s, "mail_server", "smtp.autre.fr")
+    monkeypatch.setattr(s, "mail_server", "smtp.autre.test")
     monkeypatch.setattr(s, "mail_enabled", False)
     assert smtp.amorcer(session) == 0
     connexion = smtp.connexion_smtp(smtp._get_smtp_config(session))
-    assert connexion.MAIL_SERVER == "smtp.choisi.fr"
+    assert connexion.MAIL_SERVER == "smtp.choisi.test"
     assert connexion.MAIL_USERNAME == ""
     assert connexion.MAIL_STARTTLS is False
     assert envoi_actif(session) is True
@@ -250,9 +250,9 @@ def test_un_second_demarrage_n_ecrase_pas_un_reglage_fait_dans_l_admin(monkeypat
     from app.utils.config_site import ecrire_cle
 
     s_ = get_settings()
-    monkeypatch.setattr(s_, "mail_server", "smtp.du-env.fr")
+    monkeypatch.setattr(s_, "mail_server", "smtp.du-env.test")
     monkeypatch.setattr(s_, "mail_username", "compte-du-env")
-    monkeypatch.setattr(s_, "mail_from", "noreply@exemple.fr")
+    monkeypatch.setattr(s_, "mail_from", "noreply@example.com")
     SQLModel.metadata.create_all(engine)
     with Session(engine) as s:
         for ligne in s.exec(select(ConfigSite).where(ConfigSite.cle.like("smtp%"))).all():
@@ -260,13 +260,13 @@ def test_un_second_demarrage_n_ecrase_pas_un_reglage_fait_dans_l_admin(monkeypat
         s.commit()
     seed()  # premier démarrage : l'amorce
     with Session(engine) as s:
-        assert _valeurs(s)["smtp_server"] == "smtp.du-env.fr"
-        ecrire_cle(s, "smtp_server", "smtp.choisi-a-l-ecran.fr")
+        assert _valeurs(s)["smtp_server"] == "smtp.du-env.test"
+        ecrire_cle(s, "smtp_server", "smtp.choisi-a-l-ecran.test")
         ecrire_cle(s, "smtp_username", "")
         s.commit()
-    monkeypatch.setattr(s_, "mail_server", "smtp.autre-env.fr")
+    monkeypatch.setattr(s_, "mail_server", "smtp.autre-env.test")
     seed()  # second démarrage
     with Session(engine) as s:
         v = _valeurs(s)
-    assert v["smtp_server"] == "smtp.choisi-a-l-ecran.fr"
+    assert v["smtp_server"] == "smtp.choisi-a-l-ecran.test"
     assert v["smtp_username"] == ""

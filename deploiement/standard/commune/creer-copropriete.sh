@@ -6,8 +6,8 @@
 #  Depuis le dossier de l'installation :
 #
 #      bash deploiement/standard/commune/creer-copropriete.sh tilleuls \
-#          --code-postal 75015 --nom "Les Tilleuls" --expediteur contact@exemple.fr \
-#          [--hote residence-tilleuls.fr]
+#          --code-postal 75015 --nom "Les Tilleuls" --expediteur contact@example.com \
+#          [--hote residence-tilleuls.example.com]
 #
 #  ## Le déroulé — rien n'est écrit tant que tout n'est pas validé
 #

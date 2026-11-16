@@ -233,6 +233,9 @@ Le détail de chacune : `security-audit` §11.
   Exception assumée (#1581) : l'identifiant SSH d'exploitation et les IP du LAN restent dans
   les scripts, crontabs et documents, jamais dans l'application (🔒
   `test_hygiene_depot.py`, `security-audit` §8).
+- **Un hôte fictif est un nom réservé** — `exemple.test`, `example.com`, `.example`,
+  `.invalid` —, jamais `exemple.fr`, vrai domaine tiers ; un vrai domaine se déclare dans
+  `REELS` (🔒 `test_hotes_fictifs.py`, `standards/03` §8 quater, #2767).
 
 ---
 

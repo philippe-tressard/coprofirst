@@ -188,7 +188,7 @@ def _declaree(identifiant: str, code_postal: str, cle: str) -> dict:
         "base": f"ESSAI_{cle}_BASE",
         "secret": f"ESSAI_{cle}_SECRET",
         "racine_fichiers": f"/app/uploads/{identifiant}",
-        "expediteur": "contact@exemple.fr",
+        "expediteur": "contact@exemple.test",
     }
 
 

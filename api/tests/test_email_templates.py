@@ -119,7 +119,7 @@ def test_le_bandeau_dintention_est_rendu_dans_le_gabarit():
     html = _wrap_email(
         "<p>corps</p>",
         "Résidence",
-        "https://exemple.fr",
+        "https://exemple.test",
         "",
         2026,
         intention="action_requise",
@@ -132,7 +132,7 @@ def test_le_bandeau_dintention_est_rendu_dans_le_gabarit():
     # étiquette fausse.
     for valeur in ("", None, "inconnue"):
         neutre = _wrap_email(
-            "<p>corps</p>", "Résidence", "https://exemple.fr", "", 2026, intention=valeur
+            "<p>corps</p>", "Résidence", "https://exemple.test", "", 2026, intention=valeur
         )
         assert all(lib not in neutre for lib, _, _ in INTENTIONS.values()), (
             f"Une intention {valeur!r} affiche pourtant un bandeau."
@@ -213,12 +213,12 @@ def test_lobjet_rendu_tient_sur_une_ligne_et_reste_court():
     """
     from app.utils.email.rendu import _SUJET_MAX, _sujet_sur_une_ligne
 
-    injecte = _sujet_sur_une_ligne("Fuite parking\r\nBcc: tiers@exemple.fr\n\nsuite")
+    injecte = _sujet_sur_une_ligne("Fuite parking\r\nBcc: tiers@exemple.test\n\nsuite")
     assert "\n" not in injecte and "\r" not in injecte, (
         "Un titre à retours à la ligne passe tel quel dans l'objet : l'en-tête "
         "Subject peut être coupée et un Bcc ajouté."
     )
-    assert injecte == "Fuite parking Bcc: tiers@exemple.fr suite"
+    assert injecte == "Fuite parking Bcc: tiers@exemple.test suite"
 
     assert _sujet_sur_une_ligne("Réunion\tdu\x00mardi") == "Réunion du mardi", (
         "Les caractères de contrôle doivent être neutralisés, NUL compris — "

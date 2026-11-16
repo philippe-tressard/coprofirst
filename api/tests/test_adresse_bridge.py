@@ -85,7 +85,7 @@ def test_une_adresse_vide_n_est_pas_reglee():
 @pytest.mark.parametrize("url", ETRANGERES[:3])
 def test_put_config_refuse_une_adresse_etrangere_et_n_ecrit_rien(session, url):
     with pytest.raises(HTTPException) as refus:
-        save_config({"site_email": "admin@exemple.fr", "whatsapp_api_url": url}, _Admin(), session)
+        save_config({"site_email": "admin@exemple.test", "whatsapp_api_url": url}, _Admin(), session)
     assert refus.value.status_code == 422
     assert session.exec(select(ConfigSite)).all() == []
 

@@ -100,7 +100,7 @@ def utilisateur(roles: str, batiment_id: int | None) -> Utilisateur:
     return Utilisateur(
         nom="X",
         prenom="Y",
-        email=f"{roles}-{batiment_id}@test.fr",
+        email=f"{roles}-{batiment_id}@test.test",
         roles_json=roles,
         batiment_id=batiment_id,
         actif=True,
@@ -114,11 +114,11 @@ def _auteur(session: Session) -> int:
     """Un utilisateur persisté — `Publication.auteur_id` et `Evenement.auteur_id`
     sont NOT NULL, et un contenu sans auteur ne s'écrit pas."""
     existant = session.exec(
-        select(Utilisateur).where(Utilisateur.email == "auteur@test.fr")
+        select(Utilisateur).where(Utilisateur.email == "auteur@test.test")
     ).first()
     if existant:
         return existant.id
-    u = Utilisateur(nom="A", prenom="B", email="auteur@test.fr", actif=True)
+    u = Utilisateur(nom="A", prenom="B", email="auteur@test.test", actif=True)
     session.add(u)
     session.commit()
     return u.id
