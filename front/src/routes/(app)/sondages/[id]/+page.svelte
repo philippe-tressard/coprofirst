@@ -226,11 +226,19 @@
 		<div class="sondage-corps">
 			{#if totalVotes > 0}
 				<p class="sondage-total">
-					{totalVotes} vote{totalVotes > 1 ? 's' : ''}
+					{fmtNombre(totalVotes)} vote{totalVotes > 1 ? 's' : ''}
 				</p>
 			{/if}
 
 			{#if peutVoter}
+				<!--  Les barres AVANT le vote, quand l'auteur a laissé les résultats
+				      visibles avant la clôture (16/11/2026) : elles remplacent le
+				      « N votes » posé à côté de chaque choix. -->
+				{#if voirResultats}
+					<div class="resultats-avant-vote">
+						<ResultatsSondage options={sondage.options} total={totalVotes} visibles provisoires />
+					</div>
+				{/if}
 				<!-- Mode vote -->
 				<form on:submit|preventDefault={voter}>
 					{#each sondage.options as opt (opt.id)}
@@ -247,11 +255,6 @@
 									class="champ-libre-badge"
 									title="Cette réponse inclut un champ de précision">✏️</span
 								>{/if}
-							{#if voirResultats}
-								<span class="option-votes"
-									>{fmtNombre(opt.nb_votes)} vote{opt.nb_votes !== 1 ? 's' : ''}</span
-								>
-							{/if}
 						</label>
 					{/each}
 
@@ -310,6 +313,7 @@
 					monVote={sondage.mon_vote}
 					total={totalVotes}
 					visibles={voirResultats}
+					provisoires={!sondage.cloture}
 				/>
 			{/if}
 		</div>
@@ -419,15 +423,13 @@
 	.sondage-corps {
 		margin-top: 1.5rem;
 	}
+	.resultats-avant-vote {
+		margin-bottom: 1.25rem;
+	}
 	.sondage-total {
 		font-size: var(--fs-md);
 		color: var(--color-text-muted);
 		margin-bottom: 1rem;
-	}
-	.option-votes {
-		margin-left: auto;
-		font-size: var(--fs-sm);
-		color: var(--color-text-muted);
 	}
 	.champ-libre-libelle {
 		font-weight: 600;
