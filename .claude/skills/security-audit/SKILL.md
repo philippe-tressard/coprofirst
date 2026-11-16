@@ -388,11 +388,19 @@ refuse la copie.
   `ia_courriel_corpus.CORPUS`. 🔒 `test_ia_courriel.py`. Le **canari** (`utils/canari_ia`, 05:40)
   passe un cas du corpus par la porte de la relève (`reponse_courriel.lire_et_juger`) ; le
   contrôle de 06:00 dit modèle qui obéit, porte percée, ou INCONNU. 🔒 `test_canari_ia.py`.
-- **Le jeton d'une montre** (#2771) : Apple Watch ou Wear OS, émis par le téléphone connecté
-  (`POST /montres`), stocké par son empreinte, lu par `Authorization: Bearer` dans
-  `auth/deps.lecteur_de_la_cloche` SEULEMENT — `GET /notifications`, aucun marquage. Il expire
-  (`jetons_montre.DUREE_JOURS`), tombe avec l'empreinte du compte et `revoquer_sessions`, part
-  avec le compte. 🔒 `test_jetons_montre.py` (aucune autre route ne prend la dépendance).
+- **Les jetons d'APPAREIL** (#2770, #2771) : UN mécanisme, deux portées — « montre » (le compte,
+  `GET /notifications` seul, émis par le téléphone connecté, `POST /montres`) et « écran » (un
+  écran de hall sans personne, ses affiches et leurs images, appairé par RFC 8628 et confirmé par
+  le conseil, `POST /ecrans`). La table des routes ouvertes vit dans
+  `auth/jetons_appareil.PORTEES` ; `deps._appareil_autorise` est la seule porte qui lit
+  `Authorization: Bearer` (schéma `JetonAppareil` du contrat) et la relit sur le chemin DEMANDÉ,
+  défaut fermé (route ou portée inconnue → 403). Empreinte, échéance (fixe pour la montre,
+  glissante pour l'écran), rotation, lecture notée et purge y sont communes. Une montre tombe
+  avec l'empreinte du compte, `revoquer_sessions` et le compte ; un écran, quand le conseil le
+  retire. Ce qu'un écran montre se décide à la porte de sortie `utils/ecran_affiches` (lieu lu
+  par tous : liste blanche, ni auteur ni destinataires). Ouvrir une route à un appareil = une
+  ligne de la table. 🔒 `test_jetons_appareil.py` (toutes les routes × chaque portée, les deux
+  sens du câblage, la porte relue), `test_ecrans.py` (ce qui est reçu), `test_jetons_montre.py`.
 - **Leurres** (#2365) : registre `utils/leurres` (`ROUTES_LEURRES`, `EVENEMENTS_LEURRES`) ;
   leurs VALEURS (`LEURRE_ADRESSE`, `LEURRE_CLE_MAINTENANCE`) ne vivent que dans le `.env` du
   nœud, jamais dans le dépôt. Une connexion leurre rend le refus ordinaire et journalise
