@@ -214,7 +214,7 @@
 							Constaté seulement{SEPARATEUR.tiret}sauf les services&nbsp;: une réplique n’allume que
 							ceux que la référence autorise.
 						{:else if i.etat === 'limitee'}
-							Appliqué&nbsp;: au plus {i.plafond_comptes_actifs} comptes actifs{SEPARATEUR.tiret}le
+							Appliqué&nbsp;: au plus {fmtNombre(i.plafond_comptes_actifs)} comptes actifs{SEPARATEUR.tiret}le
 							suivant est refusé, aucun compte existant n’est touché. Aucun service ni mise à jour
 							automatique.
 						{:else if i.etat === 'suspendue'}
