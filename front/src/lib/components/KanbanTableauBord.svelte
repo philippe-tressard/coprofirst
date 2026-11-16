@@ -29,6 +29,7 @@
 	 */
 	import { fmtNombre } from '#lib/utils.ts';
 	import ItemKanban from '#lib/components/ItemKanban.svelte';
+	import LegendeBatiments from '#lib/components/LegendeBatiments.svelte';
 	import { routeOnglet } from '#lib/routes-onglets.ts';
 	import { basculer } from '#lib/accordeon.ts';
 	import type { Ticket } from '#lib/api/index.ts';
@@ -112,6 +113,11 @@
 
 <div class="kb-header">
 	<h2 class="section-title titre-kanban">&#x1F4CB; Kanban</h2>
+	<!--  La couleur des pastilles de bâtiment, rappelée dans l'en-tête (variante B,
+	      arbitrée le 16/11/2026) — sans ligne de plus, et seulement s'il y a des briques. -->
+	{#if dashKanbanEvs.length > 0}
+		<LegendeBatiments />
+	{/if}
 	<a href={lienKanban} class="kb-voir-lien">Voir le Kanban complet →</a>
 </div>
 

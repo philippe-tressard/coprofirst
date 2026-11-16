@@ -43,8 +43,39 @@ def test_perimetre_read_arbre_et_orphelin():
     orphelin = Perimetre(
         id=3, code="perdu", parent_id=999, libelle="Perdu", description="", portee_globale=True
     )
-    lus = [lu.model_dump(mode="json") for lu in _en_lecture([racine, enfant, orphelin], {"bat-a"})]
+    lus = [
+        lu.model_dump(mode="json")
+        for lu in _en_lecture([racine, enfant, orphelin], {"bat-a"}, batiments={7: "Bât. 1 (D)"})
+    ]
     assert lus == ATTENDU_PERIMETRES, lus
+
+
+def test_le_noeud_d_un_batiment_porte_son_libelle_lettre_comprise(batiments):
+    """La légende du kanban d'accueil lit « Bât. 1 (D) » sur l'arbre servi : la
+    lettre de l'acte vit sur le bâtiment, jamais dans le nœud (`libelle_batiment`)."""
+    from sqlmodel import Session, select
+
+    from app.database import engine
+    from app.models.core import Batiment
+    from app.routers.patrimoine import _en_lecture, _libelles_batiments
+
+    with Session(engine) as session:
+        lettre, sans = (session.get(Batiment, i) for i in batiments[:2])
+        lettre.lettre_rcp, sans.lettre_rcp = "D", None
+        session.add_all([lettre, sans])
+        session.flush()
+        attendus = {lettre.id: f"Bât. {lettre.numero} (D)", sans.id: f"Bât. {sans.numero}"}
+        lus = _en_lecture(
+            list(session.exec(select(Perimetre)).all()),
+            set(),
+            batiments=_libelles_batiments(session),
+        )
+        session.rollback()
+    par_batiment = {lu.batiment_id: lu.batiment_libelle for lu in lus if lu.batiment_id}
+    for batiment_id, libelle in attendus.items():
+        assert par_batiment[batiment_id] == libelle, par_batiment
+    #  Un nœud qui ne représente pas un bâtiment n'en porte aucun.
+    assert all(lu.batiment_libelle is None for lu in lus if not lu.batiment_id)
 
 
 # ── Les sorties attendues ─────────────────────────────────────────────────────
@@ -53,6 +84,9 @@ _NOEUD = {
     "parent": None,
     "icone": None,
     "batiment_id": None,
+    #  Ajouté le 16/11/2026 (légende du kanban d'accueil) : lu sur
+    #  `utils/batiments.libelle_batiment`, par l'identifiant du bâtiment.
+    "batiment_libelle": None,
     "profondeur": 0,
     "ordre": 0,
     "actif": True,
@@ -112,6 +146,7 @@ ATTENDU_PERIMETRES = [
         "libelle_court": "Bâtiment A",
         "description": "",
         "batiment_id": 7,
+        "batiment_libelle": "Bât. 1 (D)",
         "profondeur": 1,
         "ordre": 3,
         "actif": False,
