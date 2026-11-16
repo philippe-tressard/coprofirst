@@ -74,3 +74,38 @@ def test_un_ensemble_se_publie_trie_et_un_objet_inconnu_est_refuse():
     assert cc.en_json(frozenset({"b", "a"})) == ["a", "b"]
     with pytest.raises(TypeError):
         cc.en_json(object())
+
+
+def test_un_motif_et_une_dataclasse_se_publient():
+    import re
+    from dataclasses import dataclass
+
+    assert cc.en_json(re.compile(r"^a_", re.IGNORECASE)) == {"motif": "^a_", "ignorerCasse": True}
+
+    @dataclass(frozen=True)
+    class F:
+        types: dict
+        plafond: int
+
+    assert cc.en_json(F({"image/png": ".png"}, 5)) == {"types": {"image/png": ".png"}, "plafond": 5}
+
+
+def test_le_motif_publie_juge_comme_le_serveur():
+    """Compilé tel que publié, le motif d'image dit ce que dit `est_image` (#2764)."""
+    import re
+
+    from app.utils.fichiers import FAMILLES, est_image, nom_lisible
+
+    publie = cc.lire()
+    m = publie["motifImage"]["valeur"]
+    motif = re.compile(m["motif"], re.IGNORECASE if m["ignorerCasse"] else 0)
+    noms = [f"a{ext}" for f in FAMILLES.values() for ext in f.extensions] + ["a.PDF", "a.JPG", "a"]
+    assert [bool(motif.search(n)) for n in noms] == [est_image(n) for n in noms]
+
+    p = publie["prefixeStockage"]["valeur"]
+    prefixe = re.compile(p["motif"], re.IGNORECASE if p["ignorerCasse"] else 0)
+    stocke = "0123456789abcdef0123456789ABCDEF_rapport.pdf"
+    assert prefixe.sub("", stocke) == nom_lisible(stocke) == "rapport.pdf"
+    assert (
+        publie["famillesFichiers"]["valeur"]["image"]["plafond_mo"] == FAMILLES["image"].plafond_mo
+    )
