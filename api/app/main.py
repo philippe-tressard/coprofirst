@@ -59,6 +59,7 @@ from app.routers import (
     admin,
     notifications,
     appareils,
+    montres,
     acces,
     calendrier,
     prestataires,
@@ -383,9 +384,9 @@ app.include_router(documents.router)
 app.include_router(admin.router)
 app.include_router(notifications.router)
 app.include_router(appareils.router)  # 📱 notifications push (#2493)
+app.include_router(montres.router)  # ⌚ jeton d'une montre, cloche seule (#2771)
 app.include_router(acces.router)
-#  Le calendrier n'est plus qu'une REDIRECTION des anciens liens (#1092, lot 5) :
-#  ses événements sont des affaires, son historique et son aperçu sont partis.
+#  Le calendrier ne fait plus que rediriger ses anciens liens : ses événements sont des affaires (#1092).
 app.include_router(calendrier.router)
 app.include_router(prestataires.router)
 #  Même préfixe : les relevés de compteurs sont sortis de `prestataires.py`

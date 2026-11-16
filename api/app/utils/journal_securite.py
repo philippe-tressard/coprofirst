@@ -122,6 +122,10 @@ _NIVEAUX: dict[str, int] = {
     #  Un signataire admis pour le domaine d'un autre (#2554) : un tiers de plus à
     #  qui l'on confie l'authenticité des réponses par courriel.
     "signataires_delegues_modifies": logging.WARNING,
+    #  Une montre reliée au compte, ou retirée (#2771) : un jeton de plus qui lit la cloche
+    #  hors du téléphone, sans biométrie.
+    "montre_reliee": logging.WARNING,
+    "montre_retiree": logging.INFO,
     "connexion_leurre": logging.WARNING,
     "cle_maintenance_leurre": logging.WARNING,
 }

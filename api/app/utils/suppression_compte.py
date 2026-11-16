@@ -95,6 +95,7 @@ CONTENUS_PERSONNELS: dict[tuple[str, str], str] = {
     ("email_verification_token", "user_id"): "un lien de vérification d'adresse",
     ("notification", "destinataire_id"): "une notification adressée à la personne",
     ("appareil", "utilisateur_id"): "un téléphone qui sonne pour la personne (#2493)",
+    ("jeton_montre", "utilisateur_id"): "une montre qui lit la cloche de la personne (#2771)",
     ("commande_acces", "user_id"): "une demande de badge de la personne",
     ("demande_modification_profil", "utilisateur_id"): "une demande sur son propre profil",
     ("demande_suppression_compte", "utilisateur_id"): (

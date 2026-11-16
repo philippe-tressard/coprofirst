@@ -60,6 +60,7 @@ from typing import Optional
 from sqlmodel import Session, and_, delete, or_, select, update
 
 from app.auth.empreinte_jeton import empreinte
+from app.auth.jetons_montre import retirer_montres
 from app.utils.push.appareils import retirer_appareils
 from app.models.core import Utilisateur
 from app.models.jetons import RefreshToken
@@ -95,10 +96,12 @@ def revoquer_sessions(session: Session, user_id: int, sauf: Optional[str] = None
     Retire aussi TOUS les appareils du compte (#2493, spec push §6.3) : une session
     fermée ne laisse pas un téléphone sonner, et rien ne relie un appareil à une
     session — celui de la session gardée se ré-enregistre à l'ouverture de l'application.
+    Et TOUTES ses montres (#2771) : le téléphone gardé en émet une neuve.
 
     Ne valide pas la transaction : c'est l'appelant qui décide quand elle se termine.
     """
     retirer_appareils(session, user_id)
+    retirer_montres(session, user_id)
     actifs = session.exec(
         select(RefreshToken).where(
             RefreshToken.user_id == user_id,
