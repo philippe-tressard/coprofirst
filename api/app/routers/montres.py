@@ -2,7 +2,8 @@
 
 Appelé par le TÉLÉPHONE connecté (iPhone, Android), jamais par la montre : ces routes
 prennent la session par cookie (`get_current_user`), qu'un jeton de montre n'ouvre pas.
-La montre ne lit que la cloche (`GET /notifications`, `auth/deps.lecteur_de_la_cloche`).
+La montre ne lit que la cloche (`GET /notifications`) : sa portée est une ligne de la table
+commune des jetons d'appareil (`auth/jetons_appareil.PORTEES`, #2770).
 
 Les règles — portée, échéance, révocation — vivent dans `auth/jetons_montre`. Le jeton
 brut n'est rendu qu'à l'émission et au renouvellement ; la liste ne le répète jamais.
@@ -18,7 +19,8 @@ from pydantic import BaseModel, ConfigDict
 from sqlmodel import Session, select
 
 from app.auth.deps import get_current_user
-from app.auth.jetons_montre import emettre, renouveler
+from app.auth.jetons_appareil import renouveler
+from app.auth.jetons_montre import emettre, suivre_le_compte
 from app.database import get_session
 from app.models.core import Utilisateur
 from app.models.jetons import JetonMontre
@@ -100,7 +102,8 @@ def renouveler_montre(
 ):
     """Remplace le jeton d'une montre de la personne et repousse son échéance."""
     jeton = _ma_montre(session, montre_id, user)
-    brut = renouveler(session, jeton, user, horloge.maintenant())
+    suivre_le_compte(jeton, user)
+    brut = renouveler(session, "montre", jeton, horloge.maintenant())
     session.commit()
     session.refresh(jeton)
     return _emise(jeton, brut)

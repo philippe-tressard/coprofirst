@@ -60,6 +60,7 @@ from app.routers import (
     notifications,
     appareils,
     montres,
+    ecrans,
     acces,
     calendrier,
     prestataires,
@@ -385,6 +386,7 @@ app.include_router(admin.router)
 app.include_router(notifications.router)
 app.include_router(appareils.router)  # 📱 notifications push (#2493)
 app.include_router(montres.router)  # ⌚ jeton d'une montre, cloche seule (#2771)
+app.include_router(ecrans.router)  # 📺 écran de hall, affiches de son périmètre (#2770)
 app.include_router(acces.router)
 #  Le calendrier ne fait plus que rediriger ses anciens liens : ses événements sont des affaires (#1092).
 app.include_router(calendrier.router)
