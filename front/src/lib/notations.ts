@@ -24,20 +24,27 @@ export type Etat = (typeof ETATS)[number];
  * Libellé et teinte de chaque état — UNE table, les colonnes s'en déduisent
  * (`#lib/table-statuts`). Le libellé porte le sens, la teinte (`<Badge>`) le confirme.
  */
-export const { libelle: LIBELLE_ETAT, badge: TEINTE_ETAT } = parAttribut({
+export const PAR_ETAT = {
 	mauvais: { libelle: 'Mauvais', badge: 'badge-red' },
 	neutre: { libelle: 'Neutre', badge: 'badge-gray' },
 	excellent: { libelle: 'Excellent', badge: 'badge-green' },
-});
+} as const;
+export const { libelle: LIBELLE_ETAT, badge: TEINTE_ETAT } = parAttribut(PAR_ETAT);
 
 /**
- * L'état d'une MOYENNE (1 à 5, décimale) — pour la carte du prestataire.
- * Seuils déclarés ici : `< 2,5` mauvais · `< 4` neutre · sinon excellent.
+ * Les seuils de l'état d'une MOYENNE (1 à 5, décimale), dans l'ordre : sous la
+ * `borne`, l'`etat` ; au-delà de la dernière, `ETAT_AU_DELA`.
+ * 🔒 Tables PUBLIÉES aux apps (`notations`, #2775) — littérales.
  */
+export const SEUILS_DE_MOYENNE = [
+	{ borne: 2.5, etat: 'mauvais' },
+	{ borne: 4, etat: 'neutre' },
+] as const satisfies readonly { borne: number; etat: Etat }[];
+export const ETAT_AU_DELA: Etat = 'excellent';
+
+/** L'état d'une moyenne — pour la carte du prestataire. */
 export function etatDeMoyenne(moyenne: number): Etat {
-	if (moyenne < 2.5) return 'mauvais';
-	if (moyenne < 4) return 'neutre';
-	return 'excellent';
+	return SEUILS_DE_MOYENNE.find((s) => moyenne < s.borne)?.etat ?? ETAT_AU_DELA;
 }
 
 /** Les motifs à cocher, par nature — la liste est ce qui compose la phrase. */

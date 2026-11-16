@@ -388,6 +388,29 @@ export const TABLES = {
 		quoi: "la pastille de la capsule d'un verdict selon son ton (verdict_ton), et celle d'un ton inconnu (#2773)",
 		lecteur: 'scripts/generateurs/reglement.py',
 	},
+	notations: {
+		source: {
+			etats: 'src/lib/notations.ts#ETATS',
+			parEtat: 'src/lib/notations.ts#PAR_ETAT',
+			seuilsDeMoyenne: 'src/lib/notations.ts#SEUILS_DE_MOYENNE',
+			etatAuDela: 'src/lib/notations.ts#ETAT_AU_DELA',
+		},
+		quoi: "la notation d'un prestataire : ses trois états dans l'ordre, le libellé et la pastille de chacun, et l'état d'une moyenne (sous chaque borne, son état ; au-delà, etatAuDela) (#2775)",
+		lecteur: 'scripts/generateurs/acces_prestataires.py',
+	},
+	libellesModeSaisie: {
+		source: 'src/lib/saisie-affaire.ts#LIBELLE_MODE',
+		quoi: 'la phrase discrète en tête du formulaire d’une affaire, selon le mode de saisie (#2793)',
+		lecteur: 'scripts/generateurs/options_affaire.py',
+	},
+	sectionsAffaire: {
+		source: {
+			ordre: 'src/lib/entites/types.ts#SECTIONS_ORDRE',
+			libelles: 'src/lib/entites/types.ts#SECTIONS_LIBELLE',
+		},
+		quoi: "les sections du formulaire d'une affaire dans l'ordre du cadre — le vocabulaire de sections_essentielles —, et leur intitulé (#2793)",
+		lecteur: 'scripts/generateurs/options_affaire.py',
+	},
 	separateurs: {
 		source: 'src/lib/separateurs.ts#SEPARATEUR',
 		quoi: 'les séparateurs en ligne (point, tiret, flèche) : espace sécable avant, insécable après (#2773)',
