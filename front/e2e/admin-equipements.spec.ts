@@ -63,6 +63,23 @@ test('la liste montre les équipements, un système porte son cadenas et pas de 
 	).toHaveCount(1);
 });
 
+test('la liste suit l’ordre alphabétique du libellé, pas le rang', async ({ page }) => {
+	await ouvrir(page);
+	//  Les témoins arrivent dans l'ordre de leur rang (Ascenseur, Plomberie,
+	//  Extincteurs…) : l'écran les range par libellé.
+	await expect(page.locator('#equipement-ascenseur')).toBeVisible();
+	const ancres = new Map(EQUIPEMENTS_TEMOINS.map((e) => [`equipement-${e.code}`, e.libelle]));
+	const ids = await page
+		.locator('[id^="equipement-"]')
+		.evaluateAll((cartes) => cartes.map((c) => c.id));
+	const affiches = ids.filter((id) => ancres.has(id)).map((id) => ancres.get(id));
+	const attendus = EQUIPEMENTS_TEMOINS.map((e) => e.libelle).sort((a, b) =>
+		a.localeCompare(b, 'fr', { sensitivity: 'base' }),
+	);
+	expect(attendus).not.toEqual(EQUIPEMENTS_TEMOINS.map((e) => e.libelle));
+	expect(affiches).toEqual(attendus);
+});
+
 test('créer : l’aperçu suit la saisie, et ce qui part est ce que la fiche montre', async ({
 	page,
 }) => {

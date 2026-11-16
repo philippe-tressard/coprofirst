@@ -1,6 +1,6 @@
 {
   "format": 1,
-  "version": "1.3.0",
+  "version": "1.4.0",
   "tables": {
     "attributsAdmis": {
       "source": "front/src/lib/sanitize.ts#ALLOWED_ATTR",
@@ -473,6 +473,19 @@
         }
       }
     },
+    "famillesAffichageFichiers": {
+      "source": "front/src/lib/fichiers.ts#FAMILLES_AFFICHAGE",
+      "valeur": {
+        "JPEG": "JPG",
+        "XLSX": "EXCEL",
+        "XLS": "EXCEL",
+        "DOCX": "WORD",
+        "DOC": "WORD",
+        "PPTX": "POWERPOINT",
+        "PPT": "POWERPOINT",
+        "TXT": "TEXTE"
+      }
+    },
     "filtresContrat": {
       "source": "front/src/lib/prestataires.ts#FILTRES_CONTRAT",
       "valeur": [
@@ -798,6 +811,13 @@
         "bailleur": "Copropriétaire bailleur"
       }
     },
+    "libellesModeSaisie": {
+      "source": "front/src/lib/saisie-affaire.ts#LIBELLE_MODE",
+      "valeur": {
+        "essentielle": "Saisie essentielle",
+        "complete": "Saisie complète"
+      }
+    },
     "libellesTache": {
       "source": "front/src/lib/taches.ts#LIBELLE_TACHE",
       "valeur": {
@@ -986,6 +1006,46 @@
           "icone": "book-open",
           "abrege": "RÈGL."
         }
+      }
+    },
+    "notations": {
+      "source": {
+        "etats": "front/src/lib/notations.ts#ETATS",
+        "parEtat": "front/src/lib/notations.ts#PAR_ETAT",
+        "seuilsDeMoyenne": "front/src/lib/notations.ts#SEUILS_DE_MOYENNE",
+        "etatAuDela": "front/src/lib/notations.ts#ETAT_AU_DELA"
+      },
+      "valeur": {
+        "etats": [
+          "mauvais",
+          "neutre",
+          "excellent"
+        ],
+        "parEtat": {
+          "mauvais": {
+            "libelle": "Mauvais",
+            "badge": "badge-red"
+          },
+          "neutre": {
+            "libelle": "Neutre",
+            "badge": "badge-gray"
+          },
+          "excellent": {
+            "libelle": "Excellent",
+            "badge": "badge-green"
+          }
+        },
+        "seuilsDeMoyenne": [
+          {
+            "borne": 2.5,
+            "etat": "mauvais"
+          },
+          {
+            "borne": 4,
+            "etat": "neutre"
+          }
+        ],
+        "etatAuDela": "excellent"
       }
     },
     "optionsPublication": {
@@ -2856,6 +2916,46 @@
         "conseil_syndical",
         "admin"
       ]
+    },
+    "sectionsAffaire": {
+      "source": {
+        "ordre": "front/src/lib/entites/types.ts#SECTIONS_ORDRE",
+        "libelles": "front/src/lib/entites/types.ts#SECTIONS_LIBELLE"
+      },
+      "valeur": {
+        "ordre": [
+          "titre",
+          "nature",
+          "equipement",
+          "suivi",
+          "quand",
+          "intervenant",
+          "perimetre",
+          "description",
+          "pieces_jointes",
+          "affaires_liees",
+          "au_nom_de",
+          "destinataires",
+          "mise_en_avant",
+          "diffusion"
+        ],
+        "libelles": {
+          "titre": "Titre",
+          "nature": "Nature",
+          "equipement": "Équipement",
+          "suivi": "Suivi",
+          "quand": "Quand",
+          "intervenant": "Intervenant",
+          "perimetre": "Périmètre",
+          "description": "Description",
+          "pieces_jointes": "Pièces jointes",
+          "affaires_liees": "Affaires liées",
+          "au_nom_de": "Au nom de",
+          "mise_en_avant": "Mise en avant",
+          "destinataires": "Destinataires",
+          "diffusion": "Diffusion"
+        }
+      }
     },
     "separateurs": {
       "source": "front/src/lib/separateurs.ts#SEPARATEUR",

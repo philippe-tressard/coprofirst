@@ -72,6 +72,15 @@ mode_version_branche() {
   esac
 }
 
+# version_base_du_lot v_base_dev v_base_main → la version de la base à laquelle juger un lot
+#  Un lot vise `dev` : sa base est la base commune avec `origin/dev`. Parti d'un train
+#  déjà numéroté (le conducteur a posé la version sur `dev`, la PR `dev → main` attend),
+#  il porte ce numéro sans l'avoir posé — jugé contre `main`, il était refusé (16/11/2026,
+#  #2801, v3.105.1). Sans `origin/dev` (supprimée entre deux MEP), la base de `main`.
+version_base_du_lot() {
+  if [ -n "${1:-}" ]; then echo "$1"; else echo "${2:-}"; fi
+}
+
 # verdict_version_du_lot v_base v_head → OK | FAIL | INCONNU
 #  Depuis #2631, un lot ne porte PAS de numéro : le conducteur le pose au moment de
 #  la MEP. Un lot qui en porte un recrée la collision du 10/11 (3.79.0, deux fois
@@ -278,6 +287,9 @@ if [ "${BASH_SOURCE[0]}" = "$0" ] && [ "${1:-}" = "--selftest" ]; then
   t "lot sans bump"                            OK      verdict_version_du_lot 3.84.1 3.84.1
   t "lot qui porte un bump (collision du 10/11)" FAIL  verdict_version_du_lot 3.84.1 3.85.0
   t "version de la base illisible"             INCONNU verdict_version_du_lot "" 3.84.1
+  t "lot parti d'un train numéroté : base de dev" 3.105.1 version_base_du_lot 3.105.1 3.105.0
+  t "sans origin/dev : base de main"           3.105.0 version_base_du_lot "" 3.105.0
+  t "bump du lot sur un train numéroté : refusé" FAIL  verdict_version_du_lot 3.105.1 3.105.2
   t "titre : marque remplacée"   "feat(mep): v3.85.0 — conducteur" titre_avec_version "feat(mep): {version} — conducteur" 3.85.0
   t "titre sans marque refusé"                 ""      titre_avec_version "feat(mep): v3.85.0" 3.85.0
   t "titre sans version calculée"              ""      titre_avec_version "feat: {version}" ""

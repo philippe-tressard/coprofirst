@@ -168,7 +168,10 @@ V_MAIN=$(lire_version origin/main); V_HEAD=$(lire_version HEAD)
 #  sur son bump. La branche dit lequel des deux part.
 MODE0D=$(mode_version_branche "$BRANCHE")
 V0D=$(verdict_bumps "${NB_BUMPS:-}" "${V_MAIN:-}" "${V_HEAD:-}")
-V_BASE=$(lire_version "$(git merge-base origin/main HEAD 2>/dev/null)")
+V_BASE_DEV=""
+git rev-parse -q --verify origin/dev >/dev/null 2>&1 \
+  && V_BASE_DEV=$(lire_version "$(git merge-base origin/dev HEAD 2>/dev/null)")
+V_BASE=$(version_base_du_lot "$V_BASE_DEV" "$(lire_version "$(git merge-base origin/main HEAD 2>/dev/null)")")
 [ "$MODE0D" = LOT ] && V0D=$(verdict_version_du_lot "${V_BASE:-}" "${V_HEAD:-}")
 if [ "$MODE0D" = LOT ]; then case "$V0D" in
   OK)   D0D="${V_HEAD:-?} inchangée depuis la base du lot — la version se pose par conduire-mep.sh à la MEP"

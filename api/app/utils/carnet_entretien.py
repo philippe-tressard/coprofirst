@@ -54,7 +54,7 @@ Le lot suivant, s'il est demandé.
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from datetime import date, datetime
+from datetime import date
 from app.utils import horloge
 from typing import Optional
 
@@ -173,17 +173,12 @@ class EntreeCarnet:
 
 
 def _jour(valeur) -> Optional[date]:
-    """La date d'un fait, que la colonne soit `date` ou `datetime`.
+    """Le jour d'un fait, que la colonne soit `date` ou `datetime`.
 
-    ⚠️ `datetime` est une sous-classe de `date` : tester `date` en premier
-    rendrait un `datetime` tel quel, et deux entrées du carnet ne se compareraient
-    plus entre elles (`'<' not supported between datetime and date`).
+    Un instant de la base est UTC naïf : son jour est celui de Paris
+    (`horloge.jour_civil`), jamais `.date()` — faux d'un jour entre 0 h et 2 h.
     """
-    if isinstance(valeur, datetime):
-        return valeur.date()
-    if isinstance(valeur, date):
-        return valeur
-    return None
+    return horloge.jour_civil(valeur) if isinstance(valeur, date) else None
 
 
 def _codes_de(valeur: Optional[str]) -> list[str]:
@@ -329,7 +324,9 @@ def _entrees_interventions(
     for ticket in tickets:
         if not ticket_visible(ticket, lecteur):
             continue
-        quand = _jour(ticket.debut) or _jour(ticket.ferme_le)
+        #  Datée de sa FERMETURE, comme toute affaire du carnet (#2804) ; le
+        #  jour prévu (`debut`) ne sert qu'à une affaire close sans date de fermeture.
+        quand = _jour(ticket.ferme_le) or _jour(ticket.debut)
         if quand is None:
             continue
         codes = _codes_de(ticket.perimetre_cible)
