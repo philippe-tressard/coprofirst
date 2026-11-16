@@ -13,6 +13,7 @@ export function noeud(
 		description: '',
 		icone: null,
 		batiment_id: null,
+		batiment_libelle: null,
 		profondeur: 0,
 		niveau: 1,
 		niveaux_libres: 2,

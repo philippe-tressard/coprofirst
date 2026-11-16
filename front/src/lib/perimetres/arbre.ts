@@ -38,6 +38,10 @@ export interface Perimetre {
 	description: string;
 	icone: string | null;
 	batiment_id: number | null;
+	/**  « Bât. 1 (D) » — le libellé du bâtiment que ce nœud représente, lettre de
+	 *   l'acte comprise, SERVI (`utils/batiments.libelle_batiment`) ; nul pour un nœud
+	 *   qui n'en représente pas. Lu par `LegendeBatiments` (16/11/2026). */
+	batiment_libelle: string | null;
 	profondeur: number;
 	/**  Le niveau lu par l'administrateur — 1 pour une tête de rangée (« Bâtiment 1 »,
 	 *   « Parking »), 0 pour un regroupement — et combien de niveaux le nœud peut
