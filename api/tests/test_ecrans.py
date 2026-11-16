@@ -23,9 +23,9 @@ from app.models.annonce_hall import AnnonceHall
 from app.models.core import RoleUtilisateur
 from app.models.ecrans import AppairageEcran, Ecran
 from app.utils import horloge
+from tests.aides_appareils import jeton_d_ecran
 from tests.aides_base import compte
 from tests.aides_http import base_http, client_http
-from tests.test_jetons_appareil import jeton_d_ecran
 
 CS = RoleUtilisateur.conseil_syndical
 #: Ce qui ne doit JAMAIS paraître dans le hall : l'auteur, les destinataires, la trace.

@@ -26,8 +26,8 @@ from fastapi.testclient import TestClient
 from app.auth import deps
 from app.auth.jetons_appareil import PORTEES, route_ouverte
 from app.main import app
-from app.models.core import RoleUtilisateur
-from tests.aides_http import base_http, client_http
+from tests.aides_appareils import jeton_d_ecran, jeton_de_montre
+from tests.aides_http import base_http
 from tests.aides_sources import operations_montees
 
 #: Le cas zéro du balayage — un ordre de grandeur, pas une valeur figée.
@@ -40,32 +40,6 @@ REFUS = (401, 403)
 def moteur(batiments):
     with base_http() as m:
         yield m
-
-
-def jeton_de_montre(moteur) -> str:
-    """Le parcours réel : le téléphone connecté relie une montre (`POST /montres`)."""
-    telephone, _ = client_http(moteur, RoleUtilisateur.propriétaire)
-    r = telephone.post("/montres", json={"plateforme": "watchos"})
-    assert r.status_code == 201, r.text
-    return r.json()["jeton"]
-
-
-def jeton_d_ecran(moteur, perimetre: str = "résidence", nom: str = "Hall bât. 2") -> str:
-    """Le parcours réel : l'écran demande, le conseil confirme, l'écran échange."""
-    ecran = TestClient(app)
-    demande = ecran.post("/ecrans/appairage")
-    assert demande.status_code == 200, demande.text
-    conseil, _ = client_http(moteur, RoleUtilisateur.conseil_syndical)
-    confirme = conseil.post(
-        "/ecrans",
-        json={"code_court": demande.json()["code_court"], "nom": nom, "perimetre": perimetre},
-    )
-    assert confirme.status_code == 201, confirme.text
-    r = ecran.post(
-        "/ecrans/appairage/jeton", json={"code_appareil": demande.json()["code_appareil"]}
-    )
-    assert r.status_code == 200, r.text
-    return r.json()["jeton"]
 
 
 #: L'émission réelle de chaque portée.
