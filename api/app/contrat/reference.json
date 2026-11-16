@@ -1,6 +1,6 @@
 {
-"version": "2.2.0",
-"empreinte": "d6344c7e82d4adc76ad6f3c7ff6cb2afe72be2dc26d36245ea170ab1ae7fc435",
+"version": "2.3.0",
+"empreinte": "76824c8ac8f48861cdaefac6fe191f43538994dac55e0e098d91622bf7498ac2",
 "operations": {
   "GET /acces/admin/choix-acces": {"deprecie": false, "entree": [], "reponse": {"$": "dictionnaire", "$.{}": "objet", "$.{}.codes": "liste", "$.{}.codes[]": "string", "$.{}.suit_le_lot": "boolean"}},
   "GET /acces/admin/constats-badges": {"deprecie": false, "entree": [], "reponse": {"$": "liste", "$[]": "objet", "$[].code": "string", "$[].gravite": "string", "$[].lots": "liste?", "$[].lots[]": "string", "$[].message": "string"}},
@@ -130,7 +130,7 @@
   "GET /annonces/{cible_id}/reponses": {"deprecie": false, "entree": ["path:cible_id"], "reponse": {"$": "liste", "$[]": "objet", "$[].auteur_batiment": "string?", "$[].auteur_id": "integer?", "$[].auteur_nom": "string", "$[].auteur_role": "string?", "$[].contenu": "string", "$[].cree_le": "string(date-time)", "$[].est_cs": "boolean?", "$[].id": "integer", "$[].peut_supprimer": "boolean?"}},
   "POST /annonces/{cible_id}/reponses": {"deprecie": false, "entree": ["corps", "corps.contenu", "path:cible_id"], "reponse": {"$": "objet", "$.auteur_batiment": "string?", "$.auteur_id": "integer?", "$.auteur_nom": "string", "$.auteur_role": "string?", "$.cible_id": "integer", "$.contenu": "string", "$.cree_le": "string(date-time)", "$.est_cs": "boolean?", "$.id": "integer", "$.peut_supprimer": "boolean?"}},
   "DELETE /annonces/{cible_id}/reponses/{rep_id}": {"deprecie": false, "entree": ["path:cible_id", "path:rep_id"], "reponse": {}},
-  "POST /appareils": {"deprecie": false, "entree": ["corps", "corps.abonnement", "corps.environnement", "corps.jeton"], "reponse": {}},
+  "POST /appareils": {"deprecie": false, "entree": ["corps", "corps.abonnement", "corps.jeton"], "reponse": {}},
   "DELETE /appareils/{abonnement}": {"deprecie": false, "entree": ["path:abonnement"], "reponse": {}},
   "POST /assistant/description": {"deprecie": false, "entree": ["corps", "corps.entite"], "reponse": {"$": "objet", "$.description": "string", "$.description_modifiee": "boolean", "$.titre": "string?", "$.titre_modifie": "boolean"}},
   "GET /assistant/disponible": {"deprecie": false, "entree": [], "reponse": {"$": "dictionnaire", "$.{}": "boolean"}},

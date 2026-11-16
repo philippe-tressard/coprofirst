@@ -1,7 +1,7 @@
 """Les appareils de la personne connectée — enregistrer, retirer (#2493).
 
-Spécification : `specs/architecture/notifications-push.md` §6.2. Appelé par
-l'application iOS seule : à la connexion (`POST`), à la déconnexion (`DELETE`).
+Spécification : `specs/architecture/notifications-push.md` §6.2. Appelé par les
+applications iOS et Android (#2789) : à la connexion (`POST`), à la déconnexion (`DELETE`).
 La PWA n'enregistre pas d'appareil — aucun client TypeScript ; le client Swift se
 génère du contrat publié (#2456).
 
@@ -10,7 +10,7 @@ Aucune réponse ne répète le jeton : un 204, sans corps.
 """
 
 from fastapi import APIRouter, Depends, Request, Response
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import ConfigDict, Field
 from sqlmodel import Session, select
 
 from app.auth.deps import get_current_user
@@ -19,19 +19,20 @@ from app.models.appareils import Appareil
 from app.models.core import Utilisateur
 from app.utils.limiter import LIMITE_PREFERENCE, limiter
 from app.utils.push.appareils import enregistrer
-from app.utils.push.envoi import MOTIF_ABONNEMENT, MOTIF_JETON, Environnement
+from app.utils.push.envoi import MOTIF_ABONNEMENT, Environnement, JetonDePlateforme
 from app.utils.recuperer import present_ou_404
 
 router = APIRouter(prefix="/appareils", tags=["appareils"])
 
 
-class AppareilEnregistre(BaseModel):
-    """Ce que l'application envoie — rien d'autre n'est admis."""
+class AppareilEnregistre(JetonDePlateforme):
+    """Ce que l'application envoie — rien d'autre n'est admis. La plateforme et le jeton
+    se jugent ensemble (`JetonDePlateforme`, #2789)."""
 
     model_config = ConfigDict(extra="forbid")
 
-    jeton: str = Field(pattern=MOTIF_JETON)
-    environnement: Environnement
+    #: L'APNs à viser ; sans objet pour FCM.
+    environnement: Environnement = "production"
     abonnement: str = Field(pattern=MOTIF_ABONNEMENT)
 
 
