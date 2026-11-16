@@ -85,6 +85,15 @@ precedence = "override"
 SPDX-FileCopyrightText = "Apple Inc."
 SPDX-License-Identifier = "LicenseRef-Apple-App-Store-Badge"
 
+#  La police Atkinson Hyperlegible (Braille Institute), embarquée dans la fiche
+#  d'accueil des arrivants (#2776) : fichiers de Google Fonts, sans modification,
+#  sous la SIL Open Font License 1.1 (`LICENSES/OFL-1.1.txt`), hors de l'AGPL.
+[[annotations]]
+path = "api/app/utils/polices/*.ttf"
+precedence = "override"
+SPDX-FileCopyrightText = "2020 Braille Institute of America, Inc."
+SPDX-License-Identifier = "OFL-1.1"
+
 #  Le manuel utilisateur (deux exemplaires) et la page de maintenance
 #  Cloudflare : texte du projet, pictogrammes Lucide en SVG en ligne.
 [[annotations]]

@@ -1,7 +1,12 @@
-"""Génération dynamique de la fiche d'accueil (fiche arrivant) en HTML."""
+"""Génération dynamique de la fiche d'accueil (fiche arrivant) en HTML.
+
+Gros caractères depuis #2776 : la mise en page et ses tailles sont dans
+`fiche_arrivant_css.py` ; ici, la structure du document et ses données.
+"""
 
 from __future__ import annotations
 
+import re
 from collections import defaultdict
 from html import escape
 from typing import Optional
@@ -15,19 +20,11 @@ from app.utils.pdf_theme import (
     icone_svg,
     image_data_uri as _photo_data_uri,
     logo_html,
+    police_lisible_css,
     qr_data_uri as _qr_data_uri,
 )
 from app.utils.perimetres import perimetre_du_batiment, perimetre_label_un
 from app.utils.etages import etage_label
-
-
-# ── Helpers ──────────────────────────────────────────────────────────────────
-
-
-def _initials(prenom: str, nom: str) -> str:
-    p = prenom.strip()[0].upper() if prenom and prenom.strip() else "?"
-    n = nom.strip()[0].upper() if nom and nom.strip() else "?"
-    return p + n
 
 
 # ── Icônes ───────────────────────────────────────────────────────────────────
@@ -51,51 +48,62 @@ def _initials(prenom: str, nom: str) -> str:
 # ── Consignes ── elles vivent en base, éditables par le CS (#1727) : le texte
 #    arrive ÉCHAPPÉ et rendu par `utils/consignes_arrivant`, jamais écrit ici.
 
+#: Le titre d'une rubrique tel que le conseil l'écrit : « 📦 1. Emménagement ».
+#: Le pictogramme et le numéro se rendent à part (#2776), sans rien changer à la
+#: saisie ; un titre écrit sans eux s'affiche tel quel. Le titre arrive ÉCHAPPÉ :
+#: `&` ouvre une entité, jamais un pictogramme.
+_TITRE = re.compile(r"(?P<pic>[^\w\s&;]{1,4})\s+(?:(?P<num>\d{1,3})[.)]\s+)?(?P<texte>\S.*)", re.S)
+_TITRE_NUMERO = re.compile(r"(?P<num>\d{1,3})[.)]\s+(?P<texte>\S.*)", re.S)
+
+
+def decouper_titre(titre: str) -> tuple[str, str, str]:
+    """(pictogramme, numéro, texte) d'un titre de rubrique déjà échappé. PURE.
+
+    Un pictogramme est un emoji ou un symbole hors du latin de base (au-delà de
+    U+2000) : un tiret ou une astérisque en tête restent dans le texte.
+    """
+    m = _TITRE.fullmatch(titre.strip())
+    if m and all(ord(c) > 0x2000 for c in m["pic"]):
+        return m["pic"], m["num"] or "", m["texte"]
+    m = _TITRE_NUMERO.fullmatch(titre.strip())
+    if m:
+        return "", m["num"], m["texte"]
+    return "", "", titre
+
 
 # ── Builders ─────────────────────────────────────────────────────────────────
 
 
-def _build_cs_card(m: dict) -> str:
-    """Carte d'un membre CS."""
+def _nom_complet(m: dict) -> str:
+    return f"{escape(m.get('genre', ''))} {escape(m.get('prenom', ''))} {escape(m.get('nom', '').upper())}".strip()
+
+
+def _build_cs_membre(m: dict) -> str:
+    """Un membre du conseil : nom, rôle et étage — sur une ligne lisible."""
     is_president = m.get("est_president", False)
     is_gestionnaire = m.get("est_gestionnaire_site", False)
-    photo_uri = _photo_data_uri(m.get("photo_url"))
 
-    card_class = "contact-card"
-    if is_president:
-        card_class += " president"
-    elif is_gestionnaire:
-        card_class += '" style="border-left-color:var(--navy);background:#F5F7FA;'
+    #  La photo du gestionnaire du site, comme avant #2776 ; les pastilles
+    #  d'initiales des autres membres sont parties : elles ne disaient rien que
+    #  le nom ne dise, et prenaient la largeur du corps agrandi.
+    photo_uri = _photo_data_uri(m.get("photo_url")) if is_gestionnaire else None
+    photo_html = f'<img class="membre-photo" src="{photo_uri}" alt="">' if photo_uri else ""
 
-    initials = _initials(m.get("prenom", ""), m.get("nom", ""))
-    avatar_color = "green" if is_president else ("gold" if is_gestionnaire else "navy")
-
-    if photo_uri and is_gestionnaire:
-        avatar_html = f'<img class="contact-photo" src="{photo_uri}" alt="{initials}">'
-    else:
-        avatar_html = f'<div class="contact-avatar {avatar_color}">{initials}</div>'
-
-    role_html = ""
-    if is_gestionnaire:
-        role_html = '<div class="contact-role">🏢 Gestionnaire du site</div>'
-    elif is_president:
-        role_html = '<div class="contact-role">Président</div>'
+    role = "Gestionnaire du site" if is_gestionnaire else ("Président" if is_president else "")
 
     #  🔴 `is not None`, jamais un test de vérité : `0` est le rez-de-chaussée,
     #  et il était faux en Python. Un conseiller du RDC n'avait donc AUCUN
     #  étage sur cette fiche — pas un étage faux, un étage absent.
     etage = m.get("etage")
-    etage_html = f"Étage {etage_label(etage)}" if etage is not None else ""
+    details = [f"<b>{role}</b>"] if role else []
+    if etage is not None:
+        details.append(escape(f"Étage {etage_label(etage)}"))
 
     return (
-        f'<div class="{card_class}">'
-        f"  {avatar_html}"
-        f'  <div class="contact-body">'
-        f"    {role_html}"
-        f'    <div class="contact-name">{escape(m["genre"])} {escape(m["prenom"])} {escape(m["nom"].upper())}</div>'
-        f'    <div class="contact-info">{escape(etage_html)}</div>'
-        f"  </div>"
-        f"</div>"
+        f'<div class="membre">{photo_html}<div>'
+        f'<div class="membre-nom">{_nom_complet(m)}</div>'
+        f'<div class="membre-detail">{" · ".join(details)}</div>'
+        "</div></div>"
     )
 
 
@@ -136,7 +144,7 @@ def _batiment_entete(batiment_id: Optional[int], membres: list) -> tuple[tuple, 
 
 
 def _build_cs_section(cs_data: dict) -> str:
-    """Section Conseil Syndical groupée par bâtiment."""
+    """Section Conseil Syndical groupée par bâtiment, un bâtiment par colonne."""
     membres = cs_data.get("membres", [])
     if not membres:
         return ""
@@ -152,39 +160,37 @@ def _build_cs_section(cs_data: dict) -> str:
     for m in membres:
         by_bat[m.get("batiment_id")].append(m)
 
-    html = '<div class="annuaire-section">\n'
-    html += "  <h3>📇 Conseil Syndical</h3>\n"
+    vote = ""
     if ag_annee:
-        html += (
-            f'  <p class="muted" style="margin-bottom:8px;font-size:11.5px">Voté en AG {ag_annee}'
-        )
+        vote = f"Voté en AG {ag_annee}"
         if ag_date:
             from datetime import date as dt_date
 
             try:
-                html += f" — {date_longue(dt_date.fromisoformat(ag_date))}"
+                vote += f" — {date_longue(dt_date.fromisoformat(ag_date))}"
             except Exception:
-                html += f" — {ag_date}"
-        html += "</p>\n"
+                vote += f" — {ag_date}"
 
+    #  Quatre colonnes au plus : au-delà, les bâtiments passent à la ligne.
+    colonnes = min(len(by_bat), 4)
+    html = '<section class="annuaire-section">\n'
+    html += f'  <div class="sec-titre"><h3>📇 Conseil syndical</h3><span class="muted">{escape(vote)}</span></div>\n'
+    html += f'  <div class="bats" style="grid-template-columns: repeat({colonnes}, 1fr)">\n'
     for _, entete, bat_membres in sorted(
         (_batiment_entete(bid, ms) for bid, ms in by_bat.items()),
         key=lambda t: t[0],
     ):
-        html += '  <div class="bat-section">\n'
-        html += f'    <div class="bat-label">{entete}</div>\n'
-        html += '    <div class="bat-grid">\n'
+        html += '    <div class="bat">\n'
+        html += f'      <div class="bat-label">{entete}</div>\n'
         for m in bat_membres:
-            html += f"      {_build_cs_card(m)}\n"
+            html += f"      {_build_cs_membre(m)}\n"
         html += "    </div>\n"
-        html += "  </div>\n"
-
-    html += "</div>\n"
+    html += "  </div>\n</section>\n"
     return html
 
 
 def _build_syndic_section(syndic_data: dict) -> str:
-    """Section Syndic."""
+    """Section Syndic : son identité, ses contacts côte à côte, le QR de son extranet."""
     #  Le nom vient de `nom_du_syndic` en amont (#535) : il n'est plus lu
     #  dans `SyndicInfo`, qui pouvait diverger du contrat désigné.
     nom = syndic_data.get("nom_syndic", "")
@@ -198,72 +204,64 @@ def _build_syndic_section(syndic_data: dict) -> str:
         if qr_src:
             qr_html = f'<img class="qr-code" src="{qr_src}" alt="QR Extranet">'
 
-    html = f"<h3>🏛 Syndic — {escape(nom)}</h3>\n"
-    html += '<div class="syndic-header" style="display:flex;align-items:center;gap:10px;">\n'
-    html += '  <div style="flex:1;">\n'
-    html += '    <div style="display:flex;align-items:baseline;gap:6px;flex-wrap:wrap;">\n'
-    html += f'      <span class="syndic-name">{escape(nom)}</span>\n'
-    html += f'      <span class="syndic-detail">📍 {escape(adresse)}</span>\n'
-    html += "    </div>\n"
-    html += "  </div>\n"
-    html += f"  {qr_html}\n"
-    html += "</div>\n"
+    contacts = ""
+    for m in membres:
+        fonction = m.get("fonction") or ("Gestionnaire" if m.get("est_principal") else "")
+        if m.get("est_principal"):
+            fonction = "★ " + fonction
+        lignes = []
+        if m.get("email"):
+            lignes.append(f"✉ {escape(m['email'])}")
+        for tel in (m.get("telephone") or "").split(","):
+            if tel.strip():
+                lignes.append(f"☎ {escape(tel.strip())}")
+        contacts += (
+            '<div class="syndic-contact">'
+            + (f'<div class="syndic-fonction">{escape(fonction)}</div>' if fonction else "")
+            + f'<div class="syndic-personne">{_nom_complet(m)}</div>'
+            + "<br>".join(lignes)
+            + "</div>"
+        )
 
-    if membres:
-        html += '<div class="syndic-contacts">\n'
-        for m in membres:
-            is_principal = m.get("est_principal", False)
-            card_class = "contact-card principal" if is_principal else "contact-card syndic"
-            avatar_color = "gold" if is_principal else "purple"
-            initials = _initials(m.get("prenom", ""), m.get("nom", ""))
+    #  Trois contacts par ligne au plus, comme avant #2776.
+    colonnes = max(1, min(len(membres), 3))
+    adresse_html = f'<div class="syndic-adresse">📍 {escape(adresse)}</div>' if adresse else ""
+    return (
+        '<section>\n  <div class="sec-titre"><h3>🏛 Syndic</h3></div>\n'
+        '  <div class="syndic">'
+        f'<div><div class="syndic-nom">{escape(nom)}</div>{adresse_html}</div>'
+        f'<div class="syndic-contacts" style="grid-template-columns: repeat({colonnes}, 1fr)">{contacts}</div>'
+        f"{qr_html}</div>\n</section>\n"
+    )
 
-            role_label = (
-                "★ " + (m.get("fonction") or "Gestionnaire")
-                if is_principal
-                else (m.get("fonction") or "")
-            )
 
-            info_parts = []
-            if m.get("email"):
-                info_parts.append(f"✉ {escape(m['email'])}")
-            if m.get("telephone"):
-                for tel in m["telephone"].split(","):
-                    tel = tel.strip()
-                    if tel:
-                        info_parts.append(f"☎ {escape(tel)}")
-            info_html = "<br>".join(info_parts)
-
-            html += f'  <div class="{card_class}">\n'
-            html += f'    <div class="contact-avatar {avatar_color}">{initials}</div>\n'
-            html += f'    <div class="contact-body">\n'
-            if role_label:
-                html += f'      <div class="contact-role">{escape(role_label)}</div>\n'
-            html += f'      <div class="contact-name">{escape(m.get("genre", ""))} {escape(m.get("prenom", ""))} {escape(m.get("nom", "").upper())}</div>\n'
-            html += f'      <div class="contact-info">{info_html}</div>\n'
-            html += f"    </div>\n"
-            html += f"  </div>\n"
-        html += "</div>\n"
-
-    return html
+def _build_regle(titre: str, contenu: str) -> str:
+    """Une rubrique : pictogramme, titre, et une puce par ligne saisie."""
+    pic, num, texte = decouper_titre(titre)
+    #  « Une ligne par consigne », dit l'aide de saisie : chaque ligne devient une
+    #  puce. Le contenu arrive échappé ; un saut de ligne n'y coupe aucune balise.
+    puces = "".join(f"<li>{ligne}</li>" for ligne in contenu.split("\n") if ligne.strip())
+    numero = f'<span class="regle-numero">{num}.</span>' if num else ""
+    pictogramme = f'<div class="regle-pictogramme">{pic}</div>' if pic else ""
+    classe = "regle" if pic else "regle sans-pictogramme"
+    return (
+        f'<div class="{classe}">{pictogramme}<div>'
+        f'<div class="regle-titre">{numero}{texte}</div>'
+        f'<ul class="regle-contenu">{puces}</ul>'
+        "</div></div>\n"
+    )
 
 
 def _build_consignes_section(adresse: str, consignes: list[tuple[str, str]]) -> str:
-    html = "<h3>📋 Consignes de la copropriété</h3>\n"
-    html += '<div class="consignes-intro">\n'
+    html = '<section>\n  <div class="sec-titre"><h3>📋 Consignes de la copropriété</h3></div>\n'
     html += (
-        "  <p>À la demande du Conseil syndical, il est rappelé à Mesdames et Messieurs "
-        "les résidents que les dispositions du règlement de copropriété relatives aux "
-        "parties communes et à la vie collective doivent être respectées par tous et "
+        '  <p class="rappel">À la demande du Conseil syndical, il est rappelé à Mesdames et '
+        "Messieurs les résidents que les dispositions du règlement de copropriété relatives "
+        "aux parties communes et à la vie collective doivent être respectées par tous et "
         "notamment ce qui suit.</p>\n"
     )
-    html += "</div>\n"
-
-    for titre, contenu in consignes:
-        html += '<div class="regle">\n'
-        html += f'  <div class="regle-titre">{titre}</div>\n'
-        html += f'  <div class="regle-contenu">{contenu}</div>\n'
-        html += "</div>\n"
-
+    html += "".join(_build_regle(titre, contenu) for titre, contenu in consignes)
+    html += "</section>\n"
     html += f'<p class="consigne-footer-note">Ce document est un résumé. Le règlement complet est disponible sur <strong>{escape(adresse)}</strong> → Résidence.</p>\n'
     return html
 
@@ -299,27 +297,19 @@ def generer_fiche_arrivant(
     globe_svg = icone_svg("globe")
     wa_svg = icone_svg("whatsapp")
 
-    # ── Dual CTA ──
-    wa_cta = ""
-    if whatsapp_url and wa_qr:
-        wa_cta = (
-            '<div class="whatsapp-cta">\n'
-            '  <div class="wa-text">\n'
-            f'    <div class="wa-title">{wa_svg}WhatsApp de la Copro</div>\n'
-            '    <div class="wa-desc">Infos résidence en temps réel.<br>Demandez le lien au CS de votre bâtiment.</div>\n'
-            "  </div>\n"
-            f'  <img class="qr-code" src="{wa_qr}" alt="QR WhatsApp">\n'
-            "</div>\n"
-        )
-    else:
-        wa_cta = (
-            '<div class="whatsapp-cta">\n'
-            '  <div class="wa-text">\n'
-            f'    <div class="wa-title">{wa_svg}WhatsApp de la Copro</div>\n'
-            '    <div class="wa-desc">Infos résidence en temps réel.<br>Demandez le lien au CS de votre bâtiment.</div>\n'
-            "  </div>\n"
-            "</div>\n"
-        )
+    wa_qr_html = (
+        f'<img class="qr-code" src="{wa_qr}" alt="QR WhatsApp">' if whatsapp_url and wa_qr else ""
+    )
+    wa_cta = (
+        '<div class="cta whatsapp">\n'
+        '  <div class="cta-texte">\n'
+        '    <div class="cta-label">WhatsApp de la Copro</div>\n'
+        f'    <div class="cta-titre">{wa_svg}Infos en temps réel</div>\n'
+        '    <div class="cta-aide">Demandez le lien au CS de votre bâtiment.</div>\n'
+        "  </div>\n"
+        f"  {wa_qr_html}\n"
+        "</div>\n"
+    )
 
     return f"""\
 <!DOCTYPE html>
@@ -329,42 +319,42 @@ def generer_fiche_arrivant(
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Bienvenue — {nom}</title>
 <style>
-{CSS}
+{police_lisible_css()}{CSS}
 </style>
 </head>
 <body>
 <div class="page">
   <div class="header">
-    {logo_html(logo_png, sombre=True)}
+    {logo_html(logo_png, size=48, sombre=True)}
     <div class="header-text">
       <div class="header-title">Bienvenue dans votre résidence !</div>
       <div class="header-sub">Consignes de la copropriété</div>
     </div>
+    <div class="header-site">{escape(adresse)}</div>
   </div>
-  <div class="accent-bar"></div>
   <div class="content">
-    <h2>Bonjour et bienvenue&nbsp;!</h2>
-    <p class="accueil">{accueil_html}</p>
-    <div class="dual-cta">
-      <div class="cta-banner">
-        <div class="cta-banner-text">
-          <div class="label">Votre espace en ligne</div>
-          <div class="url">{globe_svg}{escape(adresse)}</div>
-          <div class="hint">Inscription → Validation par le CS → C'est prêt !</div>
+    <div class="intro">
+      <div>
+        <h2>Bonjour et bienvenue&nbsp;!</h2>
+        <p class="accueil">{accueil_html}</p>
+      </div>
+      <div class="cta">
+        <div class="cta-texte">
+          <div class="cta-label">Votre espace en ligne</div>
+          <div class="cta-titre">{globe_svg}{escape(adresse)}</div>
+          <div class="cta-aide">Inscription → Validation par le CS → C'est prêt !</div>
         </div>
         <img class="qr-code" src="{site_qr}" alt="QR {escape(adresse)}">
       </div>
       {wa_cta}
     </div>
-    <hr class="sep">
     {_build_cs_section(cs_data)}
-    <hr class="sep">
     {_build_syndic_section(syndic_data)}
-    <hr class="sep">
     {_build_consignes_section(adresse, consignes)}
   </div>
   <div class="footer">
-    <p>© {annee} • {nom} • <strong>{escape(adresse)}</strong></p>
+    <span>© {annee} • {nom} • <strong>{escape(adresse)}</strong></span>
+    <span>Bienvenue chez vous</span>
   </div>
 </div>
 </body>
