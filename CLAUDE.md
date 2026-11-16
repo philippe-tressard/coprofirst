@@ -234,7 +234,8 @@ Le détail de chacune : `security-audit` §11.
   les scripts, crontabs et documents, jamais dans l'application (🔒
   `test_hygiene_depot.py`, `security-audit` §8).
 - **Un hôte fictif est un nom réservé** — `exemple.test`, `example.com`, `.example`,
-  `.invalid` —, jamais `exemple.fr`, vrai domaine tiers ; un vrai domaine se déclare dans
+  `.invalid` —, jamais un nom inventé sous un vrai suffixe (« exemple » en `.fr` existe et
+  répond en DNS) ; un vrai domaine se déclare dans
   `REELS` (🔒 `test_hotes_fictifs.py`, `standards/03` §8 quater, #2767).
 
 ---
