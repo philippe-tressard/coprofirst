@@ -220,8 +220,8 @@ def test_l_adresse_de_liste_suit_celle_du_fournisseur():
     """Un point d'accès compatible OpenAI relayé par une autre adresse doit voir
     sa liste demandée à CETTE adresse, pas à api.openai.com."""
     assert (
-        FOURNISSEURS["openai"].url_modeles("https://relais.exemple.fr/v1/", "")
-        == "https://relais.exemple.fr/v1/models"
+        FOURNISSEURS["openai"].url_modeles("https://relais.exemple.test/v1/", "")
+        == "https://relais.exemple.test/v1/models"
     )
     assert (
         FOURNISSEURS["anthropic"].url_modeles("https://api.anthropic.com", "")

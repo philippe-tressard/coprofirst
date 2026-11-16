@@ -178,7 +178,7 @@
 			</label>
 			<label class="field">
 				Nom d'utilisateur
-				<input type="text" bind:value={imapConfig.username} placeholder="noreply@exemple.fr" />
+				<input type="text" bind:value={imapConfig.username} placeholder="noreply@example.com" />
 				<span class="aide">Le même compte que l'envoi, chez le même hébergeur.</span>
 			</label>
 			<!--  Le motif du secret déjà posé vit dans `ChampSecret` (11/09/2026) : il
@@ -214,7 +214,7 @@
 					bind:value={imapConfig.delegues}
 					rows="3"
 					spellcheck="false"
-					placeholder="syndic.fr = cabinet.onmicrosoft.com"></textarea>
+					placeholder="syndic.example.com = cabinet.onmicrosoft.com"></textarea>
 				<span class="aide">
 					Une ligne par domaine : « domaine de l'expéditeur = domaine qui signe pour lui ». À
 					remplir quand une réponse est refusée parce qu'elle est « signée par … et non par le

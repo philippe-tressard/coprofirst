@@ -66,7 +66,7 @@ def cas(session, request):
 
 def _proprietaire(session: Session, nom: str, cree: list) -> Utilisateur:
     u = Utilisateur(
-        nom=nom, prenom="Claire", email=f"{nom.lower()}@exemple.fr", hashed_password="x"
+        nom=nom, prenom="Claire", email=f"{nom.lower()}@exemple.test", hashed_password="x"
     )
     session.add(u)
     session.commit()

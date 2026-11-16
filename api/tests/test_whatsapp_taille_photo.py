@@ -188,7 +188,7 @@ def test_un_corps_refuse_reemet_le_message_sans_la_photo(bridge_factice, monkeyp
     entier était perdu alors que le texte serait passé.
     """
     bridge_factice.codes = [413, 200]
-    poser_adresse_du_site(monkeypatch, "https://exemple.fr")
+    poser_adresse_du_site(monkeypatch, "https://exemple.test")
 
     wa.envoyer_whatsapp(
         "Porte des boîtes aux lettres",
@@ -203,7 +203,7 @@ def test_un_corps_refuse_reemet_le_message_sans_la_photo(bridge_factice, monkeyp
     premier, second = bridge_factice.corps
     assert "imageBase64" in premier
     assert "imageBase64" not in second, "La réémission doit se faire SANS la photo."
-    assert "exemple.fr" in second["text"], (
+    assert "exemple.test" in second["text"], (
         "Le message de repli doit dire où voir la photo, plutôt que de laisser "
         "croire qu'il n'y en a pas."
     )

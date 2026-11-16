@@ -65,7 +65,7 @@ def client_fixture(session: Session):
     from app.auth.deps import require_cs_or_admin
 
     admin = Utilisateur(
-        email="admin@test.fr",
+        email="admin@test.test",
         hashed_password="x",
         nom="Admin",
         prenom="Test",
@@ -92,7 +92,7 @@ def _decor(session: Session) -> tuple[int, int]:
     session.commit()
     lot = Lot(numero="12", type="appartement", batiment_id=bat.id)
     bailleur = Utilisateur(
-        email="bailleur@test.fr",
+        email="bailleur@test.test",
         hashed_password="x",
         nom="Proprio",
         prenom="Paul",
@@ -132,7 +132,7 @@ def test_un_bail_dont_le_locataire_A_un_compte_est_signale_comme_RATTRAPABLE(
             bailleur_id=bailleur_id,
             locataire_nom="Durand",
             locataire_prenom="Jean",
-            locataire_email="j.durand@ancienne-adresse.fr",
+            locataire_email="j.durand@ancienne-adresse.test",
             date_entree=date(2026, 1, 1),
             statut=StatutBail.actif,
         )
@@ -200,7 +200,7 @@ def test_un_bail_DEJA_rattache_ne_figure_pas_non_plus(session: Session, client: 
     """Le cas zéro : sans lui, le relevé pourrait tout lister et paraître juste."""
     lot_id, bailleur_id = _decor(session)
     locataire = Utilisateur(
-        email="ok@test.fr",
+        email="ok@test.test",
         hashed_password="x",
         nom="Lié",
         prenom="Luc",
@@ -228,7 +228,7 @@ def test_les_rattrapables_sont_en_TETE(session: Session, client: TestClient):
     lot_id, bailleur_id = _decor(session)
     session.add(
         Utilisateur(
-            email="zoe@test.fr",
+            email="zoe@test.test",
             hashed_password="x",
             nom="Zeller",
             prenom="Zoé",

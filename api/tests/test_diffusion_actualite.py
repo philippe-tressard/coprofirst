@@ -30,7 +30,7 @@ def contexte(monkeypatch, batiments):
     poser_adresse_du_site(monkeypatch, "https://5hostachy.fr")
     monkeypatch.setattr(
         "app.utils.destinataires.destinataires_syndic_cs",
-        lambda session, syndic, cs: [("Syndic", "syndic@exemple.fr")] if (syndic or cs) else [],
+        lambda session, syndic, cs: [("Syndic", "syndic@exemple.test")] if (syndic or cs) else [],
     )
     monkeypatch.setattr(
         annonces_hall, "creer_annonce_hall", lambda **k: affiches.append(k["ticket_id"])

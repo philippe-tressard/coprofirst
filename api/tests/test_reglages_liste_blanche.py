@@ -65,7 +65,7 @@ def _cles_en_base(session) -> set[str]:
 )
 def test_une_cle_non_ecrivable_est_refusee_et_rien_n_est_ecrit(session, cle):
     with pytest.raises(HTTPException) as refus:
-        save_config({"site_email": "admin@exemple.fr", cle: "1"}, _Admin(), session)
+        save_config({"site_email": "admin@exemple.test", cle: "1"}, _Admin(), session)
     assert refus.value.status_code == 422
     #  La clé valide de la même requête n'est pas écrite non plus.
     assert _cles_en_base(session) == set()
@@ -81,8 +81,8 @@ def test_le_premier_essai_d_un_usage_est_reserve_au_serveur():
 
 def test_une_requete_de_cles_declarees_s_ecrit(session):
     donnees = {
-        "site_email": "admin@exemple.fr",
-        "smtp_server": "smtp.exemple.fr",
+        "site_email": "admin@exemple.test",
+        "smtp_server": "smtp.exemple.test",
         "imap_dossier": "INBOX",
         "whatsapp_api_url": "http://whatsapp-bridge:8090",
         "page_config_tableau-de-bord": "{}",

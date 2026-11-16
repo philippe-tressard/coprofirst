@@ -89,8 +89,8 @@ def test_la_mise_en_forme_passe_et_le_reste_est_retire():
 
 
 def test_un_lien_garde_son_adresse_et_recoit_rel():
-    sortie = assainir_html('<a href="https://exemple.fr/x" rel="opener">voir</a>')
-    assert sortie == '<a href="https://exemple.fr/x" rel="noopener noreferrer">voir</a>'
+    sortie = assainir_html('<a href="https://exemple.test/x" rel="opener">voir</a>')
+    assert sortie == '<a href="https://exemple.test/x" rel="noopener noreferrer">voir</a>'
 
 
 def test_un_texte_simple_reste_du_texte():
@@ -178,7 +178,7 @@ def test_aucun_modele_ne_laisse_passer_le_html_d_une_variable(code, sujet, corps
     ctx = {nom: _Hostile() for nom in variables_de(sujet, corps) | VARIABLES_DU_GABARIT}
     ctx["annee"] = 2026
     _objet, html = composer_email(
-        modele, ctx, site_nom="Résidence", site_url="https://exemple.fr", email_footer=""
+        modele, ctx, site_nom="Résidence", site_url="https://exemple.test", email_footer=""
     )
     assert not fautes(html), f"{code} : {fautes(html)}"
 
@@ -192,7 +192,7 @@ def test_le_corps_s_echappe_et_l_objet_reste_du_texte():
         modele,
         {"t": "Tom & Jerry <b>", "annee": 2026},
         site_nom="R",
-        site_url="https://exemple.fr",
+        site_url="https://exemple.test",
         email_footer="",
     )
     assert objet == "Tom & Jerry <b>"
@@ -224,11 +224,11 @@ def test_la_description_d_une_affaire_arrive_assainie_au_conseil():
         "urgent": False,
         "annee": 2026,
         "residence": {"nom": "R"},
-        "app": {"url": "https://exemple.fr"},
+        "app": {"url": "https://exemple.test"},
     }
     modele = ModeleEmail(code=code, libelle=code, sujet=sujet, corps_html=corps)
     _objet, html = composer_email(
-        modele, ctx, site_nom="R", site_url="https://exemple.fr", email_footer=""
+        modele, ctx, site_nom="R", site_url="https://exemple.test", email_footer=""
     )
     assert "<strong>Eau</strong>" in html
     assert not fautes(html)

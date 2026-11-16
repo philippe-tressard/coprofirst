@@ -44,7 +44,7 @@ def moteur(monkeypatch):
 def _generer(dossier, *, jour=JOUR, manuel=MANUEL, logo_png=None, sous_titre=""):
     return m.generer_manuel_pdf(
         "5Hostachy",
-        "https://exemple.fr",
+        "https://exemple.test",
         logo_png=logo_png,
         sous_titre=sous_titre,
         html_manuel=manuel,
@@ -141,7 +141,7 @@ def test_le_prechauffage_ATTEND_le_front(monkeypatch):
         return b"%PDF-x"
 
     monkeypatch.setattr(m, "generer_manuel_pdf", front_lent)
-    assert m.prechauffer("5Hostachy", "https://exemple.fr", logo_png=None, pause_s=0) is True
+    assert m.prechauffer("5Hostachy", "https://exemple.test", logo_png=None, pause_s=0) is True
     assert len(essais) == 3
 
 
@@ -153,7 +153,7 @@ def test_le_prechauffage_finit_par_RENONCER(monkeypatch):
         raise m.ManuelIndisponible("front absent")
 
     monkeypatch.setattr(m, "generer_manuel_pdf", jamais)
-    assert m.prechauffer("5Hostachy", "https://exemple.fr", logo_png=None, pause_s=0) is False
+    assert m.prechauffer("5Hostachy", "https://exemple.test", logo_png=None, pause_s=0) is False
     assert len(essais) == m.TENTATIVES_PRECHAUFFAGE
 
 
@@ -166,7 +166,7 @@ def test_un_MOTEUR_en_panne_ne_se_reessaie_pas(monkeypatch):
         raise RuntimeError("moteur indisponible")
 
     monkeypatch.setattr(m, "generer_manuel_pdf", casse)
-    assert m.prechauffer("5Hostachy", "https://exemple.fr", logo_png=None, pause_s=0) is False
+    assert m.prechauffer("5Hostachy", "https://exemple.test", logo_png=None, pause_s=0) is False
     assert len(essais) == 1
 
 

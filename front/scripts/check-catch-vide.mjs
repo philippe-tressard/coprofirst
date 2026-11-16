@@ -231,7 +231,7 @@ function selftest() {
 	t(
 		'URL puis appel fautif sur la même ligne',
 		1,
-		"const u = 'https://x.fr'; api.list().catch(() => []);",
+		"const u = 'https://x.test'; api.list().catch(() => []);",
 	);
 
 	//  ── Forme 2 (#1459) ──

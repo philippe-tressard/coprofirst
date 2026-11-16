@@ -35,7 +35,7 @@ def alice_et_bruno(session: Session) -> None:
         id=1,
         prenom="Alice",
         nom="Martin",
-        email="alice@x.fr",
+        email="alice@x.test",
         role="conseil_syndical",
     )
     compte(
@@ -43,6 +43,6 @@ def alice_et_bruno(session: Session) -> None:
         id=2,
         prenom="Bruno",
         nom="Dupont",
-        email="bruno@x.fr",
+        email="bruno@x.test",
         role="propriétaire",
     )

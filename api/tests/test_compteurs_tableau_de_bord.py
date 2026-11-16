@@ -139,8 +139,8 @@ def _clos_pour_l_ecran(sondage_lu) -> bool:
 def test_le_compteur_sondages_egale_ce_que_l_ecran_montre(base):
     """Pour chaque profil : la pastille annonce ce que `/sondages` rendra d'ouvert."""
     bat1, bat2 = _batiments(base)
-    cs = _utilisateur(base, "cs@test.fr", "conseil_syndical")
-    resident = _utilisateur(base, "resident@test.fr", "résident", batiment_id=bat1)
+    cs = _utilisateur(base, "cs@test.test", "conseil_syndical")
+    resident = _utilisateur(base, "resident@test.test", "résident", batiment_id=bat1)
 
     _sondage(base, cs.id)  # ouvert, sans ciblage → visible de tous
     _sondage(base, cs.id, perimetre_cible=f'["bat:{bat2}"]')  # autre bâtiment
@@ -158,8 +158,8 @@ def test_le_compteur_sondages_egale_ce_que_l_ecran_montre(base):
 def test_un_sondage_cible_ailleurs_ne_gonfle_pas_la_pastille_du_resident(base):
     """(b) — le cas le plus visible : « Sondages 1 » et un écran vide."""
     _bat1, bat2 = _batiments(base)
-    cs = _utilisateur(base, "cs@test.fr", "conseil_syndical")
-    resident = _utilisateur(base, "resident@test.fr", "résident", batiment_id=_bat1)
+    cs = _utilisateur(base, "cs@test.test", "conseil_syndical")
+    resident = _utilisateur(base, "resident@test.test", "résident", batiment_id=_bat1)
     _sondage(base, cs.id, perimetre_cible=f'["bat:{bat2}"]')
 
     assert calculer(_contexte(base, resident)).sondages_actifs == 0
@@ -168,7 +168,7 @@ def test_un_sondage_cible_ailleurs_ne_gonfle_pas_la_pastille_du_resident(base):
 
 def test_une_echeance_passee_clot_le_sondage_pour_le_compteur(base):
     """(c) — `~cloture_forcee` n'excluait que la clôture manuelle."""
-    cs = _utilisateur(base, "cs@test.fr", "conseil_syndical")
+    cs = _utilisateur(base, "cs@test.test", "conseil_syndical")
     _sondage(base, cs.id, cloture_le=maintenant() - timedelta(minutes=1))
 
     assert calculer(_contexte(base, cs)).sondages_actifs == 0
@@ -193,9 +193,9 @@ def test_le_compteur_tickets_egale_ce_que_l_ecran_montre(base):
     — il resterait vert en ayant cessé de mesurer.
     """
     bat1, bat2 = _batiments(base)[:2]
-    cs = _utilisateur(base, "cs@test.fr", "conseil_syndical")
-    resident = _utilisateur(base, "resident@test.fr", "résident", batiment_id=bat1)
-    autre = _utilisateur(base, "autre@test.fr", "résident", batiment_id=bat2)
+    cs = _utilisateur(base, "cs@test.test", "conseil_syndical")
+    resident = _utilisateur(base, "resident@test.test", "résident", batiment_id=bat1)
+    autre = _utilisateur(base, "autre@test.test", "résident", batiment_id=bat2)
 
     #  (auteur, périmètre) — qui le voit se lit dans la colonne de droite.
     lot = [
@@ -250,7 +250,7 @@ def _affaire_datee(session: Session, auteur_id: int, titre: str, debut, fin=None
 
 def test_le_rendez_vous_est_l_affaire_datee_la_plus_proche_a_venir(base):
     """Passée, annulée ou plus lointaine : aucune n'est le prochain rendez-vous."""
-    cs = _utilisateur(base, "cs@test.fr", "conseil_syndical")
+    cs = _utilisateur(base, "cs@test.test", "conseil_syndical")
     now = maintenant()
     _affaire_datee(base, cs.id, "Passée", now - timedelta(days=2))
     _affaire_datee(base, cs.id, "Annulée", now + timedelta(hours=1), statut="annulé")
@@ -263,7 +263,7 @@ def test_le_rendez_vous_est_l_affaire_datee_la_plus_proche_a_venir(base):
 
 def test_un_rendez_vous_en_cours_reste_le_rendez_vous(base):
     """Commencé il y a une heure, fini dans deux : c'est encore celui du jour."""
-    cs = _utilisateur(base, "cs@test.fr", "conseil_syndical")
+    cs = _utilisateur(base, "cs@test.test", "conseil_syndical")
     now = maintenant()
     en_cours = _affaire_datee(
         base, cs.id, "En cours", now - timedelta(hours=1), fin=now + timedelta(hours=2)
@@ -275,8 +275,8 @@ def test_un_rendez_vous_en_cours_reste_le_rendez_vous(base):
 def test_le_rendez_vous_suit_la_visibilite_de_l_affaire(base):
     """La pastille ne nomme jamais une affaire que l'écran ne montrerait pas."""
     bat1, bat2 = _batiments(base)[:2]
-    resident = _utilisateur(base, "resident@test.fr", "résident", batiment_id=bat1)
-    autre = _utilisateur(base, "autre@test.fr", "résident", batiment_id=bat2)
+    resident = _utilisateur(base, "resident@test.test", "résident", batiment_id=bat1)
+    autre = _utilisateur(base, "autre@test.test", "résident", batiment_id=bat2)
     _affaire_datee(
         base,
         autre.id,
@@ -307,13 +307,13 @@ def _compte_inactif(session: Session, email: str, decide: bool) -> Utilisateur:
 def test_le_compteur_validations_egale_la_file_de_l_ecran(base):
     """La pastille Espace CS annonce exactement son onglet « Comptes & accès »."""
     bat1, _bat2 = _batiments(base)
-    cs = _utilisateur(base, "cs@test.fr", "conseil_syndical")
+    cs = _utilisateur(base, "cs@test.test", "conseil_syndical")
     lot = Lot(batiment_id=bat1, numero="A1")
     base.add(lot)
     base.commit()
     base.refresh(lot)
 
-    _compte_inactif(base, "attente@test.fr", decide=False)
+    _compte_inactif(base, "attente@test.test", decide=False)
     base.add(CommandeAcces(user_id=cs.id, lot_id=lot.id, type="vigik"))
     base.commit()
 
@@ -333,25 +333,25 @@ def test_un_compte_refuse_ou_desactive_quitte_la_file(base):
     aucun état, donc rien ne le distinguait d'une inscription du jour, et il
     revenait à chaque chargement de l'écran.
     """
-    cs = _utilisateur(base, "cs@test.fr", "conseil_syndical")
-    _compte_inactif(base, "attente@test.fr", decide=False)
-    _compte_inactif(base, "refuse@test.fr", decide=True)
-    _compte_inactif(base, "desactive@test.fr", decide=True)
+    cs = _utilisateur(base, "cs@test.test", "conseil_syndical")
+    _compte_inactif(base, "attente@test.test", decide=False)
+    _compte_inactif(base, "refuse@test.test", decide=True)
+    _compte_inactif(base, "desactive@test.test", decide=True)
 
     assert calculer(_contexte(base, cs)).validations_cs == 1
-    assert [u.email for u in comptes_en_attente(session=base)] == ["attente@test.fr"]
+    assert [u.email for u in comptes_en_attente(session=base)] == ["attente@test.test"]
 
 
 def test_la_pastille_admin_somme_les_trois_files_de_son_ecran(base):
     """Comptes + demandes d'accès + demandes de profil — la troisième manquait."""
     bat1, _bat2 = _batiments(base)
-    admin = _utilisateur(base, "admin@test.fr", "admin")
+    admin = _utilisateur(base, "admin@test.test", "admin")
     lot = Lot(batiment_id=bat1, numero="A1")
     base.add(lot)
     base.commit()
     base.refresh(lot)
 
-    _compte_inactif(base, "attente@test.fr", decide=False)
+    _compte_inactif(base, "attente@test.test", decide=False)
     base.add(CommandeAcces(user_id=admin.id, lot_id=lot.id, type="vigik"))
     base.add(DemandeModificationProfil(utilisateur_id=admin.id, motif="M"))
     base.commit()
@@ -376,9 +376,9 @@ def test_un_compteur_reserve_vaut_zero_pour_qui_ne_voit_pas_sa_pastille(base):
     l'écran.
     """
     bat1, _bat2 = _batiments(base)
-    resident = _utilisateur(base, "resident@test.fr", "résident", batiment_id=bat1)
-    cs = _utilisateur(base, "cs@test.fr", "conseil_syndical")
-    _compte_inactif(base, "attente@test.fr", decide=False)
+    resident = _utilisateur(base, "resident@test.test", "résident", batiment_id=bat1)
+    cs = _utilisateur(base, "cs@test.test", "conseil_syndical")
+    _compte_inactif(base, "attente@test.test", decide=False)
 
     #  Le résident ne voit ni Espace CS ni Admin.
     sante_resident = calculer(_contexte(base, resident))

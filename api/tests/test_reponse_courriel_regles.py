@@ -162,9 +162,9 @@ def test_le_transfert_d_un_message_d_un_TIERS_verse_le_message_du_tiers(scene): 
 
 
 def test_une_REPONSE_a_un_transfert_n_est_pas_un_transfert():
-    texte = "Merci.\n\nDébut du message réexpédié :\n\nDe : G S <g@syndic.fr>\n\nTexte"
+    texte = "Merci.\n\nDébut du message réexpédié :\n\nDe : G S <g@syndic.test>\n\nTexte"
     assert transfert_dans("RE: TR : Affaire #TK-1", texte) is None
-    assert transfert_dans("TR : Affaire #TK-1", texte).adresse == "g@syndic.fr"
+    assert transfert_dans("TR : Affaire #TK-1", texte).adresse == "g@syndic.test"
 
 
 # ── Un merci du conseil n'entre pas ───────────────────────────────────────────
