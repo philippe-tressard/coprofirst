@@ -49,6 +49,7 @@ from app.utils.cloche import sonner_systeme
 from app.utils.config_site import config_site
 from app.utils.liens import adresse_du_site, nom_site
 from app.utils.logo import logo_televerse_png
+from app.utils.palettes import CLE_PALETTE
 
 router = APIRouter()
 
@@ -392,6 +393,9 @@ def get_fiche_arrivant(
         consignes=consignes_en_html(lire_consignes(session), nom_du_syndic(session)),
         accueil=lire_accueil(session),
         annee=horloge.aujourd_hui().year,
+        #  La palette de la copropriété (#2780), lue par `config_site` comme pour
+        #  l'annonce de hall.
+        palette=site.get(CLE_PALETTE),
     )
     # Jamais de cache : la fiche est régénérée à chaque appel depuis l'annuaire
     # (membres du CS, syndic, date d'AG). Sans ces en-têtes, un navigateur pouvait
