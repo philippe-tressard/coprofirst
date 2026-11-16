@@ -24,8 +24,10 @@ Chaque valeur est LUE dans son module — jamais recopiée ici.
 
 from __future__ import annotations
 
+import dataclasses
 import importlib
 import json
+import re
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -58,6 +60,22 @@ CONSTANTES: dict[str, Constante] = {
         "LONGUEUR_MIN_MOT_DE_PASSE",
         "le nombre de caractères qu'un mot de passe doit atteindre (#2755)",
     ),
+    "motifImage": Constante(
+        "app.utils.fichiers",
+        "_EXTENSIONS_IMAGE",
+        "le motif d'un nom ou d'une URL de fichier qui s'affiche en vignette (#2764)",
+    ),
+    "prefixeStockage": Constante(
+        "app.utils.fichiers",
+        "_PREFIXE_UUID",
+        "le préfixe technique d'un fichier stocké, à retirer pour afficher son nom (#2764)",
+    ),
+    "famillesFichiers": Constante(
+        "app.utils.fichiers",
+        "FAMILLES",
+        "par famille de téléversement : types acceptés et leur extension, extensions, "
+        "plafond en Mo (#2764)",
+    ),
     "noteMin": Constante("app.utils.avis", "NOTE_MIN", "la note la plus basse d'un avis"),
     "noteMax": Constante("app.utils.avis", "NOTE_MAX", "la note la plus haute d'un avis"),
     "noteRemarque": Constante(
@@ -76,7 +94,13 @@ RETRAITS_CONSTANTES: dict[str, tuple[str, str]] = {}
 
 
 def en_json(valeur):
-    """Un ensemble devient une liste TRIÉE (l'ordre d'un `frozenset` n'en est pas un)."""
+    """Un ensemble devient une liste TRIÉE (l'ordre d'un `frozenset` n'en est pas un) ;
+    un motif, son texte et sa casse (Swift et Kotlin le compilent tels quels) ; une
+    dataclasse, ses champs."""
+    if isinstance(valeur, re.Pattern):
+        return {"motif": valeur.pattern, "ignorerCasse": bool(valeur.flags & re.IGNORECASE)}
+    if dataclasses.is_dataclass(valeur) and not isinstance(valeur, type):
+        return {f.name: en_json(getattr(valeur, f.name)) for f in dataclasses.fields(valeur)}
     if isinstance(valeur, (set, frozenset)):
         return sorted(valeur)
     if isinstance(valeur, dict):

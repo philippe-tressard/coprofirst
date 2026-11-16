@@ -2,7 +2,7 @@
  * Les questions au règlement de copropriété — ce qui se déclare hors de l'écran.
  *
  * Le LIBELLÉ d'un verdict vient du serveur (`verdict_libelle`, une seule liste :
- * `utils/question_reglement/format.VERDICTS`) ; sa teinte, de `BadgeVerdict`.
+ * `utils/question_reglement/format.VERDICTS`) ; sa teinte, de `BADGES_DU_VERDICT`.
  */
 import { ACCEPT_DOCUMENTS, LIBELLE_TYPES } from '#lib/fichiers.ts';
 
@@ -24,3 +24,28 @@ export const TEINTE_TRANSCRIPTION: Record<string, string> = {
 	validee: 'badge-green',
 	echec: 'badge-red',
 };
+
+/**
+ * La teinte de la capsule d'un VERDICT, selon le ton que le serveur sert avec lui
+ * (`format.TONS_VERDICT`, #2505). Un ton absent ou inconnu se lit incertain.
+ *
+ * 🔒 Table PUBLIÉE aux clients (`badgesDuVerdict`, #2773) — littérale. Elle vivait
+ * dans `BadgeVerdict.svelte`, en conditions `class:` : les apps la recopiaient.
+ * À ne pas confondre avec `TEINTE_DU_TON` (`journal-verdicts.ts`), autre table.
+ */
+export const BADGES_DU_VERDICT = {
+	parTon: {
+		succes: 'badge-green',
+		danger: 'badge-red',
+		alerte: 'badge-orange',
+		neutre: 'badge-gray',
+	},
+	inconnu: 'badge-yellow',
+};
+
+/** La teinte d'un verdict de ce ton. */
+export function teinteDuVerdict(ton: string | undefined | null): string {
+	return (
+		(BADGES_DU_VERDICT.parTon as Record<string, string>)[ton ?? ''] ?? BADGES_DU_VERDICT.inconnu
+	);
+}
