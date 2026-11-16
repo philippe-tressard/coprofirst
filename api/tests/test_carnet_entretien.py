@@ -136,3 +136,38 @@ def test_une_affaire_se_dit_par_sa_categorie_jamais_incident():
             purger_ligne(session, Ticket, ticket.id)
             purger_ligne(session, Utilisateur, auteur.id)
             session.commit()
+
+
+def test_un_contrat_qui_n_a_pas_commence_est_a_venir():
+    """Le contrat des extincteurs paraissait au 18/11 un 16/11, comme un fait passé
+    (#2811). Il reste au carnet, et son entrée dit qu'il est À VENIR — au jour de
+    Paris : un contrat qui débute aujourd'hui a commencé."""
+    from datetime import timedelta
+
+    from sqlmodel import Session
+
+    from app.models.prestataires import ContratEntretien, Prestataire
+    from app.utils import horloge
+    from app.utils.carnet_entretien import _entrees_contrats
+    from tests.aides_base import moteur_de_test
+
+    aujourdhui = horloge.aujourd_hui()
+    moteur = moteur_de_test()
+    with Session(moteur) as s:
+        p = Prestataire(nom="Ascenseurs Témoin", specialite="ascenseur")
+        s.add(p)
+        s.commit()
+        for libelle, debut in (
+            ("demain", aujourdhui + timedelta(days=1)),
+            ("aujourd'hui", aujourdhui),
+            ("hier", aujourdhui - timedelta(days=1)),
+        ):
+            s.add(
+                ContratEntretien(
+                    copropriete_id=1, prestataire_id=p.id, libelle=libelle, date_debut=debut
+                )
+            )
+        s.commit()
+        a_venir = {e.libelle: e.en_dict()["a_venir"] for e in _entrees_contrats(s, None)}
+    assert a_venir == {"demain": True, "aujourd'hui": False, "hier": False}
+    moteur.dispose()

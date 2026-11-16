@@ -238,7 +238,9 @@ def test_l_envoi_ne_porte_rien_de_la_notification(session, double):
     )
     session.commit()
     (envoi,) = double.recus
+    #  `plateforme` (#2789) dit à quel service le relais transmet — rien de la notification.
     assert set(envoi.model_dump()) == {
+        "plateforme",
         "jeton",
         "environnement",
         "abonnement",

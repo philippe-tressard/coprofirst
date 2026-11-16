@@ -143,3 +143,29 @@ test('la carte montre l’extrait sous le titre, et seulement s’il existe', as
 	await expect(apercus).toHaveText('Les murs du hall sont écaillés.');
 	await expect(apercus).toHaveClass(/clamp-3/);
 });
+
+test('un contrat qui n’a pas commencé dit « À venir » dans sa gouttière, et lui seul (#2811) @mise-en-page', async ({
+	page,
+}) => {
+	const aVenir: EntreeCarnet = {
+		...ENTREE,
+		date: '2026-11-18',
+		libelle: 'Contrat extincteurs Témoin',
+		origine: 'contrat',
+		lien: '/prestataires/contrats/9',
+		a_venir: true,
+	};
+	const commence: EntreeCarnet = {
+		...ENTREE,
+		libelle: 'Contrat ascenseur Témoin',
+		origine: 'contrat',
+		lien: '/prestataires/contrats/7',
+	};
+	await ouvrir(page, MEMBRE_CS, carnetDe([aVenir, commence]));
+	const gouttiere = (titre: string) =>
+		page.locator('.carte-liste', { hasText: titre }).locator('.gouttiere');
+	await expect(gouttiere('Contrat extincteurs Témoin')).toContainText('À venir');
+	//  Cas zéro : un contrat commencé ne le dit pas.
+	await expect(gouttiere('Contrat ascenseur Témoin')).not.toContainText('À venir');
+	await attendreSansDefilementHorizontal(page);
+});

@@ -30,7 +30,13 @@ ABANDON_JOURS = 60
 
 
 def enregistrer(
-    session: Session, utilisateur_id: int, *, jeton: str, environnement: str, abonnement: str
+    session: Session,
+    utilisateur_id: int,
+    *,
+    jeton: str,
+    environnement: str,
+    abonnement: str,
+    plateforme: str = "apns",
 ) -> Appareil:
     """Enregistre ou rafraîchit l'appareil. Un jeton ou un abonnement connu sous un
     autre compte CHANGE DE MAIN : le téléphone a changé de session."""
@@ -50,6 +56,7 @@ def enregistrer(
     appareil.jeton = jeton
     appareil.abonnement = abonnement
     appareil.environnement = environnement
+    appareil.plateforme = plateforme
     appareil.vu_le = horloge.maintenant()
     session.add(appareil)
     session.flush()

@@ -210,6 +210,13 @@ EXIGENCES = [
         ("service de notifications d'Apple",),
     ),
     (
+        #  #2789 : le jeton d'un téléphone Android part chez Google (FCM HTTP v1) dès que le
+        #  transport existe ; la politique doit le nommer.
+        "les notifications sur téléphone Android, transmises à Google",
+        ("utils/push/fcm.py", "class TransportFcm"),
+        ("firebase cloud messaging",),
+    ),
+    (
         #  #2535 : la purge des notifications lues annonce sa durée.
         "la durée de conservation des notifications, appliquée par leur purge",
         ("utils/purge_notifications.py", "def purger_notifications_lues"),

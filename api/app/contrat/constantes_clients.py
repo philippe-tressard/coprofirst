@@ -76,6 +76,17 @@ CONSTANTES: dict[str, Constante] = {
         "par famille de téléversement : types acceptés et leur extension, extensions, "
         "plafond en Mo (#2764)",
     ),
+    "typesNotification": Constante(
+        "app.utils.types_notification",
+        "TYPES_NOTIFICATION",
+        "par type de notification de la cloche : son pictogramme (catalogue icones-svg.json) "
+        "et son libellé pour un lecteur d'écran (#2802)",
+    ),
+    "typeNotificationParDefaut": Constante(
+        "app.utils.types_notification",
+        "TYPE_PAR_DEFAUT",
+        "le pictogramme et le libellé d'un type de notification inconnu de l'app (#2802)",
+    ),
     "noteMin": Constante("app.utils.avis", "NOTE_MIN", "la note la plus basse d'un avis"),
     "noteMax": Constante("app.utils.avis", "NOTE_MAX", "la note la plus haute d'un avis"),
     "noteRemarque": Constante(
