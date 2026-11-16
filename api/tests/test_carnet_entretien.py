@@ -154,7 +154,7 @@ def test_un_contrat_qui_n_a_pas_commence_est_a_venir():
     aujourdhui = horloge.aujourd_hui()
     moteur = moteur_de_test()
     with Session(moteur) as s:
-        p = Prestataire(nom="Extincteurs Témoin", specialite="securite_incendie")
+        p = Prestataire(nom="Ascenseurs Témoin", specialite="ascenseur")
         s.add(p)
         s.commit()
         for libelle, debut in (
