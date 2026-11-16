@@ -388,6 +388,11 @@ refuse la copie.
   `ia_courriel_corpus.CORPUS`. 🔒 `test_ia_courriel.py`. Le **canari** (`utils/canari_ia`, 05:40)
   passe un cas du corpus par la porte de la relève (`reponse_courriel.lire_et_juger`) ; le
   contrôle de 06:00 dit modèle qui obéit, porte percée, ou INCONNU. 🔒 `test_canari_ia.py`.
+- **Le jeton d'une montre** (#2771) : Apple Watch ou Wear OS, émis par le téléphone connecté
+  (`POST /montres`), stocké par son empreinte, lu par `Authorization: Bearer` dans
+  `auth/deps.lecteur_de_la_cloche` SEULEMENT — `GET /notifications`, aucun marquage. Il expire
+  (`jetons_montre.DUREE_JOURS`), tombe avec l'empreinte du compte et `revoquer_sessions`, part
+  avec le compte. 🔒 `test_jetons_montre.py` (aucune autre route ne prend la dépendance).
 - **Leurres** (#2365) : registre `utils/leurres` (`ROUTES_LEURRES`, `EVENEMENTS_LEURRES`) ;
   leurs VALEURS (`LEURRE_ADRESSE`, `LEURRE_CLE_MAINTENANCE`) ne vivent que dans le `.env` du
   nœud, jamais dans le dépôt. Une connexion leurre rend le refus ordinaire et journalise

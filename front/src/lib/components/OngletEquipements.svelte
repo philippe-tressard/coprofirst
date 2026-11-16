@@ -68,11 +68,15 @@
 	});
 
 	//  `archivee` est ce que `ListeEtArchives` lit : un équipement RETIRÉ de la saisie.
+	//  L'administrateur cherche un équipement par son nom : la liste suit l'ordre
+	//  ALPHABÉTIQUE du libellé. Le rang (`ordre`) ne range que les menus des
+	//  contrats et des affaires, où l'API rend la liste dans cet ordre.
 	$: liste = $equipementsStore
 		.filter((e) =>
 			contientTousLesMots([e.libelle, e.code, e.abreviation, e.description], recherche),
 		)
-		.map((e) => ({ ...e, archivee: !e.actif }));
+		.map((e) => ({ ...e, archivee: !e.actif }))
+		.sort((a, b) => a.libelle.localeCompare(b.libelle, 'fr', { sensitivity: 'base' }));
 
 	async function lireUsages(id: number) {
 		try {

@@ -14,7 +14,8 @@ import re
 from fastapi import HTTPException
 
 #: Publiée aux apps (`contrat/constantes_clients`, #2755) : elles disent ce qui manque
-#: avant l'envoi.
+#: avant l'envoi. Le site en tient une copie, `front/src/lib/mots-de-passe.ts`, comparée
+#: à celle-ci par `tests/test_longueur_mot_de_passe_front.py` (#2763).
 LONGUEUR_MIN_MOT_DE_PASSE = 8
 
 
