@@ -152,7 +152,9 @@ def test_une_seule_adresse_configuree_ne_fabrique_pas_un_second_envoi():
     double sans rien prouver de plus finit par être perçu comme du bruit.
     """
     assert adresses_a_tester({"smtp_from": "a@x.test"}) == ["a@x.test"]
-    assert adresses_a_tester({"smtp_from": "a@x.test", "smtp_from_reponse": "a@x.test"}) == ["a@x.test"]
+    assert adresses_a_tester({"smtp_from": "a@x.test", "smtp_from_reponse": "a@x.test"}) == [
+        "a@x.test"
+    ]
 
 
 def test_l_ENVOI_transmet_bien_l_intention_de_la_ligne():
