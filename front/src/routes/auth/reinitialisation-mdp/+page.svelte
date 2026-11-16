@@ -1,5 +1,6 @@
 <script lang="ts">
 	import ChampMotDePasse from '#lib/components/ChampMotDePasse.svelte';
+	import { LONGUEUR_MIN_MOT_DE_PASSE } from '#lib/mots-de-passe.ts';
 	import EnteteAuthentification from '#lib/components/EnteteAuthentification.svelte';
 	import { auth as authApi, ApiError } from '#lib/api/index.ts';
 	import { toast } from '#lib/components/Toast.svelte';
@@ -71,7 +72,7 @@
 					libelle="Nouveau mot de passe"
 					bind:valeur={nouveauMdp}
 					autocomplete="new-password"
-					longueurMini={8}
+					longueurMini={LONGUEUR_MIN_MOT_DE_PASSE}
 					robustesse
 				/>
 				<ChampMotDePasse
@@ -79,7 +80,7 @@
 					libelle="Confirmer le mot de passe"
 					bind:valeur={confirmMdp}
 					autocomplete="new-password"
-					longueurMini={8}
+					longueurMini={LONGUEUR_MIN_MOT_DE_PASSE}
 					erreur={confirmationDivergente ? 'Cette saisie diffère du nouveau mot de passe.' : ''}
 				/>
 				<div class="btn-wrapper">
