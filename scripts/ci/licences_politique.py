@@ -332,4 +332,24 @@ CONTENUS_TIERS = (
             "Guidelines)."
         ),
     },
+    {
+        "nom": "Police Atkinson Hyperlegible — Braille Institute",
+        "origine": (
+            "https://github.com/google/fonts/tree/main/ofl/atkinsonhyperlegible — "
+            "fichiers TTF normal et gras, version 1.006, sans modification"
+        ),
+        "licences": ("OFL-1.1",),
+        "titulaires": ("Braille Institute of America, Inc.",),
+        "icones": None,
+        "sans_empreinte": True,  # une police : aucun tracé du catalogue à retrouver
+        "fichiers": (
+            "api/app/utils/polices/AtkinsonHyperlegible-Regular.ttf",
+            "api/app/utils/polices/AtkinsonHyperlegible-Bold.ttf",
+        ),
+        "detail": (
+            "Police dessinée pour les lecteurs malvoyants, embarquée en data-URI dans la "
+            "fiche d'accueil des arrivants (#2776). L'OFL-1.1 permet de la redistribuer "
+            "avec un logiciel, sans la vendre seule ; elle ne déclare aucun nom réservé."
+        ),
+    },
 )

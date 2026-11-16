@@ -37,6 +37,52 @@ FONT_SANS = (
     "'Segoe UI', -apple-system, BlinkMacSystemFont, Roboto, 'Helvetica Neue', Arial, sans-serif"
 )
 
+# ── La police des documents remis aux résidents (#2776) ──────────────────────
+#
+#  Atkinson Hyperlegible (Braille Institute, OFL-1.1, `LICENSES/OFL-1.1.txt`),
+#  dessinée pour les lecteurs malvoyants : I, l et 1, O et 0 ne s'y confondent
+#  pas. La fiche d'accueil est lue par des résidents souvent âgés.
+#
+#  🔴 EMBARQUÉE dans le document, en data-URI, et non installée dans l'image : la
+#  fiche est une page HTML que le NAVIGATEUR du lecteur affiche et imprime
+#  (`GET /admin/fiche-arrivant`). Un paquet Debian ne servirait que WeasyPrint.
+#  Les fichiers sont ceux de Google Fonts, sans modification.
+FONT_LISIBLE = "'Atkinson Hyperlegible', Verdana, 'DejaVu Sans', sans-serif"
+
+_POLICES = Path(__file__).with_name("polices")
+_POLICE_LISIBLE = (
+    ("normal", 400, "AtkinsonHyperlegible-Regular.ttf"),
+    ("normal", 700, "AtkinsonHyperlegible-Bold.ttf"),
+)
+_police_lisible_cache: str | None = None
+
+
+def police_lisible_css() -> str:
+    """Les `@font-face` d'Atkinson Hyperlegible, fichiers en data-URI.
+
+    Lus à l'usage et mémorisés seulement s'ils l'ont été : un fichier
+    momentanément illisible ne fige pas l'absence pour la vie du process (même
+    raisonnement que `_icones`). Sans eux, le document se rend dans la police de
+    repli de `FONT_LISIBLE` — lisible, simplement moins.
+    """
+    global _police_lisible_cache
+    if _police_lisible_cache is not None:
+        return _police_lisible_cache
+    regles = []
+    try:
+        for style, graisse, nom in _POLICE_LISIBLE:
+            donnees = base64.b64encode((_POLICES / nom).read_bytes()).decode()
+            regles.append(
+                "@font-face { font-family: 'Atkinson Hyperlegible'; "
+                f"font-style: {style}; font-weight: {graisse}; "
+                f"src: url(data:font/ttf;base64,{donnees}) format('truetype'); }}"
+            )
+    except OSError as exc:
+        logger.error("Police lisible illisible (%s) — document rendu dans la police de repli", exc)
+        return ""
+    _police_lisible_cache = "\n".join(regles) + "\n"
+    return _police_lisible_cache
+
 
 # ── La page imprimée ─────────────────────────────────────────────────────────
 

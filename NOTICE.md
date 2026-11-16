@@ -86,6 +86,10 @@ dans `scripts/ci/licences_politique.py`.
 - **Badge « Télécharger dans l'App Store »** — œuvre et marque d'Apple Inc., reprise sans
   modification dans `front/static/badge-app-store-fr.svg` pour le manuel utilisateur. Hors de
   l'AGPL : [`LICENSES/LicenseRef-Apple-App-Store-Badge.txt`](LICENSES/LicenseRef-Apple-App-Store-Badge.txt).
+- **Police Atkinson Hyperlegible** — `Copyright 2020 Braille Institute of America, Inc.`,
+  fichiers TTF de Google Fonts repris sans modification dans `api/app/utils/polices/` et
+  embarqués dans la fiche d'accueil des arrivants. Licence SIL Open Font License 1.1,
+  hors de l'AGPL : [`LICENSES/OFL-1.1.txt`](LICENSES/OFL-1.1.txt).
 
 L'attribution de ces fichiers est déclarée dans `REUSE.toml`, et contrôlée par
 `scripts/ci/contenus_tiers.py`.
