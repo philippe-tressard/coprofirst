@@ -441,6 +441,7 @@ from app.models.sauvegarde import (  # noqa: E402,F401
 #  comme pour la télémétrie, qui enregistre les tables auprès de SQLModel.
 from app.models.jetons import (  # noqa: E402,F401
     EmailVerificationToken,
+    JetonMontre,
     PasswordResetToken,
     RefreshToken,
 )

@@ -16,7 +16,12 @@ iOS envoyait une requête par alerte, 134 pour vider les lues d'un compte.
 from fastapi import APIRouter, Depends
 from sqlmodel import Session, delete, select
 
-from app.auth.deps import get_current_user, ma_notification, mes_notifications
+from app.auth.deps import (
+    get_current_user,
+    lecteur_de_la_cloche,
+    ma_notification,
+    mes_notifications,
+)
 from app.database import get_session
 from app.models.core import Notification, Utilisateur
 from app.routers.notifications_schemas import (
@@ -32,7 +37,8 @@ router = APIRouter(prefix="/notifications", tags=["notifications"])
 @router.get("", response_model=list[NotificationRead])
 def list_notifications(
     session: Session = Depends(get_session),
-    user: Utilisateur = Depends(get_current_user),
+    #  La seule route qu'une montre lit (#2771) : session par cookie, ou jeton de montre.
+    user: Utilisateur = Depends(lecteur_de_la_cloche),
 ):
     return session.exec(
         select(Notification).where(mes_notifications(user)).order_by(Notification.cree_le.desc())
