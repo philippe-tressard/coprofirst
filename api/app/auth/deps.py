@@ -1,10 +1,12 @@
 from collections.abc import Iterable
 
-from fastapi import Depends, HTTPException, Cookie, status
+from fastapi import Depends, HTTPException, Cookie, Header, status
 from sqlmodel import Session
 
+from app.auth.jetons_montre import compte_du_jeton
 from app.auth.jwt import decode_token, empreinte_du_compte
 from app.database import get_session
+from app.utils import horloge
 from app.utils.nature_affaire import est_actualite
 from app.utils.recuperer import ou_404
 from app.utils.valeurs import valeur
@@ -54,6 +56,29 @@ def _get_current_user(
 
 def get_current_user(user: Utilisateur = Depends(_get_current_user)) -> Utilisateur:
     return user
+
+
+def lecteur_de_la_cloche(
+    access_token: str | None = Cookie(default=None),
+    authorization: str | None = Header(default=None),
+    session: Session = Depends(get_session),
+) -> Utilisateur:
+    """La session par cookie, ou le jeton d'une MONTRE (#2771) — pour `GET /notifications` SEUL.
+
+    🔴 C'est la seule dépendance qui lit `Authorization: Bearer <jeton de montre>` : la
+    portée d'une montre (lire la cloche, rien d'autre) tient à ce qu'aucune autre route ne
+    la prenne. Un cookie présent l'emporte et se juge comme partout (`_get_current_user`) ;
+    un jeton de montre se juge par `auth/jetons_montre.compte_du_jeton` (échu, retiré,
+    compte inactif ou empreinte changée → 401). 🔒 `test_jetons_montre.py`.
+    """
+    if access_token:
+        return _get_current_user(access_token, session)
+    schema, _, brut = (authorization or "").partition(" ")
+    if schema.lower() == "bearer":
+        user = compte_du_jeton(session, brut.strip(), horloge.maintenant())
+        if user is not None:
+            return user
+    raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Non authentifié")
 
 
 def utilisateur_ou_anonyme(
