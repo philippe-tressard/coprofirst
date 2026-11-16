@@ -14,6 +14,7 @@
 -->
 <script lang="ts">
 	import ChampMotDePasse from './ChampMotDePasse.svelte';
+	import { LONGUEUR_MIN_MOT_DE_PASSE } from '#lib/mots-de-passe.ts';
 	import { auth as authApi } from '#lib/api/index.ts';
 	import { messageErreur } from '#lib/erreurs.ts';
 	import { toast } from './Toast.svelte';
@@ -34,8 +35,8 @@
 	$: aideAction =
 		pwdActuel.length === 0
 			? 'Saisissez d’abord votre mot de passe actuel.'
-			: pwdNouv.length < 8
-				? 'Le nouveau mot de passe doit faire 8 caractères au minimum.'
+			: pwdNouv.length < LONGUEUR_MIN_MOT_DE_PASSE
+				? `Le nouveau mot de passe doit faire ${LONGUEUR_MIN_MOT_DE_PASSE} caractères au minimum.`
 				: pwdNouv !== pwdConf
 					? 'Les deux saisies du nouveau mot de passe doivent être identiques.'
 					: '';
@@ -87,7 +88,7 @@
 				libelle="Nouveau mot de passe"
 				bind:valeur={pwdNouv}
 				autocomplete="new-password"
-				longueurMini={8}
+				longueurMini={LONGUEUR_MIN_MOT_DE_PASSE}
 				robustesse
 			/>
 			<ChampMotDePasse
@@ -95,7 +96,7 @@
 				libelle="Confirmation"
 				bind:valeur={pwdConf}
 				autocomplete="new-password"
-				longueurMini={8}
+				longueurMini={LONGUEUR_MIN_MOT_DE_PASSE}
 				erreur={confirmationDivergente ? 'Cette saisie diffère du nouveau mot de passe.' : ''}
 			/>
 		</div>
