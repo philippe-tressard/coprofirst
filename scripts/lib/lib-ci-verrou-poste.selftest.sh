@@ -46,9 +46,11 @@ os.set_inheritable(verrou.fileno(), True)
 os.execvp(cmd[0], cmd)
 PY
 
-  _depot() {               # $1 = nom → un dépôt jetable : les scripts du lot, une étape témoin
+  _depot() {               # $1 = nom · $2 = commit (défaut : les scripts du lot) → un dépôt jetable, une étape témoin
     local d="$vd/$1"
-    mkdir -p "$d/.github/workflows" && cp -R "$ici/scripts" "$d/"
+    mkdir -p "$d/.github/workflows" || return 1
+    if [ -n "${2:-}" ]; then git -C "$ici" archive "$2" scripts | tar -x -C "$d" || return 1
+    else cp -R "$ici/scripts" "$d/"; fi
     cat > "$d/.github/workflows/ci.yml" <<'YML'
 name: essai
 on: push
@@ -63,10 +65,10 @@ YML
       && git -C "$d" -c user.name=essai -c user.email=essai@exemple.test -c core.hooksPath=/dev/null \
            -c commit.gpgsign=false commit -qm essai
   }
-  _rejeu() {               # $1 = dépôt · $2 = témoin · $3 = verrou_poste.py → code du rejeu
+  _rejeu() {               # $1 = dépôt · $2 = témoin · $3 = verrou_poste.py [· $4 = répertoire commun : --attendre] → code
     ( cd "$vd/$1" && env -u REJEU_SOUS_VERROU_POSTE -u REJEU_DOSSIER_COMMUN -u MARQUEUR_CI -u CI_FICHIER \
-        VERROU_POSTE_PY="$3" VERROU_POSTE_DIR="$vd/poste" TEMOIN="$2" JOURNAL="$journal" \
-        bash scripts/poste/rejouer-ci.sh > "$vd/$2.sortie" 2>&1 )
+        ${4:+REJEU_DOSSIER_COMMUN="$4"} VERROU_POSTE_PY="$3" VERROU_POSTE_DIR="$vd/poste" TEMOIN="$2" \
+        JOURNAL="$journal" bash scripts/poste/rejouer-ci.sh ${4:+--attendre} > "$vd/$2.sortie" 2>&1 )
   }
   _apparie() {             # $1 = journal → oui si chaque début est suivi de SA fin, deux tâches
     awk 'NR % 2 == 1 { if ($1 != "debut") m = 1; w = $2 }
@@ -119,6 +121,27 @@ YML
   t "après — le verrou du rejeu est rendu"         "$([ -d "$vd/b/.git/rejeu-ci.verrou" ] && echo tenu || echo rendu)" "rendu"
   t "après — etat-rejeu.sh dit le poste libre" \
     "$(cd "$vd/b" && VERROU_POSTE_PY="$vd/verrou_poste.py" VERROU_POSTE_DIR="$vd/poste" bash scripts/poste/etat-rejeu.sh | grep -c 'Libre$')" "1"
+
+  # ── La transition : l'ANCIEN script et le nouveau, sur le même clone ─────
+  #  Pendant la bascule, un worktree resté sur une branche d'avant #2765 rejoue avec
+  #  l'ancien script (et ses anciennes bibliothèques), qui ignore le poste. Les deux
+  #  s'excluent par le verrou du REJEU, resté le même fichier (`rejeu-ci.verrou` du
+  #  répertoire git commun) : lancés ensemble, ils passent l'un après l'autre. L'ancien
+  #  est pris à REJEU_AVANT_2765, sur `main` (permanent) ; la CI clone sans historique,
+  #  d'où la récupération de ce seul commit. Introuvable, le cas ÉCHOUE : jamais un OK.
+  #  À retirer quand plus aucune branche ne porte l'ancien script.
+  local ancien=64f08d64730584a5ebc021d4591ef6149017486d   # REJEU_AVANT_2765 : v3.105.2, origin/dev avant le lot
+  git -C "$ici" cat-file -e "$ancien^{commit}" 2>/dev/null || git -C "$ici" fetch -q --depth=1 origin "$ancien" 2>/dev/null
+  if _depot ancien "$ancien" && ! grep -q ci_verrou_poste "$vd/ancien/scripts/poste/rejouer-ci.sh"; then
+    mkdir -p "$vd/commun"; : > "$journal"
+    _rejeu ancien v "$vd/verrou_poste.py" "$vd/commun" & r1=$!
+    _rejeu b n "$vd/verrou_poste.py" "$vd/commun" & r2=$!
+    wait "$r1"; c1=$?; wait "$r2"; c2=$?
+    t "transition — ancien et nouveau script : tous deux verts" "$c1 $c2" "0 0"
+    t "transition — jamais ensemble (même verrou du rejeu)"     "$(_apparie "$journal")" "oui"
+  else
+    t "transition — l'ancien script ($ancien) est lisible" "absent" "present"
+  fi
 
   # ── Verrou du poste ABSENT (CI, autre machine) : le rejeu passe et le dit ──
   : > "$journal"
