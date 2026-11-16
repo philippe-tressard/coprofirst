@@ -20,6 +20,16 @@
  *  Le compte doit être EXACT : une lecture ajoutée sans déclaration échoue,
  *  une déclaration qui ne sert plus aussi.
  *
+ *  ## La mesure aussi (#2768, 15/11/2026)
+ *
+ *  `courriel-a-classer.spec.ts` lisait des `getBoundingClientRect()` dans un
+ *  `evaluate`, une seule fois, juste après le clic qui déplie la ligne : la mise en
+ *  page n'était pas stable sous WebKit, et « champ décalé » tombait au rouge sur une
+ *  PR qui ne touchait aucun écran. Un `evaluate(…)` ou `evaluateAll(…)` qui mesure
+ *  une boîte vit donc, lui aussi, dans un `expect.poll(…)` (ou après `boiteStable`,
+ *  `e2e/aides.ts`), ou se DÉCLARE dans `MESURES_DECLAREES`, avec la même exigence
+ *  de compte exact.
+ *
  *  Lancer : node scripts/check-e2e-lectures.mjs [--selftest]
  */
 import { readdirSync, readFileSync } from 'node:fs';
@@ -47,8 +57,26 @@ const DECLAREES = {
 	'telemetrie-legende-jours.spec.ts': [2, 'après `ouvrir`, qui attend les bâtons du graphe'],
 };
 
+/** Fichier → [nombre, raison] : les mesures de boîte hors d'un `poll(`, déclarées. */
+const MESURES_DECLAREES = {
+	'accueil-frise-consignes.spec.ts': [
+		1,
+		'après `toHaveText` sur la gouttière : la carte est rendue, rien ne se déplie',
+	],
+	'avertissement-urgence.spec.ts': [1, 'après `waitFor` du bandeau, replié et immobile'],
+	'etoile-requis.spec.ts': [1, 'le témoin est posé et mesuré dans le même `evaluate`'],
+	'gouttiere-nature.spec.ts': [3, 'après `ouvrir` ou `goto` : listes statiques, sans dépliage'],
+	'onglet-actif-lisere.spec.ts': [1, 'après `toHaveText` sur l’onglet actif, sans animation'],
+	'pied-de-page.spec.ts': [2, 'fonctions passées à `expect.poll` (`ecarts`)'],
+};
+
 /** Un `poll(` ouvert sur la ligne ou l'une des `PORTEE_POLL` précédentes l'entoure. */
 const PORTEE_POLL = 3;
+/** Pour une mesure, l'appel s'écrit souvent sur plusieurs lignes sous le `poll(`. */
+const PORTEE_POLL_MESURE = 6;
+/** Une mesure : un `evaluate(` dont le corps lit une boîte, sur `CORPS_MESURE` lignes. */
+const EVALUE = /\.evaluate(All)?\(/;
+const CORPS_MESURE = 15;
 
 /** Les lectures sans attente d'une source — hors d'un `poll(` qui les entoure. PURE. */
 export function lecturesALInstant(source) {
@@ -58,6 +86,21 @@ export function lecturesALInstant(source) {
 			LECTURE.test(ligne) &&
 			!lignes.slice(Math.max(0, i - PORTEE_POLL), i + 1).some((l) => /poll\(/.test(l)),
 	).length;
+}
+
+/** Les mesures de boîte sans attente d'une source — hors d'un `poll(`. PURE. */
+export function mesuresALInstant(source) {
+	const lignes = neutraliserCommentaires(source).split('\n');
+	let n = 0;
+	lignes.forEach((ligne, i) => {
+		if (!EVALUE.test(ligne)) return;
+		let fin = i + 1;
+		while (fin < lignes.length && fin < i + CORPS_MESURE && !EVALUE.test(lignes[fin])) fin++;
+		if (!lignes.slice(i, fin).some((l) => l.includes('getBoundingClientRect'))) return;
+		const avant = lignes.slice(Math.max(0, i - PORTEE_POLL_MESURE), i + 1);
+		if (!avant.some((l) => /poll\(/.test(l))) n++;
+	});
+	return n;
 }
 
 /** Le relevé confronté aux déclarations : la liste des fautes. PURE. */
@@ -98,6 +141,24 @@ if (process.argv.includes('--selftest')) {
 	t('non déclarée → faute', 1, fautes({ 'a.spec.ts': 1 }, {}).length);
 	t('déclaration périmée → faute', 1, fautes({}, { 'a.spec.ts': [1, 'x'] }).length);
 	t('compte exact → rien', 0, fautes({ 'a.spec.ts': 2 }, { 'a.spec.ts': [2, 'x'] }).length);
+	const mesure =
+		'const m = await bloc.evaluate((el) => {\n\treturn el.getBoundingClientRect().right;\n});';
+	t('une mesure nue est comptée (#2768)', 1, mesuresALInstant(mesure));
+	t(
+		'une mesure dans un poll réessaie',
+		0,
+		mesuresALInstant(`await expect\n\t.poll(() =>\n\t\t${mesure.replace('const m = await ', '')}`),
+	);
+	t(
+		'un evaluate qui ne mesure pas n’est pas compté',
+		0,
+		mesuresALInstant('await b.evaluate((e) => e.id);'),
+	);
+	t(
+		'deux evaluate : seule la mesure compte',
+		1,
+		mesuresALInstant(`await b.evaluate((e) => (e.id = 'x'));\n${mesure}`),
+	);
 	process.exit(ko ? 1 : 0);
 }
 
@@ -108,11 +169,18 @@ if (specs.length < 20) {
 	process.exit(1);
 }
 const releve = {};
+const releveMesures = {};
 for (const f of specs) {
-	const n = lecturesALInstant(readFileSync(`${E2E}/${f}`, 'utf8'));
+	const source = readFileSync(`${E2E}/${f}`, 'utf8');
+	const n = lecturesALInstant(source);
 	if (n) releve[f] = n;
+	const m = mesuresALInstant(source);
+	if (m) releveMesures[f] = m;
 }
-const liste = fautes(releve, DECLAREES);
+const liste = [
+	...fautes(releve, DECLAREES),
+	...fautes(releveMesures, MESURES_DECLAREES).map((f) => `${f} (mesure de boîte, #2768)`),
+];
 if (liste.length) {
 	console.error(
 		'✗ Lectures e2e qui jugent l’instant (#1830) — un `expect` qui attend, ou une déclaration :',

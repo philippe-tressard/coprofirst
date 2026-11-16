@@ -12,9 +12,10 @@
     au champ plutôt que comme du texte flottant.
 -->
 <script lang="ts">
+	import { LONGUEUR_MIN_MOT_DE_PASSE } from '#lib/mots-de-passe.ts';
 	export let password: string = '';
 
-	$: hasLength = password.length >= 8;
+	$: hasLength = password.length >= LONGUEUR_MIN_MOT_DE_PASSE;
 	$: hasUpper = /[A-Z]/.test(password);
 	$: hasDigit = /\d/.test(password);
 	$: hasSpecial = /[@$!%*?&#._\-+]/.test(password);
@@ -49,7 +50,7 @@
 
 	// La seule et unique liste des critères.
 	$: criteres = [
-		{ label: '8 caractères minimum', ok: hasLength },
+		{ label: `${LONGUEUR_MIN_MOT_DE_PASSE} caractères minimum`, ok: hasLength },
 		{ label: 'Une lettre majuscule', ok: hasUpper },
 		{ label: 'Un chiffre', ok: hasDigit },
 		{ label: 'Un caractère spécial (@$!%*?&#._-+)', ok: hasSpecial },

@@ -6,6 +6,7 @@ from app.utils import horloge
 
 from sqlmodel import select
 
+from app.auth.jetons_montre import purger_echus as purger_montres
 from app.auth.jetons_rafraichissement import purger as purger_jetons
 from app.utils.noeud import noeud_courant
 from app.utils.push.appareils import purger_abandonnes as purger_appareils
@@ -70,7 +71,9 @@ def purger() -> tuple[dict[str, int], list[str]]:
     #  reste jusqu'à son expiration — écrite une fois, pour les deux purges.
     try:
         with contexte.nouvelle_session() as s:
-            comptes["tokens"] = purger_jetons(s, maintenant)
+            #  Les jetons des montres échus (#2771) comptent avec les autres : les clés du
+            #  rapport sont celles que `maintenance.sh` lit.
+            comptes["tokens"] = purger_jetons(s, maintenant) + purger_montres(s, maintenant)
             s.commit()
     except Exception as exc:
         erreurs.append(f"purge tokens: {exc}")

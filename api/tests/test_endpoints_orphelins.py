@@ -44,6 +44,10 @@ SANS_CONSOMMATEUR_FRONT = {
     "/appareils": "appelée par l'application iOS seule, dont le client se génère du contrat "
     "publié (#2456) — la PWA n'enregistre pas d'appareil (spec notifications-push §6.2, #2493)",
     "/appareils/{abonnement}": "idem : le retrait de l'appareil à la déconnexion de l'application iOS",
+    "/montres": "appelée par le téléphone (iOS, Android) qui relie une montre, client généré du "
+    "contrat publié (#2456) — la PWA n'a pas de montre (#2771)",
+    "/montres/{montre_id}": "idem : le retrait d'une montre, à la déconnexion du téléphone (#2771)",
+    "/montres/{montre_id}/renouveler": "idem : le renouvellement du jeton avant échéance (#2771)",
     "/notifications/supprimer-selection": "la sélection de l'application iOS (« Supprimer (n) », "
     "#2535) ; le site n'offre que « Supprimer les lues » et la corbeille d'une ligne",
     "/prestataires/releves/{r_id}/photo/{nom}": "idem, pour `releve_compteur.photo_url` — le GET passait auparavant par "
