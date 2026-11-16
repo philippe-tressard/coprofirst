@@ -146,21 +146,25 @@ export function typeFichier(nomOuUrl: string): string {
 	const point = nom.lastIndexOf('.');
 	if (point <= 0) return 'FICHIER';
 	const ext = nom.slice(point + 1).toUpperCase();
-	//  Les familles bureautiques portent plusieurs extensions pour un même
-	//  format : les ramener au nom que tout le monde emploie évite « XLSX » à
-	//  côté de « XLS » pour deux tableurs.
-	const FAMILLES: Record<string, string> = {
-		JPEG: 'JPG',
-		XLSX: 'EXCEL',
-		XLS: 'EXCEL',
-		DOCX: 'WORD',
-		DOC: 'WORD',
-		PPTX: 'POWERPOINT',
-		PPT: 'POWERPOINT',
-		TXT: 'TEXTE',
-	};
-	return FAMILLES[ext] ?? ext;
+	return FAMILLES_AFFICHAGE[ext] ?? ext;
 }
+
+/**
+ * Les familles bureautiques portent plusieurs extensions pour un même format : les
+ * ramener au nom que tout le monde emploie évite « XLSX » à côté de « XLS » pour deux
+ * tableurs. Extension en capitales → libellé ; une extension absente se montre telle quelle.
+ * 🔒 Table PUBLIÉE aux apps (`famillesAffichageFichiers`, #2798) — littérale.
+ */
+export const FAMILLES_AFFICHAGE: Readonly<Record<string, string>> = {
+	JPEG: 'JPG',
+	XLSX: 'EXCEL',
+	XLS: 'EXCEL',
+	DOCX: 'WORD',
+	DOC: 'WORD',
+	PPTX: 'POWERPOINT',
+	PPT: 'POWERPOINT',
+	TXT: 'TEXTE',
+};
 
 /**
  * Le nom SANS son extension — elle est déjà dite par le type, et la répéter
