@@ -112,6 +112,12 @@ h3 { font-size: 17px; }
 .cta-titre { font-size: 15px; font-weight: 700; color: var(--navy); margin: 1px 0; }
 .cta-titre svg { vertical-align: -2px; margin-right: 3px; }
 .cta-aide { font-size: 12px; color: var(--muted); line-height: 1.28; }
+/*  Teinte littérale DÉCLARÉE (#2780) : le voile du Vert Parc, qui n'est pas un
+    rôle de la palette — il est commun à toutes, comme sur le site
+    (`front/src/styles/palettes.css`) et dans le filet des affiches et courriels.
+    `recolorer` ne le touche pas, et c'est voulu : le bloc dit WhatsApp, pas la
+    copropriété. Même raison pour l'ombre de `.page` (le bleu de la charte à
+    12 %) : elle n'existe qu'à l'écran, l'impression la retire. */
 .cta.whatsapp { background: #E8F0EA; border-color: #E8F0EA; }
 .cta.whatsapp .cta-titre { color: var(--green); }
 

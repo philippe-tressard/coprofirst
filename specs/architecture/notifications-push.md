@@ -145,7 +145,8 @@ Concentration (§10, décision 2). Tous les autres partent au niveau normal.
 |---|---|
 | `id` | identifiant, le seul que le journal écrit |
 | `utilisateur_id` | FK `utilisateur.id` — à qui l'appareil sonne |
-| `jeton` | le jeton APNs, **en clair** (voir ci-dessous), unique |
+| `jeton` | le jeton APNs ou FCM, **en clair** (voir ci-dessous), unique |
+| `plateforme` | `apns` (iPhone, défaut) ou `fcm` (Android, #2789) — le service à qui le relais transmet, et le motif du jeton (`envoi.MOTIFS_JETON`) |
 | `environnement` | `production` ou `developpement` — l'APNs à viser |
 | `abonnement` | l'identifiant opaque tiré par l'application (§5), unique |
 | `cree_le`, `vu_le` | `NaiveDatetime` par `horloge.maintenant()` ; `vu_le` se rafraîchit à chaque enregistrement |
@@ -167,7 +168,7 @@ ne les nomme pas.
 
 | Route | Dépendance | Geste |
 |---|---|---|
-| `POST /appareils` | `get_current_user` | enregistre (ou rafraîchit) `{jeton, environnement, abonnement}` pour la personne connectée ; un jeton déjà connu sous un autre compte **change de main** — le téléphone a changé de session |
+| `POST /appareils` | `get_current_user` | enregistre (ou rafraîchit) `{plateforme, jeton, environnement, abonnement}` (`plateforme` absente = `apns`, l'app iOS déjà publiée ; `environnement` sans objet pour `fcm`) pour la personne connectée ; un jeton déjà connu sous un autre compte **change de main** — le téléphone a changé de session |
 | `DELETE /appareils/{abonnement}` | `get_current_user` | retire l'appareil de la personne — appelé par l'application à la **déconnexion** ; l'abonnement d'un autre compte rend 404 |
 
 Préfixe au pluriel, tag `appareils`, nommage français (#1056). Client TypeScript : aucun
@@ -284,3 +285,20 @@ Les quatre questions posées par cette spécification ont été tranchées le
    nombre ne part chez Apple (§5).
 4. **Réglage par personne** : **non** — les réglages de notifications d'iOS
    suffisent, pas de doublon avec le profil de la cloche (§6.2).
+
+## 11. Android — Firebase Cloud Messaging (16/11/2026, #2789)
+
+Philippe a accepté le 16/11/2026 le SDK Firebase Messaging dans l'app Android. Même
+principe, même charge vide : le relais transmet un appareil `fcm` à **FCM HTTP v1**
+(`utils/push/fcm.TransportFcm`), au nom du **compte de service** du projet Firebase de
+CoproFirst, détenu par la **référence seule**, comme la clé `.p8` (N1). La charge
+(`envoi.charge_fcm`) : le texte fixe de §5, `data.a` = l'abonnement,
+`android.collapse_key` = l'abonnement, `android.priority` = `high` pour un avis urgent
+seulement. `UNREGISTERED` ou `INVALID_ARGUMENT` → `jeton_perime`. Une montre Wear OS
+reprend l'avis du téléphone ; elle ne reçoit rien de plus. La politique de
+confidentialité nomme Google et FCM (migration 0342).
+
+**Gestes de Philippe** : créer le projet Firebase et son compte de service (rôle
+*Firebase Cloud Messaging API Admin*), poser sa clé JSON sur la référence seule ; le
+fichier `google-services.json` de l'app Android. Le transport se branche avec le relais
+(P1, #2494) ; d'ici là, rien ne part.
