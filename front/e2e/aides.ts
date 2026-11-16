@@ -17,13 +17,6 @@ import { REFERENTIELS_TEMOINS, compteServi, reponseApercu } from './referentiels
  * le faisaient, chacun pour lui.
  *
  * Une exception non rattrapée est donc un ÉCHEC, quel que soit le test.
- *
- * ⚠️ Sous WebKit, Playwright compte aussi comme exception toute ligne d'erreur
- * que le moteur écrit en console au nom d'un script (#2807). Une lecture lancée
- * PENDANT une navigation y écrit « Fetch API cannot load … due to access control
- * checks. », même quand l'écran rattrape le rejet. Le remède n'est ni un filtre
- * ici ni un `catch` dans le client : le test attend l'état final de l'écran
- * avant de le quitter (`admin-a-traiter.spec.ts`).
  * 🔒 `npm run lint:e2e-test` refuse un spec qui importerait `test` directement
  * de `@playwright/test` — il échapperait à cette règle.
  */
