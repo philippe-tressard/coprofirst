@@ -74,7 +74,7 @@
 		if (!complet) return;
 		enCours = true;
 		try {
-			const r = await ecransApi.confirmer({
+			const r = await ecransApi.appairer({
 				code_court: lettres,
 				nom: nom.trim(),
 				perimetre: perimetre[0],
@@ -231,7 +231,7 @@
 	}
 	/*  Le code se lit lettre à lettre, comme l'écran l'affiche. */
 	.champ-code {
-		font-family: var(--font-mono, monospace);
+		font-family: monospace;
 		letter-spacing: 0.12em;
 		text-transform: uppercase;
 		max-width: 14rem;

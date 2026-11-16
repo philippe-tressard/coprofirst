@@ -28,7 +28,7 @@ export interface AppairageConfirme {
 export const ecrans = {
 	lister: () => api.get<EcranHall[]>('/ecrans'),
 	/**  Le code court que l'écran affiche, son nom et son périmètre (un code). */
-	confirmer: (corps: { code_court: string; nom: string; perimetre: string }) =>
+	appairer: (corps: { code_court: string; nom: string; perimetre: string }) =>
 		api.post<AppairageConfirme>('/ecrans', corps),
 	retirer: (id: number) => api.delete(`/ecrans/${id}`),
 };
