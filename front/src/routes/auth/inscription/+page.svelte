@@ -6,6 +6,7 @@
 	import ChargementPartiel from '#lib/components/ChargementPartiel.svelte';
 	import { getSiteNom } from '#lib/stores/pageConfig.ts';
 	import ChampMotDePasse from '#lib/components/ChampMotDePasse.svelte';
+	import { LONGUEUR_MIN_MOT_DE_PASSE } from '#lib/mots-de-passe.ts';
 	import LibelleGroupe from '#lib/components/LibelleGroupe.svelte';
 	import EtoileRequis from '#lib/components/EtoileRequis.svelte';
 	import EnteteAuthentification from '#lib/components/EnteteAuthentification.svelte';
@@ -291,7 +292,7 @@
 					libelle="Mot de passe"
 					bind:valeur={password}
 					autocomplete="new-password"
-					longueurMini={8}
+					longueurMini={LONGUEUR_MIN_MOT_DE_PASSE}
 					robustesse
 				/>
 
