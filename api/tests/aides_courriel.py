@@ -60,7 +60,7 @@ def image_png(largeur: int, hauteur: int | None = None) -> bytes:
 
 #: Le verdict d'authenticité, tel que la relève le calcule sur les octets reçus
 #: (`courriel_authenticite.verifier_expediteur`) — jamais un en-tête du message.
-_AUTH_OK = (True, "signé par syndic.fr")
+_AUTH_OK = (True, "signé par syndic.test")
 
 
 def _adresse_a_jeton(jeton: str) -> str:
@@ -69,7 +69,7 @@ def _adresse_a_jeton(jeton: str) -> str:
     return f"tickets+{jeton}@5hostachy.fr"
 
 
-def _entetes_reponse(jeton: str, *, de: str = "gestion@syndic.fr") -> dict:
+def _entetes_reponse(jeton: str, *, de: str = "gestion@syndic.test") -> dict:
     return {"From": de, "To": _adresse_a_jeton(jeton), "Subject": "Re: ticket"}
 
 
@@ -82,7 +82,7 @@ def scene():
     with Session(engine) as session:
         syndic = compte(
             session,
-            email=f"syndic-{uuid.uuid4().hex[:8]}@syndic.fr",
+            email=f"syndic-{uuid.uuid4().hex[:8]}@syndic.test",
             prenom="G",
             nom="S",
             roles_json="résident",

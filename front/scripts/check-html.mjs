@@ -275,9 +275,9 @@ const CHARGES = [
 	['<svg onload=alert(1)>', /svg|onload/i],
 ];
 const TEMOINS = [
-	['<a href="https://exemple.fr/x">x</a>', 'href="https://exemple.fr/x"'],
+	['<a href="https://exemple.test/x">x</a>', 'href="https://exemple.test/x"'],
 	['<a href="/tickets/3">x</a>', 'href="/tickets/3"'],
-	['<a href="mailto:a@exemple.fr">x</a>', 'href="mailto:a@exemple.fr"'],
+	['<a href="mailto:a@exemple.test">x</a>', 'href="mailto:a@exemple.test"'],
 	['<img src="/uploads/fichiers/a.jpg" alt="a">', 'src="/uploads/fichiers/a.jpg"'],
 ];
 const fuites = CHARGES.filter(([entree, interdit]) => interdit.test(secours(entree)));

@@ -68,7 +68,7 @@ def _suite(session, ticket, user):
         type="commentaire",
         contenu="Toujours cassée.",
         partager_whatsapp=True,
-        email_externe="quiconque@exemple.org",
+        email_externe="quiconque@exemple.test",
     )
     evolutions.add_evolution(ticket.id, corps, taches, session=session, user=user)
     return [t.func.__name__ for t in taches.tasks]
@@ -86,14 +86,14 @@ def test_une_suite_du_conseil_publie_et_ecrit(session, envois):
     resident = compte(session, prefixe="r")
     cs = compte(session, prefixe="cs", role=RoleUtilisateur.conseil_syndical)
     taches = _suite(session, _affaire(session, resident), cs)
-    assert envois["externe"] == ["quiconque@exemple.org"]
+    assert envois["externe"] == ["quiconque@exemple.test"]
     assert "envoyer_whatsapp_avec_log" in taches
 
 
 def test_un_message_de_resident_n_ecrit_pas_au_dehors(session, envois):
     resident = compte(session, prefixe="r")
     ticket = _affaire(session, resident)
-    corps = MessageCreate(contenu="Relance.", email_externe="quiconque@exemple.org")
+    corps = MessageCreate(contenu="Relance.", email_externe="quiconque@exemple.test")
     messages.add_message(ticket.id, corps, BackgroundTasks(), session=session, user=resident)
     assert envois["externe"] == []
 
@@ -102,9 +102,9 @@ def test_un_message_du_conseil_ecrit_au_dehors(session, envois):
     resident = compte(session, prefixe="r")
     cs = compte(session, prefixe="cs", role=RoleUtilisateur.conseil_syndical)
     ticket = _affaire(session, resident)
-    corps = MessageCreate(contenu="Réponse.", email_externe="syndic@exemple.org")
+    corps = MessageCreate(contenu="Réponse.", email_externe="syndic@exemple.test")
     messages.add_message(ticket.id, corps, BackgroundTasks(), session=session, user=cs)
-    assert envois["externe"] == ["syndic@exemple.org"]
+    assert envois["externe"] == ["syndic@exemple.test"]
 
 
 def test_on_n_ecrit_pas_sur_une_affaire_qu_on_ne_voit_pas(session, envois):

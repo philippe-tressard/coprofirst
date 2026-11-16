@@ -32,7 +32,7 @@ RACINE = Path(__file__).resolve().parents[2]
 
 
 def _utilisateur(prefs: str | None = None, batiment_id: int | None = None) -> Utilisateur:
-    u = Utilisateur(nom="X", prenom="Y", email="x@test.fr", batiment_id=batiment_id, actif=True)
+    u = Utilisateur(nom="X", prenom="Y", email="x@test.test", batiment_id=batiment_id, actif=True)
     if prefs is not None:
         u.preferences_notifications = prefs
     return u

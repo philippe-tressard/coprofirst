@@ -81,7 +81,7 @@ test.describe("L'astérisque des champs obligatoires", () => {
 		const couleur = () => etoile.evaluate((n) => getComputedStyle(n).color);
 
 		const vide = await couleur();
-		await page.fill('#email', 'quelqu-un@exemple.fr');
+		await page.fill('#email', 'quelqu-un@exemple.test');
 		const rempli = await couleur();
 
 		//  🔴 On ne compare pas à une valeur écrite ici : la charte peut changer

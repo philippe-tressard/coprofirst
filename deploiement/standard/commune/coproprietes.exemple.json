@@ -10,7 +10,7 @@
       "base": "TILLEULS_DATABASE_URL",
       "secret": "TILLEULS_SECRET_KEY",
       "racine_fichiers": "/app/uploads/tilleuls",
-      "expediteur": "contact@exemple.fr",
+      "expediteur": "contact@example.com",
       "nom_expediteur": "Les Tilleuls"
     },
     {
@@ -18,12 +18,12 @@
       "code_postal": "69003",
       "nom": "Résidence des Chênes",
       "anciens_alias": [],
-      "hotes": ["residence-des-chenes.fr"],
+      "hotes": ["residence-des-chenes.example.com"],
       "suspendue": false,
       "base": "CHENES_DATABASE_URL",
       "secret": "CHENES_SECRET_KEY",
       "racine_fichiers": "/app/uploads/chenes",
-      "expediteur": "contact@residence-des-chenes.fr",
+      "expediteur": "contact@residence-des-chenes.example.com",
       "nom_expediteur": "Résidence des Chênes"
     }
   ]

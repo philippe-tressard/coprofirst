@@ -270,9 +270,9 @@ def test_la_piece_jointe_part_avec_son_nom_dorigine(tmp_path):
     prets = _preparer_pieces_jointes([str(fichier)])
 
     msg = MessageSchema(
-        subject="s", recipients=["a@b.fr"], body="<p>x</p>", subtype="html", attachments=prets
+        subject="s", recipients=["a@b.example"], body="<p>x</p>", subtype="html", attachments=prets
     )
-    brut = asyncio.run(MailMsg(msg)._message("5Hostachy <no-reply@x.fr>")).as_string()
+    brut = asyncio.run(MailMsg(msg)._message("5Hostachy <no-reply@x.test>")).as_string()
 
     assert 'filename="devis-ramonage.pdf"' in brut
     assert "0d41107a6c9b4e2f8a1d3c5e7b9f0a2c" not in brut, (

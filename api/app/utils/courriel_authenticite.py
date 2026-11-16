@@ -139,18 +139,18 @@ def _txt(nom: bytes, timeout: int = _DELAI_DNS) -> bytes | None:
 
 
 def domaine_de(adresse: str) -> str:
-    """Le domaine d'une adresse d'en-tête (« Nom <a@b.fr> » → « b.fr »), minuscule."""
+    """Le domaine d'une adresse d'en-tête (« Nom <a@b.test> » → « b.test »), minuscule."""
     return (parseaddr(adresse or "")[1] or "").rpartition("@")[2].strip().lower().rstrip(".")
 
 
 def aligne(domaine_signataire: str, domaine_expediteur: str) -> bool:
     """Le signataire répond-il du domaine de l'expéditeur ?
 
-    Le même domaine, ou un domaine PARENT (`d=exemple.fr` pour
-    `From: …@mail.exemple.fr`) : qui publie les clés de `exemple.fr` en contrôle
+    Le même domaine, ou un domaine PARENT (`d=exemple.test` pour
+    `From: …@mail.exemple.test`) : qui publie les clés de `exemple.test` en contrôle
     les sous-domaines. L'inverse n'est pas admis — un sous-domaine délégué ne
     répond pas de son parent —, et la comparaison se fait sur les LIBELLÉS : `d=
-    exemple.fr` ne couvre pas `faux-exemple.fr`.
+    exemple.test` ne couvre pas `faux-exemple.test`.
     """
     s, e = domaine_signataire.lower().rstrip("."), domaine_expediteur.lower().rstrip(".")
     if not s or not e or "." not in s:

@@ -43,7 +43,7 @@ def gestionnaire(scene):
         genre=GenreCivilite.mr,
         prenom="Paul",
         nom="Morel",
-        email=f"gestion-{uuid.uuid4().hex[:8]}@cabinet-gestion.fr",
+        email=f"gestion-{uuid.uuid4().hex[:8]}@cabinet-gestion.test",
     )
     session.add(membre)
     session.commit()
@@ -124,7 +124,7 @@ def test_une_suite_sans_signataire_ne_s_ecrit_que_pour_le_syndic(scene):
             ticket,
             None,
             Texte(contenu="<p>Bonjour</p>", origine=None, assiste=False),
-            expediteur="inconnu@ailleurs.fr",
+            expediteur="inconnu@ailleurs.test",
             nom="Inconnu",
             envoye_le=datetime(2026, 11, 5),
         )

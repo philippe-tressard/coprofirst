@@ -136,7 +136,7 @@
 			<input
 				type="email"
 				bind:value={siteConfig.contact_donnees}
-				placeholder="donnees@exemple.fr"
+				placeholder="donnees@example.com"
 			/>
 			<span class="aide"
 				>Le champ <code>[[contact]]</code> : joignable sans compte, au nom du responsable du

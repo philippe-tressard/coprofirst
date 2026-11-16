@@ -20,7 +20,7 @@ from app.utils.courriel_authenticite import VerificationReportee
 from tests.aides_courriel import imap_actif, journal  # noqa: F401 — fixtures
 
 _BRUT = (
-    b"From: gestion@syndic.fr\r\n"
+    b"From: gestion@syndic.test\r\n"
     b"To: affaire@5hostachy.fr\r\n"
     b"Subject: Re: Affaire #TK-121048\r\n"
     b"Date: Mon, 28 Sep 2026 16:37:00 +0200\r\n"
@@ -67,7 +67,7 @@ def test_la_releve_verifie_les_OCTETS_recus_et_transmet_le_verdict(boite, monkey
     def verifier(brut, from_, **options):
         vus["brut"], vus["from"] = brut, from_
         vus["delegues"] = options.get("delegues")  # les délégations du site (#2554)
-        return (True, "signé par syndic.fr")
+        return (True, "signé par syndic.test")
 
     def traiter(
         session, entetes, corps, recu_le, plancher, authentification=None, pieces=None, brut=None
@@ -81,9 +81,9 @@ def test_la_releve_verifie_les_OCTETS_recus_et_transmet_le_verdict(boite, monkey
     courriel_boite.relever()
 
     assert vus["brut"] == _BRUT, "la vérification doit porter sur le message tel que reçu"
-    assert vus["from"] == "gestion@syndic.fr"
+    assert vus["from"] == "gestion@syndic.test"
     assert vus["delegues"] == frozenset(), "les délégations du site sont transmises (#2554)"
-    assert vus["authentification"] == (True, "signé par syndic.fr")
+    assert vus["authentification"] == (True, "signé par syndic.test")
     assert vus["pieces"] is not None, "les pièces jointes sont triées sur le message reçu"
     assert boite.acquittes == [b"1"]
 

@@ -186,7 +186,7 @@ def test_un_portillon_nest_pas_un_defaut_de_vigik(arbre_dessai):
     """
     session, batiments = arbre_dessai
     porteur = Utilisateur(
-        email="defaut@essai.fr",
+        email="defaut@essai.test",
         hashed_password="x",
         prenom="C",
         nom="D",
@@ -254,7 +254,7 @@ def test_une_telecommande_ignore_le_batiment_du_lot(arbre_dessai):
     """
     session, batiments = arbre_dessai
     porteur = Utilisateur(
-        email="porteur@essai.fr",
+        email="porteur@essai.test",
         hashed_password="x",
         prenom="A",
         nom="B",

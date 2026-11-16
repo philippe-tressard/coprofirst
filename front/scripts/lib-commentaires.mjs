@@ -153,7 +153,7 @@ function selftest() {
 	);
 	t('commentaire de bloc multi-lignes', '/*\n interdit\n*/\nconst a = 1;', 'interdit');
 	//  ⚠️ Ce qui n'est PAS un commentaire doit rester intact, au caractère près.
-	t('URL avec double barre', "const u = 'https://exemple.fr/a';", null);
+	t('URL avec double barre', "const u = 'https://exemple.test/a';", null);
 	t('code sans commentaire', 'const a = 1;\nconst b = 2;', null);
 	t('barre oblique simple', 'const r = a / b;', null);
 

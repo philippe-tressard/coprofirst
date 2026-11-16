@@ -166,7 +166,7 @@ def test_les_exceptions_declarees_servent_TOUTES():
         ("  https://5hostachy.fr/  ", "https://5hostachy.fr"),
         #  Un sous-chemin est légitime (le produit peut vivre sous /copro) : on
         #  n'enlève que la barre FINALE, jamais un segment.
-        ("https://exemple.fr/copro/", "https://exemple.fr/copro"),
+        ("https://exemple.test/copro/", "https://exemple.test/copro"),
     ],
 )
 def test_la_barre_finale_disparait_sans_toucher_au_reste(valeur, attendu):
@@ -228,13 +228,13 @@ def test_l_ecran_lit_l_adresse_derivee_et_ne_peut_pas_l_ecrire(session, monkeypa
     from app.routers import config as routeur
     from tests.aides_adresse import poser_adresse_du_site
 
-    poser_adresse_du_site(monkeypatch, "https://residence.exemple/")
+    poser_adresse_du_site(monkeypatch, "https://residence.example/")
     #  Une valeur restée en base d'avant #2058 ne compte plus.
-    session.add(ConfigSite(cle="site_url", valeur="https://ancienne.exemple"))
+    session.add(ConfigSite(cle="site_url", valeur="https://ancienne.example"))
     session.commit()
-    assert routeur.get_config(session)["site_url"] == "https://residence.exemple"
+    assert routeur.get_config(session)["site_url"] == "https://residence.example"
     with pytest.raises(HTTPException) as refus:
-        routeur.save_config({"site_url": "https://ailleurs.exemple"}, user=None, session=session)
+        routeur.save_config({"site_url": "https://ailleurs.example"}, user=None, session=session)
     assert refus.value.status_code == 422
 
 
@@ -271,10 +271,10 @@ def test_un_ecart_avec_l_ancienne_valeur_se_dit_au_demarrage(session, monkeypatc
         s.add(ligne)
         s.commit()
         assert demarrage.ecart_d_adresse() is None
-        ligne.valeur = "https://ancien.exemple"
+        ligne.valeur = "https://ancien.example"
         s.add(ligne)
         s.commit()
-    assert demarrage.ecart_d_adresse() == "https://ancien.exemple"
+    assert demarrage.ecart_d_adresse() == "https://ancien.example"
     with caplog.at_level(logging.WARNING, logger="hostachy.api"):
         monkeypatch.setattr("app.seed.seed", lambda: None)
         demarrage.preparer_la_copropriete()

@@ -17,15 +17,15 @@ Un seul code, deux façons d'héberger une copropriété (spec
 ## Les adresses
 
 L'hôte **commun** est celui de l'`ORIGIN` de l'installation (son URL publique).
-Avec `ORIGIN=https://exemple.fr` :
+Avec `ORIGIN=https://example.com` :
 
 | On arrive par | On aboutit à |
 |---|---|
-| le domaine propre d'une copropriété (`residence-des-chenes.fr`) | son écran de connexion |
-| son **adresse dérivée** `69003-residence-des-chenes.exemple.fr` | son écran de connexion |
-| `exemple.fr` | l'écran d'**aiguillage** : code postal + nom, puis redirection |
-| `exemple.fr/69003-residence-des-chenes` | une redirection vers l'adresse de la copropriété |
-| un **ancien** alias `69003-chenes.exemple.fr/…` | une redirection (308) vers l'adresse actuelle, chemin compris |
+| le domaine propre d'une copropriété (`residence-des-chenes.example.com`) | son écran de connexion |
+| son **adresse dérivée** `69003-residence-des-chenes.example.com` | son écran de connexion |
+| `example.com` | l'écran d'**aiguillage** : code postal + nom, puis redirection |
+| `example.com/69003-residence-des-chenes` | une redirection vers l'adresse de la copropriété |
+| un **ancien** alias `69003-chenes.example.com/…` | une redirection (308) vers l'adresse actuelle, chemin compris |
 
 L'**alias** se forme du code postal et du nom : accents, casse, ponctuation et
 espaces normalisés, jamais de `_`. Deux copropriétés au même alias sont refusées ;
@@ -51,7 +51,7 @@ Depuis le dossier de l'installation, une fois la déclaration posée (ci-dessous
 
 ```bash
 bash deploiement/standard/commune/creer-copropriete.sh tilleuls \
-    --code-postal 75015 --nom "Les Tilleuls" --expediteur contact@exemple.fr
+    --code-postal 75015 --nom "Les Tilleuls" --expediteur contact@example.com
 ```
 
 Il valide la copropriété contre la déclaration en service (un alias déjà pris est
@@ -124,12 +124,12 @@ les adresses dérivées, sans démarche pour les copropriétés.
 **Derrière Cloudflare** (le tunnel des Raspberry Pi) :
 
 ```bash
-cloudflared tunnel route dns <nom-du-tunnel> "*.exemple.fr"
+cloudflared tunnel route dns <nom-du-tunnel> "*.example.com"
 ```
 
-puis, dans la configuration du tunnel, une règle d'entrée `hostname: "*.exemple.fr"`
+puis, dans la configuration du tunnel, une règle d'entrée `hostname: "*.example.com"`
 vers le même service que l'hôte commun. Le certificat universel de Cloudflare
-couvre **un** niveau sous la zone : `*.exemple.fr`, pas `*.acces.exemple.fr`.
+couvre **un** niveau sous la zone : `*.example.com`, pas `*.acces.example.com`.
 L'hôte commun est donc la **racine d'une zone** — sinon il faut le certificat
 avancé (payant).
 

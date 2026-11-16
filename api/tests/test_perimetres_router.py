@@ -43,11 +43,11 @@ def _vider(session: Session) -> None:
 def _auteur(session: Session) -> int:
     """`Ticket.auteur_id` et `Evenement.auteur_id` sont NOT NULL."""
     existant = session.exec(
-        select(Utilisateur).where(Utilisateur.email == "auteur@test.fr")
+        select(Utilisateur).where(Utilisateur.email == "auteur@test.test")
     ).first()
     if existant:
         return existant.id
-    u = Utilisateur(nom="A", prenom="B", email="auteur@test.fr", actif=True)
+    u = Utilisateur(nom="A", prenom="B", email="auteur@test.test", actif=True)
     session.add(u)
     session.commit()
     return u.id
