@@ -317,6 +317,12 @@
 			<OngletAnnoncesHall />
 		{/snippet}
 	</ChargementDiffere>
+{:else if onglet === 'ecrans'}
+	<ChargementDiffere charger={() => import('#lib/components/OngletEcrans.svelte')}>
+		{#snippet contenu(OngletEcrans)}
+			<OngletEcrans />
+		{/snippet}
+	</ChargementDiffere>
 {:else if onglet === 'courriels'}
 	<ChargementDiffere charger={() => import('#lib/components/OngletCourriels.svelte')}>
 		{#snippet contenu(OngletCourriels)}
