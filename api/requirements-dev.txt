@@ -16,4 +16,4 @@ pytest-xdist==3.8.0
 execnet==2.1.2
 #  L'ordre des tests est TIRÉ AU SORT, graine affichée (#2223) : une dépendance à
 #  l'ordre sort au lot qui l'écrit, plus sur celui d'un autre. MIT.
-pytest-randomly==5.0.0
+pytest-randomly==5.1.0
