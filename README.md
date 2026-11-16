@@ -140,6 +140,8 @@ L'application est accessible sur `http://localhost`.
 
 Au premier lancement, deux comptes sont créés avec un **mot de passe aléatoire** affiché dans les logs : l'**administrateur** de la copropriété (`admin@localhost`) et l'**opérateur** de l'installation (`operateur@localhost`, administrateur aussi — supervision, santé, inscription au registre). Séparés pour confier le premier sans livrer le second. Sur une installation **commune**, qui sert plusieurs copropriétés, l'opérateur n'est pas accordé par un administrateur : l'exploitant du serveur le désigne dans le fichier des copropriétés (champ `operateurs`).
 
+Tant qu'elle n'a pas de bail actif du registre de la référence (inscription validée), une réplique est en **mode limité** : **5 comptes actifs** au plus — ces deux comptes techniques ne comptent pas, aucun compte existant n'est touché —, ni service du registre, ni mise à jour automatique. Suspendue par la référence, elle passe en **lecture seule**, export ouvert à l'administrateur. Un bail échu ramène au mode limité, jamais à la lecture seule. `REGISTRE_CONSTAT=true` (`.env`) remet le plafond et la lecture seule en simple constat (spec `multi-coproprietes.md` §4.11).
+
 ```bash
 docker compose logs api | grep -A5 "ADMIN INITIAL"
 ```
