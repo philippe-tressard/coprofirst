@@ -125,7 +125,7 @@ def _lu(ecran: Ecran, maintenant: datetime) -> EcranLu:
 @limiter.limit(LIMITE_APPAIRAGE)
 def demander_appairage(request: Request, session: Session = Depends(get_session)):
     """L'écran demande un code d'appareil et un code court à afficher (RFC 8628)."""
-    demande = appairage_ecran.demander(session, horloge.maintenant())
+    demande = appairage_ecran.nouvelle_demande(session, horloge.maintenant())
     if demande is None:
         raise HTTPException(
             status_code=status.HTTP_429_TOO_MANY_REQUESTS,

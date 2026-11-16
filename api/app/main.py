@@ -370,8 +370,7 @@ app.include_router(auth.router)
 #  Même préfixe `/auth`, monté à part : FastAPI additionne les routers, les URL
 #  publiques sont donc inchangées (cf. en-tête de `routers/auth_mot_de_passe.py`).
 app.include_router(auth_mot_de_passe.router)
-#  Idem pour le bloc PROFIL, sorti d'`auth.py` le 09/09/2026 (cf. son en-tête) :
-#  même préfixe `/auth`, donc mêmes URL publiques.
+#  Idem pour le bloc PROFIL, sorti d'`auth.py` le 09/09/2026 : même préfixe, mêmes URL.
 app.include_router(auth_profil.router)
 #  Idem pour les trois routes RGPD sur la télémétrie, sorties d'`auth.py` le
 #  08/09/2026 : elles ne parlent pas d'authentification, seulement d'une donnée
@@ -391,8 +390,7 @@ app.include_router(acces.router)
 #  Le calendrier ne fait plus que rediriger ses anciens liens : ses événements sont des affaires (#1092).
 app.include_router(calendrier.router)
 app.include_router(prestataires.router)
-#  Même préfixe : les relevés de compteurs sont sortis de `prestataires.py`
-#  (modularité, 29/08/2026), pas de l'API — les chemins n'ont pas bougé.
+#  Les relevés de compteurs, sortis de `prestataires.py` (29/08/2026) : mêmes chemins.
 app.include_router(compteurs.router)
 #  Le geste 📦 des prestataires et des contrats (#1538), même préfixe aussi.
 app.include_router(prestataires_archivage.router)

@@ -3,7 +3,7 @@
 ## Le parcours
 
 1. L'écran demande, SANS être authentifié, un code d'appareil (secret, 256 bits) et un
-   code court à afficher (`demander`). Les deux expirent au bout de `VALIDITE`.
+   code court à afficher (`nouvelle_demande`). Les deux expirent au bout de `VALIDITE`.
 2. Un membre du conseil, CONNECTÉ, saisit le code court sur le site et choisit le nom et
    le périmètre de l'écran (`confirmer`).
 3. L'écran échange son code d'appareil contre son jeton (`echanger`), en interrogeant au
@@ -81,7 +81,7 @@ def purger_demandes(session: Session, maintenant: datetime) -> int:
     return resultat.rowcount or 0
 
 
-def demander(session: Session, maintenant: datetime) -> Optional[Demande]:
+def nouvelle_demande(session: Session, maintenant: datetime) -> Optional[Demande]:
     """Une demande d'appairage neuve, ou `None` si trop sont en attente. Valide la transaction."""
     purger_demandes(session, maintenant)
     en_cours = session.exec(select(func.count()).select_from(AppairageEcran)).one()
