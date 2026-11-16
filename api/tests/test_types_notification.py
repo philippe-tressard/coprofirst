@@ -13,11 +13,10 @@ from __future__ import annotations
 
 import ast
 import json
-import pathlib
 
 from app.utils.types_notification import TYPE_PAR_DEFAUT, TYPES_NOTIFICATION
+from tests.aides_sources import APP, modules_app
 
-APP = pathlib.Path(__file__).resolve().parents[1] / "app"
 CATALOGUE = APP / "utils" / "icones-svg.json"
 PORTES = {"sonner", "sonner_systeme"}
 
@@ -28,10 +27,10 @@ DYNAMIQUES = {
 }
 
 
-def types_emis(source: str) -> list[tuple[str, int]]:
+def types_emis(arbre: ast.AST) -> list[tuple[str, int]]:
     """PURE. Les `type=` passés à la cloche : (constante ou `<expression>`, ligne)."""
     sortie = []
-    for noeud in ast.walk(ast.parse(source)):
+    for noeud in ast.walk(arbre):
         if not isinstance(noeud, ast.Call):
             continue
         f = noeud.func
@@ -48,13 +47,10 @@ def types_emis(source: str) -> list[tuple[str, int]]:
 
 def _releve() -> dict[str, list[str]]:
     releve: dict[str, list[str]] = {}
-    fichiers = sorted(APP.rglob("*.py"))
-    assert len(fichiers) > 300, "lecture de app/ cassée — cas zéro"
-    for chemin in fichiers:
-        rel = chemin.relative_to(APP).as_posix()
-        for valeur, ligne in types_emis(chemin.read_text(encoding="utf-8")):
-            cle = f"{rel}:{valeur[1:-1]}" if valeur.startswith("<") else valeur
-            releve.setdefault(cle, []).append(f"{rel}:{ligne}")
+    for module in modules_app(minimum=300):
+        for valeur, ligne in types_emis(module.arbre):
+            cle = f"{module.rel}:{valeur[1:-1]}" if valeur.startswith("<") else valeur
+            releve.setdefault(cle, []).append(f"{module.rel}:{ligne}")
     return releve
 
 
@@ -64,7 +60,7 @@ def test_chaque_forme_est_reperee():
         "cloche.sonner_systeme(s, 'compte', destinataire_id=1, type=t.cle)\n"
         "autre(type='x')\n"
     )
-    assert types_emis(source) == [("sondage", 1), ("<t.cle>", 2)]
+    assert types_emis(ast.parse(source)) == [("sondage", 1), ("<t.cle>", 2)]
 
 
 def test_chaque_type_emis_a_son_pictogramme():
