@@ -76,6 +76,9 @@ _DEPS_AUTORISATION = {
     #  L'opérateur de la plateforme (#1750) : supervision technique et base.
     "require_operateur",
     "ma_notification",
+    #  La cloche seule : la session, ou le jeton d'une montre (#2771) —
+    #  `test_jetons_montre.py` refuse qu'une autre route la prenne.
+    "lecteur_de_la_cloche",
 }
 
 _VERBES = {"get", "post", "put", "patch", "delete"}

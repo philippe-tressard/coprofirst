@@ -8,6 +8,10 @@
 
   Masqués jusqu'à la clôture, les résultats ne sont pas des barres vides : l'API
   n'envoie pas les décomptes, et un « 0 vote » se lirait « personne n'a voté ».
+
+  `provisoires` (16/11/2026, demandé à l'écran) : tant que le sondage est ouvert,
+  les barres le disent — elles se montrent désormais AVANT le vote, au-dessus du
+  formulaire, et un décompte en cours ne doit pas se lire comme un résultat.
 -->
 <script lang="ts">
 	import { fmtNombre } from '#lib/utils.ts';
@@ -21,6 +25,8 @@
 	export let monVote: number | null = null;
 	export let total = 0;
 	export let visibles = false;
+	/** Le sondage est encore ouvert : le décompte peut bouger. */
+	export let provisoires = false;
 
 	function pct(nb: number) {
 		if (total === 0) return 0;
@@ -33,6 +39,9 @@
 		Les résultats de ce sondage ne seront visibles qu'après sa clôture.
 	</p>
 {:else}
+	{#if provisoires}
+		<p class="resultats-provisoires">Résultats provisoires : le sondage est encore ouvert.</p>
+	{/if}
 	{#each options as opt (opt.id)}
 		<div class="result-row" class:winner={opt.id === monVote}>
 			<div class="result-label">
@@ -104,6 +113,12 @@
 		border-radius: var(--radius);
 		padding: 0.75rem 1rem;
 		margin: 0;
+	}
+	.resultats-provisoires {
+		font-size: var(--fs-sm);
+		color: var(--color-text-muted);
+		font-style: italic;
+		margin: 0 0 0.6rem;
 	}
 	.winner .result-bar {
 		background: var(--color-success);
