@@ -13,9 +13,11 @@ sans réseau ni disque, cas par cas (`tests/test_inscription_constat.py`).
    époque inférieure (règle 11), bail d'une autre clé, échéance passée.
 3. **L'état vient du bail, et seulement de lui** : « active » et « suspendue » ne
    se croient que signés.
-4. **Mode constat** : ce verdict s'AFFICHE ; rien ne l'applique encore (R6 #1882) —
-   sauf les SERVICES, avancés le 13/10/2026 : une réplique n'allume que ceux que
-   son bail cru autorise (`services`, lu par `utils/services.service_actif`).
+4. **Ce verdict s'applique à une réplique** (`inscription/regime`, R6 #1882) : ses
+   SERVICES depuis le 13/10/2026 (`services`, lu par `utils/services.service_actif`),
+   le plafond du mode limité et la lecture seule d'une suspension depuis le 16/11/2026.
+   L'échéance passe AVANT l'état du bail : un bail échu, même suspendu, vaut
+   « limitée », jamais la lecture seule (D19).
 5. **La mise à jour automatique suit le bail** (R5 #1881, D18) : seule une
    installation active ou suspendue, au bail cru, reçoit une version à installer
    (`version_a_installer`) ; une installation limitée n'en reçoit aucune, même
