@@ -15,7 +15,9 @@
 
   **Inscription au registre** (R2 #1878, arbitrage du 13/10/2026 : ici, à l'opérateur) :
   l'état de l'installation auprès de la référence — limitée, active, suspendue — et
-  sa raison, CONSTATÉS : rien ne les applique encore (R6, #1882). L'opérateur y saisit
+  sa raison, APPLIQUÉS à une réplique depuis R6 (#1882) : limitée, elle n'ouvre pas
+  plus de comptes actifs que le plafond ; suspendue, elle est en lecture seule. Au
+  retour au constat (`REGISTRE_CONSTAT`), la carte le dit. L'opérateur y saisit
   le contact de l'administrateur d'installation et accepte les conditions EN VIGUEUR,
   dont le texte se lit ici même : on ne s'engage pas sur un texte qu'on n'a pas vu.
 -->
@@ -73,7 +75,7 @@
 		}
 	});
 
-	/** L'état constaté, dit en clair — `reference` et `essai` ne sont jamais limités. */
+	/** L'état, dit en clair — `reference` et `essai` ne sont jamais limités. */
 	const LIBELLES_INSCRIPTION: Record<InscriptionInstallation['etat'], string> = {
 		reference: 'Référence',
 		essai: 'Essai',
@@ -208,8 +210,20 @@
 				>
 					<strong>{LIBELLES_INSCRIPTION[i.etat]}</strong>{SEPARATEUR.tiret}{i.raison}
 					<p class="aide">
-						Constaté seulement{SEPARATEUR.tiret}sauf les services&nbsp;: une réplique n’allume que
-						ceux que la référence autorise.
+						{#if !i.applique}
+							Constaté seulement{SEPARATEUR.tiret}sauf les services&nbsp;: une réplique n’allume que
+							ceux que la référence autorise.
+						{:else if i.etat === 'limitee'}
+							Appliqué&nbsp;: au plus {i.plafond_comptes_actifs} comptes actifs{SEPARATEUR.tiret}le
+							suivant est refusé, aucun compte existant n’est touché. Aucun service ni mise à jour
+							automatique.
+						{:else if i.etat === 'suspendue'}
+							Appliqué&nbsp;: lecture seule{SEPARATEUR.tiret}l’export reste ouvert à
+							l’administrateur de la copropriété. Seule la référence la rétablit&nbsp;:
+							<em>Renouveler le bail</em> le lui redemande.
+						{:else}
+							Appliqué&nbsp;: une réplique n’allume que les services que la référence autorise.
+						{/if}
 					</p>
 				</dd>
 				{#if i.identifiant}
