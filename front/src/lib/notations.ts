@@ -61,17 +61,37 @@ export const POINTS_FAIBLES = [
 	'intervenant injoignable',
 ] as const;
 
+/**
+ * La forme de la phrase générée et du commentaire enregistré — UNE table, que la phrase,
+ * le commentaire et leur décomposition lisent tous trois.
+ * 🔒 Table PUBLIÉE aux apps (`commentaireAvis`, #2816) — littérale : les apps refont les
+ * trois gestes depuis elle, sans recopier un libellé.
+ */
+export const FORME_COMMENTAIRE = {
+	prefixeForts: 'Points forts : ',
+	prefixeFaibles: 'Points faibles : ',
+	/** Entre deux motifs d'un même groupe. */
+	entreMotifs: ', ',
+	/** À la fin de chaque groupe. */
+	finDeGroupe: '.',
+	/** Entre le groupe des points forts et celui des points faibles. */
+	entreGroupes: ' ',
+	/** Entre la phrase générée et le texte libre. */
+	avantLibre: '\n',
+} as const;
+const F = FORME_COMMENTAIRE;
+
 /** La phrase générée d'après les cases cochées. Vide si rien n'est coché. */
 export function phraseGeneree(forts: readonly string[], faibles: readonly string[]): string {
 	const morceaux: string[] = [];
-	if (forts.length) morceaux.push(`Points forts : ${forts.join(', ')}.`);
-	if (faibles.length) morceaux.push(`Points faibles : ${faibles.join(', ')}.`);
-	return morceaux.join(' ');
+	if (forts.length) morceaux.push(F.prefixeForts + forts.join(F.entreMotifs) + F.finDeGroupe);
+	if (faibles.length) morceaux.push(F.prefixeFaibles + faibles.join(F.entreMotifs) + F.finDeGroupe);
+	return morceaux.join(F.entreGroupes);
 }
 
 /** Le commentaire enregistré : la phrase générée, puis le texte libre. */
 export function commentaireComplet(genere: string, libre: string): string {
-	return [genere, libre.trim()].filter((s) => s.length > 0).join('\n');
+	return [genere, libre.trim()].filter((s) => s.length > 0).join(F.avantLibre);
 }
 
 /** Un commentaire relu : les cases qu'il cochait, et le texte libre qui suit. */
@@ -81,7 +101,11 @@ export interface CommentaireDecompose {
 	libre: string;
 }
 
-const PHRASE = /^(?:Points forts : (.+?)\.)?\s*(?:Points faibles : (.+?)\.)?$/;
+const echapper = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+const PHRASE = new RegExp(
+	`^(?:${echapper(F.prefixeForts)}(.+?)${echapper(F.finDeGroupe)})?\\s*` +
+		`(?:${echapper(F.prefixeFaibles)}(.+?)${echapper(F.finDeGroupe)})?$`,
+);
 
 /**
  * L'inverse de `commentaireComplet` (15/11/2026) : corriger un avis RECOCHE ses cases.
@@ -92,9 +116,9 @@ export function decomposerCommentaire(
 	commentaire: string | null | undefined,
 ): CommentaireDecompose {
 	const texte = commentaire ?? '';
-	const [premiere, ...suite] = texte.split('\n');
+	const [premiere, ...suite] = texte.split(F.avantLibre);
 	const m = PHRASE.exec(premiere.trim());
-	const motifs = (liste: string | undefined) => (liste ? liste.split(', ') : []);
+	const motifs = (liste: string | undefined) => (liste ? liste.split(F.entreMotifs) : []);
 	const forts = motifs(m?.[1]);
 	const faibles = motifs(m?.[2]);
 	const reconnus =
@@ -103,5 +127,5 @@ export function decomposerCommentaire(
 		forts.every((f) => (POINTS_FORTS as readonly string[]).includes(f)) &&
 		faibles.every((f) => (POINTS_FAIBLES as readonly string[]).includes(f));
 	if (!reconnus) return { forts: [], faibles: [], libre: texte };
-	return { forts, faibles, libre: suite.join('\n') };
+	return { forts, faibles, libre: suite.join(F.avantLibre) };
 }
