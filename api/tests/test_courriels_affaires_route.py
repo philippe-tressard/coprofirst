@@ -31,7 +31,7 @@ from app.utils.courriel_journal import (
 from tests.aides_http import base_http, client_http
 
 _ROUTE = "/courriels-affaires"
-_EXPEDITEUR = "Gestionnaire <gestion@syndic.exemple.fr>"
+_EXPEDITEUR = "Gestionnaire <gestion@syndic.exemple.test>"
 
 
 def _poser(moteur, n: int) -> None:
@@ -71,7 +71,7 @@ def test_le_conseil_lit_le_NOM_de_l_expediteur_pas_son_adresse():
         assert reponse.status_code == 200, reponse.text
         ligne = reponse.json()["messages"][0]
         assert ligne["expediteur"] == "Gestionnaire"
-        assert "syndic.exemple.fr" not in reponse.text
+        assert "syndic.exemple.test" not in reponse.text
 
 
 def test_l_administrateur_lit_l_adresse_en_entier():

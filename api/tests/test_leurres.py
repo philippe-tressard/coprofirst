@@ -93,7 +93,7 @@ def test_sans_leurre_pose_la_meme_adresse_est_un_compte_inconnu(session, monkeyp
 
 
 def test_une_autre_adresse_n_est_pas_le_leurre(leurres):
-    assert not est_adresse_leurre("secours-leurre@exemple.invalid.autre")
+    assert not est_adresse_leurre("secours-leurre@exemple.invalid.test")
     assert not est_adresse_leurre("")
 
 

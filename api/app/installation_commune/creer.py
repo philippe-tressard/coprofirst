@@ -19,7 +19,7 @@ Une déclaration qui ne se valide pas n'est JAMAIS écrite : elle ferait servir 
 toutes les copropriétés de l'installation. Aucun secret n'est affiché.
 
     python -m app.installation_commune.creer noms <identifiant> --code-postal 75015 \\
-        --nom "Les Tilleuls" --expediteur contact@exemple.fr [--hote residence.fr]
+        --nom "Les Tilleuls" --expediteur contact@example.com [--hote residence.example.com]
 
 🔒 `tests/test_installation_commune_creer.py`.
 """

@@ -101,7 +101,7 @@ def test_la_fiche_imprime_les_consignes_saisies(session):
         cs_data={"membres": []},
         syndic_data={"nom_syndic": "", "adresse": "", "membres": []},
         site_nom="Résidence Témoin",
-        site_url="https://exemple.fr",
+        site_url="https://exemple.test",
         logo_png=None,
         whatsapp_url=None,
         consignes=consignes_en_html(lire_consignes(session), "Syndic Témoin"),
@@ -173,7 +173,7 @@ def _fiche(accueil: str | None) -> str:
         cs_data={"membres": []},
         syndic_data={"nom_syndic": "", "adresse": "", "membres": []},
         site_nom="Résidence Témoin",
-        site_url="https://exemple.fr",
+        site_url="https://exemple.test",
         logo_png=None,
         whatsapp_url=None,
         consignes=[],
@@ -188,7 +188,7 @@ def test_sans_saisie_la_fiche_imprime_l_accueil_du_gabarit(session):
     #  Le gabarit nomme le site par le marqueur, jamais par une adresse en dur.
     assert MARQUEUR_SITE in ACCUEIL_GABARIT
     fiche = _fiche(None)
-    assert "sur le site exemple.fr de la copropriété" in fiche
+    assert "sur le site exemple.test de la copropriété" in fiche
     assert MARQUEUR_SITE not in fiche
 
 
@@ -203,7 +203,7 @@ def test_l_accueil_saisi_s_imprime_echappe(session):
         == "<b>Bienvenue</b> chez **nous**, voyez {site}."
     )
     fiche = _fiche(lire_accueil(session))
-    assert "&lt;b&gt;Bienvenue&lt;/b&gt; chez <strong>nous</strong>, voyez exemple.fr." in fiche
+    assert "&lt;b&gt;Bienvenue&lt;/b&gt; chez <strong>nous</strong>, voyez exemple.test." in fiche
     assert "<b>Bienvenue" not in fiche
 
 

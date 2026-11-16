@@ -273,7 +273,7 @@ test('relancer le syndic : la même liste, les relances envoyées, un pli et l�
 		return route.fulfill({
 			status: 200,
 			contentType: 'application/json',
-			body: JSON.stringify({ sent: 2, relance_to: 'syndic@exemple.fr' }),
+			body: JSON.stringify({ sent: 2, relance_to: 'syndic@exemple.test' }),
 		});
 	});
 	//  L'adresse de l'alerte du tableau de bord : la relance est un MODE du suivi.

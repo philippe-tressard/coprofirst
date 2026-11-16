@@ -81,7 +81,7 @@
 					type="email"
 					bind:value={email}
 					on:input={() => (erreur = '')}
-					placeholder="prenom.nom@exemple.fr"
+					placeholder="prenom.nom@example.com"
 					autocomplete="email"
 					aria-label="Adresse du destinataire"
 					aria-invalid={!!erreur}

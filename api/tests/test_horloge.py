@@ -31,7 +31,7 @@ def test_maintenant_est_en_utc():
 
 def test_maintenant_se_compare_a_une_date_de_modele():
     """Le cas qui aurait levé : comparer « maintenant » à un `default_factory`."""
-    u = Utilisateur(nom="N", prenom="P", email="n@p.fr")
+    u = Utilisateur(nom="N", prenom="P", email="n@p.test")
     assert u.cree_le <= horloge.maintenant()
 
 

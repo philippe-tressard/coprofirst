@@ -34,7 +34,7 @@ _CONTEXTE = {
     "nb_problemes": len(_ISSUES),
     "date_controle": "mercredi 5 août 2026 à 06:00",
     "residence": {"nom": "Les Hostachy"},
-    "app": {"url": "https://exemple.fr"},
+    "app": {"url": "https://exemple.test"},
     "annee": 2026,
 }
 

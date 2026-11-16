@@ -248,7 +248,7 @@
 					id="{idPrefixe}-email-ext"
 					type="email"
 					bind:value={emailExterne}
-					placeholder="contact@exemple.fr"
+					placeholder="contact@example.com"
 				/>
 			</div>
 		{/if}

@@ -68,7 +68,7 @@ def test_noms_refuse_un_alias_deja_pris_sans_rien_ecrire(tmp_path, monkeypatch, 
                 "--nom",
                 "Les Tilleuls",
                 "--expediteur",
-                "x@exemple.fr",
+                "x@exemple.test",
             ]
         )
         assert code == 1

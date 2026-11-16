@@ -65,7 +65,7 @@ def _partager(session, user, objet, ident):
     taches = BackgroundTasks()
     partager_par_courriel(
         requete_de_test("/partage"),
-        PartageCourriel(objet=objet, id=ident, email="voisin@exemple.fr"),
+        PartageCourriel(objet=objet, id=ident, email="voisin@example.com"),
         taches,
         session=session,
         user=user,
@@ -79,7 +79,7 @@ def test_qui_lit_l_affaire_peut_la_transmettre(monde):
     assert len(taches.tasks) == 1
     envoi = taches.tasks[0]
     assert envoi.kwargs["code"] == "ticket_partage"
-    assert envoi.kwargs["to"] == "voisin@exemple.fr"
+    assert envoi.kwargs["to"] == "voisin@example.com"
     #  Titre, numéro, lien — jamais la description.
     assert set(envoi.kwargs["context"]["ticket"]) == {"id", "numero", "titre"}
 
@@ -114,5 +114,5 @@ def test_un_objet_inconnu_est_refuse(monde):
     """Le lien se reconstruit d'un type CONNU : rien d'autre ne sort du site."""
     session, _t, auteur, _l = monde
     with pytest.raises(HTTPException) as refus:
-        _partager(session, auteur, "https://exemple.fr", 1)
+        _partager(session, auteur, "https://exemple.test", 1)
     assert refus.value.status_code == 422

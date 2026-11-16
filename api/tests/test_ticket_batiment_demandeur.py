@@ -40,7 +40,7 @@ from app.models.core import Batiment, Ticket, Utilisateur
 from app.routers.tickets.commun import ticket_read
 from tests.aides_base import compte
 
-EMAIL = "demandeur-653@test.fr"
+EMAIL = "demandeur-653@test.test"
 
 
 def _purger(session: Session) -> None:

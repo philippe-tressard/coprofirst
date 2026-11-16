@@ -25,7 +25,7 @@ LONGUEUR_TITRE = 200
 
 
 def compte_a_l_adresse(session: Session, adresse: str | None) -> Utilisateur | None:
-    """Le compte ACTIF à cette adresse (« Nom <a@b.fr> » accepté), sans égard à la casse.
+    """Le compte ACTIF à cette adresse (« Nom <a@b.test> » accepté), sans égard à la casse.
 
     Ce module ne fait qu'extraire l'adresse de l'en-tête : la question « quel
     compte ? » est celle de `auth.adresse_compte`, posée partout de la même façon.

@@ -12,11 +12,11 @@ l'hébergeur de la phase 3 soit choisi.
   "identifiant": "tilleuls",
   "code_postal": "75015", "nom": "Les Tilleuls",
   "anciens_alias": ["75015-tilleuls"],
-  "hotes": ["residence-tilleuls.fr"],
+  "hotes": ["residence-tilleuls.example.com"],
   "suspendue": false,
   "base": "TILLEULS_DATABASE_URL", "secret": "TILLEULS_SECRET_KEY",
   "racine_fichiers": "/app/uploads/tilleuls",
-  "expediteur": "contact@residence-tilleuls.fr", "nom_expediteur": "Les Tilleuls",
+  "expediteur": "contact@residence-tilleuls.example.com", "nom_expediteur": "Les Tilleuls",
   "operateurs": ["exploitation@hebergeur.example"]
 }]}
 ```

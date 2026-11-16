@@ -61,7 +61,7 @@ from app.utils.envois_uniques import adresses, sans_les_deja_servies
 
 def test_les_adresses_se_comparent_sans_casse_ni_espaces():
     """Deux écritures de la même boîte doivent se reconnaître."""
-    assert normaliser_adresse("  Jean.Dupont@Exemple.FR  ") == "jean.dupont@exemple.fr"
+    assert normaliser_adresse("  Jean.Dupont@Exemple.TEST  ") == "jean.dupont@exemple.test"
 
 
 def test_la_normalisation_ne_va_PAS_plus_loin():
@@ -71,8 +71,8 @@ def test_la_normalisation_ne_va_PAS_plus_loin():
     des serveurs. Les « normaliser » ensemble retirerait un destinataire légitime
     — et c'est le mauvais côté de l'erreur : un doublon dérange, une absence prive.
     """
-    assert normaliser_adresse("jean.dupont@x.fr") != normaliser_adresse("jeandupont@x.fr")
-    assert normaliser_adresse("a+ticket@x.fr") != normaliser_adresse("a@x.fr")
+    assert normaliser_adresse("jean.dupont@x.test") != normaliser_adresse("jeandupont@x.test")
+    assert normaliser_adresse("a+ticket@x.test") != normaliser_adresse("a@x.test")
 
 
 def test_le_retrait_conserve_l_ORDRE():
@@ -80,8 +80,8 @@ def test_le_retrait_conserve_l_ORDRE():
 
     Le réordonner ferait gagner le doublon interne à quelqu'un d'autre (#480).
     """
-    liste = [(1, "syndic@x.fr"), (2, "a@x.fr"), (3, "b@x.fr")]
-    assert sans_les_deja_servies(liste, {"a@x.fr"}) == [(1, "syndic@x.fr"), (3, "b@x.fr")]
+    liste = [(1, "syndic@x.test"), (2, "a@x.test"), (3, "b@x.test")]
+    assert sans_les_deja_servies(liste, {"a@x.test"}) == [(1, "syndic@x.test"), (3, "b@x.test")]
 
 
 def test_une_liste_VIDE_est_un_resultat_normal():
@@ -90,12 +90,12 @@ def test_une_liste_VIDE_est_un_resultat_normal():
     L'appelant doit alors ne rien envoyer — pas envoyer à personne, ce qui
     laisserait une trace sans destinataire dans `historique_email`.
     """
-    assert sans_les_deja_servies([(1, "a@x.fr")], {"A@X.FR"}) == []
+    assert sans_les_deja_servies([(1, "a@x.test")], {"A@X.TEST"}) == []
 
 
 def test_adresses_ignore_les_entrees_vides():
     """Un membre sans adresse ne doit pas produire une chaîne vide qui matcherait tout."""
-    assert adresses([(1, ""), (2, None), (3, "a@x.fr")]) == {"a@x.fr"}
+    assert adresses([(1, ""), (2, None), (3, "a@x.test")]) == {"a@x.test"}
 
 
 # ── Le branchement, sans lequel le module ne servirait à rien ────────────────

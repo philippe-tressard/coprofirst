@@ -170,7 +170,7 @@ def test_le_nom_affiche_du_courriel_prime_et_le_texte_recu_est_echappe():
     from app.utils.reponse_courriel import contenu_de_la_suite
 
     html = contenu_de_la_suite(
-        "Jean Martin <jm@syndic.fr>",
+        "Jean Martin <jm@syndic.test>",
         "G S",
         datetime(2026, 9, 25, 16, 0),
         "Ligne 1\nLigne <2>\n\nParagraphe & fin",

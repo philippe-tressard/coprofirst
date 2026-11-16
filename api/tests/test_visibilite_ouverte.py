@@ -87,7 +87,7 @@ def _utilisateur(roles, statut, batiment_id, *, restreint=False) -> Utilisateur:
     return Utilisateur(
         nom="X",
         prenom="Y",
-        email=f"{roles}-{statut}-{batiment_id}-{restreint}@test.fr",
+        email=f"{roles}-{statut}-{batiment_id}-{restreint}@test.test",
         roles_json=roles,
         statut=statut,
         batiment_id=batiment_id,
@@ -378,7 +378,7 @@ def bailleur_avec_lot(batiments):
         user = Utilisateur(
             nom="Bailleur",
             prenom="Sans",
-            email="bailleur-sans-rattachement@test.fr",
+            email="bailleur-sans-rattachement@test.test",
             roles_json="propriétaire",
             statut=StatutUtilisateur.copropriétaire_bailleur,
             batiment_id=None,
@@ -442,7 +442,7 @@ def test_un_lot_donne_acces_a_son_batiment_meme_avec_un_rattachement(batiments):
         user = Utilisateur(
             nom="Mixte",
             prenom="Cas",
-            email="rattache-et-proprietaire@test.fr",
+            email="rattache-et-proprietaire@test.test",
             roles_json="propriétaire",
             statut=StatutUtilisateur.copropriétaire_bailleur,
             batiment_id=batiments[0],

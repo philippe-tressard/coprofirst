@@ -44,8 +44,8 @@ SOURCE = Path(inspect.getfile(_masquer)).read_text(encoding="utf-8")
 @pytest.mark.parametrize(
     "adresse, attendu",
     [
-        ("paul.delmas@exemple.fr", "p***@exemple.fr"),
-        ("a@b.fr", "a***@b.fr"),
+        ("paul.delmas@exemple.test", "p***@exemple.test"),
+        ("a@b.test", "a***@b.test"),
         # Le domaine reste lisible : il suffit à diagnostiquer une panne de
         # délivrance chez un fournisseur, sans identifier personne.
         ("contact@5hostachy.fr", "c***@5hostachy.fr"),
@@ -54,7 +54,7 @@ SOURCE = Path(inspect.getfile(_masquer)).read_text(encoding="utf-8")
         ("", "(vide)"),
         (None, "(vide)"),
         ("pas-une-adresse", "***"),
-        ("@sans-tete.fr", "***@sans-tete.fr"),
+        ("@sans-tete.test", "***@sans-tete.test"),
     ],
 )
 def test_masquer_ne_laisse_pas_passer_l_adresse(adresse, attendu):
@@ -63,7 +63,7 @@ def test_masquer_ne_laisse_pas_passer_l_adresse(adresse, attendu):
 
 @pytest.mark.parametrize(
     "adresse",
-    ["paul.delmas@exemple.fr", "un.tres.long.prenom@domaine.example"],
+    ["paul.delmas@exemple.test", "un.tres.long.prenom@domaine.example"],
 )
 def test_la_partie_locale_ne_survit_pas_au_masquage(adresse):
     """Au-delà du format exact : la partie locale ne doit pas être reconstituable."""
