@@ -14,36 +14,20 @@ import pytest
 from app.inscription import constat
 from app.inscription.depot import EtatLocal
 from app.registre import signature
-from app.registre.contrat import Bail, BailSigne, octets_du_bail
+from tests.aides_baux import CLES, IDENTIFIANT, REF_PUBLIQUE, bail_signe
 
 MAINTENANT = datetime(2026, 10, 13, 12, 0, 0)
 
-REF_PRIVEE, REF_PUBLIQUE = signature.generer_paire()
 INST_PRIVEE, INST_PUBLIQUE = signature.generer_paire()
-CLES = {1: REF_PUBLIQUE}
 
 
 def _bail(**champs) -> dict:
-    valeurs = dict(
-        identifiant="CF-000042",
-        empreinte_cle=signature.empreinte(INST_PUBLIQUE),
-        etat="active",
-        canal="replica",
-        epoque=1,
-        delivre_le=MAINTENANT - timedelta(days=1),
-        echeance=MAINTENANT + timedelta(days=29),
-    )
-    valeurs.update({k: v for k, v in champs.items() if k != "cle"})
-    bail = Bail(**valeurs)
-    cle = champs.get("cle", REF_PRIVEE)
-    return BailSigne(bail=bail, signature=signature.signer(cle, octets_du_bail(bail))).model_dump(
-        mode="json"
-    )
+    return bail_signe(INST_PUBLIQUE, MAINTENANT, **champs)
 
 
 def _etat(bail=None, **autres) -> EtatLocal:
     valeurs = dict(
-        identifiant="CF-000042",
+        identifiant=IDENTIFIANT,
         bail=bail,
         plus_haute_epoque=1,
         dernier_renouvellement_le=(MAINTENANT - timedelta(hours=10)).isoformat(),
@@ -66,12 +50,20 @@ def _constat(etat, **k):
 
 def test_un_bail_signe_et_valide_rend_active():
     verdict = _constat(_etat(_bail()))
-    assert (verdict.etat, verdict.identifiant, verdict.canal) == ("active", "CF-000042", "replica")
+    assert (verdict.etat, verdict.identifiant, verdict.canal) == ("active", IDENTIFIANT, "replica")
     assert not verdict.renouvellement_en_retard
 
 
 def test_un_bail_suspendu_rend_suspendue():
     assert _constat(_etat(_bail(etat="suspendue"))).etat == "suspendue"
+
+
+def test_un_bail_suspendu_mais_echu_rend_limitee_jamais_suspendue():
+    """D19 (R6 #1882) : une panne de la référence ne coupe personne — l'échéance passe
+    avant l'état du bail, et ramène au mode limité, jamais à la lecture seule."""
+    echu = _bail(etat="suspendue", echeance=MAINTENANT - timedelta(seconds=1))
+    verdict = _constat(_etat(echu))
+    assert verdict.etat == "limitee" and "échu" in verdict.raison
 
 
 @pytest.mark.parametrize("etat, raison", [("en_attente", "attente"), ("resiliee", "résiliée")])
