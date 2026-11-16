@@ -287,12 +287,18 @@
 		reverse_proxy front:3000
 	}
 
-	# Liens universels d'Apple (#2459) : l'app iOS s'ouvre depuis un lien de courriel
-	# ou le QR de la fiche arrivant. Le fichier n'a PAS d'extension, donc le serveur du
-	# front ne lui pose aucun type ; Apple exige `application/json` et refuse toute
-	# redirection. Les chemins couverts : `front/static/.well-known/` (🔒
-	# `test_apple_app_site_association.py` les confronte aux liens de nos courriels).
-	handle /.well-known/apple-app-site-association {
+	# Liens d'application : l'app s'ouvre depuis un lien de courriel ou le QR de la
+	# fiche arrivant, si l'hôte publie son fichier d'association — iOS lit
+	# `apple-app-site-association` (#2459), Android `assetlinks.json` (#2788). Les deux
+	# exigent `application/json`, un 200 et AUCUNE redirection ; l'AASA n'a pas
+	# d'extension, donc le serveur du front ne lui pose aucun type. Un seul bloc les
+	# sert tous les deux. Contenu : `front/static/.well-known/` (🔒
+	# `test_liens_d_application.py` ; les chemins iOS, `test_apple_app_site_association.py`).
+	# L'empreinte de `assetlinks.json` est publique : celle du certificat de débogage
+	# aujourd'hui ; celle de publication (Google Play) s'ajoutera, et celle de débogage
+	# se retirera alors.
+	@liens_d_application path /.well-known/apple-app-site-association /.well-known/assetlinks.json
+	handle @liens_d_application {
 		header >Content-Type "application/json"
 		reverse_proxy front:3000
 	}

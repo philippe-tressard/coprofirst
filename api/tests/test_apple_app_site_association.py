@@ -2,7 +2,8 @@
 
 POURQUOI : l'app iOS s'ouvre depuis un lien de courriel ou le QR de la fiche arrivant
 (liens universels d'Apple). Chaque installation doit donc servir ce fichier, en JSON,
-sans redirection. Deux défauts guettent, et aucun ne fait d'erreur :
+sans redirection — ce que tient `test_liens_d_application.py`, avec `assetlinks.json`
+d'Android (#2788). Ici, les CHEMINS. Deux défauts guettent, et aucun ne fait d'erreur :
 
   * un chemin que NOS courriels ouvrent et que le fichier ne couvre pas — le lien
     s'ouvre dans Safari, l'app n'est jamais proposée ;
@@ -24,8 +25,6 @@ pytest qu'ici, et un contrôle sans exécution est un contrôle absent.
 import json
 import pathlib
 import re
-
-from tests.aides_caddy import bloc_handle, caddyfile
 
 _RACINE = pathlib.Path(__file__).resolve().parents[2]
 _FICHIER = _RACINE / "front" / "static" / ".well-known" / "apple-app-site-association"
@@ -93,23 +92,9 @@ def test_cas_zero_les_chemins_sont_bien_lus():
     assert "/auth/reinitialisation-mdp" in lus, sorted(lus)
 
 
-def test_le_fichier_est_en_json_utf8_sans_bom_ni_crlf():
-    octets = _FICHIER.read_bytes()
-    assert not octets.startswith(b"\xef\xbb\xbf"), "BOM en tête"
-    assert b"\r" not in octets, "fins de ligne CRLF"
-    _document()
-
-
 def test_l_app_est_celle_de_l_equipe_apple_du_projet():
     (detail,) = _document()["applinks"]["details"]
     assert detail["appIDs"] == [APP_ID]
-
-
-def test_le_fichier_ne_nomme_pas_la_residence():
-    """Il part chez toutes les installations (`lint:nom-residence` le garde aussi)."""
-    texte = _FICHIER.read_text(encoding="utf-8").lower()
-    for mot in ("hostachy", "résidence", "residence"):
-        assert mot not in texte
 
 
 def test_chaque_chemin_de_courriel_est_couvert_ou_declare_non_ouvert():
@@ -135,15 +120,3 @@ def test_la_racine_est_couverte_seule_pour_le_qr_de_la_fiche_arrivant():
     assert _couvert("/")
     assert not _couvert("/mentions-legales")
     assert not _couvert("/politique-de-confidentialite")
-
-
-def test_caddy_le_sert_en_json_sans_redirection():
-    """Le serveur du front pose un type par l'extension : celui-ci n'en a pas. Apple exige
-    `application/json` et refuse toute redirection."""
-    bloc = bloc_handle(caddyfile(), "/.well-known/apple-app-site-association")
-    assert bloc is not None, (
-        "aucun `handle /.well-known/apple-app-site-association` dans le Caddyfile"
-    )
-    assert 'header >Content-Type "application/json"' in bloc
-    assert "reverse_proxy front:3000" in bloc
-    assert "redir" not in bloc
