@@ -16,6 +16,7 @@ comme à la relève. Seul le réseau est remplacé.
 from __future__ import annotations
 
 import base64
+import re
 
 import dkim
 import pytest
@@ -293,7 +294,9 @@ def test_le_constat_SCELLE_par_le_serveur_de_reception_fait_foi(cle):
         _rediriger(brut, cle), "gestion@syndic.test", dnsfunc=_dns_redirection(cle)
     )
     assert ok, motif
-    assert "mail.ovh.net" in motif and "syndic.test" in motif
+    #  Les domaines du motif, comparés en entier : une recherche de sous-chaîne sur un
+    #  nom d'hôte est la forme que CodeQL refuse (py/incomplete-url-substring-sanitization).
+    assert {"mail.ovh.net", "syndic.test"} <= set(re.findall(r"[\w-]+(?:\.[\w-]+)+", motif))
 
 
 def test_un_sceau_d_un_AUTRE_serveur_ne_prouve_rien(cle):

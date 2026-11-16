@@ -7,8 +7,8 @@ d'Admin › Pages légales) ; un texte qui ne la porte plus telle quelle ne chan
 L'ANCIENNE est recopiée ici, littérale : une migration ne dépend pas d'un seed qui bouge.
 Données seules ; l'image précédente lit les mêmes clés (#1757).
 
-Revision ID: 0341
-Revises: 0340
+Revision ID: 0342
+Revises: 0341
 """
 
 from alembic import op
@@ -16,8 +16,8 @@ from alembic import op
 from app.seed.contenus_legaux_notifications import NOTIFICATIONS_PUSH
 from app.utils.textes_livres import forme_editeur, remplacer_passage
 
-revision = "0341"
-down_revision = "0340"
+revision = "0342"
+down_revision = "0341"
 branch_labels = None
 depends_on = None
 

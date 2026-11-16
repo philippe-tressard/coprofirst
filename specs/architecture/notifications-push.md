@@ -296,7 +296,7 @@ CoproFirst, détenu par la **référence seule**, comme la clé `.p8` (N1). La c
 `android.collapse_key` = l'abonnement, `android.priority` = `high` pour un avis urgent
 seulement. `UNREGISTERED` ou `INVALID_ARGUMENT` → `jeton_perime`. Une montre Wear OS
 reprend l'avis du téléphone ; elle ne reçoit rien de plus. La politique de
-confidentialité nomme Google et FCM (migration 0341).
+confidentialité nomme Google et FCM (migration 0342).
 
 **Gestes de Philippe** : créer le projet Firebase et son compte de service (rôle
 *Firebase Cloud Messaging API Admin*), poser sa clé JSON sur la référence seule ; le

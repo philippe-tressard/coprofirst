@@ -212,7 +212,13 @@ def update_ticket(
         if body.statut is not None:
             refuser_si_absorbee(ticket)  # son suivi vit dans la principale (#1704)
             ticket.statut = body.statut
-            if body.statut in STATUTS_TICKET_CLOS:
+            #  🔴 Une affaire se ferme UNE fois : la correction d'une affaire close
+            #  renvoie son état (le formulaire le porte toujours), et la date de
+            #  fermeture devenait celle de la correction — le carnet et le fil la
+            #  montraient (16/11/2026, #2804). Seul le passage d'ouvert à clos la date.
+            if body.statut in STATUTS_TICKET_CLOS and (
+                valeur(ancien_statut) not in STATUTS_TICKET_CLOS or ticket.ferme_le is None
+            ):
                 ticket.ferme_le = horloge.maintenant()
         if body.priorite is not None:
             ticket.priorite = body.priorite

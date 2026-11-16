@@ -106,11 +106,19 @@ test('Espace CS › Courriels : une pliure par message, verdict et motif dessous
 		el.querySelector('.jv-titre')!.textContent =
 			'Re: ' + 'Objet très long de l’affaire '.repeat(12);
 	});
-	const { cadre, verdict } = await tete.evaluate((el) => ({
-		cadre: el.getBoundingClientRect().right,
-		verdict: el.querySelector('.jv-meta')!.getBoundingClientRect().right,
-	}));
-	expect(Math.abs(cadre - verdict), 'le verdict n’est plus cadré à droite').toBeLessThan(2);
+	//  Mesuré dans un `expect.poll` : le titre vient de changer, la ligne se recompose (#2768).
+	await expect
+		.poll(
+			() =>
+				tete.evaluate((el) =>
+					Math.abs(
+						el.getBoundingClientRect().right -
+							el.querySelector('.jv-meta')!.getBoundingClientRect().right,
+					),
+				),
+			{ message: 'le verdict n’est plus cadré à droite' },
+		)
+		.toBeLessThan(2);
 
 	await bloc.screenshot({
 		path: `test-results/journal-releves-${test.info().project.name}.png`,

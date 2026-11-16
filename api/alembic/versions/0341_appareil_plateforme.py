@@ -3,15 +3,15 @@
 Colonne ADDITIVE, `server_default 'apns'` : tout appareil enregistré avant ce lot est un
 iPhone, et l'image précédente ignore la colonne (#1757).
 
-Revision ID: 0340
-Revises: 0339
+Revision ID: 0341
+Revises: 0340
 """
 
 import sqlalchemy as sa
 from alembic import op
 
-revision = "0340"
-down_revision = "0339"
+revision = "0341"
+down_revision = "0340"
 branch_labels = None
 depends_on = None
 

@@ -1,10 +1,10 @@
-"""La 0341 fait nommer Google et FCM à la puce des notifications sur téléphone (#2789).
+"""La 0342 fait nommer Google et FCM à la puce des notifications sur téléphone (#2789).
 
 La production sert la puce sous la forme de l'éditeur d'Admin › Pages légales (constaté
 le 16/11/2026 sur `GET /api/config/legal`) ; l'essai rejoue les deux formes, et un texte
 reformulé, qui ne change pas.
 
-À retirer après la MEP qui applique la 0341 (`feedback_tests_migrations_appliquees`).
+À retirer après la MEP qui applique la 0342 (`feedback_tests_migrations_appliquees`).
 """
 
 from __future__ import annotations
@@ -18,7 +18,7 @@ from app.seed.contenus_legaux_notifications import NOTIFICATIONS_PUSH
 from app.utils.textes_livres import forme_editeur
 from tests.aides_migrations import charger_migration
 
-MIGRATION = charger_migration("0341")
+MIGRATION = charger_migration("0342")
 CLE = "politique_confidentialite"
 
 

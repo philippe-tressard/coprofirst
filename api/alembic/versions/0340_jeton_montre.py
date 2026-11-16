@@ -3,15 +3,15 @@
 Une table NEUVE, rien d'autre : la version précédente du code ne la connaît pas et ne
 la lit pas — revenir à son image ne demande aucune restauration (#1757).
 
-Revision ID: 0339
-Revises: 0338
+Revision ID: 0340
+Revises: 0339
 """
 
 import sqlalchemy as sa
 from alembic import op
 
-revision = "0339"
-down_revision = "0338"
+revision = "0340"
+down_revision = "0339"
 branch_labels = None
 depends_on = None
 
