@@ -83,7 +83,8 @@ Deux clients, **un seul serveur** :
    un relais de la plateforme, la clé d'Apple ne quittant jamais la référence —
    spécification : [`notifications-push.md`](notifications-push.md).
 5. **Les liens universels** (#2459) : `/.well-known/apple-app-site-association`,
-   servi par chaque installation, ouvre l'application sur la bonne installation.
+   servi par chaque installation, ouvre l'application sur la bonne installation ;
+   `/.well-known/assetlinks.json` (#2788) fait de même pour l'application Android.
 
 **Où la vérité se lit** : l'état de chaque lot dans ses tickets (#2455 à #2459,
 chapeautés par #2460) ; ce que le serveur expose, dans le contrat publié ; ce que
