@@ -27,7 +27,7 @@ const ANNUAIRE = {
 				prenom: 'Christophe',
 				nom: 'Morin-Legrand',
 				fonction: 'Gestionnaire de Copropriétés',
-				email: 'gestion@exemple.fr',
+				email: 'gestion@exemple.test',
 				telephone: '01 02 03 04 05',
 				telephones: ['01 02 03 04 05'],
 				nom_affiche: 'Christophe MORIN-LEGRAND',

@@ -149,7 +149,7 @@ def test_un_expediteur_authentifie_SANS_COMPTE_ne_signe_rien(scene):
     session, ticket, _syndic, cs = scene
     decision = traiter(
         session,
-        _entetes_reponse(ticket.jeton_courriel, de="inconnu@syndic.fr"),
+        _entetes_reponse(ticket.jeton_courriel, de="inconnu@syndic.test"),
         "Bonjour, c'est noté.",
         datetime(2026, 9, 3),
         authentification=_AUTH_OK,
@@ -312,7 +312,7 @@ def test_un_prospectus_ne_reveille_toujours_personne(scene):
     decision = traiter(
         session,
         {
-            "From": "pub@ailleurs.fr",
+            "From": "pub@ailleurs.test",
             "To": "noreply@5hostachy.fr",
         },
         "Profitez de nos offres !",

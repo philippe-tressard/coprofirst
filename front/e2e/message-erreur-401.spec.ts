@@ -39,7 +39,7 @@ test.describe('Le message d’un 401 dépend du chemin appelé', () => {
 
 		await page.goto('/auth/connexion');
 		await attendreHydratation(page);
-		await page.locator('#email').fill('quelquun@exemple.fr');
+		await page.locator('#email').fill('quelquun@exemple.test');
 		await page.locator('#password').fill('mauvais-mot-de-passe');
 		await page.locator('button[type="submit"]').click();
 
@@ -59,7 +59,7 @@ test.describe('Le message d’un 401 dépend du chemin appelé', () => {
 
 		await page.goto('/auth/connexion');
 		await attendreHydratation(page);
-		await page.locator('#email').fill('quelquun@exemple.fr');
+		await page.locator('#email').fill('quelquun@exemple.test');
 		await page.locator('#password').fill('peu-importe');
 		await page.locator('button[type="submit"]').click();
 

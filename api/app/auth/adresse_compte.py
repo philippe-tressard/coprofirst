@@ -63,7 +63,7 @@ def normaliser_adresse(adresse: Optional[str]) -> str:
 
 
 def adresse_masquee(adresse: Optional[str]) -> str:
-    """`p***@domaine.fr` — assez pour reconnaître quelqu'un, pas assez pour ficher.
+    """`p***@domaine.test` — assez pour reconnaître quelqu'un, pas assez pour ficher.
 
     Écrit une fois pour deux lecteurs : le journal des envois (#777), et la
     recherche d'un locataire par un bailleur (#2153), où l'adresse entière

@@ -54,7 +54,7 @@ def test_le_jeton_se_relit_dans_les_en_tetes_qui_le_portent():
     adresse = _adresse_a_jeton(jeton)
     assert jeton_dans(adresse) == jeton
     assert jeton_dans(f"Conseil syndical <{adresse.upper()}>") == jeton
-    assert jeton_dans(None, "", "autre@ailleurs.fr") is None
+    assert jeton_dans(None, "", "autre@ailleurs.test") is None
     #  Une adresse trop courte n'est pas un jeton tronqué acceptable.
     assert jeton_dans("tickets+abc@5hostachy.fr") is None
 
@@ -74,7 +74,7 @@ def test_un_message_authentifie_est_accepte():
     [
         (None, "aucune vérification"),
         ((False, "le message ne porte aucune signature DKIM"), "non signé"),
-        ((False, "le message est signé par autre.test, et non par syndic.fr"), "non aligné"),
+        ((False, "le message est signé par autre.test, et non par syndic.test"), "non aligné"),
     ],
 )
 def test_un_message_NON_authentifie_est_refuse(authentification, cas):
@@ -97,7 +97,7 @@ def test_un_message_NON_authentifie_est_refuse(authentification, cas):
 @pytest.mark.parametrize(
     "entete",
     [
-        "mx.ovh.net; spf=pass smtp.mailfrom=syndic.fr; dkim=pass; dmarc=pass",
+        "mx.ovh.net; spf=pass smtp.mailfrom=syndic.test; dkim=pass; dmarc=pass",
         "5hostachy.fr; spf=pass; dkim=pass; dmarc=pass",
     ],
 )
@@ -122,7 +122,7 @@ def test_un_message_sans_rapport_est_IGNORE_et_non_refuse():
     et le filtre deviendrait lui-même la nuisance. On finirait par ne plus le lire.
     """
     v = examiner(
-        {"From": "pub@ailleurs.fr", "To": "noreply@5hostachy.fr"}, recu_le=datetime(2026, 9, 3)
+        {"From": "pub@ailleurs.test", "To": "noreply@5hostachy.fr"}, recu_le=datetime(2026, 9, 3)
     )
     assert v.decision == IGNORE
 
@@ -142,7 +142,7 @@ def test_le_sujet_rattache_en_REPLI_quand_le_jeton_manque():
     """
     v = examiner(
         {
-            "From": "gestion@syndic.fr",
+            "From": "gestion@syndic.test",
             "To": "noreply@5hostachy.fr",
             "Subject": "Re: Ticket #TK-482910 — Fuite au 3e",
         },
@@ -163,7 +163,7 @@ def test_le_jeton_PRIME_toujours_sur_le_sujet():
     jeton = nouveau_jeton()
     v = examiner(
         {
-            "From": "gestion@syndic.fr",
+            "From": "gestion@syndic.test",
             "To": f"tickets+{jeton}@5hostachy.fr",
             "Subject": "Re: Ticket #TK-000001 — un AUTRE dossier",
         },
@@ -180,7 +180,7 @@ def test_un_numero_sans_le_mot_ticket_ne_rattache_rien():
     """
     v = examiner(
         {
-            "From": "quelquun@ailleurs.fr",
+            "From": "quelquun@ailleurs.test",
             "To": "noreply@5hostachy.fr",
             "Subject": "Re: votre facture TK-482910",
         },

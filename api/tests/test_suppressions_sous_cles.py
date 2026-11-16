@@ -51,7 +51,7 @@ from app.models.core import (
 )
 from app.models.documents import Document
 
-EMAIL = "suppression-546@test.fr"
+EMAIL = "suppression-546@test.test"
 
 
 def _purger(session: Session) -> None:

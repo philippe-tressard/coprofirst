@@ -42,7 +42,7 @@ const RELEVES = [
 		affaire: 'TK-121048',
 	}),
 	ligne(2, 'relance', 'réponse à une relance groupée, transmise au conseil syndical'),
-	ligne(1, 'accepte', 'ajouté au fil de l’affaire — signé par syndic.fr', {
+	ligne(1, 'accepte', 'ajouté au fil de l’affaire — signé par syndic.test', {
 		ticket_id: 7,
 		affaire: 'TK-121048',
 	}),

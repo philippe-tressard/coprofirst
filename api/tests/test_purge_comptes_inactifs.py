@@ -285,9 +285,9 @@ def test_send_email_dit_s_il_est_parti(session, monkeypatch):
         "date_suppression": "1er janvier 2030",
         "derniere_activite": "1er janvier 2028",
     }
-    assert asyncio.run(send_email(code, "resident@exemple.fr", contexte, session)) is True
+    assert asyncio.run(send_email(code, "resident@example.com", contexte, session)) is True
     _FauxFastMail.echoue = True
-    assert asyncio.run(send_email(code, "resident@exemple.fr", contexte, session)) is False
+    assert asyncio.run(send_email(code, "resident@example.com", contexte, session)) is False
 
 
 # ── Ceux que la purge ne supprime jamais ─────────────────────────────────────

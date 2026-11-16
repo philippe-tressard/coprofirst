@@ -287,7 +287,7 @@
 						id="{uid}-email"
 						type="email"
 						bind:value={bail.locataire_email}
-						placeholder="email@exemple.fr"
+						placeholder="email@example.com"
 					/>
 				</div>
 				<div class="field">

@@ -169,7 +169,7 @@ def traiter(
 
 
 def _adresse(en_tete: str) -> str:
-    """L'adresse d'un `From:` (« Nom <a@b.fr> » → « a@b.fr »)."""
+    """L'adresse d'un `From:` (« Nom <a@b.test> » → « a@b.test »)."""
     return parseaddr(en_tete or "")[1]
 
 

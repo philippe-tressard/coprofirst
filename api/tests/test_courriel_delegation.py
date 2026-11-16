@@ -25,7 +25,7 @@ from app.utils import courriel_delegation as cd
 from app.utils.courriel_authenticite import repond_de, verifier_expediteur
 
 _SELECTEUR = b"selector1"
-_CABINET = "cabinet-gestion.fr"
+_CABINET = "cabinet-gestion.test"
 _ABONNEMENT = "cabinetgestion.onmicrosoft.com"
 
 
@@ -80,7 +80,7 @@ def test_avec_la_delegation_declaree_la_reponse_est_authentifiee(cle):
 def test_la_delegation_ne_couvre_ni_un_sous_domaine_ni_un_autre_domaine(cle):
     """Exacte, au libellé près : elle répond d'UN domaine, pas de sa famille."""
     delegues = cd.delegations(f"{_CABINET} = {_ABONNEMENT}")
-    for de in (f"x@mail.{_CABINET}", "x@autre-cabinet.fr"):
+    for de in (f"x@mail.{_CABINET}", "x@autre-cabinet.test"):
         brut, dns = _signe_par_l_abonnement(cle, de)
         ok, _ = verifier_expediteur(brut, de, dnsfunc=dns, delegues=delegues)
         assert not ok, de

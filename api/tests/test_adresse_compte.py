@@ -37,12 +37,12 @@ def _compte_ancien(session, **champs):
 
 
 def test_la_forme_d_une_adresse():
-    assert normaliser_adresse("  Jean.Dupont@Exemple.FR ") == "jean.dupont@exemple.fr"
+    assert normaliser_adresse("  Jean.Dupont@Exemple.TEST ") == "jean.dupont@exemple.test"
     assert normaliser_adresse(None) == ""
     #  Rien de plus que la casse et les espaces : `jean.dupont` ≠ `jeandupont`,
     #  et la partie après `+` reste — une adresse distincte pour la plupart des
     #  serveurs (`envois_uniques` le disait déjà).
-    assert normaliser_adresse("jean.dupont+bal@exemple.fr") == "jean.dupont+bal@exemple.fr"
+    assert normaliser_adresse("jean.dupont+bal@exemple.test") == "jean.dupont+bal@exemple.test"
 
 
 def test_compte_par_adresse_ignore_casse_et_espaces(session):

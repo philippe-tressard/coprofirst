@@ -33,16 +33,16 @@ from app.utils.services import COURRIELS_DE_SECURITE
 CONTEXTES = {
     "reinitialisation_mdp": {
         "destinataire": {"prenom": "Prénom", "nom": "Nom"},
-        "lien": "https://exemple.fr/reinitialiser",
+        "lien": "https://exemple.test/reinitialiser",
     },
     "verification_email": {
         "prenom": "Prénom",
-        "lien": "https://exemple.fr/verifier",
+        "lien": "https://exemple.test/verifier",
         "expire_heures": 24,
     },
     "adresse_changement_avis": {
         "destinataire": {"prenom": "Prénom", "nom": "Nom"},
-        "nouvelle_adresse": "nouvelle@exemple.fr",
+        "nouvelle_adresse": "nouvelle@example.com",
         "par_un_administrateur": False,
     },
     "suppression_compte_demandee": {
@@ -99,7 +99,7 @@ def test_un_courriel_de_securite_decoche_part_quand_meme(session, faux_smtp, cod
     from app.utils.email import send_email
 
     _poser_modele(session, code, actif=False)
-    parti = asyncio.run(send_email(code, "resident@exemple.fr", CONTEXTES[code], session))
+    parti = asyncio.run(send_email(code, "resident@example.com", CONTEXTES[code], session))
     assert parti is True and len(faux_smtp) == 1
 
 
@@ -110,7 +110,7 @@ def test_un_modele_desactivable_decoche_ne_part_pas(session, faux_smtp):
     assert est_desactivable("compte_active")
     _poser_modele(session, "compte_active", actif=False)
     contexte = {"destinataire": {"prenom": "Prénom", "nom": "Nom"}}
-    assert asyncio.run(send_email("compte_active", "r@exemple.fr", contexte, session)) is False
+    assert asyncio.run(send_email("compte_active", "r@example.com", contexte, session)) is False
     assert faux_smtp == []
 
 

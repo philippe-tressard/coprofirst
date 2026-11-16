@@ -44,7 +44,7 @@ def parc_dessai():
     SQLModel.metadata.create_all(engine)
     with Session(engine) as session:
         porteur = Utilisateur(
-            email="parc@essai.fr",
+            email="parc@essai.test",
             hashed_password="x",
             prenom="Anne",
             nom="Durand",

@@ -4,7 +4,7 @@
 
 Un cabinet sous Microsoft 365 qui n'a pas configuré la signature de son propre
 domaine voit ses messages signés du domaine de son ABONNEMENT : `From:
-…@iff-gestion.fr`, `d=iffgestion.onmicrosoft.com`. La signature est valide, mais
+…@cabinet-gestion.test`, `d=cabinetgestion.onmicrosoft.com`. La signature est valide, mais
 pas alignée (`courriel_authenticite.aligne`) : depuis le 26/10/2026, aucune réponse
 directe du syndic n'était entrée. Demander au cabinet de corriger son DNS a été
 écarté (arbitrage du 05/11/2026 : on ne s'ingère pas dans leur informatique).

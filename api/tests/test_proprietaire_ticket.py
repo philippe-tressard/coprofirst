@@ -52,7 +52,7 @@ def test_sans_saisi_pour_le_proprietaire_est_l_AUTEUR(session):
     rien ne change pour eux."""
     nom, email = proprietaire(session, _Ticket(auteur_id=1))
     assert nom == "Alice MARTIN"
-    assert email == "alice@x.fr"
+    assert email == "alice@x.test"
 
 
 def test_un_resident_INSCRIT_se_substitue_a_l_auteur(session):
@@ -60,17 +60,17 @@ def test_un_resident_INSCRIT_se_substitue_a_l_auteur(session):
     le fil nomme, et Bruno qui reçoit la copie."""
     nom, email = proprietaire(session, _Ticket(auteur_id=1, sp_user=2))
     assert nom == "Bruno DUPONT"
-    assert email == "bruno@x.fr"
+    assert email == "bruno@x.test"
 
 
 def test_une_personne_EXTERIEURE_se_substitue_aussi(session):
     """Le second cas : personne d'inscrit, seulement un nom et une adresse
     saisis. Ils priment sur l'auteur de la même façon."""
     nom, email = proprietaire(
-        session, _Ticket(auteur_id=1, sp_nom="Paul EXTERNE", sp_email="paul@dehors.fr")
+        session, _Ticket(auteur_id=1, sp_nom="Paul EXTERNE", sp_email="paul@dehors.test")
     )
     assert nom == "Paul EXTERNE"
-    assert email == "paul@dehors.fr"
+    assert email == "paul@dehors.test"
 
 
 def test_un_nom_SANS_adresse_reste_un_nom(session):
@@ -87,7 +87,7 @@ def test_un_saisi_pour_INTROUVABLE_retombe_sur_l_auteur(session):
     propriétaire : l'auteur reprend la place, et la copie part quand même."""
     nom, email = proprietaire(session, _Ticket(auteur_id=1, sp_user=999))
     assert nom == "Alice MARTIN"
-    assert email == "alice@x.fr"
+    assert email == "alice@x.test"
 
 
 def test_la_COPIE_part_au_saisi_pour_et_non_a_l_auteur(session):
@@ -95,16 +95,16 @@ def test_la_COPIE_part_au_saisi_pour_et_non_a_l_auteur(session):
     le serveur envoie doivent désigner la même personne.
 
     Vérifié sur la version fautive : avant le 12/09, cette copie partait à
-    `alice@x.fr` — l'adresse de celle qui avait tapé."""
+    `alice@x.test` — l'adresse de celle qui avait tapé."""
     bcc = copie_demandee(session, _Ticket(auteur_id=1, sp_user=2), [], demandee=True)
-    assert bcc == ["bruno@x.fr"]
+    assert bcc == ["bruno@x.test"]
 
 
 def test_la_copie_n_est_pas_DOUBLEE_quand_le_proprietaire_est_deja_servi(session):
     """La déduplication vaut pour le propriétaire comme elle valait pour
     l'auteur : un résident déjà destinataire principal ne reçoit pas deux fois le
     même courriel."""
-    bcc = copie_demandee(session, _Ticket(auteur_id=1, sp_user=2), ["BRUNO@X.FR"], demandee=True)
+    bcc = copie_demandee(session, _Ticket(auteur_id=1, sp_user=2), ["BRUNO@X.TEST"], demandee=True)
     assert bcc is None
 
 
@@ -132,7 +132,7 @@ def test_la_copie_COCHEE_SEULE_devient_le_destinataire_avec_SON_gabarit(session)
     destinataires, bcc, seule = destinataires_et_copie(
         session, _Ticket(auteur_id=1, sp_user=2), [], demandee=True
     )
-    assert destinataires == [(None, "bruno@x.fr")]
+    assert destinataires == [(None, "bruno@x.test")]
     assert bcc is None
     assert seule is True
 
@@ -146,12 +146,12 @@ def test_sans_la_case_et_sans_destinataire_rien_ne_part(session):
 
 
 def test_avec_des_destinataires_la_copie_reste_un_bcc_et_le_gabarit_ne_change_pas(session):
-    principaux = [(9, "cs@x.fr")]
+    principaux = [(9, "cs@x.test")]
     destinataires, bcc, seule = destinataires_et_copie(
         session, _Ticket(auteur_id=1, sp_user=2), principaux, demandee=True
     )
     assert destinataires == principaux
-    assert bcc == ["bruno@x.fr"]
+    assert bcc == ["bruno@x.test"]
     assert seule is False
 
 

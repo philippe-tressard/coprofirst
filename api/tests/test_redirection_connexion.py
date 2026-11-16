@@ -109,7 +109,7 @@ def test_aucune_redirection_en_dur_vers_l_ecran_de_connexion():
 def test_la_destination_ne_peut_pas_pointer_hors_du_site():
     """`?next=` non filtré = écran de connexion transformé en tremplin (open redirect).
 
-    Les trois pièges à couvrir : `//exemple.fr` et `/\\exemple.fr`, que les navigateurs
+    Les trois pièges à couvrir : `//exemple.test` et `/\\exemple.test`, que les navigateurs
     résolvent en URL absolue malgré le `/` initial, et une cible `/auth/…` qui
     boucle sur l'écran de connexion.
     """
