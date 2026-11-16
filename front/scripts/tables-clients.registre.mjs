@@ -398,6 +398,11 @@ export const TABLES = {
 		quoi: "la notation d'un prestataire : ses trois états dans l'ordre, le libellé et la pastille de chacun, et l'état d'une moyenne (sous chaque borne, son état ; au-delà, etatAuDela) (#2775)",
 		lecteur: 'scripts/generateurs/acces_prestataires.py',
 	},
+	famillesAffichageFichiers: {
+		source: 'src/lib/fichiers.ts#FAMILLES_AFFICHAGE',
+		quoi: "le libellé d'affichage du type d'un fichier, par extension en capitales (JPEG → JPG, XLSX → EXCEL…) ; une extension absente se montre telle quelle, sans extension « FICHIER » (#2798)",
+		lecteur: 'scripts/generer.py',
+	},
 	libellesModeSaisie: {
 		source: 'src/lib/saisie-affaire.ts#LIBELLE_MODE',
 		quoi: 'la phrase discrète en tête du formulaire d’une affaire, selon le mode de saisie (#2793)',

@@ -473,6 +473,19 @@
         }
       }
     },
+    "famillesAffichageFichiers": {
+      "source": "front/src/lib/fichiers.ts#FAMILLES_AFFICHAGE",
+      "valeur": {
+        "JPEG": "JPG",
+        "XLSX": "EXCEL",
+        "XLS": "EXCEL",
+        "DOCX": "WORD",
+        "DOC": "WORD",
+        "PPTX": "POWERPOINT",
+        "PPT": "POWERPOINT",
+        "TXT": "TEXTE"
+      }
+    },
     "filtresContrat": {
       "source": "front/src/lib/prestataires.ts#FILTRES_CONTRAT",
       "valeur": [
