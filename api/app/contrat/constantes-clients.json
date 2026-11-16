@@ -1,6 +1,6 @@
 {
   "format": 1,
-  "version": "1.1.0",
+  "version": "1.2.0",
   "constantes": {
     "defautsPreferences": {
       "source": "api/app/utils/preferences_mail.py#DEFAUTS",
@@ -172,6 +172,52 @@
         "https",
         "mailto"
       ]
+    },
+    "typeNotificationParDefaut": {
+      "source": "api/app/utils/types_notification.py#TYPE_PAR_DEFAUT",
+      "quoi": "le pictogramme et le libellé d'un type de notification inconnu de l'app (#2802)",
+      "valeur": {
+        "pictogramme": "bell",
+        "libelle": "Notification"
+      }
+    },
+    "typesNotification": {
+      "source": "api/app/utils/types_notification.py#TYPES_NOTIFICATION",
+      "quoi": "par type de notification de la cloche : son pictogramme (catalogue icones-svg.json) et son libellé pour un lecteur d'écran (#2802)",
+      "valeur": {
+        "ticket_update": {
+          "pictogramme": "ticket",
+          "libelle": "Affaire"
+        },
+        "document": {
+          "pictogramme": "file-text",
+          "libelle": "Document"
+        },
+        "sondage": {
+          "pictogramme": "bar-chart-3",
+          "libelle": "Sondage"
+        },
+        "communaute_reponse": {
+          "pictogramme": "message-square-text",
+          "libelle": "Réponse"
+        },
+        "communaute_idee": {
+          "pictogramme": "lightbulb",
+          "libelle": "Idée"
+        },
+        "vigik": {
+          "pictogramme": "key-round",
+          "libelle": "Badge"
+        },
+        "moderation": {
+          "pictogramme": "flag",
+          "libelle": "Modération"
+        },
+        "system": {
+          "pictogramme": "settings",
+          "libelle": "Système"
+        }
+      }
     }
   }
 }
