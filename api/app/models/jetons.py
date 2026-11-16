@@ -58,3 +58,26 @@ class EmailVerificationToken(SQLModel, table=True):
     #: lien n'est pas servi, l'ancienne adresse reste celle du compte :
     #: `utils/verification_adresse.py`.
     nouvelle_adresse: Optional[str] = None
+
+
+class JetonMontre(SQLModel, table=True):
+    """Le jeton d'une montre (Apple Watch, Wear OS) — lecture de la cloche seule (#2771).
+
+    Émis à la demande du téléphone connecté, transmis à la montre par le téléphone.
+    Les règles — portée, expiration, révocation — vivent dans `auth/jetons_montre.py`.
+    Stocké par son EMPREINTE (#1389) : le brut ne vit que sur la montre.
+    """
+
+    __tablename__ = "jeton_montre"
+    id: Optional[int] = Field(default=None, primary_key=True)
+    utilisateur_id: int = Field(foreign_key="utilisateur.id", index=True)
+    empreinte: str = Field(unique=True)
+    #: `watchos` ou `wearos` — pour la liste que voit la personne, jamais pour la portée.
+    plateforme: str
+    #: L'empreinte du compte à l'émission (`auth/jwt.empreinte_du_compte`) : un mot de
+    #: passe changé ou une session rejouée fait tomber le jeton, comme un jeton d'accès.
+    empreinte_compte: str
+    cree_le: NaiveDatetime
+    expire_le: NaiveDatetime
+    #: La dernière lecture de la cloche par la montre — `None` tant qu'elle n'a rien lu.
+    vu_le: Optional[NaiveDatetime] = None
