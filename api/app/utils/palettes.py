@@ -13,7 +13,8 @@ suivent. La palette par défaut est la charte elle-même (`seine`).
   `data-palette` posé par le serveur (`#lib/palettes.ts`) ;
 - un **courriel** et un **document PDF** sont composés aux couleurs de la charte,
   puis `recolorer` y substitue celles de la palette — UN geste, au point où
-  chacun se termine (`composer_email`, `html_to_pdf`), plutôt qu'une palette lue
+  chacun se termine (`composer_email`, `annonce_hall.construire_html`,
+  `fiche_arrivant.generer_fiche_arrivant` — #2780), plutôt qu'une palette lue
   dans chacun des modèles : ceux des courriels vivent en base et l'administration
   les édite, un modèle réécrit à la main garderait ses couleurs.
 

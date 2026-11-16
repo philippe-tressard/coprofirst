@@ -39,6 +39,9 @@ export interface EntreeCarnet {
 	 *   validée, sinon la demande de l'affaire ; vide pour un contrat. Le choix est
 	 *   fait par le serveur (`carnet_entretien._joindre_syntheses`). */
 	extrait: string;
+	/**  Un contrat dont la date de début n'est pas encore atteinte (jour de Paris) :
+	 *   la date est à venir — calculé par le serveur (#2811). */
+	a_venir?: boolean;
 }
 
 /**  Les entrées d'un équipement, dans l'ordre où l'écran les montre. */

@@ -5,7 +5,8 @@
 - seul l'administrateur choisit, et seulement une palette du registre (routeur
   `config_palette`) ;
 - la clé est publique : le serveur du front pose la palette avant toute session ;
-- un courriel et une affiche de hall sortent aux couleurs choisies.
+- un courriel, une affiche de hall et la fiche d'accueil servie (#2780) sortent
+  aux couleurs choisies.
 """
 
 from __future__ import annotations
@@ -150,3 +151,31 @@ def test_l_affiche_de_hall_sort_aux_couleurs_de_la_palette():
     assert "#1e3a5f" in affiche(None)
     assert "#1e3a5f" not in affiche("bouteille")
     assert PALETTES["bouteille"].primaire in affiche("bouteille")
+
+
+#: Les couleurs de la charte telles que les documents les écrivent (`utils/palettes`).
+CHARTE = ("#1e3a5f", "#16304f", "#eef2f7", "#c9983a", "#f2efe9")
+
+
+def test_la_fiche_d_accueil_servie_sort_aux_couleurs_de_la_palette(moteur):
+    """#2780 : la route rendait la fiche en bleu et or quelle que soit la palette.
+
+    Lu sur ce que la route SERT, pas sur une fonction : c'est la route qui oubliait
+    la palette. Et la fiche Seine recolorée doit être exactement la fiche servie —
+    rien d'autre ne change que les couleurs.
+    """
+    http, _ = client_http(moteur, RoleUtilisateur.conseil_syndical)
+    seine = http.get("/admin/fiche-arrivant")
+    assert seine.status_code == 200, seine.text
+    assert "#1e3a5f" in seine.text.lower(), "la fiche ne porte plus la charte : contrôle inopérant"
+
+    with Session(moteur) as s:
+        ecrire_cle(s, CLE_PALETTE, "bordeaux")
+        s.commit()
+    bordeaux = http.get("/admin/fiche-arrivant").text
+
+    restees = [c for c in CHARTE if c in bordeaux.lower()]
+    assert not restees, f"la fiche servie garde des couleurs de la charte : {restees}"
+    assert PALETTES["bordeaux"].primaire in bordeaux
+    assert PALETTES["bordeaux"].accent in bordeaux
+    assert bordeaux == recolorer(seine.text, "bordeaux")

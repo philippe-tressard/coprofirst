@@ -148,6 +148,9 @@ class EntreeCarnet:
     #: l'affaire, remplacée par « Ce qui s'est passé » quand une synthèse validée
     #: le raconte (`_joindre_syntheses`). Un contrat n'en a pas.
     extrait: str = ""
+    #: Un contrat qui n'a pas encore commencé (#2811) : sa date est À VENIR, et
+    #: l'écran le dit — sinon une date future se lit comme un fait passé.
+    a_venir: bool = False
 
     def en_dict(self) -> dict:
         return {
@@ -168,6 +171,7 @@ class EntreeCarnet:
             "lien": self.lien,
             "alerte": self.alerte,
             "synthese": self.synthese,
+            "a_venir": self.a_venir,
             "extrait": self.extrait,
         }
 
@@ -287,6 +291,9 @@ def _entrees_contrats(session: Session, perimetre: Optional[str]) -> list[Entree
                 perimetre=codes,
                 lien=lien_element("contrat", contrat.id),
                 alerte=alerte,
+                #  Le jour de Paris, comme l'alerte : un contrat qui débute
+                #  aujourd'hui a commencé.
+                a_venir=debut > aujourdhui,
             )
         )
     return entrees
