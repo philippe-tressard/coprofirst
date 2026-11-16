@@ -53,6 +53,10 @@ if [ -n "$VL_PID" ]; then
   echo "  pouls      : $([ -n "$VL_AGE_POULS" ] && echo "il y a $(ci_duree "$VL_AGE_POULS")" || echo absent) (figé au-delà de $(ci_duree "$REJEU_SEUIL_FIGE_S"))"
 fi
 
+#  Le verrou commun des tâches lourdes du poste (#2765), que le rejeu prend APRÈS le sien :
+#  un rejeu qui tient son verrou peut attendre ici un xcodebuild ou un Gradle.
+ci_verrou_poste_dire | awk 'NR == 1 { print "Poste        : " $0; next } { print "               " $0 }'
+
 LISTE=$(ci_file_lister "$FILE" "$REJEU_SEUIL_FIGE_S")
 echo "File         : $(printf '%s\n' "$LISTE" | grep -c .) ticket(s), dans l'ordre de passage"
 rang=0
