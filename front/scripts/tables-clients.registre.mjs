@@ -383,6 +383,16 @@ export const TABLES = {
 		quoi: 'les jetons que chaque palette redéfinit au sombre, par code',
 		lecteur: 'scripts/generateurs/palettes.py',
 	},
+	badgesDuVerdict: {
+		source: 'src/lib/reglement.ts#BADGES_DU_VERDICT',
+		quoi: "la pastille de la capsule d'un verdict selon son ton (verdict_ton), et celle d'un ton inconnu (#2773)",
+		lecteur: 'scripts/generateurs/reglement.py',
+	},
+	separateurs: {
+		source: 'src/lib/separateurs.ts#SEPARATEUR',
+		quoi: 'les séparateurs en ligne (point, tiret, flèche) : espace sécable avant, insécable après (#2773)',
+		lecteur: 'scripts/generateurs/charte.py',
+	},
 	palettesResolues: {
 		derivee: true,
 		quoi: 'les jetons --color-*, --fil-*, --kanban-*, --serie-* et --palier-* de chaque palette (seine comprise), au clair et au sombre, déjà résolus en #rrggbb ou rgba(…) : la cascade et les var() du site, calculées une fois (#2754)',

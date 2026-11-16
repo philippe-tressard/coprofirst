@@ -21,6 +21,8 @@
  *
  *  🔒 `npm run lint:espace-blocs` refuse les formes qui laissent le séparateur en
  *  bout de ligne ; `e2e/separateurs-fin-de-ligne.spec.ts` le mesure sur le rendu.
+ *
+ *  🔒 Table PUBLIÉE aux clients (`separateurs`, #2773) — littérale, entière.
  */
 export const SEPARATEUR = {
 	/** sépare deux éléments d'une même ligne : « 3/5 · PDF » */

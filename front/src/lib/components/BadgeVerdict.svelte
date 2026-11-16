@@ -8,12 +8,13 @@
   #2505) : l'app iOS lit le même ton. Ce composant ne fait que le peindre à la
   charte du site — il ne décide plus quel verdict est un succès.
 
-  La teinte s'écrit en `class:`, jamais en classe interpolée : une interpolation
-  rendrait le fichier aveugle à `lint:css-orphelin`, dont le plafond ne monte
-  pas pour cela.
+  La teinte se lit dans `BADGES_DU_VERDICT` (`#lib/reglement.ts`, publiée aux apps,
+  #2773) et se pose par `Badge`, en `class:` — jamais en classe interpolée.
 -->
 <script lang="ts">
 	import type { TonVerdict } from '#lib/api/reglement.ts';
+	import Badge from '#lib/components/Badge.svelte';
+	import { teinteDuVerdict } from '#lib/reglement.ts';
 
 	/** Ce que le verdict signale — servi avec lui ; absent ou inconnu (le fil le
 	 *  lit dans `meta`), il se lit incertain. */
@@ -21,12 +22,4 @@
 	export let libelle: string;
 </script>
 
-<span
-	class="badge"
-	class:badge-green={ton === 'succes'}
-	class:badge-red={ton === 'danger'}
-	class:badge-orange={ton === 'alerte'}
-	class:badge-gray={ton === 'neutre'}
-	class:badge-yellow={ton !== 'succes' && ton !== 'danger' && ton !== 'alerte' && ton !== 'neutre'}
-	>{libelle}</span
->
+<Badge teinte={teinteDuVerdict(ton)}>{libelle}</Badge>
