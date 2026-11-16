@@ -496,7 +496,7 @@ Venu de `CLAUDE.md` (#2709). Lancer : `cd front && npm run e2e`.
   `e2e/import-interrompu.spec.ts` (`@moteur`). Les `ECONNREFUSED` du journal viennent du proxy
   de `/telemetry/collect`, sans API derrière.
 - **Un test ne quitte un écran qu'à son état final** (#2807) : une lecture lancée pendant un
-  `page.goto` fait écrire à WebKit « Fetch API cannot load … due to access control checks. »,
+  `page.goto` fait écrire à WebKit `Fetch API cannot load … due to access control checks.`,
   que Playwright compte comme exception de la page — même rejet rattrapé. Attendre ce que
   l'écran affiche une fois chargé, jamais filtrer le message ni rattraper dans le client
   (`e2e/admin-a-traiter.spec.ts`, `LECTURES_TARDIVES`).

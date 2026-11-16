@@ -108,8 +108,8 @@ test('Admin › À traiter : trois sections en accordéon, Télémétrie en gest
 	//  🔴 #2807 (16/11/2026). L'onglet arrive au geste (`ChargementDiffere`) et ne
 	//  lance ses deux lectures qu'une fois monté. Le `page.goto` qui suit partait
 	//  sans l'attendre : quand le module arrivait tard, les lectures partaient
-	//  PENDANT la navigation, et WebKit le dit en console — « Fetch API cannot
-	//  load … due to access control checks. », même rejet rattrapé —, ce que
+	//  PENDANT la navigation, et WebKit le dit en console — `Fetch API cannot
+	//  load … due to access control checks.`, même rejet rattrapé —, ce que
 	//  Playwright WebKit compte comme une exception de la page. Le test attend
 	//  donc l'état final de l'onglet avant de le quitter.
 	//
