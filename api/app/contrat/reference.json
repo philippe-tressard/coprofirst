@@ -1,6 +1,6 @@
 {
-"version": "2.2.0",
-"empreinte": "ca1d7dd3939bdf1e17c962aec45b944b6773376eb66910a94e9a15413b8c36df",
+"version": "2.3.0",
+"empreinte": "70384fe412be330e8720514a88ae8c81f37d2396a1243356a1ec47176e1791ae",
 "operations": {
   "GET /acces/admin/choix-acces": {"deprecie": false, "entree": [], "reponse": {"$": "dictionnaire", "$.{}": "objet", "$.{}.codes": "liste", "$.{}.codes[]": "string", "$.{}.suit_le_lot": "boolean"}},
   "GET /acces/admin/constats-badges": {"deprecie": false, "entree": [], "reponse": {"$": "liste", "$[]": "objet", "$[].code": "string", "$[].gravite": "string", "$[].lots": "liste?", "$[].lots[]": "string", "$[].message": "string"}},
@@ -293,6 +293,10 @@
   "GET /lots/mes-perimetres": {"deprecie": false, "entree": [], "reponse": {"$": "objet", "$.batiments": "liste", "$.batiments[]": "string", "$.desservis": "liste", "$.desservis[]": "string"}},
   "PATCH /lots/{lot_id}/etage": {"deprecie": false, "entree": ["corps", "path:lot_id"], "reponse": {"$": "libre"}},
   "GET /manuel/pdf": {"deprecie": false, "entree": [], "reponse": {"$": "libre"}},
+  "GET /montres": {"deprecie": false, "entree": [], "reponse": {"$": "liste", "$[]": "objet", "$[].cree_le": "string(date-time)", "$[].expire_le": "string(date-time)", "$[].id": "integer", "$[].plateforme": "string", "$[].vu_le": "string(date-time)?"}},
+  "POST /montres": {"deprecie": false, "entree": ["corps", "corps.plateforme"], "reponse": {"$": "objet", "$.cree_le": "string(date-time)", "$.expire_le": "string(date-time)", "$.id": "integer", "$.jeton": "string", "$.plateforme": "string", "$.vu_le": "string(date-time)?"}},
+  "DELETE /montres/{montre_id}": {"deprecie": false, "entree": ["path:montre_id"], "reponse": {}},
+  "POST /montres/{montre_id}/renouveler": {"deprecie": false, "entree": ["path:montre_id"], "reponse": {"$": "objet", "$.cree_le": "string(date-time)", "$.expire_le": "string(date-time)", "$.id": "integer", "$.jeton": "string", "$.plateforme": "string", "$.vu_le": "string(date-time)?"}},
   "POST /noms/affiche": {"deprecie": false, "entree": ["corps"], "reponse": {"$": "objet", "$.nom_affiche": "string"}},
   "GET /notifications": {"deprecie": false, "entree": [], "reponse": {"$": "liste", "$[]": "objet", "$[].corps": "string", "$[].cree_le": "string(date-time)", "$[].id": "integer", "$[].lien": "string?", "$[].lue": "boolean", "$[].titre": "string", "$[].type": "string", "$[].urgente": "boolean"}},
   "POST /notifications/supprimer-lues": {"deprecie": false, "entree": [], "reponse": {"$": "objet", "$.supprimees": "integer"}},

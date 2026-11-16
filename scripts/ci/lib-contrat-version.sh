@@ -17,6 +17,11 @@
 #    · constantes-clients.json — les constantes de l'API que l'app génère (notes,
 #                           défauts, longueur d'un mot de passe, schémas de lien),
 #                           produites par `api/app/contrat/constantes_clients.py` (#2686).
+#    · icones-svg.json     — le catalogue des tracés des pictogrammes (Lucide, le logo
+#                           WhatsApp de Simple Icons, `stairs`), que les apps dessinent
+#                           au lieu d'équivalents (#2792) ; sa provenance et ses licences
+#                           partent avec lui : REUSE.toml (l'annotation du catalogue),
+#                           ISC.txt, MIT.txt (la part issue de Feather), CC0-1.0.txt.
 #  `/api/openapi.json` reste fermé en production (`ENABLE_API_DOCS=false`) : le
 #  schéma part ici, jamais sur le site.
 #
@@ -36,6 +41,11 @@ FICHIERS_CONTRAT=(
 FICHIERS_CONTRAT_DEPUIS=(
     front/tables-clients.json   # #2634
     api/app/contrat/constantes-clients.json   # #2686
+    front/src/lib/icones-svg.json   # #2792 : le catalogue, et de quoi le déclarer
+    REUSE.toml
+    LICENSES/ISC.txt
+    LICENSES/MIT.txt
+    LICENSES/CC0-1.0.txt
 )
 
 #: La référence du contrat : elle porte la version que le schéma doit annoncer.
@@ -100,6 +110,8 @@ if [ "${BASH_SOURCE[0]}" = "$0" ] && [ "${1:-}" = "--selftest" ]; then
         git add -A && git commit -q -m contrat
         echo '{"tables": {}}' > front/tables-clients.json
         echo '{"constantes": {}}' > api/app/contrat/constantes-clients.json
+        mkdir -p LICENSES && echo '{}' > front/src/lib/icones-svg.json && echo 'version = 1' > REUSE.toml
+        for l in ISC MIT CC0-1.0; do echo "$l" > "LICENSES/$l.txt"; done
         git add -A && git commit -q -m tables
         git rm -q front/src/styles/socle.css && git commit -q -m incomplet
     )
@@ -115,7 +127,7 @@ if [ "${BASH_SOURCE[0]}" = "$0" ] && [ "${1:-}" = "--selftest" ]; then
         rm -rf "$s"
     }
     echo "== self-test : le contrat d'API joint à une version =="
-    essai "contrat complet : six fichiers"                    ok    "$(commit 1)"
+    essai "contrat complet : onze fichiers"                   ok    "$(commit 1)"
     essai "d'avant les tables et constantes : quatre fichiers" ok    "$(commit 2)"
     essai "un fichier manque au commit : refusé"              refus "$(commit 0)"
     essai "commit d'avant le contrat : rien à joindre"        ok    "$(commit 3)"
@@ -137,8 +149,8 @@ if [ "${BASH_SOURCE[0]}" = "$0" ] && [ "${1:-}" = "--selftest" ]; then
     s=$(mktemp -d); exporter_dans_image() { echo "$SCHEMA_SIMULE" > "$3/openapi.json"; }
     SCHEMA_SIMULE='{"info": {"version": "1.2.0"}, "servers": [{"url": "/api"}], "paths": {"/x": {}}}'
     (cd "$DEPOT" && preparer_contrat "$(commit 1)" image "$s") >/dev/null
-    if [ "$(cd "$s" && ls | sort | tr '\n' ' ')" = "constantes-clients.json openapi.json pages.ts palette-sombre.css socle.css tables-clients.json " ]; then
-        echo "PASS  les noms joints : constantes-clients.json openapi.json pages.ts palette-sombre.css socle.css tables-clients.json"
+    if [ "$(cd "$s" && ls | LC_ALL=C sort | tr '\n' ' ')" = "CC0-1.0.txt ISC.txt MIT.txt REUSE.toml constantes-clients.json icones-svg.json openapi.json pages.ts palette-sombre.css socle.css tables-clients.json " ]; then
+        echo "PASS  les noms joints : $(cd "$s" && ls | tr '\n' ' ')"
     else echo "FAIL  noms joints : $(ls "$s")"; fail=1; fi
     rm -rf "$DEPOT" "$s"
     exit "$fail"

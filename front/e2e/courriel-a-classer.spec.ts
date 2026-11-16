@@ -94,20 +94,27 @@ test('Espace CS › Courriels : un message à classer se rattache à l’affaire
 	//  L'alignement, mesuré (demandé le 05/11/2026) : la proposition, le champ du
 	//  numéro et le bouton principal ont le même bord droit ; les deux autres
 	//  issues, la même hauteur.
+	//  Mesuré dans un `expect.poll` : lue une fois juste après le dépliement, la mise en
+	//  page n'était pas encore stable sous WebKit (#2768).
 	const bloc = ligne.locator('.classer');
-	const mesures = await bloc.evaluate((el) => {
-		const r = (s: string) => el.querySelector(s)!.getBoundingClientRect();
-		const issues = [...el.querySelectorAll('.autres-issues .btn')].map((b) =>
-			b.getBoundingClientRect(),
-		);
-		return {
-			droites: [r('.suggestion').right, r('.champ-numero input').right, r('.rattacher').right],
-			issues: issues.map((b) => b.height),
-		};
-	});
-	expect(Math.abs(mesures.droites[0] - mesures.droites[1]), 'champ décalé').toBeLessThan(1);
-	expect(Math.abs(mesures.droites[0] - mesures.droites[2]), 'bouton décalé').toBeLessThan(1);
-	expect(Math.abs(mesures.issues[0] - mesures.issues[1]), 'issues inégales').toBeLessThan(1);
+	await expect
+		.poll(
+			() =>
+				bloc.evaluate((el) => {
+					const r = (s: string) => el.querySelector(s)!.getBoundingClientRect();
+					const [h1, h2] = [...el.querySelectorAll('.autres-issues .btn')].map(
+						(b) => b.getBoundingClientRect().height,
+					);
+					const droite = r('.suggestion').right;
+					return {
+						champAligne: Math.abs(droite - r('.champ-numero input').right) < 1,
+						boutonAligne: Math.abs(droite - r('.rattacher').right) < 1,
+						issuesEgales: Math.abs(h1 - h2) < 1,
+					};
+				}),
+			{ message: 'proposition, champ et bouton au même bord droit ; issues de même hauteur' },
+		)
+		.toEqual({ champAligne: true, boutonAligne: true, issuesEgales: true });
 	await ligne.screenshot({
 		path: `test-results/courriel-a-classer-${test.info().project.name}.png`,
 	});
