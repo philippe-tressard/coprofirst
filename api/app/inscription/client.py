@@ -15,6 +15,9 @@ depuis la référence ; l'installation l'appelle, sous son nom dédié
 - `run_annonce_version` : au démarrage, le bail redemandé si la version qui tourne
   n'est pas celle que le registre a reçue (#2750) — sinon il garde, une nuit durant,
   la version d'AVANT une mise à jour (`mise-a-jour.sh` demande le bail avant d'installer).
+- `run_demarrage` : la tâche du démarrage — l'annonce, puis le rapport s'il est en retard
+  (#2837) : la tâche de la nuit meurt quand une mise à jour recrée l'API pendant qu'elle
+  attend, et le rapport perdu ne se rattrapait pas.
 
 Ni la référence, ni une installation d'ESSAI n'appellent le registre (règles 7 et
 9) ; le mode essai n'est cru que pour un hôte local ou une base en mémoire.
@@ -24,7 +27,8 @@ from __future__ import annotations
 
 import json
 import logging
-from datetime import timedelta
+from datetime import datetime, timedelta
+from typing import Optional
 from urllib.parse import urlsplit
 
 import httpx
@@ -50,6 +54,11 @@ logger = logging.getLogger("hostachy.inscription")
 
 #: Un registre qui ne répond pas en dix secondes ne répondra pas mieux en trente.
 DELAI = 10
+
+#: Au-delà, le rapport nocturne est en retard et repart au démarrage (#2837) : plus
+#: qu'une nuit moins la fenêtre de la tâche (04:20-04:50), pour que deux démarrages
+#: d'une même nuit (mise à jour, remise à zéro de la démo) n'envoient qu'un rapport.
+RAPPORT_EN_RETARD_APRES = timedelta(hours=20)
 
 #: Les hôtes où le mode essai est admis (règle 9).
 HOTES_LOCAUX = frozenset({"localhost", "127.0.0.1", "::1"})
@@ -256,6 +265,33 @@ def run_annonce_version() -> None:
         logger.warning("inscription : version non annoncée au démarrage (%s)", exc)
 
 
+def rapport_en_retard(dernier_rapport_le: Optional[str], maintenant: datetime) -> bool:
+    """PURE. Le dernier rapport accepté date-t-il de plus de `RAPPORT_EN_RETARD_APRES` ?
+    Jamais envoyé, ou date illisible : en retard."""
+    if not dernier_rapport_le:
+        return True
+    try:
+        return maintenant - datetime.fromisoformat(dernier_rapport_le) > RAPPORT_EN_RETARD_APRES
+    except ValueError:
+        return True
+
+
+def run_demarrage() -> None:
+    """Au démarrage : la version annoncée (#2750), puis le rapport s'il est en retard
+    (#2837). Injoignable : la nuit suivante le fera — un démarrage ne dépend jamais du
+    registre."""
+    run_annonce_version()
+    if not _appelle_le_registre():
+        return
+    if not rapport_en_retard(depot.lire().dernier_rapport_le, horloge.maintenant()):
+        return
+    try:
+        envoyer_rapport()
+        logger.info("inscription : rapport en retard rattrapé au démarrage")
+    except RegistreInjoignable as exc:
+        logger.warning("inscription : rapport en retard non rattrapé au démarrage (%s)", exc)
+
+
 def run_renouvellement_bail() -> None:
     """Tâche de la plateforme : le bail puis le rapport ; alerter l'opérateur après 3 jours."""
     if not _appelle_le_registre():
@@ -284,13 +320,13 @@ def run_renouvellement_bail() -> None:
 
 def enregistrer(scheduler) -> None:
     """Pose les tâches — le bail chaque nuit vers 04:20, étalé sur une demi-heure (les
-    installations n'appellent pas la référence toutes à la même seconde), et l'annonce de
-    la version, une fois, 30 s après le démarrage (#2750)."""
+    installations n'appellent pas la référence toutes à la même seconde), et, une fois,
+    30 s après le démarrage, l'annonce de la version (#2750) et le rapport en retard (#2837)."""
     scheduler.add_job(
         run_renouvellement_bail, "cron", hour=4, minute=20, jitter=1800, id="bail_installation"
     )
     scheduler.add_job(
-        run_annonce_version,
+        run_demarrage,
         "date",
         #  Conscient, donc indépendant du fuseau du planificateur (#1565) ; différé pour
         #  que le démarrage rende la main à Caddy avant d'appeler dehors.
