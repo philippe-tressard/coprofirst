@@ -10,7 +10,6 @@ from datetime import timedelta
 from app.utils import horloge
 
 from fastapi import FastAPI
-from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from slowapi import _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
@@ -44,8 +43,7 @@ _logger = _logging.getLogger("hostachy.api")
 
 from app.utils.reponse_utc import UTCJSONResponse
 
-from app import contexte, contrat, erreurs_globales
-from app.utils import demo
+from app import contexte, contrat, erreurs_globales, intergiciels
 from app.routers import (
     auth,
     auth_mot_de_passe,
@@ -348,22 +346,9 @@ app.add_middleware(SlowAPIMiddleware)
 erreurs_globales.installer(app)
 
 
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["http://localhost:3000", "https://localhost"],
-    allow_credentials=True,
-    allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
-    allow_headers=["*"],
-)
-
-#  🏢 LE PLUS À L'EXTÉRIEUR, donc ajouté en dernier : chaque requête s'exécute
-#  dans le contexte de SA copropriété — base, fichiers, secret, caches (#1746,
-#  spec §4.1). Résolue à l'entrée, une fois, par l'hôte : un hôte inconnu reçoit 421
-#  avant toute autre couche, débit et CORS compris (#1751).
-#  🎭 Le mode démo (spec `mode-demo.md` §4.3) : les gestes fermés reçoivent 403
-#  avant toute route. Hors démo, la garde laisse tout passer.
-app.add_middleware(demo.GardeDemo)
-app.add_middleware(contexte.ResolutionCopropriete)
+#  CORS, contexte de la copropriété, gardes démo et suspension, plafond du mode
+#  limité : `app/intergiciels.py` (l'ordre y est écrit et expliqué).
+intergiciels.installer(app)
 
 # Routeurs
 app.include_router(auth.router)

@@ -72,13 +72,17 @@ export interface ContactInstallationLu extends ContactInstallation {
 }
 
 /**  `GET /admin/installation/inscription` (`routers/admin/inscription.py`, R2 #1878) :
- *   l'inscription de l'installation au registre de la référence, CONSTATÉE — rien
- *   ne l'applique encore (R6). */
+ *   l'inscription de l'installation au registre de la référence — APPLIQUÉE à une
+ *   réplique depuis R6 (#1882), sauf retour au constat (`applique`). */
 export interface InscriptionInstallation {
 	/** `reference` | `essai` | `limitee` | `active` | `suspendue`. */
 	etat: 'reference' | 'essai' | 'limitee' | 'active' | 'suspendue';
 	/** Pourquoi cet état, en clair — chaque raison de ne pas croire un bail se nomme. */
 	raison: string;
+	/** L'état s'applique-t-il ici (plafond, lecture seule) ? Non hors réplique, ni au retour au constat (R6). */
+	applique: boolean;
+	/** Le plafond de comptes actifs du mode limité (D18), servi par l'API. */
+	plafond_comptes_actifs: number;
 	identifiant: string | null;
 	canal: string | null;
 	version_cible: string | null;

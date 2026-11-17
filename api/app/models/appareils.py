@@ -23,6 +23,9 @@ from app.utils import horloge
 
 #: L'APNs à viser : celui de l'App Store, ou celui d'une application de développement.
 ENVIRONNEMENTS = ("production", "developpement")
+#: Le service de notifications du téléphone : Apple (iPhone) ou Firebase Cloud Messaging
+#: de Google (Android, #2789). Un appareil d'avant #2789 est un iPhone.
+PLATEFORMES = ("apns", "fcm")
 
 
 class Appareil(SQLModel, table=True):
@@ -31,6 +34,9 @@ class Appareil(SQLModel, table=True):
     #  À qui l'appareil sonne.
     utilisateur_id: int = Field(foreign_key="utilisateur.id", index=True)
     jeton: str = Field(unique=True)
+    #: `apns` ou `fcm` (#2789) — dit à qui le relais transmet, et le motif du jeton.
+    plateforme: str = Field(default="apns", sa_column_kwargs={"server_default": "apns"})
+    #: L'APNs à viser ; sans objet pour FCM, qui n'a qu'un environnement.
     environnement: str = "production"
     #  L'identifiant opaque tiré par l'application (§5) — le seul qui part chez Apple.
     abonnement: str = Field(unique=True)

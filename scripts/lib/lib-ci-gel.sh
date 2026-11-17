@@ -121,10 +121,14 @@ PYTHON
 #  `$d/gel` porte le motif, la sortie reçoit l'activité de la base, puis
 #  l'étape est arrêtée avec son arbre.
 ci_surveiller_etape() {        # $1 = dossier de l'étape · $2 = pid de l'étape
-  local d="$1" pid="$2" t0=$EPOCHSECONDS plafond silence
+  local d="$1" pid="$2" t0=$EPOCHSECONDS plafond silence attente=""
   plafond=$(ci_plafond_etape "$(cat "$d/mesuree" 2>/dev/null)")
+  #  Arrêté (`kill` de `ci_executer_etape`), il emporte son `sleep` (#2765) : orphelin, ce
+  #  dernier tenait 30 s le descripteur hérité du verrou du POSTE après la fin du rejeu.
+  trap 'kill "$attente" 2>/dev/null; exit 0' TERM
   while kill -0 "$pid" 2>/dev/null; do
-    sleep "$CI_GEL_INTERVALLE"
+    sleep "$CI_GEL_INTERVALLE" & attente=$!
+    wait "$attente"
     silence=$(( EPOCHSECONDS - $(stat -c %Y "$d/sortie" 2>/dev/null || echo "$EPOCHSECONDS") ))
     [ "$(ci_gel_verdict $(( EPOCHSECONDS - t0 )) "$silence" "$plafond" "$CI_GEL_SILENCE")" = fige ] || continue
     echo "figée : $(( (EPOCHSECONDS - t0) / 60 )) min (plafond $(( plafond / 60 )) min), muette depuis $(( silence / 60 )) min — arrêtée" > "$d/gel"

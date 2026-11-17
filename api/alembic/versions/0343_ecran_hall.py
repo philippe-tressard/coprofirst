@@ -4,15 +4,15 @@ Deux tables NEUVES, rien d'autre : la version précédente du code ne les conna�
 ne les lit pas — revenir à son image ne demande aucune restauration (#1757). Aucune
 donnée personnelle : un écran n'a pas de compte derrière lui.
 
-Revision ID: 0341
-Revises: 0340
+Revision ID: 0343
+Revises: 0342
 """
 
 import sqlalchemy as sa
 from alembic import op
 
-revision = "0341"
-down_revision = "0340"
+revision = "0343"
+down_revision = "0342"
 branch_labels = None
 depends_on = None
 

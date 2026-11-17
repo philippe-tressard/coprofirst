@@ -195,16 +195,17 @@ SERVICES: dict[str, Service] = {
     ),
     SERVICE_PUSH: Service(
         code=SERVICE_PUSH,
-        libelle="Notifications sur téléphone (iOS)",
+        libelle="Notifications sur téléphone (iOS, Android)",
         description=(
-            "Quand la cloche sonne pour une personne qui a installé l'application iOS, son "
-            "téléphone l'avertit — par le relais de la plateforme, qui seul parle à Apple. "
+            "Quand la cloche sonne pour une personne qui a installé l'application iOS ou "
+            "Android, son téléphone l'avertit — par le relais de la plateforme, qui seul parle "
+            "à Apple et à Google (#2789). "
             "Rien de personnel ne part : ni nom, ni résidence, ni titre, seulement « Vous avez "
             "une nouvelle notification » ; l'application lit le détail à l'ouverture."
         ),
         perte=(
             "Les téléphones ne sonnent plus ; la cloche de l'application reste, et "
-            "l'application iOS la montre à l'ouverture."
+            "les applications la montrent à l'ouverture."
         ),
         onglet="services",
         icone="bell",
@@ -302,14 +303,10 @@ def autorise_par_la_reference(code: str) -> tuple[bool, str]:
     """
     if code in SERVICES_HORS_BAIL:
         return True, ""
-    from app.utils.installation import est_replique
+    from app.inscription.regime import constat_de_la_replique
 
-    if not est_replique():
-        return True, ""
-    from app.inscription.client import constat_courant
-
-    constat = constat_courant()
-    if constat.services is None or code in constat.services:
+    constat = constat_de_la_replique()
+    if constat is None or constat.services is None or code in constat.services:
         return True, ""
     if constat.etat == "active":
         return False, "Non autorisé par la référence."

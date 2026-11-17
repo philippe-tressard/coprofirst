@@ -276,6 +276,7 @@ Les champs de `Settings` (`api/app/config.py`). Un `.env` qui porte une variable
 | `REGISTRE_URL` | str | `https://registre.coprofirst.fr` |
 | `INSTALLATION_DIR` | str | `/app/data/installation` |
 | `INSTALLATION_ESSAI` | bool | `False` |
+| `REGISTRE_CONSTAT` | bool | `False` |
 
 ### Opérateur et hébergeur (alertes, textes légaux)
 

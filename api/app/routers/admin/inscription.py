@@ -4,8 +4,10 @@ Lu et écrit par la carte « Inscription au registre » d'Administration › Mai
 réservée à l'OPÉRATEUR (arbitrage du 13/10/2026) : c'est lui qui saisit les
 coordonnées de l'administrateur d'installation et accepte les conditions.
 
-🔴 **Mode constat** : l'état rendu s'AFFICHE ; rien ne l'applique encore (R6 #1882).
-La règle vit dans `app/inscription/` ; ce routeur l'assemble pour l'écran.
+Depuis R6 (#1882), l'état S'APPLIQUE à une réplique : mode limité (5 comptes actifs
+au plus), suspension (lecture seule) — sauf retour au constat (`REGISTRE_CONSTAT`),
+que la vue dit (`applique`). La règle vit dans `app/inscription/` ; ce routeur
+l'assemble pour l'écran.
 """
 
 from dataclasses import asdict
@@ -17,7 +19,7 @@ from pydantic import BaseModel, EmailStr, Field
 
 from app.auth.deps import require_operateur
 from app.config import get_settings
-from app.inscription import client, depot
+from app.inscription import client, depot, regime
 from app.inscription.depot import Contact
 from app.models.core import Utilisateur
 from app.schemas_nom_servi import NomServi
@@ -33,9 +35,14 @@ class ContactLu(Contact, NomServi):
 
 
 class VueInscription(BaseModel):
-    #: reference · essai · limitee · active · suspendue — CONSTATÉ, jamais appliqué
+    #: reference · essai · limitee · active · suspendue
     etat: str
     raison: str
+    #: l'état S'APPLIQUE-t-il ici (plafond, lecture seule) ? Non hors réplique, ni au
+    #: retour au constat (`inscription/regime.regime_applique`, R6 #1882)
+    applique: bool = False
+    #: le plafond de comptes actifs du mode limité (D18) — lu, jamais recopié par l'écran
+    plafond_comptes_actifs: int = regime.PLAFOND_COMPTES_ACTIFS
     identifiant: Optional[str] = None
     canal: Optional[str] = None
     version_cible: Optional[str] = None
@@ -90,6 +97,7 @@ def _vue() -> VueInscription:
                 else None
             ),
             "identifiant": verdict.identifiant or etat.identifiant,
+            "applique": regime.regime_applique() is not None,
             "contact": etat.contact.model_dump() if etat.contact else None,
             "conditions_en_vigueur": conditions.version_en_vigueur(),
             "peut_s_inscrire": verdict.etat not in ("reference", "essai"),
