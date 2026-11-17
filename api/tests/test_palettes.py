@@ -23,6 +23,7 @@ from app.utils.email import _contexte_rendu, composer_email
 from app.utils.palettes import CLE_PALETTE, PALETTE_PAR_DEFAUT, PALETTES, recolorer
 from tests.aides_compose import RACINE
 from tests.aides_http import base_http, client_http
+from tests.aides_sources import modules_app
 
 FEUILLE = RACINE / "front" / "src" / "styles" / "palettes.css"
 
@@ -186,20 +187,14 @@ def test_la_fiche_d_accueil_servie_sort_aux_couleurs_de_la_palette(moteur):
 #: Les modules qui rendent un PDF SANS la palette de la copropriété, et pourquoi.
 #: Le contrôle échoue si l'un cesse de rendre un PDF : l'exception ne sert plus.
 PDF_SANS_PALETTE = {
-    "app/utils/pdf_theme.py": "le moteur lui-même (`html_to_pdf`) : il rend ce qu'on lui donne",
-    "app/demo/fichiers.py": "les documents FICTIFS de la démo, générés une fois avec elle — "
+    "utils/pdf_theme.py": "le moteur lui-même (`html_to_pdf`) : il rend ce qu'on lui donne",
+    "demo/fichiers.py": "les documents FICTIFS de la démo, générés une fois avec elle — "
     "ni rapport ni manuel de la copropriété",
 }
 
-APP = RACINE / "api" / "app"
-
 
 def _modules_qui_rendent_un_pdf() -> dict[str, str]:
-    return {
-        str(f.relative_to(RACINE / "api")): texte
-        for f in APP.rglob("*.py")
-        if "html_to_pdf(" in (texte := f.read_text(encoding="utf-8"))
-    }
+    return {m.rel: m.source for m in modules_app() if "html_to_pdf(" in m.source}
 
 
 def test_tout_pdf_passe_par_la_palette_ou_se_declare():
