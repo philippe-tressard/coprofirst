@@ -126,6 +126,12 @@ _NIVEAUX: dict[str, int] = {
     #  hors du téléphone, sans biométrie.
     "montre_reliee": logging.WARNING,
     "montre_retiree": logging.INFO,
+    #  Un écran de hall (#2770) : appairé par le conseil (le code court saisi), relié
+    #  quand l'écran retire son jeton, retiré par le conseil. Un appareil de plus qui
+    #  lit les affiches, sans personne derrière lui.
+    "ecran_appaire": logging.WARNING,
+    "ecran_relie": logging.INFO,
+    "ecran_retire": logging.INFO,
     "connexion_leurre": logging.WARNING,
     "cle_maintenance_leurre": logging.WARNING,
 }

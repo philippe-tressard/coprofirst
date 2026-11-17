@@ -74,6 +74,7 @@ export * from './messages-ticket';
 export * from './services';
 export * from './instance';
 export * from './conservation';
+export * from './ecrans';
 export * from './suivi-affaires';
 export * from './reporting';
 export * from './points-conseil';

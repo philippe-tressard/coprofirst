@@ -39,7 +39,16 @@ from app.routers.auth_schemas import LoginRequest
 from tests.aides_sources import modules_app
 from tests.conftest import requete_de_test
 
-MODELES = {"RefreshToken", "PasswordResetToken", "EmailVerificationToken"}
+#: Chaque modèle qui garde un jeton, et la colonne qui le porte. Les jetons d'APPAREIL
+#: (#2770, #2771) — montre, écran de hall, codes d'appairage — s'y rangent comme les autres.
+MODELES = {
+    "RefreshToken": ("token",),
+    "PasswordResetToken": ("token",),
+    "EmailVerificationToken": ("token",),
+    "JetonMontre": ("empreinte",),
+    "Ecran": ("empreinte",),
+    "AppairageEcran": ("empreinte_code_appareil", "empreinte_code_court"),
+}
 
 
 def _appel_empreinte(noeud: ast.AST) -> bool:
@@ -58,18 +67,18 @@ def _ecarts() -> list[str]:
             #  Modele(token=…)
             if isinstance(n, ast.Call) and isinstance(n.func, ast.Name) and n.func.id in MODELES:
                 for kw in n.keywords:
-                    if kw.arg == "token" and not _appel_empreinte(kw.value):
-                        ecarts.append(f"{rel}:{n.lineno} {n.func.id}(token=…) en clair")
+                    if kw.arg in MODELES[n.func.id] and not _appel_empreinte(kw.value):
+                        ecarts.append(f"{rel}:{n.lineno} {n.func.id}({kw.arg}=…) en clair")
             #  Modele.token == …
             if isinstance(n, ast.Compare) and isinstance(n.left, ast.Attribute):
                 gauche = n.left
                 if (
-                    gauche.attr == "token"
-                    and isinstance(gauche.value, ast.Name)
+                    isinstance(gauche.value, ast.Name)
                     and gauche.value.id in MODELES
+                    and gauche.attr in MODELES[gauche.value.id]
                     and not all(_appel_empreinte(c) for c in n.comparators)
                 ):
-                    ecarts.append(f"{rel}:{n.lineno} {gauche.value.id}.token == … en clair")
+                    ecarts.append(f"{rel}:{n.lineno} {gauche.value.id}.{gauche.attr} == … en clair")
     return ecarts
 
 
