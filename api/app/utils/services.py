@@ -195,16 +195,17 @@ SERVICES: dict[str, Service] = {
     ),
     SERVICE_PUSH: Service(
         code=SERVICE_PUSH,
-        libelle="Notifications sur téléphone (iOS)",
+        libelle="Notifications sur téléphone (iOS, Android)",
         description=(
-            "Quand la cloche sonne pour une personne qui a installé l'application iOS, son "
-            "téléphone l'avertit — par le relais de la plateforme, qui seul parle à Apple. "
+            "Quand la cloche sonne pour une personne qui a installé l'application iOS ou "
+            "Android, son téléphone l'avertit — par le relais de la plateforme, qui seul parle "
+            "à Apple et à Google (#2789). "
             "Rien de personnel ne part : ni nom, ni résidence, ni titre, seulement « Vous avez "
             "une nouvelle notification » ; l'application lit le détail à l'ouverture."
         ),
         perte=(
             "Les téléphones ne sonnent plus ; la cloche de l'application reste, et "
-            "l'application iOS la montre à l'ouverture."
+            "les applications la montrent à l'ouverture."
         ),
         onglet="services",
         icone="bell",

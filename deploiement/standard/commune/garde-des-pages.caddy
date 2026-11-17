@@ -20,7 +20,7 @@
 # qui fait du 308 une redirection, sans rien écrire de plus ici.
 #
 # Les fichiers du front (`/_app/*`, icônes, service worker) et `/.well-known/`
-# (`security.txt`) ne posent pas la question : ils ne dépendent d'aucun hôte, et
+# (`security.txt`, fichiers d'association des apps) ne posent pas la question : ils ne dépendent d'aucun hôte, et
 # une page en charge des dizaines.
 #
 # ⚠️ Sur une installation propre à une copropriété (5Hostachy), NE PAS l'importer :
