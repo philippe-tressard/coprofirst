@@ -17,6 +17,7 @@
 	import EncartAvertissement from '#lib/components/EncartAvertissement.svelte';
 	import { installationSuspendueStore, modeDemoStore } from '#lib/stores/pageConfig.ts';
 	import { SEPARATEUR } from '#lib/separateurs.ts';
+	import { BANDEAU_SUSPENDUE } from '#lib/bandeaux-installation.ts';
 
 	/** Dans la carte de connexion : pleine largeur de la carte, détaché de ce qui suit. */
 	export let dansCarte = false;
@@ -25,10 +26,8 @@
 {#if $installationSuspendueStore}
 	<div class="bandeau-installation" class:dans-carte={dansCarte}>
 		<EncartAvertissement role="note">
-			<strong>Installation suspendue{SEPARATEUR.tiret}lecture seule.</strong>
-			Tout reste consultable, mais rien ne peut être ajouté ni modifié. L’administrateur de la copropriété
-			peut en exporter les données&nbsp;; l’opérateur de l’installation s’adresse à la référence pour
-			la rétablir.
+			<strong>{BANDEAU_SUSPENDUE.titre}{SEPARATEUR.tiret}{BANDEAU_SUSPENDUE.precision}.</strong>
+			{BANDEAU_SUSPENDUE.texte}
 		</EncartAvertissement>
 	</div>
 {/if}

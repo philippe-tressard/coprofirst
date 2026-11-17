@@ -5,9 +5,20 @@
  *  le bandeau « lecture seule » se lit sur la connexion ET dans l'application — avant
  *  qu'une écriture refusée l'apprenne à quelqu'un. Hors suspension, aucun bandeau.
  *
+ *  Le texte rendu est EXACTEMENT celui que la release publie aux apps (`bandeauSuspendue`
+ *  de `tables-clients.json`, #2840) : une copie réécrite dans le composant ferait diverger
+ *  le site et les apps, et ce test le refuse.
+ *
  *  API simulée.
  */
+import { readFileSync } from 'node:fs';
 import { attendreHydratation, expect, simulerApi, test } from './aides';
+
+const TABLES = JSON.parse(readFileSync(new URL('../tables-clients.json', import.meta.url), 'utf8'));
+const PUBLIE = TABLES.tables.bandeauSuspendue.valeur;
+const TIRET = TABLES.tables.separateurs.valeur.tiret;
+/** Le bandeau tel que les apps le composent : titre, tiret, précision, point, texte. */
+const TEXTE_PUBLIE = `${PUBLIE.titre}${TIRET}${PUBLIE.precision}. ${PUBLIE.texte}`;
 
 async function suspendue(page: import('@playwright/test').Page, oui: boolean) {
 	await simulerApi(page, (chemin) =>
@@ -22,7 +33,10 @@ test('suspendue, la connexion le dit et garde son formulaire', async ({ page }) 
 	await page.goto('/auth/connexion');
 	await attendreHydratation(page);
 
-	await expect(page.getByRole('note').filter({ hasText: BANDEAU })).toBeVisible();
+	const bandeau = page.getByRole('note').filter({ hasText: BANDEAU });
+	await expect(bandeau).toBeVisible();
+	//  `toHaveText` attend, et normalise les espaces : le gabarit replie ses retours à la ligne.
+	await expect(bandeau).toHaveText(TEXTE_PUBLIE);
 	await expect(page.locator('form input[type="email"]')).toBeVisible();
 });
 
