@@ -32,6 +32,7 @@ from app.models.core import RoleUtilisateur, StatutUtilisateur
 from app.models.points_conseil import CompteRenduAffaire
 from app.utils.annonce_hall import texte_brut
 from app.utils.dates_fr import date_courte, date_longue, datetime_longue
+from app.utils.palettes import recolorer
 from app.utils.pdf_theme import entete_rapport, html_to_pdf
 from app.utils.points_conseil import CrGlobal, nom_present
 from app.utils.points_conseil_ou import ou_du_point
@@ -229,5 +230,9 @@ def html_compte_rendu(doc: DocumentPoint, *, site_nom: str, logo_png: bytes | No
     )
 
 
-def generer_pdf(doc: DocumentPoint, *, site_nom: str, logo_png: bytes | None) -> bytes:
-    return html_to_pdf(html_compte_rendu(doc, site_nom=site_nom, logo_png=logo_png))
+def generer_pdf(
+    doc: DocumentPoint, *, site_nom: str, logo_png: bytes | None, palette: str | None = None
+) -> bytes:
+    """Le compte rendu aux couleurs de la copropriété (`palette`, #2819)."""
+    html = html_compte_rendu(doc, site_nom=site_nom, logo_png=logo_png)
+    return html_to_pdf(recolorer(html, palette))
