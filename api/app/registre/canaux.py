@@ -16,8 +16,9 @@ retirée : un code inconnu se lit comme la vague par défaut, Standard — sans 
 
 Une version est PUBLIÉE quand elle a sa release — l'archive de déploiement que la
 mise à jour télécharge, jointe par le workflow « Images » après ses images
-(`scripts/ci/publier-version.sh`). La référence relit ces releases chaque nuit
-(`relire_versions`) ; sa date est celle du tag, d'où se comptent les 7 jours.
+(`scripts/ci/publier-version.sh`). La référence relit ces releases à son démarrage
+puis CHAQUE HEURE (`relire_versions`, #2825 : la MEP redémarre l'API avant que la release
+soit publiée) ; sa date est celle du tag, d'où se comptent les 7 jours.
 
 ## Les règles
 
@@ -297,12 +298,15 @@ def run_canaux_registre() -> None:
 
 
 def enregistrer(scheduler) -> None:
-    """Pose la lecture à 03:50 — avant les baux de la nuit (04:20, `bail_installation`) —,
-    et une première au démarrage : la liste que l'opérateur choisit n'attend pas la nuit."""
+    """Pose la lecture chaque heure à :50 — donc à 03:50, avant les baux de la nuit (04:20,
+    `bail_installation`) —, et une première au démarrage : la liste que l'opérateur choisit
+    n'attend pas la nuit. Chaque heure (#2825) : la MEP redémarre l'API AVANT que la release
+    de sa version soit publiée ; lue une fois par nuit, elle restait inconnue jusqu'à 03:50,
+    et une réplique en canal Urgence recevait la version d'avant. Une lecture par heure
+    reste loin de la limite de l'API de GitHub (60 appels par heure sans jeton)."""
     scheduler.add_job(
         run_canaux_registre,
         "cron",
-        hour=3,
         minute=50,
         id="canaux_registre",
         next_run_time=horloge.a_paris(horloge.maintenant()),
