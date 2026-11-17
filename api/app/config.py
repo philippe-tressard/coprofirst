@@ -57,6 +57,9 @@ class Settings(BaseSettings):
     # La version promue qu'une RÉPLIQUE installe (`deploiement/standard`, même `.env`) ;
     # vide chez la référence. Lue par `utils/installation.version_logicielle`.
     coprofirst_version: str = ""
+    # La release de l'IMAGE (`front/package.json`), posée au build (`api/Dockerfile`,
+    # #2833) ; vide hors de la CI et du build d'un nœud. Lue par `version_logicielle`.
+    version_image: str = ""
 
     # Le REGISTRE DES INSTALLATIONS, tenu par la référence seule (spec §4.11, R1 #1877) :
     # sa base, DISTINCTE de celle de la résidence, et le nom DÉDIÉ sous lequel il

@@ -92,9 +92,9 @@ TACHES_PERMANENTES: dict[str, str] = {
     "conservation_registre": "l'effacement, à leur échéance, des coordonnées (12 mois) et du "
     "contrat archivé (5 ans) d'une installation résiliée — les durées promises par les "
     "conditions d'inscription (§4) redeviennent fictives",
-    "canaux_registre": "la lecture des versions publiées dans le registre (#2210) — les "
-    "baux portent alors une version cible figée, et aucune réplique ne reçoit de nouvelle "
-    "version",
+    "canaux_registre": "la lecture horaire des versions publiées dans le registre (#2210, "
+    "#2825) — les baux portent alors une version cible figée, et aucune réplique ne reçoit "
+    "de nouvelle version",
     "conservation_affaires": "l'archivage, à leur échéance, des pièces jointes des affaires "
     "closes et le détachement de leurs auteurs (#2014), puis le retrait du serveur des "
     "archives copiées sur le PC depuis 30 jours — les durées de conservation redeviennent "

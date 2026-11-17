@@ -117,6 +117,7 @@ services:
       dockerfile: Dockerfile
       args:
         GIT_HASH: ${GIT_HASH:-dev}
+        VERSION_IMAGE: ${VERSION_IMAGE:-}
     container_name: hostachy_api
     restart: unless-stopped
     stop_grace_period: 30s

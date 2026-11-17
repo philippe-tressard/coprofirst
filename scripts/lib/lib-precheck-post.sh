@@ -13,7 +13,8 @@
 #  `precheck-mep.sh --post-mep` n'exécute donc pas les points du LOT, et ajoute
 #  les deux preuves que le post-check faisait À LA MAIN sur le RPi :
 #    P1 — l'actif a DÉPLOYÉ le commit de `origin/main` (ligne `Déployé:`) ;
-#    P3 — le site SERT la version de `origin/main` (bundle réellement reçu).
+#    P3 — le site SERT la version de `origin/main` (bundle réellement reçu) ;
+#    P3b — l'API la PUBLIE dans `GET /config` (`version_logicielle`, #2833).
 #  Il n'écrit jamais la trace du pré-check : il n'autorise aucun push.
 #
 #  Sourcé par `precheck-mep.sh`, qui fournit `sur`, `rapporter`, `SITE`,
@@ -97,6 +98,17 @@ precheck_points_post() {
   VERSION_SERVIE="$ligne"   # lue par la conclusion (`lib-precheck-infra.sh`)
   rapporter P3 "$(verdict_version_servie "$version" "$ligne")" "Version servie par le site" \
             "attendue=${version:-?} servie=${ligne:-?}"
+
+  #  P3b — la release que l'API PUBLIE (`GET /config`, `version_logicielle`, #2833) : celle
+  #  que les apps lisent pour juger « au moins vX.Y.Z ». Même verdict que P3 : une
+  #  mesure impossible rend INCONNU, jamais OK.
+  local publiee
+  publiee=$(curl -s --max-time 15 "$SITE/api/config" 2>/dev/null | python3 -c \
+    'import json,sys
+try: print(json.load(sys.stdin).get("version_logicielle") or "INCONNU: clé absente")
+except Exception as e: print(f"INCONNU: {type(e).__name__}")' 2>/dev/null)
+  rapporter P3b "$(verdict_version_servie "$version" "${publiee:-INCONNU: python3 absent}")" \
+            "Version publiée par l'API (GET /config)" "attendue=${version:-?} publiée=${publiee:-?}"
 }
 
 #  ── Auto-test : les décisions se vérifient sans réseau ni RPi ──────────────
