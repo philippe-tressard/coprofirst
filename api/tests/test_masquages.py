@@ -112,7 +112,9 @@ def test_les_suites_et_messages_du_masque_quittent_l_affaire_qui_reste(moteur):
     affaire = affaire_ouverte(moteur, "Fuite au 3e")
     _poser(
         moteur,
-        TicketEvolution(ticket_id=affaire, type="commentaire", contenu="Du voisin", auteur_id=voisin),
+        TicketEvolution(
+            ticket_id=affaire, type="commentaire", contenu="Du voisin", auteur_id=voisin
+        ),
         TicketEvolution(ticket_id=affaire, type="commentaire", contenu="D'un autre"),
         MessageTicket(ticket_id=affaire, contenu="Message du voisin", auteur_id=voisin),
     )

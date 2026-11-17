@@ -16,6 +16,9 @@ TABLE = "masquage_auteur"  # identifiant, constante du fichier
 
 
 def upgrade():
+    #  Rejouable : un redémarrage après une migration interrompue la relance (0312).
+    if sa.inspect(op.get_bind()).has_table(TABLE):
+        return
     op.create_table(
         TABLE,
         sa.Column("id", sa.Integer, primary_key=True),
@@ -28,5 +31,7 @@ def upgrade():
 
 
 def downgrade():
+    if not sa.inspect(op.get_bind()).has_table(TABLE):
+        return
     op.drop_index("ix_masquage_auteur_masque_par_id", table_name=TABLE)
     op.drop_table(TABLE)

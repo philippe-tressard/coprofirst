@@ -17,7 +17,7 @@ from app.models.core import Utilisateur
 from app.models.masquages import MasquageAuteur
 from app.utils.masquage import masques_de, motif_de_refus
 from app.utils.noms import nom_auteur
-from app.utils.recuperer import ou_404
+from app.utils.recuperer import ou_404, ou_rien
 
 router = APIRouter(prefix="/masquages", tags=["masquages"])
 
@@ -36,7 +36,7 @@ class MasquageRead(BaseModel):
 def _lu(m: MasquageAuteur, session: Session) -> MasquageRead:
     return MasquageRead(
         auteur_id=m.auteur_id,
-        auteur=nom_auteur(session.get(Utilisateur, m.auteur_id)),
+        auteur=nom_auteur(ou_rien(session, Utilisateur, m.auteur_id)),
         cree_le=m.cree_le,
     )
 

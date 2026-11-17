@@ -108,6 +108,8 @@ CONTENUS_PERSONNELS: dict[tuple[str, str], str] = {
     ("location_bail", "bailleur_id"): "le bail d'un lot de la personne (étape 10)",
     ("petite_annonce", "auteur_id"): "une offre personnelle, avec ses moyens de contact",
     ("signalement", "signale_par_id"): "une démarche personnelle ; la modération garde sa décision",
+    ("masquage_auteur", "masque_par_id"): "un masque que la personne a posé (#2861)",
+    ("masquage_auteur", "auteur_id"): "un masque posé sur la personne : il ne vise plus personne",
     ("avis", "auteur_id"): (
         "un avis nominatif sur l'application, publié avec l'accord de son auteur (#2075)"
     ),

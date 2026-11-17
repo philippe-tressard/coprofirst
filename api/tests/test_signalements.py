@@ -100,7 +100,9 @@ def test_une_suite_se_signale_par_qui_lit_l_affaire(moteur):
         auteur = compte(s, prefixe="voisin").id
     lisible = _ajouter(
         moteur,
-        TicketEvolution(ticket_id=ouverte, type="commentaire", contenu="Tais-toi", auteur_id=auteur),
+        TicketEvolution(
+            ticket_id=ouverte, type="commentaire", contenu="Tais-toi", auteur_id=auteur
+        ),
     )
     cachee = _ajouter(
         moteur,
