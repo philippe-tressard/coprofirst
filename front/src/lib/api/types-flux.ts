@@ -19,6 +19,11 @@ export interface FluxItem {
 	meta: Record<string, unknown>;
 	/** « Me concerne », posé par le serveur (#2215) ; `null` pour ce qui ne porte aucun lieu. */
 	me_concerne?: boolean | null;
+	/** Le fil d'une période seulement (`GET /flux?du=&au=`, #2834) : le jour (AAAA-MM-JJ, Paris)
+	 *  où la carte se range — une carte de plusieurs jours revient chaque jour couvert. */
+	jour?: string | null;
+	/** Pourquoi ce jour : l'échéance de l'affaire, ou la publication de la carte. */
+	rattachement?: 'echeance' | 'publication' | null;
 }
 export interface FluxProchain {
 	id: string;

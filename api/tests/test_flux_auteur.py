@@ -51,6 +51,7 @@ SANS_AUTEUR = {
     "epingles.py": "il reprend les cartes des autres collecteurs, avec leur meta",
     "commun.py": "le socle partagé, il ne rend aucune carte",
     "schemas.py": "des déclarations",
+    "periode.py": "il range les cartes des autres collecteurs à leur jour (#2834), sans en créer",
     "__init__.py": "l'assemblage",
 }
 
@@ -162,7 +163,7 @@ def test_les_collecteurs_sans_auteur_n_en_ont_VRAIMENT_pas():
     PORTEURS, il ne reste pas dans la liste des dispensés."""
     contredits = []
     for nom, motif in SANS_AUTEUR.items():
-        if nom in ("commun.py", "schemas.py", "__init__.py"):
+        if nom in ("commun.py", "schemas.py", "periode.py", "__init__.py"):
             continue
         src = (FLUX / nom).read_text(encoding="utf-8")
         if '"auteur"' in src:
