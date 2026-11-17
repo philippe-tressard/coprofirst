@@ -214,6 +214,14 @@
 									expanded={ouverte === entree.lien}
 									onDeplier={entree.synthese ? () => (ouverte = entree.lien) : null}
 								>
+									<!--  Un contrat qui n'a pas encore commencé (#2811) : sa date
+									      est à venir, et la gouttière le dit sous « Contrat » —
+									      la règle est servie (`a_venir`), jamais recalculée ici. -->
+									<svelte:fragment slot="gouttiere">
+										{#if entree.a_venir}
+											<span class="a-venir">À venir</span>
+										{/if}
+									</svelte:fragment>
 									<EnteteCarte
 										titre={entree.libelle}
 										basculable={!!entree.synthese}
@@ -313,6 +321,15 @@
 		list-style: none;
 		margin: 0;
 		padding: 0;
+	}
+	/*  « À venir » sous le classement de la gouttière, dans sa typographie
+	    (petites capitales espacées) mais en gris : un état, pas une nature. */
+	.a-venir {
+		font-size: var(--fs-2xs);
+		font-weight: 700;
+		letter-spacing: 0.06em;
+		text-transform: uppercase;
+		color: var(--color-text-muted);
 	}
 	/*  Le détail (prestataire, échéance…) dans la typographie de l'aperçu d'une
 	    carte aérée : `--fs-md`, interligne 1,5, gris (`EnteteCarte`). */

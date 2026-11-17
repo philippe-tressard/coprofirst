@@ -16,6 +16,7 @@ from app.utils.consignes_arrivant import texte_en_html
 from app.utils.dates_fr import date_longue
 from app.utils.fiche_arrivant_css import CSS
 from app.utils.liens import adresse_lisible
+from app.utils.palettes import recolorer
 from app.utils.pdf_theme import (
     icone_svg,
     image_data_uri as _photo_data_uri,
@@ -280,8 +281,13 @@ def generer_fiche_arrivant(
     consignes: list[tuple[str, str]],
     accueil: str | None = None,
     annee: int = 2026,
+    palette: str | None = None,
 ) -> str:
     """Génère le HTML complet de la fiche arrivant à partir des données annuaire.
+
+    Composée aux couleurs de la charte, puis recolorée à la `palette` de la
+    copropriété (#2780), comme l'annonce de hall : là où le document se termine,
+    jamais chez un appelant.
 
     `site_nom` et `site_url` sont ceux de la CONFIGURATION, sans défaut (#1725) :
     le paramètre valait `"5hostachy.fr"` par défaut et le seul appelant ne le
@@ -311,7 +317,7 @@ def generer_fiche_arrivant(
         "</div>\n"
     )
 
-    return f"""\
+    html = f"""\
 <!DOCTYPE html>
 <html lang="fr">
 <head>
@@ -359,3 +365,4 @@ def generer_fiche_arrivant(
 </div>
 </body>
 </html>"""
+    return recolorer(html, palette)

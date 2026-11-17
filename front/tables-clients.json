@@ -1,6 +1,6 @@
 {
   "format": 1,
-  "version": "1.4.0",
+  "version": "1.5.0",
   "tables": {
     "attributsAdmis": {
       "source": "front/src/lib/sanitize.ts#ALLOWED_ATTR",
@@ -358,6 +358,35 @@
           "masqueAccueil": true
         }
       ]
+    },
+    "commentaireAvis": {
+      "source": {
+        "pointsForts": "front/src/lib/notations.ts#POINTS_FORTS",
+        "pointsFaibles": "front/src/lib/notations.ts#POINTS_FAIBLES",
+        "forme": "front/src/lib/notations.ts#FORME_COMMENTAIRE"
+      },
+      "valeur": {
+        "pointsForts": [
+          "délai respecté",
+          "travail soigné",
+          "pièces fournies",
+          "interlocuteur réactif"
+        ],
+        "pointsFaibles": [
+          "retard",
+          "travail à refaire",
+          "facture contestée",
+          "intervenant injoignable"
+        ],
+        "forme": {
+          "prefixeForts": "Points forts : ",
+          "prefixeFaibles": "Points faibles : ",
+          "entreMotifs": ", ",
+          "finDeGroupe": ".",
+          "entreGroupes": " ",
+          "avantLibre": "\n"
+        }
+      }
     },
     "cookieTheme": {
       "source": "front/src/lib/theme.ts#COOKIE_THEME",
