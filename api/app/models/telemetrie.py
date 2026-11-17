@@ -47,6 +47,8 @@ class TelemetryEvent(SQLModel, table=True):
     detail: Optional[str] = None  # ex: bouton cliqué, id ticket
     #: Le canal d'accès (`utils/canaux_audience`) : le site par défaut (0335).
     canal: str = Field(default=CANAL_PAR_DEFAUT)
+    #: La classe d'appareil que le client déclare (#2774, 0344) : `None` = non précisé.
+    appareil: Optional[str] = None
     cree_le: NaiveDatetime = Field(default_factory=horloge.maintenant, index=True)
 
 
@@ -105,6 +107,8 @@ class _AudienceCanal(SQLModel):
     id: Optional[int] = Field(default=None, primary_key=True)
     page: str
     canal: str
+    #: La classe d'appareil, sous le canal (#2774, 0344) : `None` = non précisé.
+    appareil: Optional[str] = None
     gestionnaire: Optional[bool] = Field(default=None, description=GESTIONNAIRE_DOC)
     vues: int = 0
 

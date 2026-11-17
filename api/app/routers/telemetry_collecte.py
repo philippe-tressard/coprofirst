@@ -41,14 +41,14 @@ le tableau de bord les compterait comme des pages vues.
 """
 
 from fastapi import APIRouter, Depends, Request
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, model_validator
 from sqlmodel import Session
 
 from app.auth.deps import utilisateur_ou_anonyme
 from app.database import get_session
 from app.models.core import TelemetryEvent, Utilisateur
 from app.utils import horloge
-from app.utils.canaux_audience import CANAL_PAR_DEFAUT, Canal
+from app.utils.canaux_audience import CANAL_PAR_DEFAUT, Canal, appareil_admis
 from app.utils.erreurs_navigateur import ACTION_ERREUR, enregistrer_erreur
 from app.utils.gestes_formulaire import (
     ACTION_ENVOI,
@@ -88,6 +88,15 @@ class LotAudience(BaseModel):
     #: Le canal d'accès du client qui poste (`utils/canaux_audience`) : le site s'il
     #: ne le dit pas — c'est le cas du front, seul client avant le 14/11/2026.
     canal: Canal = CANAL_PAR_DEFAUT
+    #: La CLASSE d'appareil (#2774) — fermée par canal (`APPAREILS_PAR_CANAL`), jamais
+    #: un modèle ni une version de système. Absente : « non précisé ».
+    appareil: str | None = Field(default=None, max_length=20)
+
+    @model_validator(mode="after")
+    def _appareil_du_canal(self):
+        if not appareil_admis(self.canal, self.appareil):
+            raise ValueError(f"appareil « {self.appareil} » inconnu pour le canal {self.canal}")
+        return self
 
 
 @router.post("/collect", status_code=204)
@@ -115,6 +124,7 @@ def collect(
                 action=ev.action,
                 detail=ev.detail,
                 canal=body.canal,
+                appareil=body.appareil,
                 cree_le=now,
             )
         )
