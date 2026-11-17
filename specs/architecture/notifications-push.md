@@ -1,10 +1,10 @@
 # Notifications push — le relais APNs de la plateforme (#2458)
 
-> ⛔ **Abandonné le 17/11/2026** (décision de Philippe : #2494 et #2789 fermés « b »).
-> Le relais ne sera pas construit : ni APNs, ni FCM. Les applications gardent la
-> **cloche**, lue à l'ouverture. Ce document reste comme trace des choix ; le code
-> serveur qui ne servait qu'au push dort (`transport.RelaisNonBranche`, rien ne part)
-> et se retire dans l'ordre que fixe #2857.
+> ⏸ **État au 17/11/2026 : pas encore branché.** Le relais n'existe pas : le transport
+> d'une installation est `transport.RelaisNonBranche`, et rien ne part. L'app iOS garde
+> son client (`POST /appareils`) ; l'app Android a retiré le sien. La fonction reste
+> prévue — une alerte, celle du syndic par exemple, qui fait sonner le téléphone —,
+> pour une prochaine soumission des apps ; son suivi : #2857.
 
 > 🧭 **Spécification de CIBLE, validée par Philippe le 03/11/2026** (§10). Écrite le
 > 02/11/2026 pour le chantier de l'application iOS native (#2460) ; comme

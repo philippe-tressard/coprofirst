@@ -79,9 +79,9 @@ Deux clients, **un seul serveur** :
    l'application y adapte ses gestes au lieu d'échouer.
 3. **La même porte d'authentification que le navigateur** (#2457) : cookies
    `httponly`, rafraîchissement et sa rotation — pas de second mode (Bearer).
-4. **Le relais de notifications** (#2458) : **abandonné le 17/11/2026** — ni APNs ni
-   FCM ; les applications gardent la cloche, lue à l'ouverture. La conception reste
-   dans [`notifications-push.md`](notifications-push.md), son code se retire (#2857).
+4. **Le relais de notifications** (#2458) : les notifications push APNs passent par
+   un relais de la plateforme, la clé d'Apple ne quittant jamais la référence —
+   spécification : [`notifications-push.md`](notifications-push.md).
 5. **Les liens universels** (#2459) : `/.well-known/apple-app-site-association`,
    servi par chaque installation, ouvre l'application sur la bonne installation ;
    `/.well-known/assetlinks.json` (#2788) fait de même pour l'application Android.
@@ -92,8 +92,8 @@ l'application fait, dans son propre dépôt. Ce paragraphe ne dit que leur lien.
 
 - **Fonctionnement hors-ligne de la PWA :** Workbox (intégré via vite-pwa) — cache
   des pages statiques et des données essentielles.
-- **Notifications push :** aucune — ni Web Push pour la PWA, ni APNs ou FCM pour les
-  applications (abandon du 17/11/2026, ci-dessus) : la cloche suffit.
+- **Notifications push de la PWA (Web Push) :** non prévues ; l'application iOS a
+  les siennes (APNs, ci-dessus).
 
 ---
 
