@@ -1,14 +1,14 @@
-fastapi==0.162.5
+fastapi==0.162.7
 uvicorn[standard]==0.54.0
 slowapi==0.1.10
-sqlmodel==0.0.49
+sqlmodel==0.0.50
 #  Importés DIRECTEMENT par le code — pydantic ~50 fois, sqlalchemy ~250 fois,
 #  pydantic_settings par `config.py` — mais qui n'arrivaient ici que par
 #  transitivité (fastapi, sqlmodel, fastapi-mail). Une montée de l'un de ceux-là
 #  changeait donc leur version sans que ce fichier bouge (#1048, 24/09/2026).
 #  Épinglés à la version que ce fichier résolvait ce jour-là : aucun changement.
 pydantic==2.14.3
-pydantic-settings==2.16.2
+pydantic-settings==2.16.3
 #  `EmailStr` (routers/config, routers/partage) charge `email_validator` à
 #  l'exécution, sans `import` qu'un contrôle verrait : il n'arrivait que par
 #  `fastapi-mail`. Épinglé à la version que l'image installait déjà (2.3.0,
@@ -31,7 +31,7 @@ httpx==0.28.1
 #  Lecture du texte d'un PDF — la synthèse assistée d'un contrat (#899). Pur
 #  Python, aucune bibliothèque système : rien à ajouter au Dockerfile, à la
 #  différence de WeasyPrint qui, lui, ÉCRIT des PDF et réclame GTK.
-pypdf==7.0.1
+pypdf==7.1.0
 #  Jamais importé, et pourtant nécessaire : c'est lui qui lit `env_file = ".env"`
 #  pour pydantic-settings (`app/config.py`). Sans lui, le `.env` serait ignoré.
 #  `aiofiles`, qui le suivait ici, n'était ni importé ni requis par rien : retiré.
