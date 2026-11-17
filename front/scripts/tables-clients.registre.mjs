@@ -412,6 +412,11 @@ export const TABLES = {
 		quoi: "la saisie guidée d'un avis : les motifs à cocher, et la forme de la phrase générée et du commentaire (préfixes, séparateurs) d'où se refont phraseGeneree, commentaireComplet et decomposerCommentaire (#2816)",
 		lecteur: 'scripts/generateurs/acces_prestataires.py',
 	},
+	bandeauSuspendue: {
+		source: 'src/lib/bandeaux-installation.ts#BANDEAU_SUSPENDUE',
+		quoi: "le bandeau d'une installation suspendue, en lecture seule (installation_suspendue = '1' dans GET /config) : titre et précision en gras, joints par separateurs.tiret et suivis d'un point, puis le texte (#2840)",
+		lecteur: 'scripts/generer.py',
+	},
 	libellesModeSaisie: {
 		source: 'src/lib/saisie-affaire.ts#LIBELLE_MODE',
 		quoi: 'la phrase discrète en tête du formulaire d’une affaire, selon le mode de saisie (#2793)',
