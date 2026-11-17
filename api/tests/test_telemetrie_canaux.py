@@ -43,6 +43,14 @@ from tests.aides_http import base_http, client_http
 from tests.aides_migrations import charger_migration
 
 MAINTENANT = datetime(2026, 10, 1, 12, 0, 0)
+
+
+def _non_precise(vues: int) -> list[dict]:
+    """Avant #2774, aucune vue ne dit son appareil : toutes sont « non précisé »."""
+    return [{"appareil": "non_precise", "libelle": "Non précisé", "vues": vues, "part": 100}]
+
+
+NP2, NP4, NP5 = _non_precise(2), _non_precise(4), _non_precise(5)
 ROUTE = "/telemetry/collect"
 
 
@@ -189,8 +197,22 @@ def _tableau(http, scope: str, filtre: str = "avec") -> dict:
 def test_le_jour_reparti_les_vues_et_les_visiteurs_par_canal(gestionnaire_http):
     donnees = _tableau(gestionnaire_http, "jour")
     assert donnees["canaux"] == [
-        {"canal": "site", "libelle": "Site web", "vues": 2, "part": 33, "visiteurs": 1},
-        {"canal": "ios", "libelle": "App iPhone", "vues": 4, "part": 67, "visiteurs": 2},
+        {
+            "canal": "site",
+            "libelle": "Web",
+            "vues": 2,
+            "part": 33,
+            "visiteurs": 1,
+            "appareils": NP2,
+        },
+        {
+            "canal": "ios",
+            "libelle": "App iPhone",
+            "vues": 4,
+            "part": 67,
+            "visiteurs": 2,
+            "appareils": NP4,
+        },
     ]
     #  Le total des canaux est l'indicateur « Pages vues ».
     assert sum(c["vues"] for c in donnees["canaux"]) == donnees["kpi"]["vues"]
@@ -219,7 +241,14 @@ def test_le_mois_lit_l_agregat_et_tombe_sur_le_total(gestionnaire_http):
 def test_l_annee_lit_le_mensuel_sans_visiteurs(gestionnaire_http):
     donnees = _tableau(gestionnaire_http, "annee")
     assert donnees["canaux"] == [
-        {"canal": "ios", "libelle": "App iPhone", "vues": 5, "part": 100, "visiteurs": None}
+        {
+            "canal": "ios",
+            "libelle": "App iPhone",
+            "vues": 5,
+            "part": 100,
+            "visiteurs": None,
+            "appareils": NP5,
+        }
     ]
     assert sum(c["vues"] for c in donnees["canaux"]) == donnees["kpi"]["vues"]
 

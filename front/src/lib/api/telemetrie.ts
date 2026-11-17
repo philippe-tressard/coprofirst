@@ -114,6 +114,15 @@ export interface PageTelemetrie {
 	canaux?: VuesCanal[];
 }
 
+/** Une classe d'appareil sous son canal (#2774) ; `non_precise` : sans appareil dit. */
+export interface PartAppareil {
+	appareil: string;
+	libelle: string;
+	vues: number;
+	/** En pour cent des vues DU CANAL, calculée par le serveur. */
+	part: number;
+}
+
 /** Un canal d'accès dans la répartition de la vue (`utils/telemetrie_canaux.servir`). */
 export interface PartCanal {
 	canal: string;
@@ -123,6 +132,8 @@ export interface PartCanal {
 	part: number;
 	/** Comptes venus par ce canal — ne s'additionnent pas ; `null` en Année et Total. */
 	visiteurs: number | null;
+	/** Ses vues par classe d'appareil (#2774), dans l'ordre déclaré par l'API. */
+	appareils?: PartAppareil[];
 }
 
 /** Un utilisateur du palmarès (`telemetrie_calculs._palmares`). */

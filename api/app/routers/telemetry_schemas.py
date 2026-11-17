@@ -81,6 +81,16 @@ class PageTop(BaseModel):
     canaux: list[VuesCanal] = []
 
 
+class PartAppareil(BaseModel):
+    """Une classe d'appareil sous son canal (#2774). `part` : en pour cent des vues DU
+    CANAL, calculée par le serveur ; `non_precise` regroupe les vues sans appareil."""
+
+    appareil: str
+    libelle: str
+    vues: int
+    part: int
+
+
 class PartCanal(BaseModel):
     """Un canal d'accès dans la répartition de la portée (`utils/telemetrie_canaux`).
 
@@ -94,6 +104,8 @@ class PartCanal(BaseModel):
     vues: int
     part: int
     visiteurs: Optional[int] = None
+    #: Ses vues par classe d'appareil (#2774), dans l'ordre déclaré.
+    appareils: list[PartAppareil] = []
 
 
 class UtilisateurTop(BaseModel):
