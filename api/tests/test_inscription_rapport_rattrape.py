@@ -59,7 +59,9 @@ def test_un_rapport_perdu_dans_la_nuit_repart_au_demarrage(registre):
     client.run_demarrage()
 
     assert _rapports_recus(registre) == avant + 1
-    assert depot.lire().dernier_rapport_le >= (horloge.maintenant() - timedelta(minutes=1)).isoformat()
+    assert (
+        depot.lire().dernier_rapport_le >= (horloge.maintenant() - timedelta(minutes=1)).isoformat()
+    )
 
 
 def test_un_rapport_jamais_envoye_part_au_demarrage(registre):
