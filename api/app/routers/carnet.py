@@ -127,6 +127,9 @@ class EntreeCarnetLue(BaseModel):
     synthese: Optional[SyntheseLue] = None
     #: Les trois lignes d'aperçu de la carte.
     extrait: str = ""
+    #: Un contrat dont la date de début n'est pas encore atteinte (jour de Paris) :
+    #: la date est à venir, et chaque client le dit (#2811).
+    a_venir: bool = False
 
 
 class GroupeCarnet(BaseModel):

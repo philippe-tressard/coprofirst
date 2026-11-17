@@ -403,6 +403,15 @@ export const TABLES = {
 		quoi: "le libellé d'affichage du type d'un fichier, par extension en capitales (JPEG → JPG, XLSX → EXCEL…) ; une extension absente se montre telle quelle, sans extension « FICHIER » (#2798)",
 		lecteur: 'scripts/generer.py',
 	},
+	commentaireAvis: {
+		source: {
+			pointsForts: 'src/lib/notations.ts#POINTS_FORTS',
+			pointsFaibles: 'src/lib/notations.ts#POINTS_FAIBLES',
+			forme: 'src/lib/notations.ts#FORME_COMMENTAIRE',
+		},
+		quoi: "la saisie guidée d'un avis : les motifs à cocher, et la forme de la phrase générée et du commentaire (préfixes, séparateurs) d'où se refont phraseGeneree, commentaireComplet et decomposerCommentaire (#2816)",
+		lecteur: 'scripts/generateurs/acces_prestataires.py',
+	},
 	libellesModeSaisie: {
 		source: 'src/lib/saisie-affaire.ts#LIBELLE_MODE',
 		quoi: 'la phrase discrète en tête du formulaire d’une affaire, selon le mode de saisie (#2793)',
