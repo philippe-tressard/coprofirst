@@ -116,6 +116,7 @@ jobs:
           platforms: linux/${{ matrix.plateforme }}
           build-args: |
             GIT_HASH=${{ needs.version.outputs.empreinte }}
+            VERSION_IMAGE=${{ needs.version.outputs.version }}
           labels: |
             org.opencontainers.image.title=coprofirst-${{ matrix.service.nom }}
             org.opencontainers.image.version=${{ needs.version.outputs.version }}

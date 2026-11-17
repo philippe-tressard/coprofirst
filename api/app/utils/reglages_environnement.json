@@ -4,7 +4,8 @@
       "instance_id",
       "role_installation",
       "git_hash",
-      "coprofirst_version"
+      "coprofirst_version",
+      "version_image"
     ],
     "Mode démo": [
       "mode_demo",

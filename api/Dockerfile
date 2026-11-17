@@ -30,6 +30,10 @@ WORKDIR /app
 # par `construire_images` ; `dev` hors de ces deux chemins.
 ARG GIT_HASH=dev
 ENV GIT_HASH=$GIT_HASH
+# La release de l'image (`front/package.json`, la source du pied de page), publiée par
+# `GET /config` (#2833) ; vide hors de la CI et du build d'un nœud.
+ARG VERSION_IMAGE=
+ENV VERSION_IMAGE=$VERSION_IMAGE
 
 # Dépendances système
 # libpango/libcairo/libharfbuzz(+subset) + polices : rendu PDF WeasyPrint

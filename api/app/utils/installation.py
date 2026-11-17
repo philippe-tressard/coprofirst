@@ -113,9 +113,16 @@ def empreinte(valeur: Optional[str] = None) -> str:
 
 
 def version_logicielle() -> str:
-    """Ce qui tourne, tel que le registre le lit (R2 #1878) : la version promue d'une
-    réplique (`COPROFIRST_VERSION`), sinon le commit de l'image, sinon « inconnue »."""
-    return get_settings().coprofirst_version.strip() or empreinte()[:12] or "inconnue"
+    """Ce qui tourne, tel que le registre le lit (R2 #1878) et que `GET /config` le publie
+    (#2833) : la version promue d'une réplique (`COPROFIRST_VERSION`), sinon la release de
+    l'image (`VERSION_IMAGE`), sinon le commit de l'image, sinon « inconnue »."""
+    reglages = get_settings()
+    return (
+        reglages.coprofirst_version.strip()
+        or reglages.version_image.strip()
+        or empreinte()[:12]
+        or "inconnue"
+    )
 
 
 @dataclass(frozen=True)
