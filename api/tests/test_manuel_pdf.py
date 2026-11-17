@@ -229,11 +229,13 @@ def test_l_identite_du_manuel_lit_le_reglage_d_Admin_Site(session):
 
     session.add(ConfigSite(cle="login_sous_titre", valeur="  Notre résidence  "))
     session.add(ConfigSite(cle="site_nom", valeur="Les Tilleuls"))
+    session.add(ConfigSite(cle="site_palette", valeur="bordeaux"))
     session.commit()
     identite = m.identite_du_manuel(session)
     assert identite["sous_titre"] == "Notre résidence"
     assert identite["site_nom"] == "Les Tilleuls"
-    assert set(identite) == {"site_nom", "site_url", "logo_png", "sous_titre"}
+    assert identite["palette"] == "bordeaux"  # les couleurs de la copropriété (#2819)
+    assert set(identite) == {"site_nom", "site_url", "logo_png", "sous_titre", "palette"}
 
 
 def test_les_mentions_identifient_l_editeur(document):

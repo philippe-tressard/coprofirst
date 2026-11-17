@@ -25,6 +25,7 @@ from app.utils.pdf_theme import (
     html_to_pdf,
     regle_page,
 )
+from app.utils.palettes import recolorer
 from app.utils.suivi_affaires.pdf_barres import CSS_BARRES, repartition_html
 from app.utils.suivi_affaires.releve import AffaireOuverte, Releve
 
@@ -136,5 +137,8 @@ def html_rapport(r: Releve, *, site_nom: str, logo_png: bytes | None) -> str:
     )
 
 
-def generer_pdf(r: Releve, *, site_nom: str, logo_png: bytes | None) -> bytes:
-    return html_to_pdf(html_rapport(r, site_nom=site_nom, logo_png=logo_png))
+def generer_pdf(
+    r: Releve, *, site_nom: str, logo_png: bytes | None, palette: str | None = None
+) -> bytes:
+    """Le rapport aux couleurs de la copropriété (`palette`, #2819)."""
+    return html_to_pdf(recolorer(html_rapport(r, site_nom=site_nom, logo_png=logo_png), palette))

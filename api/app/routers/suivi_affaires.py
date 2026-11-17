@@ -31,6 +31,7 @@ from app.database import get_session
 from app.models.core import Utilisateur
 from app.utils import horloge
 from app.utils.config_site import config_site
+from app.utils.palettes import CLE_PALETTE
 from app.utils.lecture import lire_objet
 from app.utils.limiter import LIMITE_APPEL_FACTURE, limiter
 from app.utils.liens import nom_site
@@ -217,6 +218,7 @@ def exporter_pdf(
         releve(session, user, _mode(mode)),
         site_nom=nom_site(site.get("site_nom")),
         logo_png=logo_televerse_png(session),
+        palette=site.get(CLE_PALETTE),
     )
     nom = f"suivi-des-affaires-{horloge.aujourd_hui():%Y-%m-%d}.pdf"
     return Response(

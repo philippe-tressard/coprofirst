@@ -57,6 +57,7 @@ from app.utils.liens import adresse_du_site, nom_site
 from app.utils.logo import logo_televerse_png
 from app.utils.manuel_pdf_css import css_du_pdf
 from app.utils.manuel_pdf_pages import garde, mentions
+from app.utils.palettes import CLE_PALETTE, code_palette, recolorer
 from app.utils.pdf_theme import html_to_pdf
 
 #: Le manuel, tel qu'il est SERVI. Nom de service Docker : les deux conteneurs
@@ -266,6 +267,7 @@ def identite_du_manuel(session: Session) -> dict:
         "site_url": adresse_du_site(),
         "logo_png": logo_televerse_png(session, "sombre"),  # page de garde bleu marine
         "sous_titre": (cfg.get("login_sous_titre") or "").strip(),
+        "palette": cfg.get(CLE_PALETTE),  # les couleurs de la copropriété (#2819)
     }
 
 
@@ -351,6 +353,7 @@ def generer_manuel_pdf(
     html_manuel: str | None = None,
     edite_le: date | None = None,
     dossier: Path | None = None,
+    palette: str | None = None,
 ) -> bytes:
     """Le manuel complet en PDF : la mémoire, puis le disque, puis le rendu.
 
@@ -371,6 +374,8 @@ def generer_manuel_pdf(
         sous_titre,
         #  Le CODE qui compose aussi (#2189) : un correctif de mise en page est un autre PDF.
         manuel_pdf_cache.EMPREINTE_COMPOSITEUR,
+        #  La palette aussi (#2819) : un autre jeu de couleurs est un autre PDF.
+        code_palette(palette),
     )
     memoire = _cache()
     if cle in memoire:
@@ -384,13 +389,16 @@ def generer_manuel_pdf(
         pdf = manuel_pdf_cache.lire(cle, dossier)
         if pdf is None:
             pdf = html_to_pdf(
-                composer_html(
-                    site_nom,
-                    site_url,
-                    logo_png=logo_png,
-                    sous_titre=sous_titre,
-                    html_manuel=html,
-                    edite_le=edite_le,
+                recolorer(
+                    composer_html(
+                        site_nom,
+                        site_url,
+                        logo_png=logo_png,
+                        sous_titre=sous_titre,
+                        html_manuel=html,
+                        edite_le=edite_le,
+                    ),
+                    palette,
                 )
             )
             manuel_pdf_cache.ecrire(cle, pdf, dossier, garder=_CACHE_MAX)
@@ -416,6 +424,7 @@ def prechauffer(
     logo_png: bytes | None,
     sous_titre: str = "",
     pause_s: float | None = None,
+    palette: str | None = None,
 ) -> bool:
     """Rend le manuel une fois, pour que personne n'attende le premier rendu.
 
@@ -440,7 +449,9 @@ def prechauffer(
     pause = PAUSE_PRECHAUFFAGE_S if pause_s is None else pause_s
     for essai in range(1, TENTATIVES_PRECHAUFFAGE + 1):
         try:
-            generer_manuel_pdf(site_nom, site_url, logo_png=logo_png, sous_titre=sous_titre)
+            generer_manuel_pdf(
+                site_nom, site_url, logo_png=logo_png, sous_titre=sous_titre, palette=palette
+            )
         except ManuelIndisponible as exc:
             if essai == TENTATIVES_PRECHAUFFAGE:
                 _logger.warning("Préchauffage du manuel PDF impossible : %s", exc)
