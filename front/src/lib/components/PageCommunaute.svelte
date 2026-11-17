@@ -25,6 +25,7 @@
 		idees as ideesApi,
 		annonces as annoncesApi,
 		signalements as signalementsApi,
+		type CibleSignalement,
 		type Idee,
 		type PetiteAnnonce,
 		type Signalement,
@@ -237,7 +238,7 @@
 	//  Le geste lui-même vit dans `#lib/signalements` : il était écrit à
 	//  l'identique ici et dans `sondages/[id]`. Ne reste que ce qui est PROPRE à
 	//  cet écran — recharger la liste de modération quand on est au CS.
-	const signaler = (cibleType: string, cibleId: number) =>
+	const signaler = (cibleType: CibleSignalement, cibleId: number) =>
 		signalerContenu(cibleType, cibleId, () => {
 			if ($estModerateur) chargerSignalements();
 		});

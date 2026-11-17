@@ -32,6 +32,7 @@
 	import { STATUT_DEMANDE_BADGE, STATUT_DEMANDE_LABEL } from '#lib/demandes.ts';
 	import { essayer, messagePartiel } from '#lib/chargement.ts';
 	import DroitsRgpd from '#lib/components/DroitsRgpd.svelte';
+	import PersonnesMasquees from '#lib/components/PersonnesMasquees.svelte';
 	import InformationsCompte from '#lib/components/InformationsCompte.svelte';
 	import ChampsEtage from '#lib/components/ChampsEtage.svelte';
 	import EtoileRequis from '#lib/components/EtoileRequis.svelte';
@@ -419,6 +420,9 @@
 		bind:restreindre={restreindreAMesBatiments}
 		onSave={saveNotifs}
 	/>
+
+	<!-- ── Les personnes dont je masque ce qu'elles publient (#2861) ───────── -->
+	<PersonnesMasquees />
 
 	<!-- ── RGPD — extrait dans `DroitsRgpd` le 22/09/2026 (modularité) ── -->
 	<DroitsRgpd />

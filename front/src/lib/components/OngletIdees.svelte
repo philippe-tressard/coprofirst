@@ -20,7 +20,7 @@
 -->
 <script lang="ts">
 	import ChargementDiffere from '#lib/components/ChargementDiffere.svelte';
-	import type { Idee } from '#lib/api/index.ts';
+	import type { CibleSignalement, Idee } from '#lib/api/index.ts';
 	import EtatListe from '#lib/components/EtatListe.svelte';
 	import ListeIdees from '#lib/components/ListeIdees.svelte';
 	import ListeEtArchives from '#lib/components/ListeEtArchives.svelte';
@@ -44,7 +44,7 @@
 	export let onVoter: (id: number) => void;
 	export let onChangerStatut: (id: number, statut: string) => void;
 	export let onSupprimer: (id: number) => void;
-	export let onSignaler: (cibleType: string, cibleId: number) => void;
+	export let onSignaler: (cibleType: CibleSignalement, cibleId: number) => void;
 	export let onRepondre: (id: number, contenu: string) => Promise<void> | void;
 	export let onSupprimerReponse: (id: number, reponseId: number) => void;
 

@@ -91,6 +91,8 @@
 	export let onSupprimerReponse: (id: number) => void;
 	export let onSignalerAnnonce: () => void;
 	export let onSignalerReponse: (id: number) => void;
+	/** « Masquer ce que publie… » l'auteur de l'annonce (#2861) — absent, le geste ne s'offre pas. */
+	export let onMasquerAuteur: ((id: number, nom: string) => void) | null = null;
 
 	//  ⚠️ Le serveur refait ce contrôle (`_can_manage`) : ce qui suit n'est qu'un
 	//  confort d'écran. Une interface qui cache un bouton n'a jamais protégé quoi
@@ -285,6 +287,14 @@
 							aria-label="Signaler cette annonce"
 							on:click={onSignalerAnnonce}>&#x1F6A9; Signaler l'annonce</button
 						>
+						{#if onMasquerAuteur}
+							<button
+								class="signaler-inline"
+								title="Ne plus voir ce que publie {annonce.auteur_affiche}"
+								on:click={() => onMasquerAuteur?.(annonce.auteur_id, annonce.auteur_affiche)}
+								>🙈 Masquer ce que publie {annonce.auteur_affiche}</button
+							>
+						{/if}
 					</div>
 				{/if}
 
@@ -295,6 +305,7 @@
 					onSubmit={onRepondre}
 					onDelete={onSupprimerReponse}
 					onReport={onSignalerReponse}
+					masquable
 				/>
 			{/if}
 		</div>

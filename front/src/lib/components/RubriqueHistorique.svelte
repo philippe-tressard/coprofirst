@@ -52,6 +52,9 @@
 
 	import { entreesDuFil, evolutionIcone } from '#lib/evolutions.ts';
 	import { confirmer } from '#lib/confirmation.ts';
+	import { signaler } from '#lib/signalements.ts';
+	import { masquer } from '#lib/masquages.ts';
+	import { currentUser } from '#lib/stores/auth.ts';
 	import { SEPARATEUR } from '#lib/separateurs.ts';
 
 	export let evolutions: TicketEvolution[] = [];
@@ -108,6 +111,10 @@
 	 *   manquantes (publications, événements) est suivie en #512. */
 	export let avecSuppression = false;
 
+	/** Signaler une suite au conseil, et masquer ce que publie son auteur (#2861) :
+	 *  les affaires seules l'ouvrent — le serveur ne connaît pas les autres fils. */
+	export let avecSignalement = false;
+
 	const dispatch = createEventDispatcher<{ modifier: number; supprimer: number }>();
 
 	/**  🔴 Effacer est réservé à l'ADMINISTRATEUR (18/08/2026, demandé à l'écran :
@@ -135,6 +142,17 @@
 	function peutCorriger(evol: TicketEvolution): boolean {
 		return peutModifier && evol.peut_modifier === true;
 	}
+
+	//  Une suite qui porte un texte, d'un autre que soi : ce que le serveur signale
+	//  (`signalement_cibles`, cible `suite`). Masquer exige en plus un auteur nommé.
+	function peutSignaler(evol: TicketEvolution): boolean {
+		return avecSignalement && !!evol.contenu && evol.auteur_id !== $currentUser?.id;
+	}
+	const masquerAuteur = (id: number | null, nom: string | undefined) =>
+		id &&
+		masquer(id, nom ?? 'cette personne', () => {
+			evolutions = evolutions.filter((e) => e.auteur_id !== id);
+		});
 
 	/**  Effacer se CONFIRME (15/10/2026, maquette A de la carte dépliée) : le geste
 	 *   partait au premier clic, sur une corbeille voisine du crayon. La question
@@ -229,8 +247,27 @@
 
 						      Groupées, elles suivent la norme de l'en-tête de carte : ✏️ puis
 						      🗑️, collées, à l'extrémité droite (ux-patterns §3). -->
-						{#if enEdition !== evol.id && (peutCorriger(evol) || peutEffacer(evol))}
+						{#if enEdition !== evol.id && (peutCorriger(evol) || peutEffacer(evol) || peutSignaler(evol))}
 							<span class="evol-actions">
+								{#if peutSignaler(evol)}
+									<button
+										type="button"
+										class="btn-icon"
+										aria-label="Signaler cette suite au conseil syndical"
+										title="Signaler au conseil syndical"
+										on:click={() => signaler('suite', evol.id)}><IconeAction icone="flag" /></button
+									>
+									{#if evol.auteur_id && evol.auteur_nom}
+										<button
+											type="button"
+											class="btn-icon"
+											aria-label="Masquer ce que publie {evol.auteur_nom}"
+											title="Masquer ce que publie {evol.auteur_nom}"
+											on:click={() => masquerAuteur(evol.auteur_id, evol.auteur_nom)}
+											><IconeAction icone="eye-off" /></button
+										>
+									{/if}
+								{/if}
 								{#if peutCorriger(evol)}
 									<!--  Le CRAYON SEUL, comme partout ailleurs sur le site : ce
 									      bouton portait « ✏️ Modifier » et était le dernier à écrire
