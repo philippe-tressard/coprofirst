@@ -81,19 +81,32 @@ cd "$RACINE" || exit 2
 #  libre, ou file d'attente avec `--attendre`), la fiche du propriétaire, et le
 #  veilleur qui bat le pouls et arrête ce rejeu si son lanceur disparaît.
 #  État lisible par tous : `bash scripts/poste/etat-rejeu.sh`.
+#  Puis le verrou commun du POSTE (#2765), toujours APRÈS celui du rejeu — l'ordre et
+#  pourquoi : `lib-ci-verrou-poste.sh`. Le rejeu s'y relance (même pid) : à la seconde
+#  entrée (`reentree`), son verrou du rejeu est déjà à lui et son veilleur tourne.
 MODE_REJEU=direct; ARGS_REJEU=()
 for a in "$@"; do [ "$a" = --attendre ] && MODE_REJEU=attendre || ARGS_REJEU+=("$a"); done
 set -- ${ARGS_REJEU[@]+"${ARGS_REJEU[@]}"}
 VERROU_REJEU="$(ci_dossier_commun)/rejeu-ci.verrou"
-ANCRE_REJEU=$(ci_ancre "$(ci_chaine_ancetres $$)")
-FICHE_REJEU=$(ci_fiche $$ "$ANCRE_REJEU" "$(ci_noms_de_jobs "$@")")   # les jobs, pas les options (#2229)
-ci_rejeu_acquerir "$VERROU_REJEU" "$MODE_REJEU" "$ANCRE_REJEU" "$FICHE_REJEU" || exit 2
+ENTREE=$(ci_verrou_poste_entree "${REJEU_SOUS_VERROU_POSTE:-}" $$ "$(cat "$VERROU_REJEU/pid" 2>/dev/null)")
+unset REJEU_SOUS_VERROU_POSTE   # les étapes n'en héritent pas
+[ "$ENTREE" = perdu ] && { echo "✗ Le verrou du rejeu a changé de main pendant l'attente du verrou du poste — rien n'a été rejoué."; exit 2; }
+if [ "$ENTREE" = premiere ]; then
+  ANCRE_REJEU=$(ci_ancre "$(ci_chaine_ancetres $$)")
+  FICHE_REJEU=$(ci_fiche $$ "$ANCRE_REJEU" "$(ci_noms_de_jobs "$@")")   # les jobs, pas les options (#2229)
+  ci_rejeu_acquerir "$VERROU_REJEU" "$MODE_REJEU" "$ANCRE_REJEU" "$FICHE_REJEU" || exit 2
+fi
 trap 'ci_verrou_liberer "$VERROU_REJEU" $$' EXIT
 #  Le lanceur parti, la sortie peut l'être aussi : écrire ne doit pas tuer le trap.
 trap 'trap "" PIPE; ci_rejeu_arrete "$VERROU_REJEU"; exit 2' TERM HUP
-ci_verrou_signer "$VERROU_REJEU" "$FICHE_REJEU"
-ci_veilleur "$VERROU_REJEU" $$ "$ANCRE_REJEU" >/dev/null 2>&1 &
-[ -n "$ANCRE_REJEU" ] || echo "· lanceur non surveillé (aucun shell parent) : un rejeu abandonné ne s'arrêtera pas seul."
+if [ "$ENTREE" = premiere ]; then
+  ci_verrou_signer "$VERROU_REJEU" "$FICHE_REJEU"
+  ci_veilleur "$VERROU_REJEU" $$ "$ANCRE_REJEU" >/dev/null 2>&1 &
+  [ -n "$ANCRE_REJEU" ] || echo "· lanceur non surveillé (aucun shell parent) : un rejeu abandonné ne s'arrêtera pas seul."
+  ci_verrou_poste_prendre "$VERROU_REJEU" "$RACINE_DEPOT/scripts/poste/rejouer-ci.sh" "$@"   # ne revient que s'il est absent
+else
+  echo "· Verrou du poste pris (tâches lourdes) — le rejeu commence."
+fi
 
 #  ── Workers e2e sur un poste occupé (#1665) — la règle : `ci_workers_e2e` ────
 #  La charge est mesurée MAINTENANT, avant nos propres étapes : c'est celle des

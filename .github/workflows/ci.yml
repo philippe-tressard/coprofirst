@@ -793,6 +793,10 @@ jobs:
           # Le verrou du rejeu nommé, sa file d'attente, et le veilleur qui arrête un
           # rejeu dont le lanceur a disparu (#2225) — éprouvés sur de vrais processus.
           bash scripts/lib/lib-ci-verrou.sh       --selftest
+          # 🔒 Le rejeu prend son rang au verrou commun du POSTE, après le sien (#2765) :
+          # un rejeu et une tâche lourde, puis deux rejeux de deux clones, passent l'un
+          # après l'autre — sous un double du verrou, jamais le vrai ; absent, il le dit.
+          bash scripts/lib/lib-ci-verrou-poste.sh --selftest
           # L'arbre de processus d'un rejeu (#2270) : retrouvé même racine morte (le
           # `kill -9` du 28/10 laissait deux pytest vivants six heures), tué d'un coup,
           # l'appelant épargné ; les restes d'un rejeu mort repérés sur de vrais processus.

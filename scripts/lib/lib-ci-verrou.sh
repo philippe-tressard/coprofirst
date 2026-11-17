@@ -42,6 +42,9 @@ REJEU_ATTENTE_MAX_S=${REJEU_ATTENTE_MAX_S:-14400}
 
 # shellcheck source=lib-ci-arbre.sh
 . "$(dirname "${BASH_SOURCE[0]}")/lib-ci-arbre.sh"
+#  Le verrou commun du POSTE (tâches lourdes, #2765), pris APRÈS celui-ci : l'ordre et pourquoi y sont.
+# shellcheck source=lib-ci-verrou-poste.sh
+. "$(dirname "${BASH_SOURCE[0]}")/lib-ci-verrou-poste.sh"
 
 ci_dossier_commun() {      # → le répertoire git COMMUN (REJEU_DOSSIER_COMMUN l'impose : tests)
   if [ -n "${REJEU_DOSSIER_COMMUN:-}" ]; then printf '%s\n' "$REJEU_DOSSIER_COMMUN"; return; fi
