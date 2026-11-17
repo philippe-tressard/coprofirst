@@ -294,9 +294,9 @@
 	# d'extension, donc le serveur du front ne lui pose aucun type. Un seul bloc les
 	# sert tous les deux. Contenu : `front/static/.well-known/` (🔒
 	# `test_liens_d_application.py` ; les chemins iOS, `test_apple_app_site_association.py`).
-	# L'empreinte de `assetlinks.json` est publique : celle du certificat de débogage
-	# aujourd'hui ; celle de publication (Google Play) s'ajoutera, et celle de débogage
-	# se retirera alors.
+	# Les empreintes de `assetlinks.json` sont publiques : les clés de signature de Google
+	# Play (#2860), puis celle de débogage du poste. Après une MEP, `precheck-mep.sh
+	# --post-mep` sonde ces deux fichiers sur chaque hôte (P3c, P3d).
 	@liens_d_application path /.well-known/apple-app-site-association /.well-known/assetlinks.json
 	handle @liens_d_application {
 		header >Content-Type "application/json"
