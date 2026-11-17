@@ -30,6 +30,7 @@ treizième section à intercaler au milieu de 780 lignes.
 | `annuaire` | nouveaux membres du conseil syndical et du syndic |
 | `sante` | indicateurs et agenda « Prochaines échéances » (aucune ligne de fil) |
 | `epingles` | endpoint `/flux/epingles`, décompte du bandeau « Épinglé » |
+| `periode` | le fil d'une période (`?du=&au=`, #2834) : le jour de chaque carte |
 | `commun` | contexte de collecte, périmètres, résumés, marqueurs |
 | `schemas` | `FluxItem`, `FluxSante`, `FluxResponse`, `EpinglesCompte` |
 
@@ -67,10 +68,11 @@ aussi, et ils écrivaient leur propre version — plus pauvre. Ils vivent dans
 masque l'origine sans rien apporter (`standards/02` §1, règle 6).
 """
 
-from datetime import timedelta
+from datetime import date, timedelta
+from typing import Optional
 from app.utils import horloge
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Query
 from sqlmodel import Session, select
 
 from app.auth.deps import get_current_user, require_admin
@@ -84,6 +86,7 @@ from . import (
     annuaire,
     communaute,
     epingles,
+    periode,
     points_conseil,
     prestataires,
     publications,
@@ -121,9 +124,13 @@ router.include_router(epingles.router)
 
 @router.get("", response_model=FluxResponse)
 def get_flux(
+    du: Optional[date] = Query(None, description="Premier jour d'une période (AAAA-MM-JJ, Paris)"),
+    au: Optional[date] = Query(None, description="Dernier jour, inclus — 31 jours au plus"),
     session: Session = Depends(get_session),
     user: Utilisateur = Depends(get_current_user),
 ):
+    """Le fil — ou, avec `du` et `au`, celui d'une période, chaque carte à son jour (#2834)."""
+    bornes = periode.valider(du, au)
     now = horloge.maintenant()
     ctx = ContexteFlux(
         session=session,
@@ -159,7 +166,10 @@ def get_flux(
             #  Le badge 🔹 de la ligne, servi (#2633) : le front ne nomme plus le lieu.
             item.meta["perimetre_libelle"] = perimetre_badge(codes)
 
-    items.sort(key=lambda x: x.date, reverse=True)
+    if bornes is not None:
+        items = periode.ranger(items, *bornes)
+    else:
+        items.sort(key=lambda x: x.date, reverse=True)
 
     return FluxResponse(
         items=items,

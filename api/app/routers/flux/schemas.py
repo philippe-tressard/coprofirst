@@ -10,8 +10,8 @@ transmet sous `photos_urls`, partout, sinon la rubrique est la seule à ne pas
 avoir d'aperçu.
 """
 
-from datetime import datetime
-from typing import Optional
+from datetime import date, datetime
+from typing import Literal, Optional
 
 from pydantic import BaseModel
 
@@ -30,6 +30,10 @@ class FluxItem(BaseModel):
     #: « Cet élément me concerne-t-il ? » (#2215) — posé au point d'assemblage du fil
     #: par la règle de l'accès ; `None` pour ce qui ne porte aucun lieu.
     me_concerne: Optional[bool] = None
+    #: Le fil d'une PÉRIODE seulement (`GET /flux?du=&au=`, #2834) : le jour où la carte
+    #: se range, et pourquoi — son échéance, ou sa publication. `None` hors période.
+    jour: Optional[date] = None
+    rattachement: Optional[Literal["echeance", "publication"]] = None
 
 
 class RendezVous(BaseModel):
