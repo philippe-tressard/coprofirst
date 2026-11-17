@@ -95,7 +95,9 @@ def test_un_registre_injoignable_ne_bloque_pas_le_demarrage(registre, monkeypatc
     monkeypatch.setattr(client.httpx, "post", injoignable)
     client.run_demarrage()  # ne lève pas : le démarrage n'en dépend pas
 
-    assert depot.lire().dernier_rapport_le < (horloge.maintenant() - timedelta(days=2)).isoformat()
+    assert (
+        depot.lire().dernier_rapport_le < (horloge.maintenant() - timedelta(hours=48)).isoformat()
+    )
 
 
 def test_l_essai_ne_rapporte_rien(registre, monkeypatch):
