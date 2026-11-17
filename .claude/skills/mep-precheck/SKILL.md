@@ -734,6 +734,11 @@ Ce que le point 16 ci-dessus ne dit pas, et qui sert quand un rejeu ou un job d�
   (#1808) — ne jamais l'effacer à la main. `bash scripts/poste/file-rejeu.sh` réordonne la file
   (`devant`, `retirer`, `purger`) et reprend un verrou orphelin (`reprendre "<motif>"`,
   journalisé). Règles : `scripts/lib/lib-ci-verrou.sh`.
+- **Le verrou du poste** (#2765) : son verrou pris, le rejeu prend son rang au verrou commun
+  des tâches lourdes (`~/.claude/bin/verrou_poste.py`, claude-config#552) et attend qu'un
+  `xcodebuild` ou un Gradle finisse ; `etat-rejeu.sh` dit qui le tient (ligne `Poste`). Absent
+  (CI, autre machine), le rejeu tourne et le dit INCONNU. Ordre des deux verrous et pourquoi :
+  `scripts/lib/lib-ci-verrou-poste.sh`.
 - Lentes et rapides se départagent par la durée **mesurée** au rejeu précédent
   (`rejeu-ci-durees.tsv`), jamais par une liste ; couloirs côte à côte : `REJEU_PARALLELE`
   (défaut : cœurs libres / 4, au plus 8 ; `1` = en série) ; `--tout` joue tout. La trace

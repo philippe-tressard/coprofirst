@@ -67,6 +67,8 @@ _PAR_RAISON: dict[str, tuple[str, ...]] = {
         "github.com",
         "api.github.com",
         "users.noreply.github.com",
+        "fcm.googleapis.com",  # FCM HTTP v1 (#2789)
+        "www.googleapis.com",  # la portée OAuth de FCM (#2789)
         "ghcr.io",
         "api.anthropic.com",
         "api.openai.com",
