@@ -25,7 +25,7 @@
 
 > 🌐 **Le détail de chaque fonctionnalité, et une démonstration à essayer en ligne : [coprofirst.fr](https://coprofirst.fr)** — la [page Démo](https://coprofirst.fr/demo.html) donne les comptes publics (données fictives). Le [manuel utilisateur](docs/manuel-utilisateur.html) décrit chaque écran.
 
-- **Tableau de bord** — la page d'accueil : consignes du conseil syndical, éléments épinglés, kanban des dossiers en cours et fil de l'actualité.
+- **Tableau de bord** — la page d'accueil : consignes du conseil syndical, éléments épinglés, kanban des dossiers en cours et fil de l'actualité. L'API sert aussi le fil d'une **période** (`GET /flux?du=&au=`, 31 jours au plus) pour le carnet des applications : chaque carte y est rangée à son jour — l'échéance de son affaire, sinon sa publication —, et une carte de plusieurs jours revient chaque jour couvert.
 - **Affaires / Demandes** — signalements, actualités et événements datés suivis par le conseil syndical, avec périmètre, destinataires, recherche libre et la pastille « Ce qui me concerne » (aussi sur le fil d'accueil) ; une affaire close reçoit une synthèse chiffrée, rédigée par l'assistant IA puis relue par le conseil.
 - **Kanban & calendrier** — les dossiers longs avancent au kanban (AG · CS · Syndic · Prestataire · Terminé), et ce qui porte une date se lit sous le filtre Calendrier d'Affaires.
 - **Documents** — GED avec catégories et accès par profil (résidents, propriétaires, conseil syndical).
@@ -39,7 +39,7 @@
 - **Reporting CS** — suivi des affaires en cours, relance groupée du syndic et comptes rendus de réunion CS / Syndic validés par les présents, exportables en PDF.
 - **Courriels affaires** — les messages reçus à l'adresse des affaires alimentent les fils, avec leurs pièces jointes (documents et photos, dix au plus, hors signature) ; seuls l'auteur, le conseil et le syndic y écrivent ; le journal garde le verdict de chacun, jamais son texte.
 - **Questions au règlement** — l'assistant IA répond en juriste d'après le règlement de copropriété **et les décisions d'assemblée générale**, en synthèse courte dont chaque affirmation renvoie à un extrait (acte, rubrique, page), détaillée en sections pliées (règlement, AG, réserves), extraits cités et vérifiés ; les PV d'AG se transcrivent par l'assistant — résolutions seules, sans nom — et n'entrent qu'après relecture de l'administration.
-- **Administration** — comptes, pages légales, services (IA, WhatsApp, courriel, décor des jours de fête), nom, logo et palette de couleurs de la résidence (site, courriels, affiches, documents PDF).
+- **Administration** — comptes, pages légales, services (IA, WhatsApp, courriel, décor des jours de fête), télémétrie (chaque accès — web, app iPhone, app Android — éclaté par type d'appareil, jamais son modèle), nom, logo et palette de couleurs de la résidence (site, courriels, affiches, documents PDF).
 - **Périmètres** — arborescence de la copropriété (bâtiments, parking, espaces), sur trois niveaux au plus, pour localiser affaires, actualités, sondages et annonces.
 - **Équipements** — ce sur quoi l'on intervient (ascenseur, chauffage, plomberie…, et l'assurance ou le syndic pour les contrats), administrés dans Admin › Copropriété › Équipements : libellé, icône, abréviation, périmètres concernés. Ils rangent les contrats, le carnet d'entretien et les prestataires ; dans une affaire, l'équipement et le périmètre se proposent l'un l'autre.
 - **Lots et règlement** — la désignation de chaque lot selon l'état descriptif du règlement de copropriété : nature, porte ou place, niveau, circulation qui le dessert et tantièmes par clé de charges — et ce que finance chaque clé —, importés et contrôlés par l'atelier d'import — ou lus dans le règlement par l'assistant IA, qui remplit le même atelier sans rien appliquer ; une cave ou une place est rattachée à sa circulation, pas au bâtiment de son propriétaire, et ce qui vise cette circulation (ascenseur, escalier, caves) concerne qui la paie, même sans habiter le bâtiment. Le conseil les relit dans Copropriété › Lots — constats du patrimoine, périmètres posés à la main, recalcul. La règle : [`specs/architecture/lots-et-perimetres.md`](specs/architecture/lots-et-perimetres.md).
@@ -133,9 +133,12 @@ L'application est accessible sur `http://localhost`.
 > Docker, `cloudflared` — chaque nuit à 03:00, contrôlés chaque matin
 > (`deploiement/standard/correctifs-systeme.sh`).
 > **Contrat d'API.** Chaque version taguée joint aussi `openapi.json` à sa release —
-> le schéma de l'API, exporté de son image publiée —, avec la liste des onglets
-> (`pages.ts`) et les jetons de style (`socle.css`, `palette-sombre.css`) : un client
-> hors du navigateur (l'app iOS) en génère son code. Une installation dit le contrat
+> le schéma de l'API, exporté de son image publiée —, avec les tables que le site
+> partage (`tables-clients.json` : onglets, statuts, jetons de la charte, palettes),
+> les constantes de l'API (`constantes-clients.json`) et le catalogue d'icônes
+> (`icones-svg.json`) : un client hors du navigateur (les apps iOS et Android) en
+> génère son code. La liste brute des onglets (`pages.ts`) y reste jointe tant que
+> l'app iOS la lit (#2686). Une installation dit le contrat
 > qu'elle sert par `GET /config` (`version_contrat`) ; le schéma n'est jamais servi
 > par le site (`api/app/contrat`).
 

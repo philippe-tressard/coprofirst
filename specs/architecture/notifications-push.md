@@ -1,5 +1,13 @@
 # Notifications push — le relais APNs de la plateforme (#2458)
 
+> ⏸ **État au 17/11/2026 : pas encore branché.** Le relais n'existe pas : le transport
+> d'une installation est `transport.RelaisNonBranche`, et rien ne part. L'app iOS garde
+> son client (`POST /appareils`) ; l'app Android a retiré le sien. La fonction reste
+> prévue, pour une prochaine soumission des apps : les **alertes émises par le
+> syndic**, qui sonnent sur le téléphone. Suivi : #2494 (relais APNs, attend la clé
+> `.p8`), #2789 (relais FCM, préalable de licence côté Android) ; côté apps,
+> philippe-tressard/coprofirst-ios#283 et philippe-tressard/coprofirst-android#280.
+
 > 🧭 **Spécification de CIBLE, validée par Philippe le 03/11/2026** (§10). Écrite le
 > 02/11/2026 pour le chantier de l'application iOS native (#2460) ; comme
 > [`multi-coproprietes.md`](multi-coproprietes.md), elle n'est pas historique et se

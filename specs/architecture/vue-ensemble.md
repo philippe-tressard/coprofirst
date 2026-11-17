@@ -59,7 +59,8 @@ clients au serveur, vit **à un seul endroit** : [stack.md § Application mobile
   s'y ajoute, **sans WebView**, reliée par le seul **contrat d'API publié** et sa
   version (#2456) ; ses notifications passent par le **relais APNs** de la plateforme
   ([notifications-push.md](notifications-push.md), #2458).
-- **Android** : hors périmètre, la PWA y suffit.
+- **L'application Android native** (dépôt `philippe-tressard/coprofirst-android`) suit
+  le même modèle : reliée par le seul contrat d'API publié.
 
 ## Décisions d'architecture clés
 
