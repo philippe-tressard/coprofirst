@@ -57,7 +57,6 @@ def list_sondages(
     exiger_acces(user)
     all_s = session.exec(select(Sondage).order_by(Sondage.cree_le.desc())).all()
     accessible = [s for s in all_s if sondage_accessible(s, user)]
-    accessible = garder(accessible, auteurs_masques(session, user))  # #2861
     if not accessible:
         return []
     # Compter les votants distincts par sondage en une seule requête

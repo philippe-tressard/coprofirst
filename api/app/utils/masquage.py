@@ -8,14 +8,17 @@ utilisateur puisse **bloquer** un utilisateur abusif. Philippe a tranché le
 
 ## La règle
 
-- Un résident masque un autre résident : ce que celui-ci publie — idées, annonces,
-  sondages, réponses et commentaires, affaires, suites et messages d'affaire —
-  disparaît de SES listes et de SON fil. Rien n'est supprimé, rien n'est dit à
+- Un résident masque un autre résident : ce que celui-ci signe disparaît de SES
+  listes et de SON fil (voir plus bas). Rien n'est supprimé, rien n'est dit à
   l'autre, et le geste se défait dans le Profil.
 - 🔴 **Le conseil syndical et l'administration voient tout** : ils modèrent, et un
   masque leur cacherait ce qu'on leur signale. Ils ne masquent pas, et ne sont pas
   masquables : ce qu'ils publient (actualités, consignes, réponses officielles) est
   l'information de la copropriété.
+- 🔴 **Seul ce qui est SIGNÉ se masque** : petites annonces, réponses et
+  commentaires, suites et messages d'affaire. Une idée et un sondage ne disent
+  jamais leur auteur ; les retirer avec le reste révélerait qui les a écrits
+  (« tout ce qui disparaît est de lui »). Ils restent, comme les affaires.
 - Masquer n'est pas un droit de lecture : le filtre s'applique APRÈS la visibilité,
   au point où chaque liste est assemblée, par `garder` — jamais une copie.
 

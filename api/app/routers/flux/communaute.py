@@ -76,8 +76,6 @@ def _collecter_sondages(ctx: ContexteFlux) -> list[FluxItem]:
                     lien=lien_sondage(s.id),
                     meta={
                         "sondage_id": s.id,
-                        #  Qui l'a publiée : le fil retire ce qu'un lecteur a masqué (#2861).
-                        "auteur_id": s.auteur_id,
                         "nb_votants": nb_votants,
                         "full_html": s.description,
                         "assiste_ia": s.assiste_ia,
@@ -109,8 +107,6 @@ def _collecter_sondages(ctx: ContexteFlux) -> list[FluxItem]:
                 lien=lien_sondage(s.id),
                 meta={
                     "sondage_id": s.id,
-                    #  Qui l'a publiée : le fil retire ce qu'un lecteur a masqué (#2861).
-                    "auteur_id": s.auteur_id,
                     "nb_votants": nb_votants,
                     "gagnant": gagnant,
                     "full_html": s.description,
@@ -213,8 +209,6 @@ def _collecter_idees(ctx: ContexteFlux) -> list[FluxItem]:
                 lien=lien_element("idee", idee.id),
                 meta={
                     "idee_id": idee.id,
-                    #  Qui l'a publiée : le fil retire ce qu'un lecteur a masqué (#2861).
-                    "auteur_id": idee.auteur_id,
                     "statut": idee.statut,
                     "statut_libelle": libelle_etat(idee.statut),
                     "assiste_ia": idee.assiste_ia,

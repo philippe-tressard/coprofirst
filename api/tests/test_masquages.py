@@ -1,8 +1,9 @@
 """Masquer ce que publie un autre résident — pour soi seul (#2861).
 
 La règle vit dans `utils/masquage` ; ces tests l'éprouvent par les vraies routes :
-le geste (`/masquages`), et chaque liste où il s'applique — idées, réponses, fil,
-suites et messages d'une affaire. Le conseil syndical et l'administration voient
+le geste (`/masquages`), chaque liste où il s'applique — annonces, réponses, fil,
+suites et messages d'une affaire — et celle où il ne s'applique pas : une idée,
+dont l'auteur ne se dit pas. Le conseil syndical et l'administration voient
 tout, ne masquent pas et ne se masquent pas.
 """
 
@@ -11,7 +12,7 @@ from __future__ import annotations
 import pytest
 from sqlmodel import Session
 
-from app.models.communaute import Idee, ReponseCommunaute
+from app.models.communaute import Idee, PetiteAnnonce, ReponseCommunaute
 from app.models.core import RoleUtilisateur
 from app.models.tickets import MessageTicket, TicketEvolution
 from app.utils import masquage
@@ -76,34 +77,40 @@ def test_les_refus(moteur):
 # ── Où il s'applique ──────────────────────────────────────────────────────────
 
 
-def test_les_idees_et_leurs_reponses_du_masque_disparaissent_pour_moi_seul(moteur):
+def test_ce_que_signe_le_masque_disparait_pour_moi_seul(moteur):
     http, _ = client_http(moteur, RoleUtilisateur.propriétaire)
     autre, _ = client_http(moteur, RoleUtilisateur.propriétaire)
     cs, _ = client_http(moteur, RoleUtilisateur.conseil_syndical)
     voisin = _voisin(moteur)
-    (idee_voisin, idee_neutre) = _poser(
-        moteur,
-        Idee(titre="Idée du voisin", description="…", auteur_id=voisin),
-        Idee(titre="Idée neutre", description="…"),
-    )
+    (idee,) = _poser(moteur, Idee(titre="Idée neutre", description="…"))
     _poser(
         moteur,
-        ReponseCommunaute(
-            rubrique="idee", cible_id=idee_neutre, contenu="Réponse du voisin", auteur_id=voisin
-        ),
+        PetiteAnnonce(titre="Annonce du voisin", description="…", auteur_id=voisin),
+        PetiteAnnonce(titre="Annonce neutre", description="…", auteur_id=_voisin(moteur)),
+        ReponseCommunaute(rubrique="idee", cible_id=idee, contenu="Du voisin", auteur_id=voisin),
     )
     http.post("/masquages", json={"auteur_id": voisin})
 
-    assert _titres(http, "/idees") == {"Idée neutre"}
-    reponses = http.get(f"/idees/{idee_neutre}/reponses").json()
-    assert [r["contenu"] for r in reponses] == []
+    assert _titres(http, "/annonces") == {"Annonce neutre"}
+    assert http.get(f"/idees/{idee}/reponses").json() == []
     #  Les autres, et le conseil, voient tout.
-    assert _titres(autre, "/idees") == {"Idée du voisin", "Idée neutre"}
-    assert _titres(cs, "/idees") == {"Idée du voisin", "Idée neutre"}
-    #  Le fil aussi : la carte d'idée dit son auteur, et le fil la retire.
+    tout = {"Annonce du voisin", "Annonce neutre"}
+    assert _titres(autre, "/annonces") == tout
+    assert _titres(cs, "/annonces") == tout
+    #  Le fil aussi : la carte d'annonce dit son auteur, et le fil la retire.
     fil = {i["titre"] for i in http.get("/flux").json()["items"]}
-    assert "Idée du voisin" not in fil and "Idée neutre" in fil
-    assert idee_voisin  # posée, et seulement masquée
+    assert "Annonce du voisin" not in fil and "Annonce neutre" in fil
+
+
+def test_une_idee_dont_l_auteur_ne_se_dit_pas_reste(moteur):
+    """🔴 Une idée ne dit jamais son auteur : la retirer avec le reste révélerait
+    qui l'a écrite. Elle reste, au fil comme dans sa liste."""
+    http, _ = client_http(moteur, RoleUtilisateur.propriétaire)
+    voisin = _voisin(moteur)
+    _poser(moteur, Idee(titre="Idée du voisin", description="…", auteur_id=voisin))
+    http.post("/masquages", json={"auteur_id": voisin})
+    assert _titres(http, "/idees") == {"Idée du voisin"}
+    assert "Idée du voisin" in {i["titre"] for i in http.get("/flux").json()["items"]}
 
 
 def test_les_suites_et_messages_du_masque_quittent_l_affaire_qui_reste(moteur):
@@ -131,9 +138,9 @@ def test_un_masque_devenu_conseiller_redevient_visible(moteur):
     l'information de la copropriété, qui ne se masque pas."""
     http, _ = client_http(moteur, RoleUtilisateur.propriétaire)
     voisin = _voisin(moteur)
-    _poser(moteur, Idee(titre="Idée du voisin", description="…", auteur_id=voisin))
+    _poser(moteur, PetiteAnnonce(titre="Annonce du voisin", description="…", auteur_id=voisin))
     http.post("/masquages", json={"auteur_id": voisin})
-    assert _titres(http, "/idees") == set()
+    assert _titres(http, "/annonces") == set()
     with Session(moteur) as s:
         from app.models.core import Utilisateur
 
@@ -141,4 +148,4 @@ def test_un_masque_devenu_conseiller_redevient_visible(moteur):
         u.roles_json = "conseil_syndical"
         s.add(u)
         s.commit()
-    assert _titres(http, "/idees") == {"Idée du voisin"}
+    assert _titres(http, "/annonces") == {"Annonce du voisin"}
