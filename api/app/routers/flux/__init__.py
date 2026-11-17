@@ -69,7 +69,7 @@ masque l'origine sans rien apporter (`standards/02` §1, règle 6).
 """
 
 from datetime import date, timedelta
-from typing import Optional
+from typing import Annotated, Optional
 from app.utils import horloge
 
 from fastapi import APIRouter, Depends, Query
@@ -124,8 +124,12 @@ router.include_router(epingles.router)
 
 @router.get("", response_model=FluxResponse)
 def get_flux(
-    du: Optional[date] = Query(None, description="Premier jour d'une période (AAAA-MM-JJ, Paris)"),
-    au: Optional[date] = Query(None, description="Dernier jour, inclus — 31 jours au plus"),
+    du: Annotated[
+        Optional[date], Query(description="Premier jour d'une période (AAAA-MM-JJ, Paris)")
+    ] = None,
+    au: Annotated[
+        Optional[date], Query(description="Dernier jour, inclus — 31 jours au plus")
+    ] = None,
     session: Session = Depends(get_session),
     user: Utilisateur = Depends(get_current_user),
 ):
