@@ -36,6 +36,7 @@ from app.models.core import Utilisateur
 from app.models.points_conseil import A_VALIDER, VALIDE, PointConseil, PresentPoint
 from app.models.tickets import Ticket
 from app.utils.config_site import config_site
+from app.utils.palettes import CLE_PALETTE
 from app.utils.dates_fr import date_courte, datetime_longue
 from app.utils.liens import nom_site
 from app.utils.logo import logo_televerse_png
@@ -144,6 +145,7 @@ def pdf_du_point(
         document(session, point, user, projet=projet),
         site_nom=nom_site(site.get("site_nom")),
         logo_png=logo_televerse_png(session),
+        palette=site.get(CLE_PALETTE),
     )
 
 
