@@ -51,14 +51,10 @@ IDENTIFIANT_APP = "fr.coprofirst.app"
 
 #: La clé de signature d'application de Google Play, celle que la Play Console met
 #: dans son propre extrait d'`assetlinks.json` (#2860).
-EMPREINTE_GOOGLE_PLAY = (
-    "6F:9E:CD:9F:D5:30:CC:3B:18:AE:5E:70:D9:B6:41:90:C2:6A:7E:09:0D:F3:28:92:53:B4:BC:E8:9C:A9:59:6C"
-)
+EMPREINTE_GOOGLE_PLAY = "6F:9E:CD:9F:D5:30:CC:3B:18:AE:5E:70:D9:B6:41:90:C2:6A:7E:09:0D:F3:28:92:53:B4:BC:E8:9C:A9:59:6C"
 
 #: Celle du certificat de débogage du poste : pour les essais, toujours en dernier.
-EMPREINTE_DEBOGAGE = (
-    "DC:C2:DA:73:1A:A7:D7:FB:39:BA:36:67:DC:24:13:45:8D:B8:0F:78:C1:BA:CD:A8:90:86:9B:79:04:9E:1A:B1"
-)
+EMPREINTE_DEBOGAGE = "DC:C2:DA:73:1A:A7:D7:FB:39:BA:36:67:DC:24:13:45:8D:B8:0F:78:C1:BA:CD:A8:90:86:9B:79:04:9E:1A:B1"
 
 #: Une empreinte SHA-256 telle qu'Android l'écrit : 32 octets hexadécimaux en
 #: majuscules, séparés par « : ».
