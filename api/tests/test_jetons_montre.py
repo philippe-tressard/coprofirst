@@ -13,7 +13,8 @@ from datetime import timedelta
 import pytest
 from sqlmodel import Session, select
 
-from app.auth.jetons_montre import DUREE_JOURS, MONTRES_PAR_COMPTE, purger_echus
+from app.auth.jetons_appareil import PORTEES, purger_echus
+from app.auth.jetons_montre import MONTRES_PAR_COMPTE
 from app.auth.jetons_rafraichissement import fermer_apres_rejeu
 from app.models.core import Notification, RoleUtilisateur, Utilisateur
 from app.models.jetons import JetonMontre
@@ -23,6 +24,8 @@ from tests.aides_http import base_http, client_http
 from tests.aides_sources import routes_declarees
 
 PROPRIO = RoleUtilisateur.propriétaire
+#: La durée de vie du jeton d'une montre — une ligne de la table commune (#2770).
+DUREE_JOURS = PORTEES["montre"].duree.days
 
 
 @pytest.fixture()

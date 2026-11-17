@@ -63,6 +63,16 @@ export const PAGES_ROLES: PageDef[] = [
 					"Créez une annonce à afficher dans le hall des bâtiments : PDF à la charte de la résidence, envoyé par mail aux membres du CS concernés, puis conservé dans l'historique.",
 			},
 			{
+				//  L'écran du hall (#2770) : une Apple TV appairée qui fait défiler les
+				//  affiches de son périmètre. Un APPAREIL, pas une personne : le conseil
+				//  l'appaire, voit sa dernière lecture et le retire.
+				id: 'ecrans',
+				route: '/espace-cs/ecrans',
+				label: '\u{1F4FA} Écrans du hall',
+				descriptif:
+					"Les écrans qui affichent les annonces dans le hall : appairez-en un avec le code qu'il affiche, voyez quand il a lu les annonces pour la dernière fois, retirez-le s'il est perdu ou remplacé.",
+			},
+			{
 				id: 'annuaire',
 				route: '/espace-cs/annuaire',
 				label: '\u{1F4D2} Annuaire CS & Syndic',

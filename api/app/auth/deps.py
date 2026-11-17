@@ -1,9 +1,10 @@
 from collections.abc import Iterable
 
-from fastapi import Depends, HTTPException, Cookie, Header, status
+from fastapi import Depends, HTTPException, Cookie, Request, status
+from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from sqlmodel import Session
 
-from app.auth.jetons_montre import compte_du_jeton
+from app.auth.jetons_appareil import JetonLu, jeton_lu, noter_lecture, route_ouverte
 from app.auth.jwt import decode_token, empreinte_du_compte
 from app.database import get_session
 from app.utils import horloge
@@ -15,6 +16,7 @@ from app.models.core import (
     RoleUtilisateur,
     Utilisateur,
 )
+from app.models.ecrans import Ecran
 from app.auth.operateur import est_operateur
 
 
@@ -58,27 +60,88 @@ def get_current_user(user: Utilisateur = Depends(_get_current_user)) -> Utilisat
     return user
 
 
+#: Le jeton d'un APPAREIL appairé — montre, écran de hall (#2770, #2771) —, présenté en
+#: `Authorization: Bearer`. Déclaré au contrat comme schéma de sécurité `JetonAppareil` ;
+#: `auto_error=False` : son absence se refuse ici, par le même 401 que le reste.
+_JETON_APPAREIL = HTTPBearer(
+    auto_error=False,
+    scheme_name="JetonAppareil",
+    description="Le jeton d'un appareil appairé (montre, écran de hall) : une portée, "
+    "et seulement les routes qu'elle ouvre.",
+)
+
+
+def _chemin_demande(request: Request) -> str:
+    """Le chemin DEMANDÉ, tel que l'API le sert — pas celui que déclare le routeur, que
+    l'inclusion d'un routeur dans un autre raccourcit."""
+    chemin = request.scope.get("path", "")
+    racine = request.scope.get("root_path", "")
+    return chemin[len(racine) :] if racine and chemin.startswith(racine) else chemin
+
+
+def _appareil_autorise(
+    request: Request,
+    identifiants: HTTPAuthorizationCredentials | None,
+    session: Session,
+) -> JetonLu:
+    """🔴 LA porte des jetons d'appareil : la seule fonction qui en accepte un.
+
+    Jeton absent, inconnu, échu, retiré, ou sujet qui ne doit plus rien ouvrir → 401.
+    Jeton valide sur une route que sa portée n'ouvre pas → 403 : la table
+    (`auth/jetons_appareil.PORTEES`) est relue à chaque requête, sur le chemin demandé,
+    défaut fermé. La dernière lecture n'est notée qu'après.
+    🔒 `test_jetons_appareil.py` (toutes les routes, chaque portée).
+    """
+    maintenant = horloge.maintenant()
+    lu = jeton_lu(session, identifiants.credentials, maintenant) if identifiants else None
+    if lu is None:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Non authentifié")
+    if not route_ouverte(lu.portee, request.method, _chemin_demande(request)):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN, detail="Hors de la portée de cet appareil"
+        )
+    noter_lecture(session, lu, maintenant)
+    return lu
+
+
 def lecteur_de_la_cloche(
+    request: Request,
     access_token: str | None = Cookie(default=None),
-    authorization: str | None = Header(default=None),
+    identifiants: HTTPAuthorizationCredentials | None = Depends(_JETON_APPAREIL),
     session: Session = Depends(get_session),
 ) -> Utilisateur:
-    """La session par cookie, ou le jeton d'une MONTRE (#2771) — pour `GET /notifications` SEUL.
+    """La session par cookie, ou le jeton d'une MONTRE (#2771) — pour `GET /notifications`.
 
-    🔴 C'est la seule dépendance qui lit `Authorization: Bearer <jeton de montre>` : la
-    portée d'une montre (lire la cloche, rien d'autre) tient à ce qu'aucune autre route ne
-    la prenne. Un cookie présent l'emporte et se juge comme partout (`_get_current_user`) ;
-    un jeton de montre se juge par `auth/jetons_montre.compte_du_jeton` (échu, retiré,
-    compte inactif ou empreinte changée → 401). 🔒 `test_jetons_montre.py`.
+    Un cookie présent l'emporte et se juge comme partout (`_get_current_user`). Sinon le
+    jeton passe par `_appareil_autorise` : seule la portée « montre » ouvre cette route,
+    et son sujet est le compte.
     """
     if access_token:
         return _get_current_user(access_token, session)
-    schema, _, brut = (authorization or "").partition(" ")
-    if schema.lower() == "bearer":
-        user = compte_du_jeton(session, brut.strip(), horloge.maintenant())
-        if user is not None:
-            return user
-    raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Non authentifié")
+    sujet = _appareil_autorise(request, identifiants, session).sujet
+    if not isinstance(sujet, Utilisateur):  # défaut fermé, si la table s'égarait
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN, detail="Hors de la portée de cet appareil"
+        )
+    return sujet
+
+
+def ecran_appaire(
+    request: Request,
+    identifiants: HTTPAuthorizationCredentials | None = Depends(_JETON_APPAREIL),
+    session: Session = Depends(get_session),
+) -> Ecran:
+    """L'écran de hall qui présente son jeton (#2770) — aucune personne derrière lui.
+
+    Aucune session par cookie ici : un écran n'a pas de compte, et une personne connectée
+    lit les affiches par l'Espace CS, avec ce qu'il montre de plus.
+    """
+    sujet = _appareil_autorise(request, identifiants, session).sujet
+    if not isinstance(sujet, Ecran):  # défaut fermé, si la table s'égarait
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN, detail="Hors de la portée de cet appareil"
+        )
+    return sujet
 
 
 def utilisateur_ou_anonyme(

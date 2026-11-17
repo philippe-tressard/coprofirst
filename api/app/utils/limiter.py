@@ -133,3 +133,15 @@ LIMITE_INSCRIPTION_INSTALLATION = "5/hour"
 #: noms courants jusqu'à dresser la liste des copropriétés hébergées. Un résident
 #: qui se trompe deux ou trois fois reste loin des deux seuils.
 LIMITE_AIGUILLAGE = "10/minute;30/hour"
+
+#: Un écran de hall qui **demande un appairage** (`POST /ecrans/appairage`, #2770) :
+#: public, et il ÉCRIT une demande. Un écran légitime en demande une, et une autre
+#: toutes les dix minutes si personne ne l'a confirmée ; le plafond à l'heure borne le
+#: remplissage, que `appairage_ecran.DEMANDES_EN_COURS_MAX` arrête de toute façon.
+LIMITE_APPAIRAGE = "5/minute;30/hour"
+
+#: Un écran qui **interroge** pour savoir si son appairage est confirmé (#2770). Le
+#: code d'appareil est un secret de 256 bits, que la limite ne protège pas : elle
+#: protège le serveur. L'intervalle imposé est de 5 s (12 par minute) ; au-delà, le
+#: serveur répond déjà `ralentir` (RFC 8628 §3.5).
+LIMITE_INTERROGATION_APPAIRAGE = "30/minute"

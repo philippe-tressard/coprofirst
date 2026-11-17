@@ -167,9 +167,13 @@ Chaque notion a **une** porte ; le détail, les pièges et les exceptions sont d
 | `require_operateur` | Supervision technique et base (`/admin/maintenance/sante`, `/admin/db/*`…) — l'opérateur de la plateforme, pas l'administrateur de la copropriété (#1750). Sur une instance commune, désigné par l'exploitant (`operateurs` de la déclaration) : `auth/operateur.roles_effectifs` |
 | `require_proprietaire` | Fonctions propriétaires |
 | `require_questions_reglement` | Questions au règlement : `require_proprietaire`, puis la case de l'admin qui ouvre l'usage aux copropriétaires (le CS passe toujours) |
-| `lecteur_de_la_cloche` | `GET /notifications` SEUL : la session, ou le jeton d'une montre (`auth/jetons_montre`, lecture de la cloche, révocable, expirant, #2771) |
+| `lecteur_de_la_cloche` | `GET /notifications` : la session, ou le jeton d'une montre (portée « montre », #2771) |
+| `ecran_appaire` | Ce que lit un écran de hall appairé : ses affiches et leurs images (portée « écran », #2770) |
 
-Ces sept-là refusent (401 ou 403). La délégation n'en a pas : elle est en **lecture seule**
+Ces huit-là refusent (401 ou 403). Les deux dernières lisent un **jeton d'appareil** par UNE
+porte, `deps._appareil_autorise`, qui relit à chaque requête la table des routes ouvertes par
+portée, `auth/jetons_appareil.PORTEES` — défaut fermé ; ouvrir une route à un appareil est une
+ligne de cette table (🔒 `test_jetons_appareil.py` balaie toutes les routes, chaque portée). La délégation n'en a pas : elle est en **lecture seule**
 (#1534) — l'aidant lit ce que lit la personne aidée, par `utils/delegations_actives`.
 🔒 `test_autorisation.py` refuse une dépendance qu'aucune route ne prend. Les
 **prédicats** disent sans refuser ; ils s'appellent, jamais ne se redérivent :

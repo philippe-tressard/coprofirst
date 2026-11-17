@@ -79,6 +79,9 @@ _DEPS_AUTORISATION = {
     #  La cloche seule : la session, ou le jeton d'une montre (#2771) —
     #  `test_jetons_montre.py` refuse qu'une autre route la prenne.
     "lecteur_de_la_cloche",
+    #  L'écran de hall appairé (#2770) : son jeton, sa portée — `test_jetons_appareil.py`
+    #  balaie toutes les routes et refuse qu'une route hors de la table le prenne.
+    "ecran_appaire",
 }
 
 _VERBES = {"get", "post", "put", "patch", "delete"}
@@ -139,6 +142,14 @@ _PUBLICS_ASSUMES = {
     ("points_conseil_validation.py", "lire_par_lien"),
     ("points_conseil_validation.py", "valider_par_lien"),
     ("points_conseil_validation.py", "commenter_par_lien"),
+    #  L'appairage d'un écran de hall (#2770, RFC 8628) : l'écran n'a encore AUCUN
+    #  jeton, c'est ce qu'il vient chercher. La demande ne rend que deux codes, rien de
+    #  l'installation ; le jeton n'est rendu qu'après la confirmation par un membre du
+    #  conseil CONNECTÉ (`POST /ecrans`, `require_cs_or_admin`), à qui détient le code
+    #  d'appareil (256 bits). Débit plafonné, demandes en attente bornées — tenu par
+    #  `test_ecrans.py`.
+    ("ecrans.py", "demander_appairage"),
+    ("ecrans.py", "interroger_appairage"),
     #  🔴 Les quatre routes de `rapports_scripts.py` ONT QUITTÉ CETTE LISTE le
     #  19/09/2026 (#1028). Elles n'étaient pas publiques : elles sont
     #  authentifiées par une **clé partagée**, et les ranger ici en faisait un

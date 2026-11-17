@@ -61,3 +61,5 @@ from app.models.residence import RegleResidence as RegleResidence
 from app.models.notifications import Notification as Notification
 from app.models.appareils import Appareil as Appareil
 from app.models.reglages import ConfigSite as ConfigSite
+from app.models.ecrans import AppairageEcran as AppairageEcran
+from app.models.ecrans import Ecran as Ecran

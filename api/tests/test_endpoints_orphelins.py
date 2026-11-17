@@ -48,6 +48,11 @@ SANS_CONSOMMATEUR_FRONT = {
     "contrat publié (#2456) — la PWA n'a pas de montre (#2771)",
     "/montres/{montre_id}": "idem : le retrait d'une montre, à la déconnexion du téléphone (#2771)",
     "/montres/{montre_id}/renouveler": "idem : le renouvellement du jeton avant échéance (#2771)",
+    "/ecrans/appairage": "appelée par l'écran de hall (app Apple TV) qui demande son appairage, "
+    "client généré du contrat publié (#2456) — la PWA n'est pas un écran (#2770)",
+    "/ecrans/appairage/jeton": "idem : l'écran échange son code d'appareil contre son jeton (#2770)",
+    "/ecrans/moi/affiches": "idem : ce que lit l'écran de hall appairé, par son jeton (#2770)",
+    "/ecrans/moi/affiches/{affiche_id}/images/{rang}": "idem : les images de ses affiches (#2770)",
     "/notifications/supprimer-selection": "la sélection de l'application iOS (« Supprimer (n) », "
     "#2535) ; le site n'offre que « Supprimer les lues » et la corbeille d'une ligne",
     "/prestataires/releves/{r_id}/photo/{nom}": "idem, pour `releve_compteur.photo_url` — le GET passait auparavant par "

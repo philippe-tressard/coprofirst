@@ -28,12 +28,14 @@ logger = logging.getLogger("hostachy.api")
 def _purger_les_jetons() -> None:
     """Les jetons de rafraîchissement échus — les échangés restent jusqu'à leur
     expiration : c'est par eux qu'un jeton rejoué se reconnaît."""
-    from app.auth.jetons_montre import purger_echus
+    from app.auth.appairage_ecran import purger_demandes
+    from app.auth.jetons_appareil import purger_echus
     from app.auth.jetons_rafraichissement import purger
 
     with contexte.nouvelle_session() as session:
         purger(session, horloge.maintenant())
-        purger_echus(session, horloge.maintenant())  # les montres (#2771)
+        purger_echus(session, horloge.maintenant())  # les jetons d'appareil (#2770, #2771)
+        purger_demandes(session, horloge.maintenant())  # les appairages d'écran échus (#2770)
         session.commit()
 
 
