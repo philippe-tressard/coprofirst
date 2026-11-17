@@ -93,6 +93,23 @@ CONSTANTES: dict[str, Constante] = {
         "les classes d'appareil qu'un client peut déclarer à /telemetry/collect (`appareil`), "
         "par canal d'accès — jamais un modèle ni une version de système (#2774)",
     ),
+    "modesSaisie": Constante(
+        "app.utils.saisie_affaire",
+        "MODES",
+        "les modes de saisie d'une affaire que le serveur enregistre, dans l'ordre (#2686)",
+    ),
+    "sectionsDeBase": Constante(
+        "app.utils.saisie_affaire",
+        "SECTIONS_DE_BASE",
+        "les sections que la saisie Essentielle montre toujours, quelle que soit la "
+        "catégorie (#2686)",
+    ),
+    "sectionsEssentiellesParCategorie": Constante(
+        "app.utils.saisie_affaire",
+        "SECTIONS_ESSENTIELLES_PAR_CATEGORIE",
+        "ce que chaque catégorie ajoute aux sections de base en saisie Essentielle ; une "
+        "catégorie absente n'ajoute rien (#2686)",
+    ),
     "noteMin": Constante("app.utils.avis", "NOTE_MIN", "la note la plus basse d'un avis"),
     "noteMax": Constante("app.utils.avis", "NOTE_MAX", "la note la plus haute d'un avis"),
     "noteRemarque": Constante(

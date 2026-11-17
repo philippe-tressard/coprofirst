@@ -454,6 +454,7 @@ Attendre le tick, puis :
 | P2 | Site debout | `curl -s -o /dev/null -w '%{http_code}' https://5hostachy.fr/api/health` | 200 |
 | P3 | Version servie = version bumpée | Voir « P3 » ci-dessous — l'ancienne commande ne pouvait **pas** fonctionner | La version de `front/package.json`, ou `INCONNU` (jamais vide) |
 | P3b | Version publiée par l'API = version bumpée | `GET /api/config`, clé `version_logicielle` (#2833) : ce que les apps lisent pour juger « au moins vX.Y.Z » | La release de l'image de l'API, ou `INCONNU` (clé absente, mesure impossible) |
+| P3c, P3d | Les fichiers d'association des apps (`apple-app-site-association`, `assetlinks.json`), sur la production (P3c) et la démo (P3d) | `--post-mep` : chaque hôte jugé contre SA version (`GET /config`, puis le tag `v<version>`), #2860 | 200, `application/json`, sans redirection, identique au fichier de sa version ; version illisible → INCONNU |
 | P4 | Image du service touché reconstruite | Point 12 (`--post-mep` le rejoue) : images bâties avec le commit du service, conteneur sur le manifeste de l'image étiquetée | Les deux faits vrais pour chaque service |
 | P5 | Migrations appliquées | `docker logs hostachy_api --since 10m \| grep -iE 'alembic\|revision'` | Pas d'erreur ; head atteint |
 | P6 | Aucune régression visible en logs | `docker logs hostachy_api --since 10m \| grep -cE "<MOTIF_ERREURS_API>"` — le motif se lit dans `precheck-mep.sh`, jamais recopié : il compte aussi les erreurs de bibliothèque sans niveau (#1066) | 0 |

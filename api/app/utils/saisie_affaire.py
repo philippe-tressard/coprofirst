@@ -16,7 +16,9 @@ le 08/11/2026 : « selon mon rôle » est retiré du Profil). Le défaut reste c
 
 C'est une règle d'affichage que le site ET l'app iOS montrent : elle se calcule
 ici et se sert dans `UserRead.saisie_affaire_effective`, le front la LIT
-(`standards/09` §8, `lint:regles-partagees`).
+(`standards/09` §8, `lint:regles-partagees`). Les apps génèrent `MODES`, `SECTIONS_DE_BASE`
+et `SECTIONS_ESSENTIELLES_PAR_CATEGORIE` depuis `constantes-clients.json` (#2686) — jamais
+depuis ce fichier.
 """
 
 from __future__ import annotations

@@ -15,5 +15,11 @@
 		"GHSA-pfhg-q3qv-9q6r et GHSA-27mw-82g8-phjj (SvelteKit) sont LEVÉES le 28/10/2026 : @sveltejs/kit 3.1 est monté (#2205). Le même lot a retiré l'override `cookie: ^0.7.2` (kit 3 dépend de cookie 2 et appelle `parseCookie`, que la 0.7 n'a pas : le serveur plantait à la première requête).",
 		"GHSA-gcqx-w48m-w2h4 (deepmerge, chaîne de construction seule) est LEVÉE le 16/11/2026 : GitHub a RETIRÉ l'avis ce jour-là (`withdrawn_at`), et `npm audit` ne le rend plus — deepmerge 4.3.1 reste dans l'arbre, rien n'a été monté (#2763, où le contrôle a refusé l'exception devenue inutile)."
 	],
-	"exceptions": {}
+	"exceptions": {
+		"GHSA-fc5q-39xc-vjpf": {
+			"motif": "ReDoS de picomatch sur un motif extglob répété qu'on lui DONNE. Ici, picomatch n'est lu que par la chaîne de construction (vite, svelte-check par fdir, vite-plugin-pwa par tinyglobby et workbox-build), sur des motifs écrits dans le dépôt : le serveur SSR n'en importe rien (mesuré le 17/11/2026 : `build/` ne le nomme pas, et la fermeture des dépendances de ce qu'il importe ne l'atteint pas). Aucun motif ne vient d'un utilisateur. Aucune version corrigée n'existe (≤ 4.0.7 touchées, 4.0.7 la dernière).",
+			"leveeSi": "picomatch publie une version corrigée (> 4.0.7) : `npm audit fix` ou un override, puis retirer cette exception",
+			"revoirLe": "2026-12-17"
+		}
+	}
 }

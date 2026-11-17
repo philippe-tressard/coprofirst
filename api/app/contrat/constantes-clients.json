@@ -1,6 +1,6 @@
 {
   "format": 1,
-  "version": "1.3.0",
+  "version": "1.4.0",
   "constantes": {
     "appareilsParCanal": {
       "source": "api/app/utils/canaux_audience.py#APPAREILS_PAR_CANAL",
@@ -155,6 +155,14 @@
       "quoi": "le nombre de caractères qu'un mot de passe doit atteindre (#2755)",
       "valeur": 8
     },
+    "modesSaisie": {
+      "source": "api/app/utils/saisie_affaire.py#MODES",
+      "quoi": "les modes de saisie d'une affaire que le serveur enregistre, dans l'ordre (#2686)",
+      "valeur": [
+        "essentielle",
+        "complete"
+      ]
+    },
     "motifImage": {
       "source": "api/app/utils/fichiers.py#_EXTENSIONS_IMAGE",
       "quoi": "le motif d'un nom ou d'une URL de fichier qui s'affiche en vignette (#2764)",
@@ -199,6 +207,50 @@
         "https",
         "mailto"
       ]
+    },
+    "sectionsDeBase": {
+      "source": "api/app/utils/saisie_affaire.py#SECTIONS_DE_BASE",
+      "quoi": "les sections que la saisie Essentielle montre toujours, quelle que soit la catégorie (#2686)",
+      "valeur": [
+        "titre",
+        "nature",
+        "perimetre",
+        "description"
+      ]
+    },
+    "sectionsEssentiellesParCategorie": {
+      "source": "api/app/utils/saisie_affaire.py#SECTIONS_ESSENTIELLES_PAR_CATEGORIE",
+      "quoi": "ce que chaque catégorie ajoute aux sections de base en saisie Essentielle ; une catégorie absente n'ajoute rien (#2686)",
+      "valeur": {
+        "panne": [
+          "pieces_jointes",
+          "mise_en_avant"
+        ],
+        "sinistre": [
+          "pieces_jointes",
+          "mise_en_avant"
+        ],
+        "nuisance": [
+          "pieces_jointes"
+        ],
+        "espaces_verts": [
+          "pieces_jointes"
+        ],
+        "acces_accueil": [
+          "pieces_jointes"
+        ],
+        "entretien": [
+          "quand"
+        ],
+        "etude_travaux": [
+          "quand"
+        ],
+        "actualite": [
+          "quand",
+          "destinataires",
+          "diffusion"
+        ]
+      }
     },
     "typeNotificationParDefaut": {
       "source": "api/app/utils/types_notification.py#TYPE_PAR_DEFAUT",

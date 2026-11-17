@@ -14,7 +14,8 @@
 #  les deux preuves que le post-check faisait À LA MAIN sur le RPi :
 #    P1 — l'actif a DÉPLOYÉ le commit de `origin/main` (ligne `Déployé:`) ;
 #    P3 — le site SERT la version de `origin/main` (bundle réellement reçu) ;
-#    P3b — l'API la PUBLIE dans `GET /config` (`version_logicielle`, #2833).
+#    P3b — l'API la PUBLIE dans `GET /config` (`version_logicielle`, #2833) ;
+#    P3c — chaque hôte sert les fichiers d'association des apps de SA version (#2860).
 #  Il n'écrit jamais la trace du pré-check : il n'autorise aucun push.
 #
 #  Sourcé par `precheck-mep.sh`, qui fournit `sur`, `rapporter`, `SITE`,
@@ -73,6 +74,82 @@ verdict_version_servie() {  # $1 = version de origin/main, $2 = sortie de check-
   esac
 }
 
+#  ── P3c — les fichiers d'association des apps, sur CHAQUE hôte (#2860) ─────────
+#
+#  🔴 POURQUOI (17/11/2026). `assetlinks.json` rendait 404 sur la démo pendant que
+#  l'AASA y rendait 200, et la clôture de #2788 ne l'a pas vu : rien ne le sondait
+#  après une MEP. Un fichier absent, mal typé ou redirigé ne fait aucune erreur : le
+#  lien reste au navigateur (`test_liens_d_application.py`).
+#
+#  Chaque hôte se juge contre SA version : la démo monte seule à 04:30 et sert une
+#  version plus ancienne que la production pendant des heures — la comparer à
+#  `origin/main` crierait à chaque MEP. Sa version se lit dans `GET /config`
+#  (`version_logicielle`, #2833) ; le fichier attendu, au tag `v<version>`. Une
+#  version illisible (installation d'avant v3.114.0) rend INCONNU, jamais OK.
+
+#: Les hôtes sondés : la production, et la démo publique (`api/app/demo/personnages.DOMAINE`).
+HOTE_DEMO="https://demo.coprofirst.fr"
+#: Les fichiers d'association, ceux du matcher `@liens_d_application` du `Caddyfile`.
+FICHIERS_ASSOCIATION=(apple-app-site-association assetlinks.json)
+
+verdict_association() {     # $1 = code HTTP, $2 = type servi, $3 = identique au fichier de sa version (oui/non/"")
+  #  PURE. Les deux systèmes exigent 200, `application/json` et AUCUNE redirection :
+  #  curl ne suit pas, donc une redirection est un 30x, refusé comme tel.
+  case "${1:-}" in "" | 000) echo INCONNU; return ;; esac
+  [ "$1" = 200 ] || { echo FAIL; return; }
+  case "${2:-}" in application/json*) ;; *) echo FAIL; return ;; esac
+  case "${3:-}" in
+    oui) echo OK ;;
+    non) echo FAIL ;;   # servi, mais pas celui de sa version : empreinte manquante, cache
+    *)   echo INCONNU ;;
+  esac
+}
+
+ref_de_version() {          # $1 = version publiée → le tag qui la porte, ou rien
+  [ -n "${1:-}" ] || return 0
+  git rev-parse -q --verify "refs/tags/v$1^{commit}" >/dev/null 2>&1 && { echo "v$1"; return; }
+  #  Juste après la MEP, le tag peut ne pas être encore posé (`tag-version.sh`) :
+  #  `origin/main` porte alors la version, et elle seule.
+  [ "$(git show origin/main:front/package.json 2>/dev/null | grep -m1 '"version"' | cut -d'"' -f4)" = "$1" ] \
+    && echo origin/main
+}
+
+sonder_association() {      # $1 = hôte, $2 = ref, $3 = fichier → « code|type|identique »
+  local servi code type identique=""
+  servi=$(mktemp)
+  read -r code type < <(curl -s -o "$servi" -w '%{http_code} %{content_type}\n' --max-time 15 \
+    "$1/.well-known/$3" 2>/dev/null)
+  if [ -n "$2" ] && [ "${code:-}" = 200 ]; then
+    identique=$(git show "$2:front/static/.well-known/$3" 2>/dev/null | python3 -c '
+import json, sys
+try:
+    attendu = json.load(sys.stdin)
+    print("oui" if json.load(open(sys.argv[1], encoding="utf-8")) == attendu else "non")
+except Exception:
+    print("")' "$servi" 2>/dev/null)
+  fi
+  rm -f "$servi"
+  echo "${code:-}|${type:-}|${identique:-}"
+}
+
+precheck_associations() {
+  local hote numero version ref nom code type identique
+  for hote in "$SITE" "$HOTE_DEMO"; do
+    [ "$hote" = "$SITE" ] && numero=P3c || numero=P3d
+    version=$(curl -s --max-time 15 "$hote/api/config" 2>/dev/null | python3 -c \
+      'import json,sys
+try: print(json.load(sys.stdin).get("version_logicielle") or "")
+except Exception: print("")' 2>/dev/null)
+    ref=$(ref_de_version "$version")
+    for nom in "${FICHIERS_ASSOCIATION[@]}"; do
+      IFS='|' read -r code type identique <<< "$(sonder_association "$hote" "$ref" "$nom")"
+      rapporter "$numero" "$(verdict_association "$code" "$type" "$identique")" \
+                "Lien d'application : ${nom}" \
+                "${hote#https://} version=${version:-illisible} code=${code:-?} type=${type:-?} identique=${identique:-?}"
+    done
+  done
+}
+
 precheck_points_post() {
   git fetch origin --quiet 2>/dev/null
   local attendu deploye version ligne
@@ -109,6 +186,7 @@ try: print(json.load(sys.stdin).get("version_logicielle") or "INCONNU: clé abse
 except Exception as e: print(f"INCONNU: {type(e).__name__}")' 2>/dev/null)
   rapporter P3b "$(verdict_version_servie "$version" "${publiee:-INCONNU: python3 absent}")" \
             "Version publiée par l'API (GET /config)" "attendue=${version:-?} publiée=${publiee:-?}"
+  precheck_associations
 }
 
 #  ── Auto-test : les décisions se vérifient sans réseau ni RPi ──────────────
@@ -147,8 +225,16 @@ if [ "${1:-}" = "--selftest" ]; then
   t "extracteur en INCONNU"                      INCONNU verdict_version_servie 2.49.2 "INCONNU: https://5hostachy.fr/ a répondu HTTP 403"
   t "extracteur muet"                            INCONNU verdict_version_servie 2.49.2 ""
   t "version attendue illisible"                 INCONNU verdict_version_servie "" 2.49.2
+  t "association servie, celle de sa version"    OK      verdict_association 200 "application/json" oui
+  t "association servie mais périmée"            FAIL    verdict_association 200 "application/json" non
+  #  🔴 Le 17/11/2026 (#2860) : la démo rendait 404 en `text/html`.
+  t "association absente (404 du front)"         FAIL    verdict_association 404 "text/html; charset=utf-8" ""
+  t "association redirigée"                      FAIL    verdict_association 301 "" ""
+  t "association sans type JSON"                 FAIL    verdict_association 200 "text/plain" oui
+  t "hôte injoignable"                           INCONNU verdict_association 000 "" ""
+  t "version de l'hôte illisible"                INCONNU verdict_association 200 "application/json" ""
   if [ "$echecs" -eq 0 ]; then
-    echo "✓ verdicts post-MEP : déployé, version servie, et les cas zéro rendent INCONNU."
+    echo "✓ verdicts post-MEP : déployé, version servie, liens d'application, et les cas zéro rendent INCONNU."
     exit 0
   fi
   exit 1
