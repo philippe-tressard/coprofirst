@@ -38,6 +38,15 @@ def blocs_handle(contenu: str, chemin: str = r"\S+") -> list[tuple[str, str]]:
 
 
 def bloc_handle(contenu: str, chemin: str) -> str | None:
-    """Le corps du bloc `handle <chemin>` (chemin LITTÉRAL), ou `None`."""
+    """Le corps du bloc `handle <chemin>` (chemin LITTÉRAL), ou `None`.
+
+    Un matcher nommé se passe par son nom : `bloc_handle(contenu, "@nom")`.
+    """
     blocs = blocs_handle(contenu, re.escape(chemin))
     return blocs[0][1] if blocs else None
+
+
+def chemins_du_matcher(contenu: str, nom: str) -> list[str] | None:
+    """Les chemins d'un matcher nommé de premier niveau, `@nom path /a /b`, ou `None`."""
+    trouve = re.search(rf"^\t{re.escape(nom)} path ((?:\S+ ?)+)$", contenu, re.M)
+    return trouve.group(1).split() if trouve else None
