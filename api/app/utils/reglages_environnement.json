@@ -19,7 +19,8 @@
       "cle_signature_baux",
       "registre_url",
       "installation_dir",
-      "installation_essai"
+      "installation_essai",
+      "registre_constat"
     ],
     "Opérateur et hébergeur (alertes, textes légaux)": [
       "courriel_operateur",

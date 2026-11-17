@@ -1,5 +1,5 @@
 <script lang="ts">
-	import BandeauDemo from '#lib/components/BandeauDemo.svelte';
+	import BandeauInstallation from '#lib/components/BandeauInstallation.svelte';
 	import { onMount } from 'svelte';
 	import { goto } from '$app/navigation';
 	import { afterNavigate, beforeNavigate } from '$app/navigation';
@@ -84,9 +84,10 @@
 <div class="app-shell">
 	<Nav />
 	<div class="app-content">
-		<!--  La démo publique (#1906) : en tête de la colonne de contenu, sous la barre
-		      mobile fixe — dans le layout racine, elle l'aurait recouverte. -->
-		<BandeauDemo />
+		<!--  La démo publique (#1906), l'installation suspendue (R6 #1882) : en tête de
+		      la colonne de contenu, sous la barre mobile fixe — dans le layout racine,
+		      le bandeau l'aurait recouverte. -->
+		<BandeauInstallation />
 		<main class="app-main" id="contenu" tabindex="-1">
 			<div class="container page">
 				<slot />

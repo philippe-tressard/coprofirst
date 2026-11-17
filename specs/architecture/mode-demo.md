@@ -374,12 +374,12 @@ Livrée par #1907.
   (`EncartDemo saisie`).
 - **Télémétrie** : rattachée aux personnages partagés, elle ne désigne personne ;
   elle ne stocke aucune adresse IP, et s'efface avec la base chaque nuit.
-- **Registre des installations** : le plafond de 5 utilisateurs du mode limité
-  (D18) n'est **pas appliqué** (mode constat) — la démo s'affiche « limitée — non
-  inscrite », sans effet. Elle s'inscrit à l'installation, par l'opérateur de
-  l'installation ordinaire qui précède le passage en démo — ses personnages ne
-  le sont pas —, et l'inscription survit aux remises à zéro ; l'exemption sous
-  `est_demo()` s'écrit avec l'application du plafond (R6, #1882).
+- **Registre des installations** : le plafond de 5 comptes actifs du mode limité
+  (D18) s'applique depuis R6 (#1882, 16/11/2026), **sauf à la démo**, exemptée sous
+  `est_demo()` (`inscription/regime.plafond_applique`) : ses personnages sont des
+  comptes partagés, recréés chaque nuit. Elle s'inscrit à l'installation, par
+  l'opérateur de l'installation ordinaire qui précède le passage en démo — ses
+  personnages ne le sont pas —, et l'inscription survit aux remises à zéro.
 
 ## 10. Le découpage en lots
 
