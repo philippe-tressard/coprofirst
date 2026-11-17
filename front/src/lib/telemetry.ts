@@ -179,10 +179,27 @@ export function signalerErreur(code: string) {
 	trackEvent(page, ACTION_ERREUR, code);
 }
 
+/**
+ * La CLASSE de l'appareil, jointe à chaque lot (#2774) : ordinateur, téléphone ou
+ * tablette — jamais la chaîne User-Agent, le modèle ni la version du système (pas
+ * d'empreinte). `userAgentData.mobile` quand le navigateur le dit ; sinon le pointeur
+ * (un pointeur fin = un ordinateur) et le petit côté de l'écran (≥ 600 px = une
+ * tablette). L'API refuse toute autre valeur pour le site (`APPAREILS_PAR_CANAL`).
+ */
+export function classeAppareil(): 'ordinateur' | 'telephone' | 'tablette' | undefined {
+	if (typeof window === 'undefined') return undefined;
+	const donnees = (navigator as Navigator & { userAgentData?: { mobile?: boolean } }).userAgentData;
+	if (donnees?.mobile === true) return 'telephone';
+	if (!window.matchMedia?.('(pointer: coarse)').matches) return 'ordinateur';
+	const petitCote = Math.min(window.screen?.width ?? 0, window.screen?.height ?? 0);
+	return petitCote >= 600 ? 'tablette' : 'telephone';
+}
+
 function flush() {
 	if (buffer.length === 0) return;
 	const events = buffer.splice(0);
-	const payload = JSON.stringify({ events });
+	//  `appareil` absent (rendu serveur) : JSON.stringify l'omet, l'API lit « non précisé ».
+	const payload = JSON.stringify({ events, appareil: classeAppareil() });
 	try {
 		if (typeof navigator !== 'undefined' && navigator.sendBeacon) {
 			navigator.sendBeacon(ENDPOINT, new Blob([payload], { type: 'application/json' }));

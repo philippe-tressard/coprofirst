@@ -76,6 +76,12 @@ EXIGENCES = [
         ("accès utilisé",),
     ),
     (
+        #  17/11/2026 (#2774) : et la classe de l'appareil, sous le canal.
+        "la classe d'appareil jointe à la page vue",
+        ("models/telemetrie.py", "appareil: Optional[str]"),
+        ("type d'appareil",),
+    ),
+    (
         "les photos téléversées",
         ("models/core.py", "photo_url"),
         ("photo", "image"),

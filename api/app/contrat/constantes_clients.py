@@ -87,6 +87,12 @@ CONSTANTES: dict[str, Constante] = {
         "TYPE_PAR_DEFAUT",
         "le pictogramme et le libellé d'un type de notification inconnu de l'app (#2802)",
     ),
+    "appareilsParCanal": Constante(
+        "app.utils.canaux_audience",
+        "APPAREILS_PAR_CANAL",
+        "les classes d'appareil qu'un client peut déclarer à /telemetry/collect (`appareil`), "
+        "par canal d'accès — jamais un modèle ni une version de système (#2774)",
+    ),
     "noteMin": Constante("app.utils.avis", "NOTE_MIN", "la note la plus basse d'un avis"),
     "noteMax": Constante("app.utils.avis", "NOTE_MAX", "la note la plus haute d'un avis"),
     "noteRemarque": Constante(
