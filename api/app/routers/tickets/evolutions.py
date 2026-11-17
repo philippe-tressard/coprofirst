@@ -4,6 +4,7 @@ Extrait de `tickets.py` le 08/08/2026. Voir `__init__.py` pour la règle de déc
 """
 
 import json
+from app.utils.masquage import auteurs_masques, garder
 from app.utils import horloge
 
 from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException
@@ -92,6 +93,8 @@ def get_evolutions(
     ).all()
     #  La Suite d'une synthèse en brouillon ne se lit que du conseil (#1643).
     evols = evolutions_lisibles(session, ticket, evols, user)
+    #  Sans les suites de qui ce lecteur a masqué (#2861) : l'affaire, elle, reste.
+    evols = garder(evols, auteurs_masques(session, user))
     #  L'état d'avant chaque entrée : la pastille qui, en correction, ramène la
     #  Suite à un commentaire (`suivi_fil.py`) — calculé ici, une fois.
     avant = statuts_avant(evols, etat_de_la_suite(ticket))

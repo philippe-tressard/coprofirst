@@ -63,3 +63,4 @@ from app.models.appareils import Appareil as Appareil
 from app.models.reglages import ConfigSite as ConfigSite
 from app.models.ecrans import AppairageEcran as AppairageEcran
 from app.models.ecrans import Ecran as Ecran
+from app.models.masquages import MasquageAuteur as MasquageAuteur

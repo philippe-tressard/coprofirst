@@ -5,6 +5,7 @@ lui-même — `participation`, dont les chemins sont nus, le reçoit du paquet.
 """
 
 import json
+from app.utils.masquage import auteurs_masques, garder
 from app.utils import horloge
 
 from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException
@@ -56,6 +57,7 @@ def list_sondages(
     exiger_acces(user)
     all_s = session.exec(select(Sondage).order_by(Sondage.cree_le.desc())).all()
     accessible = [s for s in all_s if sondage_accessible(s, user)]
+    accessible = garder(accessible, auteurs_masques(session, user))  # #2861
     if not accessible:
         return []
     # Compter les votants distincts par sondage en une seule requête
@@ -165,6 +167,7 @@ def get_sondage(
     commentaires_db = session.exec(
         select(CommentaireSondage).where(CommentaireSondage.sondage_id == sondage_id)
     ).all()
+    commentaires_db = garder(commentaires_db, auteurs_masques(session, user))  # #2861
     commentaires_out = tri_reponses(
         [enrich_reponse(c, session, lecteur=user) for c in commentaires_db]
     )

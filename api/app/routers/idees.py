@@ -1,6 +1,7 @@
 """Router boîte à idées — idées + upvotes + réponses."""
 
 import json
+from app.utils.masquage import auteurs_masques, garder
 from app.utils import horloge
 from typing import Optional
 
@@ -206,6 +207,7 @@ def list_idees(
     #  carte masquée par le navigateur reste dans la charge utile. Même
     #  appel que l'annonce, le sondage et la publication (`cible_visible`).
     idees = [i for i in idees if idee_visible(i, user)]
+    idees = garder(idees, auteurs_masques(session, user))  # #2861
     return _enrich(idees, user, session)
 
 

@@ -1,6 +1,6 @@
 {
-"version": "2.8.0",
-"empreinte": "7da24e17307632f91dfe222b7639411eced9bfdd59f17667228da3dd97283959",
+"version": "2.9.0",
+"empreinte": "95f3438d413fa66d768ac69ed6e6e1d54f285a25e86761d902566b761d63ef63",
 "operations": {
   "GET /acces/admin/choix-acces": {"deprecie": false, "entree": [], "reponse": {"$": "dictionnaire", "$.{}": "objet", "$.{}.codes": "liste", "$.{}.codes[]": "string", "$.{}.suit_le_lot": "boolean"}},
   "GET /acces/admin/constats-badges": {"deprecie": false, "entree": [], "reponse": {"$": "liste", "$[]": "objet", "$[].code": "string", "$[].gravite": "string", "$[].lots": "liste?", "$[].lots[]": "string", "$[].message": "string"}},
@@ -300,6 +300,9 @@
   "GET /lots/mes-perimetres": {"deprecie": false, "entree": [], "reponse": {"$": "objet", "$.batiments": "liste", "$.batiments[]": "string", "$.desservis": "liste", "$.desservis[]": "string"}},
   "PATCH /lots/{lot_id}/etage": {"deprecie": false, "entree": ["corps", "path:lot_id"], "reponse": {"$": "libre"}},
   "GET /manuel/pdf": {"deprecie": false, "entree": [], "reponse": {"$": "libre"}},
+  "GET /masquages": {"deprecie": false, "entree": [], "reponse": {"$": "liste", "$[]": "objet", "$[].auteur": "string", "$[].auteur_id": "integer", "$[].cree_le": "string(date-time)"}},
+  "POST /masquages": {"deprecie": false, "entree": ["corps", "corps.auteur_id"], "reponse": {"$": "objet", "$.auteur": "string", "$.auteur_id": "integer", "$.cree_le": "string(date-time)"}},
+  "DELETE /masquages/{auteur_id}": {"deprecie": false, "entree": ["path:auteur_id"], "reponse": {}},
   "GET /montres": {"deprecie": false, "entree": [], "reponse": {"$": "liste", "$[]": "objet", "$[].cree_le": "string(date-time)", "$[].expire_le": "string(date-time)", "$[].id": "integer", "$[].plateforme": "string", "$[].vu_le": "string(date-time)?"}},
   "POST /montres": {"deprecie": false, "entree": ["corps", "corps.plateforme"], "reponse": {"$": "objet", "$.cree_le": "string(date-time)", "$.expire_le": "string(date-time)", "$.id": "integer", "$.jeton": "string", "$.plateforme": "string", "$.vu_le": "string(date-time)?"}},
   "DELETE /montres/{montre_id}": {"deprecie": false, "entree": ["path:montre_id"], "reponse": {}},

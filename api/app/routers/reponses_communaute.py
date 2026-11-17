@@ -47,6 +47,7 @@ from app.auth.deps import exiger_non_externe, get_current_user, peut_commenter
 from app.database import get_session
 from app.models.core import ReponseCommunaute, Utilisateur
 from app.schemas_communaute import ReponseCommunauteRead
+from app.utils.masquage import auteurs_masques, garder
 from app.utils.communaute import exiger_acces
 from app.utils.recuperer import ou_404
 from app.utils.reponses import (
@@ -90,6 +91,8 @@ def reponses_de(
             ReponseCommunaute.cible_id == cible_id,
         )
     ).all()
+    #  Sans les réponses de qui ce lecteur a masqué (#2861).
+    reps = garder(reps, auteurs_masques(session, lecteur))
     return tri_reponses([enrich_reponse(r, session, lecteur=lecteur) for r in reps])
 
 
