@@ -8,9 +8,12 @@
 #    · openapi.json       — le schéma de l'API, exporté DE L'IMAGE PUBLIÉE de la
 #                           version, sans réseau (`docker run --network none`) :
 #                           c'est le contrat de ce qui est servi ;
-#    · pages.ts           — les onglets du site, sa parité d'écrans ;
-#    · socle.css, palette-sombre.css — les jetons de couleur et de taille, que
-#                           l'app génère au lieu de les recopier ;
+#    · pages.ts           — les onglets du site, sa parité d'écrans (l'iOS le lit
+#                           encore : #2686) ;
+#    · socle.css et palette-sombre.css ne partent PLUS (17/11/2026, #2686) : leurs
+#                           jetons sont publiés par tables-clients.json (`jetonsCharte`,
+#                           `jetonsCharteSombre`, `palettesResolues`), et ni l'iOS (main
+#                           et branches) ni l'Android ne lisent la pièce brute ;
 #    · tables-clients.json — les tables du site que l'app génère (libellés,
 #                           pastilles, ordres), produites par
 #                           `front/scripts/tables-clients.mjs` (#2634).
@@ -31,8 +34,6 @@
 # ── Ce que la release emporte, en plus du schéma ──────────────────────────────
 FICHIERS_CONTRAT=(
     front/src/lib/pages.ts
-    front/src/styles/socle.css
-    front/src/styles/palette-sombre.css
 )
 
 #: Joints DÈS qu'ils existent au commit : un commit d'avant leur naissance
@@ -113,7 +114,7 @@ if [ "${BASH_SOURCE[0]}" = "$0" ] && [ "${1:-}" = "--selftest" ]; then
         mkdir -p LICENSES && echo '{}' > front/src/lib/icones-svg.json && echo 'version = 1' > REUSE.toml
         for l in ISC MIT CC0-1.0; do echo "$l" > "LICENSES/$l.txt"; done
         git add -A && git commit -q -m tables
-        git rm -q front/src/styles/socle.css && git commit -q -m incomplet
+        git rm -q front/src/lib/pages.ts && git commit -q -m incomplet
     )
     commit() { (cd "$DEPOT" && git rev-parse "HEAD~$1"); }
     #  L'image simulée : elle écrit le schéma qu'on lui demande d'écrire.
@@ -127,8 +128,8 @@ if [ "${BASH_SOURCE[0]}" = "$0" ] && [ "${1:-}" = "--selftest" ]; then
         rm -rf "$s"
     }
     echo "== self-test : le contrat d'API joint à une version =="
-    essai "contrat complet : onze fichiers"                   ok    "$(commit 1)"
-    essai "d'avant les tables et constantes : quatre fichiers" ok    "$(commit 2)"
+    essai "contrat complet : neuf fichiers"                   ok    "$(commit 1)"
+    essai "d'avant les tables et constantes : deux fichiers"  ok    "$(commit 2)"
     essai "un fichier manque au commit : refusé"              refus "$(commit 0)"
     essai "commit d'avant le contrat : rien à joindre"        ok    "$(commit 3)"
     SCHEMA_SIMULE='{"info": {"version": "1.1.0"}, "servers": [{"url": "/api"}], "paths": {"/x": {}}}'
@@ -149,7 +150,8 @@ if [ "${BASH_SOURCE[0]}" = "$0" ] && [ "${1:-}" = "--selftest" ]; then
     s=$(mktemp -d); exporter_dans_image() { echo "$SCHEMA_SIMULE" > "$3/openapi.json"; }
     SCHEMA_SIMULE='{"info": {"version": "1.2.0"}, "servers": [{"url": "/api"}], "paths": {"/x": {}}}'
     (cd "$DEPOT" && preparer_contrat "$(commit 1)" image "$s") >/dev/null
-    if [ "$(cd "$s" && ls | LC_ALL=C sort | tr '\n' ' ')" = "CC0-1.0.txt ISC.txt MIT.txt REUSE.toml constantes-clients.json icones-svg.json openapi.json pages.ts palette-sombre.css socle.css tables-clients.json " ]; then
+    #  #2686 : les feuilles brutes de la charte ne partent plus (tables-clients.json les publie).
+    if [ "$(cd "$s" && ls | LC_ALL=C sort | tr '\n' ' ')" = "CC0-1.0.txt ISC.txt MIT.txt REUSE.toml constantes-clients.json icones-svg.json openapi.json pages.ts tables-clients.json " ]; then
         echo "PASS  les noms joints : $(cd "$s" && ls | tr '\n' ' ')"
     else echo "FAIL  noms joints : $(ls "$s")"; fail=1; fi
     rm -rf "$DEPOT" "$s"
