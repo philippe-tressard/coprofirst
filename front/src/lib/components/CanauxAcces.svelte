@@ -127,7 +127,6 @@
 	}
 	.chevron {
 		width: 1ch;
-		color: var(--color-text-muted);
 	}
 	.appareil td:first-child {
 		padding-left: 2rem;
