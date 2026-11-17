@@ -100,6 +100,12 @@ class Settings(BaseSettings):
     registre_url: str = "https://registre.coprofirst.fr"
     installation_dir: str = "/app/data/installation"
     installation_essai: bool = False
+    # Le RETOUR AU CONSTAT (R6 #1882) : vrai, le plafond de 5 comptes actifs du mode
+    # limité et la lecture seule d'une installation suspendue ne s'appliquent plus —
+    # l'état se calcule et s'affiche seulement, comme avant R6. Une soupape contre un
+    # faux positif, sans nouvelle image : `.env`, puis l'API recréée. Les services
+    # restent ceux du bail (#1947). Lu par `app/inscription/regime.py` seul.
+    registre_constat: bool = False
 
     # Le cache du manuel PDF (`utils/manuel_pdf_cache`) : dans le volume `app_data`,
     # jamais sous `uploads`, servi en statique. Vide : pas de cache (les tests).

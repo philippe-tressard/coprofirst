@@ -83,6 +83,13 @@ export const siteNomStore = derived(
 //  les encarts des onglets fermés la lisent ici.
 export const modeDemoStore = derived(configStore, ($c) => $c['mode_demo'] === '1');
 
+//  L'installation SUSPENDUE par la référence (R6 #1882, D20) : lecture seule. Clé
+//  CALCULÉE par le serveur (`installation_suspendue`), lue par le bandeau.
+export const installationSuspendueStore = derived(
+	configStore,
+	($c) => $c['installation_suspendue'] === '1',
+);
+
 let _configLoaded = false;
 
 /**

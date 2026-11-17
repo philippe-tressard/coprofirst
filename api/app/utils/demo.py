@@ -40,6 +40,7 @@ from typing import Optional
 from fastapi.responses import JSONResponse
 
 from app.config import get_settings
+from app.utils import gestes_http
 
 #: La clé publique de `GET /config` qui dit au front que l'installation est une
 #: démo. Écrite ici, pour que le mot `mode_demo` ne se lise nulle part ailleurs.
@@ -227,18 +228,8 @@ OUVERTS_EXPRES: dict[tuple[str, str], str] = {
 }
 
 
-def _motif(chemin: str) -> re.Pattern[str]:
-    """`/a/{id}/b` → l'expression qui reconnaît un chemin concret de cette route."""
-    morceaux = re.split(r"(\{[^}]+\})", chemin)
-    corps = "".join(
-        (".+" if m.endswith(":path}") else "[^/]+") if m.startswith("{") else re.escape(m)
-        for m in morceaux
-    )
-    return re.compile(f"^{corps}$")
-
-
 _INDEX: tuple[tuple[str, re.Pattern[str], Famille], ...] = tuple(
-    (methode, _motif(chemin), famille)
+    (methode, gestes_http.motif_de_route(chemin), famille)
     for famille in GESTES_FERMES
     for methode, chemin in famille.gestes
 )
@@ -246,8 +237,7 @@ _INDEX: tuple[tuple[str, re.Pattern[str], Famille], ...] = tuple(
 
 def famille_fermee(methode: str, chemin: str) -> Optional[Famille]:
     """PURE : la famille qui ferme ce geste, ou `None`. `HEAD` vaut `GET`."""
-    methode = "GET" if methode == "HEAD" else methode
-    chemin = chemin.rstrip("/") or "/"
+    methode, chemin = gestes_http.geste_concret(methode, chemin)
     for m, motif, famille in _INDEX:
         if m == methode and motif.match(chemin):
             return famille

@@ -11,7 +11,7 @@
 		modeDemoStore,
 		siteNomStore,
 	} from '#lib/stores/pageConfig.ts';
-	import BandeauDemo from '#lib/components/BandeauDemo.svelte';
+	import BandeauInstallation from '#lib/components/BandeauInstallation.svelte';
 	import EnteteAuthentification from '#lib/components/EnteteAuthentification.svelte';
 	import ChampMotDePasse from '#lib/components/ChampMotDePasse.svelte';
 	import EtoileRequis from '#lib/components/EtoileRequis.svelte';
@@ -90,8 +90,9 @@
 
 		<!--  La démo publique (#1906, #1932) : le bandeau le dit, et l'on se connecte par
 		      le formulaire, avec les identifiants publiés sur la page « Démo » du site
-		      vitrine. L'inscription et le mot de passe oublié y sont fermés au serveur. -->
-		{#if $modeDemoStore}<BandeauDemo dansCarte />{/if}
+		      vitrine. L'inscription et le mot de passe oublié y sont fermés au serveur.
+		      Une installation suspendue (R6 #1882) le dit aussi, avant la connexion. -->
+		<BandeauInstallation dansCarte />
 
 		{#if hoteCommun}
 			<AiguillageCopropriete />

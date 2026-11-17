@@ -303,14 +303,10 @@ def autorise_par_la_reference(code: str) -> tuple[bool, str]:
     """
     if code in SERVICES_HORS_BAIL:
         return True, ""
-    from app.utils.installation import est_replique
+    from app.inscription.regime import constat_de_la_replique
 
-    if not est_replique():
-        return True, ""
-    from app.inscription.client import constat_courant
-
-    constat = constat_courant()
-    if constat.services is None or code in constat.services:
+    constat = constat_de_la_replique()
+    if constat is None or constat.services is None or code in constat.services:
         return True, ""
     if constat.etat == "active":
         return False, "Non autorisé par la référence."
