@@ -1,5 +1,11 @@
 # Notifications push — le relais APNs de la plateforme (#2458)
 
+> ⛔ **Abandonné le 17/11/2026** (décision de Philippe : #2494 et #2789 fermés « b »).
+> Le relais ne sera pas construit : ni APNs, ni FCM. Les applications gardent la
+> **cloche**, lue à l'ouverture. Ce document reste comme trace des choix ; le code
+> serveur qui ne servait qu'au push dort (`transport.RelaisNonBranche`, rien ne part)
+> et se retire dans l'ordre que fixe #2857.
+
 > 🧭 **Spécification de CIBLE, validée par Philippe le 03/11/2026** (§10). Écrite le
 > 02/11/2026 pour le chantier de l'application iOS native (#2460) ; comme
 > [`multi-coproprietes.md`](multi-coproprietes.md), elle n'est pas historique et se

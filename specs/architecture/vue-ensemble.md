@@ -57,16 +57,17 @@ clients au serveur, vit **à un seul endroit** : [stack.md § Application mobile
   d'accueil (A2HS).
 - **L'application iOS native** (SwiftUI, dépôt `philippe-tressard/coprofirst-ios`)
   s'y ajoute, **sans WebView**, reliée par le seul **contrat d'API publié** et sa
-  version (#2456) ; ses notifications passent par le **relais APNs** de la plateforme
-  ([notifications-push.md](notifications-push.md), #2458).
-- **Android** : hors périmètre, la PWA y suffit.
+  version (#2456) ; ses notifications sont celles de la cloche, lue à l'ouverture (le
+  relais APNs, [notifications-push.md](notifications-push.md), est abandonné le 17/11/2026).
+- **L'application Android native** (dépôt `philippe-tressard/coprofirst-android`) suit
+  le même modèle : reliée par le seul contrat d'API publié, sans notification push.
 
 ## Décisions d'architecture clés
 
 | Décision | Justification |
 |----------|---------------|
 | PostgreSQL | Réplication en continu vers le second nœud, une base par copropriété (`multi-coproprietes.md`, D4) |
-| PWA pour tous, application iOS native en plus (01/11/2026) | La PWA reste le client commun et ne perd aucun écran ; l'app iOS ajoute un client natif et ses notifications push, sans code partagé : le contrat d'API publié est le seul lien (#2460) |
+| PWA pour tous, application iOS native en plus (01/11/2026) | La PWA reste le client commun et ne perd aucun écran ; l'app iOS ajoute un client natif (ses notifications push, prévues, sont abandonnées le 17/11/2026), sans code partagé : le contrat d'API publié est le seul lien (#2460) |
 | SvelteKit | Bundle < 150 Ko gzippé, SSR natif, PWA sans surcoût, tourne en Node Alpine ARM64 |
 | FastAPI | Démarre en < 1 s, < 50 Mo RAM au repos, OpenAPI auto-généré |
 | Caddy | TLS automatique en 5 lignes de config, HTTP/3 natif |
