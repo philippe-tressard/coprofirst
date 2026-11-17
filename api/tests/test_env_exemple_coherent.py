@@ -70,6 +70,8 @@ HORS_GABARIT = {
     "— le déplacer hors du volume perdrait le cache à chaque recréation",
     "git_hash": "posé par la CONSTRUCTION de l'image (`ARG GIT_HASH`, api/Dockerfile) : "
     "c'est le commit qu'elle contient, pas un réglage d'exploitant (#1761)",
+    "version_image": "posé par la CONSTRUCTION de l'image (`ARG VERSION_IMAGE`, api/Dockerfile) : "
+    "la release qu'elle contient, lue dans front/package.json, pas un réglage d'exploitant (#2833)",
     "wa_photo_budget_ko": "posé par l'ancre `x-budget-photo-whatsapp` de "
     "docker-compose.yml, lue des DEUX côtés (API et bridge) ; une seconde source "
     "les ferait diverger (#1057)",

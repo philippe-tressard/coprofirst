@@ -183,9 +183,15 @@ marquer_images_construites() {
 # dans le dépôt courant, au moment du build — jamais transmis par l'appelant.
 # Les arguments passent à `docker compose build` (`--quiet`, `--no-cache`,
 # services). 🔒 api/tests/test_construction_images_porte_unique.py
+#
+# La release (`front/package.json`) part avec : l'API la publie dans `GET /config`
+# (#2833). Illisible, elle reste vide — le build n'en dépend jamais.
+# 🔒 api/tests/test_version_logicielle_servie.py
 exporter_git_hash() {
     GIT_HASH=$(git rev-parse --short HEAD) || return 1
     export GIT_HASH
+    VERSION_IMAGE=$(sed -nE 's/^[[:space:]]*"version":[[:space:]]*"([^"]+)".*/\1/p' front/package.json 2>/dev/null | head -1)
+    export VERSION_IMAGE
 }
 construire_images() {
     exporter_git_hash || return 1

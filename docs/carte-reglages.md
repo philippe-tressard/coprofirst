@@ -255,6 +255,7 @@ Les champs de `Settings` (`api/app/config.py`). Un `.env` qui porte une variable
 | `ROLE_INSTALLATION` | str | vide |
 | `GIT_HASH` | str | vide |
 | `COPROFIRST_VERSION` | str | vide |
+| `VERSION_IMAGE` | str | vide |
 
 ### Mode démo
 
