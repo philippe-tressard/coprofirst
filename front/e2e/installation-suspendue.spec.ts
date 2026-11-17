@@ -35,9 +35,8 @@ test('suspendue, la connexion le dit et garde son formulaire', async ({ page }) 
 
 	const bandeau = page.getByRole('note').filter({ hasText: BANDEAU });
 	await expect(bandeau).toBeVisible();
-	//  Espaces normalisés des deux côtés : le rendu replie les retours à la ligne du gabarit.
-	const rendu = (await bandeau.innerText()).replace(/\s+/g, ' ').trim();
-	expect(rendu).toBe(TEXTE_PUBLIE.replace(/\s+/g, ' ').trim());
+	//  `toHaveText` attend, et normalise les espaces : le gabarit replie ses retours à la ligne.
+	await expect(bandeau).toHaveText(TEXTE_PUBLIE);
 	await expect(page.locator('form input[type="email"]')).toBeVisible();
 });
 
