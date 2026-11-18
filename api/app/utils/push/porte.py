@@ -8,6 +8,13 @@ Spécification : `specs/architecture/notifications-push.md` §6.4 (N6).
 `Notification` se construit (🔒 `test_cloche_porte_unique.py`). Elle hérite donc
 de ce que la cloche décide : le profil (`sonner`) et les motifs système
 (`sonner_systeme`). Une cloche qui ne sonne pas ne pousse rien.
+
+## Ce qu'elle pousse : l'alerte, et rien d'autre
+
+Décision de Philippe du 18/11/2026 (#2789) : seule l'alerte d'une actualité ⚡
+urgente sonne sur un téléphone. Elle porte `TYPE_POUSSE`, et c'est le seul type
+que `noter` retient ; toute autre cloche reste dans l'application. L'alerte se pose
+par `utils/alerte_actualite`, et nulle part ailleurs (🔒 `test_alerte_actualite.py`).
 🔒 `test_push_porte.py` refuse un appel de `noter` ou du transport ailleurs.
 
 ## Quand l'envoi part
@@ -41,6 +48,10 @@ from app.utils.services import SERVICE_PUSH, cle_actif, service_actif
 
 logger = logging.getLogger(__name__)
 
+#: Le type de la SEULE notification qui sonne sur un téléphone : l'alerte d'une
+#: actualité ⚡ urgente (`utils/alerte_actualite`, décision du 18/11/2026, #2789).
+TYPE_POUSSE = "urgence"
+
 #: Les destinataires à avertir après le commit : {utilisateur_id: urgent}.
 _EN_ATTENTE = "push_en_attente"
 
@@ -50,9 +61,10 @@ def _service_actif(session: Session) -> bool:
     return service_actif(cfg, SERVICE_PUSH)
 
 
-def noter(session: Session, destinataire_id: int, *, urgente: bool) -> None:
-    """Retient `destinataire_id`, à avertir quand la transaction sera validée."""
-    if not _service_actif(session):
+def noter(session: Session, destinataire_id: int, *, urgente: bool, type_notification: str) -> None:
+    """Retient `destinataire_id`, à avertir quand la transaction sera validée — pour
+    l'alerte (`TYPE_POUSSE`) seulement, et si le service est allumé."""
+    if type_notification != TYPE_POUSSE or not _service_actif(session):
         return
     en_attente = session.info.setdefault(_EN_ATTENTE, {})
     en_attente[destinataire_id] = en_attente.get(destinataire_id, False) or urgente
@@ -113,4 +125,4 @@ def _transmettre(appareil: Appareil, *, urgent: bool) -> bool:
     return resultat.statut == "jeton_perime"
 
 
-__all__ = ["avertir", "avertir_dans", "lancer", "noter"]
+__all__ = ["TYPE_POUSSE", "avertir", "avertir_dans", "lancer", "noter"]

@@ -17,6 +17,8 @@ from app.utils.nature_affaire import (
     statut_pour,
 )
 from app.utils.perimetres import perimetre_cible_json
+from app.utils.alerte_actualite import sonner_l_alerte
+
 from .actualite import appliquer_acces, diffuser_actualite
 from app.utils.quand import exiger_description
 from app.utils.suivi_actualite import normaliser_suivi, poser_etat_saisi
@@ -199,8 +201,8 @@ def create_ticket(
     #  contredire ensuite : poser le défaut APRÈS effacerait un décochage.
     #  (Le droit est dans `OPTIONS_RESERVEES_AU_CS`, pas réécrit ici.)
     ticket.suivi_kanban = suivi_par_defaut(body.categorie)
-    if not bug:  # un bogue n'a pas de mise en avant (#1191)
-        appliquer_options(ticket, body, est_cs=est_cs)
+    #  Un bogue n'a pas de mise en avant (#1191).
+    options = [] if bug else appliquer_options(ticket, body, est_cs=est_cs)
     normaliser_suivi(ticket)  # la case ne vaut que pour une actualité
     poser_etat_saisi(ticket, body.suivi_actualite, est_cs=est_cs)  # Résolu dès l'ouverture
     appliquer_intervenant(ticket, body, session, est_cs=est_cs)
@@ -214,6 +216,8 @@ def create_ticket(
         appliquer_acces(ticket, session)
         session.commit()
         session.refresh(ticket)
+        if sonner_l_alerte(session, ticket, user, options):  # ⚡ (#2789)
+            session.commit()
         diffuser_actualite(
             session,
             ticket,

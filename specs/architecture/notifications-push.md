@@ -5,8 +5,8 @@
 > lui parle par `transport.TransportDeLInstallation`. Rien ne part pourtant : le compte
 > de service FCM (geste de Philippe, `scripts/exploitation/poser-compte-fcm.sh`) n'est
 > pas posé, la clé `.p8` d'Apple non plus (#2494, l'APNs est refusé jusqu'à son lot), et
-> le service `notifications_push` est coupé partout. Seules les **alertes émises par le
-> syndic** sonnent sur un téléphone (décisions de Philippe des 17 et 18/11/2026, §6.4).
+> le service `notifications_push` est coupé partout. Seule l'**alerte d'une actualité ⚡
+> urgente** sonne sur un téléphone (décisions de Philippe des 17 et 18/11/2026, §6.4 et §12).
 > Côté apps : philippe-tressard/coprofirst-ios#283 et philippe-tressard/coprofirst-android#280.
 
 > 🧭 **Spécification de CIBLE, validée par Philippe le 03/11/2026** (§10). Écrite le
@@ -225,6 +225,9 @@ système** (`sonner_systeme`). Une cloche qui ne sonne pas ne pousse rien.
    (`contexte.dans(copro)`) : la configuration et les appareils lus sont les siens.
 6. Le **niveau** de l'envoi est `urgent` si l'une des notifications du commit pour ce
    destinataire l'est (`urgente`), `normal` sinon — rien d'autre du contenu ne la suit.
+7. **Seule l'alerte part** (18/11/2026, §12) : `noter` ne retient qu'une notification du
+   type `porte.TYPE_POUSSE` (« urgence »), celle que pose `utils/alerte_actualite`.
+   Toute autre cloche reste dans l'application.
 
 ### 6.5 Le service
 
@@ -320,3 +323,24 @@ appareil `fcm` par `TransportFcm`, au compte de service du réglage `FCM_COMPTE_
 `scripts/exploitation/poser-compte-fcm.sh` (les deux `.env`, le fichier effacé) ; le
 fichier `google-services.json` de l'app Android ; allumer le service
 `notifications_push`.
+
+## 12. Ce qui sonne sur un téléphone : l'alerte d'une actualité ⚡ (18/11/2026, #2789)
+
+Décision de Philippe, mot pour mot : « les actualités ⚡ Marquer urgente en provenance de
+CS ou du syndic », précisée le même soir par « oui, la recommandation ». Les trois points
+qu'elle laissait ouverts, tranchés :
+
+1. **La porte unique est gardée (N6)** : publier une actualité ne faisait sonner la cloche
+   d'aucun résident (WhatsApp, courriels, affiche seulement). Une actualité qui **devient**
+   urgente (⚡, à sa publication, à sa correction ou dans une Suite) fait donc sonner la
+   cloche de ses **lecteurs** — `ticket_visible`, l'auteur du geste excepté, chacun selon
+   son profil —, et seules ces notifications-là partent vers un téléphone. Une fois par
+   passage à l'urgence ; rien d'une actualité réservée au conseil.
+2. **« CS » = les modérateurs** : le geste ⚡ d'un membre du conseil syndical ou d'un
+   administrateur (`est_moderateur`).
+3. **Le syndic, pour la suite** : un compte syndic (statut `syndic`) ne publie pas
+   d'actualité (#1091) ; ses droits ne changent pas. Il comptera le jour où il le pourra.
+
+La règle vit dans `utils/alerte_actualite` (qui sonne) et `utils/push/porte.TYPE_POUSSE`
+(ce qui part) ; 🔒 `test_alerte_actualite.py`, dont un contrôle exige que chaque chemin du
+geste ⚡ (`appliquer_options`) appelle l'alerte.

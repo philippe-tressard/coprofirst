@@ -139,12 +139,14 @@ def _appareil(session, utilisateur_id: int) -> Appareil:
 
 
 def _sonner(session, destinataire_id: int, **champs):
-    cloche.sonner_systeme(
+    """L'alerte (`porte.TYPE_POUSSE`) : depuis le 18/11/2026 (#2789), la seule
+    notification que la porte pousse. Ces tests posaient une notification système,
+    qui ne part plus vers un téléphone (`test_alerte_actualite.py` le tient)."""
+    assert cloche.sonner(
         session,
-        "compte",
         destinataire_id=destinataire_id,
-        type="system",
-        titre=champs.pop("titre", "Votre compte est validé"),
+        type=porte.TYPE_POUSSE,
+        titre=champs.pop("titre", "⚡ Coupure d'eau"),
         corps=champs.pop("corps", "Bienvenue au 12 rue des Lilas"),
         **champs,
     )
