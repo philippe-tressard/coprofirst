@@ -29,6 +29,9 @@ from typing import Optional
 
 from pydantic import BaseModel, ConfigDict, EmailStr, Field
 
+from app.utils.push.envoi import Envoi
+from app.utils.push.transport import Statut
+
 #: La version du contrat que ce code parle. Une installation qui en annonce une
 #: autre est refusée avec un message qui le dit — jamais lue de travers.
 VERSION_CONTRAT = 1
@@ -160,6 +163,38 @@ class BailSigne(_Contrat):
     signature: str = Field(description="prouver que la référence l'a accordé (Ed25519, base64)")
 
 
+# ── Le relais des notifications push (#2494, #2789) ──────────────────────────
+
+
+class DemandeNotification(_Contrat):
+    """Avertir UN appareil, par le relais de la référence (`registre/relais.py`).
+
+    Le relais juge sur pièces (`notifications-push.md` N3) : le bail joint, la clé qu'il
+    désigne, la signature sur les octets reçus. `envoi` est le schéma FERMÉ de
+    `utils/push/envoi.Envoi` — l'appareil, l'abonnement opaque, le niveau, l'horodatage
+    et le nonce, rien de la notification. Son jeton est l'identifiant pseudonyme d'un
+    résident, que le relais transmet et oublie (§7, N8) : déclaré `personnel`, et seule
+    exception de résident au contrat (🔒 `test_registre_contrat.py`).
+    """
+
+    version_contrat: int = Field(description="lire la demande avec le bon contrat")
+    identifiant: str = Field(description="retrouver le bail de l'installation qui demande")
+    cle_publique: str = Field(
+        description="vérifier la signature, par la clé dont le bail porte l'empreinte"
+    )
+    bail: BailSigne = Field(description="prouver que la référence admet l'installation (N3)")
+    envoi: Envoi = _personnel("avertir l'appareil, et lui seul, par son service de push")
+
+
+class ReponseNotification(_Contrat):
+    """Ce que le relais répond — sans rien répéter de la demande (§4)."""
+
+    statut: Statut = Field(
+        description="retirer l'appareil sur `jeton_perime`, journaliser le reste"
+    )
+    motif: str = Field(default="", description="dire en clair pourquoi rien n'est parti")
+
+
 # ── Le rapport nocturne (R3) — écrit dès R1 : c'est le contrat qu'on accepte ──
 
 
@@ -285,6 +320,8 @@ SCHEMAS = (
     DemandeBail,
     Bail,
     BailSigne,
+    DemandeNotification,
+    ReponseNotification,
     Identite,
     Hebergement,
     Sauvegarde,

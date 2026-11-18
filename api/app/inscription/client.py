@@ -46,7 +46,9 @@ from app.registre.contrat import (
     BailSigne,
     DemandeBail,
     DemandeInscription,
+    DemandeNotification,
     ReponseInscription,
+    ReponseNotification,
 )
 from app.utils import horloge, installation
 
@@ -222,6 +224,31 @@ def envoyer_rapport() -> EtatLocal:
     etat.dernier_rapport_le = horloge.maintenant().isoformat(timespec="seconds")
     depot.ecrire(etat)
     return etat
+
+
+def demander_notification(envoi) -> ReponseNotification:
+    """Demande au relais de la référence d'avertir UN appareil (#2494, #2789) — signée,
+    le bail joint : le relais juge sur pièces (`registre/relais.py`). `envoi` est un
+    `utils/push/envoi.Envoi` ; la charge, c'est le relais qui la compose."""
+    _appeler_permis()
+    etat = depot.lire()
+    if not etat.identifiant or not etat.bail:
+        raise RegistreInjoignable("aucun bail : le relais n'avertit que pour un bail cru")
+    try:
+        demande = DemandeNotification(
+            version_contrat=VERSION_CONTRAT,
+            identifiant=etat.identifiant,
+            cle_publique=cle_publique() or "",
+            bail=BailSigne.model_validate(etat.bail),
+            envoi=envoi,
+        )
+    except ValueError:  # ValidationError en est une
+        raise RegistreInjoignable("bail rangé illisible") from None
+    reponse = _poster("/plateforme/notifications", demande.model_dump(mode="json"))
+    try:
+        return ReponseNotification.model_validate(reponse)
+    except ValueError:
+        raise RegistreInjoignable("réponse du relais illisible") from None
 
 
 def constat_pour_la_mise_a_jour() -> constat.Constat:

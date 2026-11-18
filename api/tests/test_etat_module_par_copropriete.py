@@ -118,6 +118,18 @@ DU_PROCESSUS = {
     ("utils/pdf_rendu.py", "dernier_journal"): (
         "journal technique du dernier rendu PDF, lu par les tests seulement"
     ),
+    ("registre/relais.py", "_nonces"): (
+        "les nonces des envois vus par le relais de la plateforme, cinq minutes "
+        "(notifications-push.md §4) : ni un jeton ni une donnée de copropriété (#2494)"
+    ),
+    ("registre/relais.py", "_envois"): (
+        "les instants des derniers envois au relais, par identifiant d'INSTALLATION "
+        "(le plafond par installation, #2494)"
+    ),
+    ("utils/push/relais.py", "_fcm"): (
+        "le transport FCM de la plateforme et son jeton d'accès OAuth d'une heure — un "
+        "secret de la référence, aucune donnée de copropriété (#2789)"
+    ),
     ("installation_commune/declaration.py", "_lue"): (
         "la déclaration des copropriétés d'une installation commune, relue quand son "
         "fichier change : elle DÉSIGNE les copropriétés, n'en porte aucune donnée (#1894)"

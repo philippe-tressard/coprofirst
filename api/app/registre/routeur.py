@@ -79,7 +79,7 @@ PLAFOND_EN_ATTENTE = 50
 INCONNUE = "Installation inconnue du registre."
 
 
-def _servi_ici(request: Request) -> None:
+def servi_ici(request: Request) -> None:
     """404 hors de la référence, ou sous un autre nom que le nom dédié du registre."""
     attendu = nom_d_hote(get_settings().hote_registre)
     servi = registre_actif() and nom_d_hote(request.headers.get("host", "")) == attendu
@@ -205,7 +205,7 @@ def _inscrire(session: Session, demande: DemandeInscription) -> Installation:
     "/inscriptions",
     response_model=ReponseInscription,
     status_code=201,
-    dependencies=[Depends(_servi_ici)],
+    dependencies=[Depends(servi_ici)],
 )
 @limiter.limit(LIMITE_INSCRIPTION_INSTALLATION)
 async def inscrire(request: Request, session: Session = Depends(get_session_plateforme)):
@@ -247,7 +247,7 @@ def _signaler_clone(session: Session, inst: Installation) -> None:
         session.commit()
 
 
-@router.post("/baux", response_model=BailSigne, dependencies=[Depends(_servi_ici)])
+@router.post("/baux", response_model=BailSigne, dependencies=[Depends(servi_ici)])
 @limiter.limit(LIMITE_INSCRIPTION_INSTALLATION)
 async def renouveler_bail(request: Request, session: Session = Depends(get_session_plateforme)):
     """Délivre le bail d'une installation inscrite — signé par la clé des baux (R2)."""
@@ -278,7 +278,7 @@ async def renouveler_bail(request: Request, session: Session = Depends(get_sessi
     return baux.delivrer(inst, cle, horloge.maintenant(), versions).model_dump(mode="json")
 
 
-@router.post("/rapports", status_code=202, dependencies=[Depends(_servi_ici)])
+@router.post("/rapports", status_code=202, dependencies=[Depends(servi_ici)])
 @limiter.limit(LIMITE_INSCRIPTION_INSTALLATION)
 async def recevoir_rapport(request: Request, session: Session = Depends(get_session_plateforme)):
     """Le rapport nocturne d'une installation inscrite, signé par SA clé (R3)."""
