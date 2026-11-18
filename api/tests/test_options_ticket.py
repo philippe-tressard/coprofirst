@@ -239,3 +239,16 @@ def test_les_TROIS_corps_transportent_chaque_option():
         assert option in OPTIONS_TICKET, (
             f"`{option}` déclarée hors Suite, mais n'est plus une option."
         )
+
+
+def test_l_urgence_relue_de_la_base_se_compare_par_sa_valeur():
+    """Relue de la base, la priorité est une ÉNUMÉRATION : `str` rendait
+    « PrioriteTicket.haute », et le geste ⚡ passait pour changé à chaque
+    enregistrement — l'alerte d'une actualité aurait resonné (#2789)."""
+    from app.models.core import Ticket
+    from app.models.tickets import PrioriteTicket
+
+    t = Ticket(titre="t", priorite=PrioriteTicket.haute)
+    assert options_du_ticket(t)["urgente"] is True
+    assert appliquer_options(t, _Corps(urgente=True), est_cs=True) == []
+    assert appliquer_options(t, _Corps(urgente=False), est_cs=True) == ["urgente"]
