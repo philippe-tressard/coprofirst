@@ -126,6 +126,12 @@ LIMITE_APPEL_FACTURE = "10/minute"
 #: s'inscrit une fois, et ne revient que pour mettre à jour son contact.
 LIMITE_INSCRIPTION_INSTALLATION = "5/hour"
 
+#: Une installation qui demande au **relais des notifications push** d'avertir un
+#: appareil (`registre/relais.py`, #2494, #2789). Un envoi par appareil : une alerte à
+#: toute une résidence en fait quelques centaines d'un coup. Le plafond protège le
+#: relais d'un déluge ; `relais.PLAFOND_PAR_MINUTE` le double par installation.
+LIMITE_RELAIS_PUSH = "600/minute"
+
 #: Une tentative d'**aiguillage** sur l'hôte commun d'une installation commune
 #: (`installation_commune/routeur.py`, #1894) : code postal + nom, ou l'alias d'un
 #: chemin `/<alias>`. Ni secret ni courriel, mais la règle « pas d'énumération »

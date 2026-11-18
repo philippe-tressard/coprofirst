@@ -1,12 +1,13 @@
 # Notifications push — le relais APNs de la plateforme (#2458)
 
-> ⏸ **État au 17/11/2026 : pas encore branché.** Le relais n'existe pas : le transport
-> d'une installation est `transport.RelaisNonBranche`, et rien ne part. L'app iOS garde
-> son client (`POST /appareils`) ; l'app Android a retiré le sien. La fonction reste
-> prévue, pour une prochaine soumission des apps : les **alertes émises par le
-> syndic**, qui sonnent sur le téléphone. Suivi : #2494 (relais APNs, attend la clé
-> `.p8`), #2789 (relais FCM, préalable de licence côté Android) ; côté apps,
-> philippe-tressard/coprofirst-ios#283 et philippe-tressard/coprofirst-android#280.
+> ⏸ **État au 18/11/2026 : le relais est écrit, et éteint faute de secrets.** Le relais
+> répond sous le nom dédié du registre (`registre/relais.py`, #2789) ; une installation
+> lui parle par `transport.TransportDeLInstallation`. Rien ne part pourtant : le compte
+> de service FCM (geste de Philippe, `scripts/exploitation/poser-compte-fcm.sh`) n'est
+> pas posé, la clé `.p8` d'Apple non plus (#2494, l'APNs est refusé jusqu'à son lot), et
+> le service `notifications_push` est coupé partout. Seules les **alertes émises par le
+> syndic** sonnent sur un téléphone (décisions de Philippe des 17 et 18/11/2026, §6.4).
+> Côté apps : philippe-tressard/coprofirst-ios#283 et philippe-tressard/coprofirst-android#280.
 
 > 🧭 **Spécification de CIBLE, validée par Philippe le 03/11/2026** (§10). Écrite le
 > 02/11/2026 pour le chantier de l'application iOS native (#2460) ; comme
@@ -81,14 +82,15 @@ avec la session de la personne — la même porte que la cloche.
 jamais en les recopiant :
 
 1. **Servie seulement ici** : chez la référence dont le relais est configuré, sous
-   le nom dédié (`_servi_ici`) ; ailleurs, 404.
+   le nom dédié (`servi_ici`) ; ailleurs, 404.
 2. **Taille et débit plafonnés** : une requête de quelques centaines d'octets ; un
    plafond **par installation** (identifiant du bail) en plus de celui par adresse —
    une installation bavarde ne prive pas les autres.
 3. **Le bail se croit** : la fonction qui le juge est **celle de l'installation**,
-   `inscription/constat.bail_valide` (clés par époque, clés révoquées, empreinte de la
-   clé de l'installation) — une seule règle pour « ce bail est-il bon ? ». Puis : non
-   échu, état `active`, `notifications_push` dans `services_autorises`.
+   `inscription/constat.constater` (par `bail_valide` : clés par époque, clés révoquées,
+   empreinte de la clé de l'installation ; puis l'échéance et l'état) — une seule règle
+   pour « ce bail est-il bon ? ». Puis : état `active`, `notifications_push` dans
+   `services_autorises`.
 4. **La requête est signée** par la clé dont le bail porte l'empreinte, sur les
    octets reçus (`registre/signature.verifier`).
 5. **Fraîche et unique** : `emis_le` à moins de 5 minutes de l'horloge du relais, et
@@ -97,7 +99,10 @@ jamais en les recopiant :
    copropriété (`DU_PROCESSUS` de `test_etat_module_par_copropriete.py`, avec sa
    raison).
 
-**Puis l'envoi à APNs** : HTTP/2 vers `api.push.apple.com` (ou
+**Puis la transmission** (`utils/push/relais.transmettre`, la même pour la route et
+pour la référence elle-même) : FCM pour un appareil `fcm` (§11) ; pour un appareil
+`apns`, un refus motivé tant que la clé `.p8` manque (#2494). Le lot de l'APNs y
+branchera ceci — l'envoi à APNs : HTTP/2 vers `api.push.apple.com` (ou
 `api.sandbox.push.apple.com` pour un appareil de développement), jeton
 d'authentification JWT ES256 signé par la clé `.p8`, renouvelé entre 20 et
 60 minutes comme Apple l'exige, `apns-topic: fr.coprofirst.app`.
@@ -274,7 +279,7 @@ l'application.
 
 | Lot | Contenu | Dépend de |
 |---|---|---|
-| P1 | **Le relais** côté référence : route, gardes, transmission APNs, réglages de la clé `.p8` dans l'environnement, journal | la clé `.p8` créée par Philippe dans le compte Apple Developer |
+| P1 | **Le relais** côté référence : route, gardes, transmission, journal — **écrit le 18/11/2026 avec FCM** (#2789) ; reste la transmission APNs et le réglage de la clé `.p8` | la clé `.p8` créée par Philippe dans le compte Apple Developer |
 | P2 | **L'installation** : table `appareil` et sa migration, routes, porte d'envoi dans `utils/cloche`, service, purges, suppression avec les sessions | P1 (pour l'essai de bout en bout ; le code peut précéder) |
 | P3 | **L'application** (dépôt `coprofirst-ios`) : demande d'autorisation, enregistrement à la connexion, retrait à la déconnexion, lecture de `GET /notifications` à l'ouverture | P2 et le contrat publié (#2456) |
 | P4 | **Politique de confidentialité** et fiche de l'App Store | P2 |
@@ -306,7 +311,12 @@ seulement. `UNREGISTERED` ou `INVALID_ARGUMENT` → `jeton_perime`. Une montre W
 reprend l'avis du téléphone ; elle ne reçoit rien de plus. La politique de
 confidentialité nomme Google et FCM (migration 0342).
 
+**Branché le 18/11/2026** (« voie A », décision de Philippe) : le relais transmet un
+appareil `fcm` par `TransportFcm`, au compte de service du réglage `FCM_COMPTE_SERVICE`
+(`utils/push/relais`) ; sans lui, il refuse et rien ne part.
+
 **Gestes de Philippe** : créer le projet Firebase et son compte de service (rôle
-*Firebase Cloud Messaging API Admin*), poser sa clé JSON sur la référence seule ; le
-fichier `google-services.json` de l'app Android. Le transport se branche avec le relais
-(P1, #2494) ; d'ici là, rien ne part.
+*Firebase Cloud Messaging API Admin*), le poser sur la référence seule par
+`scripts/exploitation/poser-compte-fcm.sh` (les deux `.env`, le fichier effacé) ; le
+fichier `google-services.json` de l'app Android ; allumer le service
+`notifications_push`.

@@ -32,7 +32,7 @@ from app.models.core import ConfigSite, Notification
 from app.utils import cloche
 from app.utils.push import porte, transport
 from app.utils.push.envoi import CORPS, TITRE, Envoi, charge_apns, entetes_apns, envoi_pour
-from app.utils.push.transport import RelaisNonBranche, Resultat
+from app.utils.push.transport import Resultat, TransportDeLInstallation
 from app.utils.services import SERVICE_PUSH, cle_actif, service_actif
 from tests.aides_base import compte
 from tests.aides_sources import modules_app
@@ -166,10 +166,10 @@ def test_service_coupe_par_defaut(session, double):
     assert double.recus == []
 
 
-def test_le_transport_par_defaut_n_envoie_rien():
-    """Tant que le relais (P1, #2494) n'est pas branché, rien ne part — et il le dit."""
-    assert isinstance(transport.TRANSPORT, RelaisNonBranche)
-    assert transport.TRANSPORT.transmettre(None).statut == "refuse"
+def test_le_transport_par_defaut_est_celui_de_l_installation():
+    """Le relais de la plateforme (#2494) : ce qu'il transmet, et ses refus, se jouent
+    dans `test_push_relais.py` ; ici, la porte le lit bien."""
+    assert isinstance(transport.TRANSPORT, TransportDeLInstallation)
 
 
 # ── L'envoi suit la cloche, après le commit ───────────────────────────────────

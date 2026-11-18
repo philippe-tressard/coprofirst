@@ -87,6 +87,7 @@ from app.routers import patrimoine_branche
 from app.routers import equipements
 from app.routers import lectures, manuel, noms
 from app.registre import routeur as registre  # le registre des installations (§4.11)
+from app.registre import relais as relais_push  # le relais des notifications push (#2494)
 from app.installation_commune import routeur as aiguillage  # l'hôte commun (#1894)
 from app.installation_commune import fichiers as fichiers_commune  # /uploads/* (#2053)
 from app.routers import courriels_affaires
@@ -422,6 +423,7 @@ app.include_router(points_conseil.router)
 app.include_router(lectures.router)
 app.include_router(points_conseil_validation.router)
 app.include_router(registre.router)
+app.include_router(relais_push.router)
 app.include_router(aiguillage.router)
 app.include_router(fichiers_commune.router)  # 404 hors d'une installation commune
 
