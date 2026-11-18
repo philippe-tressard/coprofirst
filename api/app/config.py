@@ -96,10 +96,16 @@ class Settings(BaseSettings):
     cle_signature_baux: str = ""
     # Le COMPTE DE SERVICE du projet Firebase de CoproFirst (#2789) — chez la référence
     # SEULE, comme la clé des baux : le fichier JSON de Google en base64, sur une ligne,
-    # posé dans le `.env` des deux nœuds par `scripts/exploitation/poser-compte-fcm.sh`.
+    # posé dans le `.env` des deux nœuds par `scripts/exploitation/poser-secret-push.sh`.
     # Lu par `utils/push/relais` et nulle part ailleurs. Vide → aucun téléphone Android
     # n'est averti (le relais refuse, la cloche reste).
     fcm_compte_service: str = ""
+    # La CLÉ `.p8` d'Apple qui signe les envois APNs (#2494), chez la référence SEULE :
+    # le fichier `AuthKey_<id>.p8` en base64 sur une ligne, et son identifiant (le `<id>`),
+    # posés par `scripts/exploitation/poser-secret-push.sh`. Lus par `utils/push/relais`
+    # seulement. Vides → aucun iPhone n'est averti (le relais refuse, la cloche reste).
+    apns_cle: str = ""
+    apns_id_cle: str = ""
 
     # CÔTÉ INSTALLATION (R2 #1878) : où joindre le registre de la référence (son nom
     # dédié, D17), où ranger la clé et l'état d'inscription de CETTE installation —
