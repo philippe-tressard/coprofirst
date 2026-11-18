@@ -329,6 +329,7 @@
 				onSubmit={repondreSondage}
 				onDelete={supprimerCommentaire}
 				onReport={(rid) => signaler('commentaire', rid)}
+				masquable
 			/>
 		</div>
 	</div>

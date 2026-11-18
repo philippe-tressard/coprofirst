@@ -1,4 +1,4 @@
-import { signalements as signalementsApi } from '#lib/api/index.ts';
+import { signalements as signalementsApi, type CibleSignalement } from '#lib/api/index.ts';
 import { tenter } from '#lib/erreurs.ts';
 import { demander } from '#lib/saisie.ts';
 
@@ -28,7 +28,7 @@ import { demander } from '#lib/saisie.ts';
  *               (recharger sa liste de modération, par exemple).
  */
 export async function signaler(
-	cibleType: string,
+	cibleType: CibleSignalement,
 	cibleId: number,
 	apres?: () => void,
 ): Promise<void> {

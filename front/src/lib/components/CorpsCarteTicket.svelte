@@ -255,6 +255,7 @@
 				statutLabels={STATUT_TICKET_LABELS}
 				peutModifier={peutSuivre}
 				avecSuppression
+				avecSignalement
 				enEdition={evolEnEdition}
 				on:modifier={(e) => gestes.evolModifier(e.detail)}
 				on:supprimer={(e) => gestes.evolSupprimer({ ticket, evolId: e.detail })}

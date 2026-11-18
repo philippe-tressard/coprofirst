@@ -20,7 +20,7 @@
   calcule. Rien d'autre ne change, donc rien d'autre ne se paramètre.
 -->
 <script lang="ts">
-	import type { PetiteAnnonce } from '#lib/api/index.ts';
+	import type { CibleSignalement, PetiteAnnonce } from '#lib/api/index.ts';
 	import AnnonceCard from './AnnonceCard.svelte';
 
 	/** Les annonces à rendre, déjà filtrées et triées par l'appelant. */
@@ -46,7 +46,8 @@
 	export let onSupprimer: (id: number) => void;
 	export let onRepondre: (id: number, contenu: string) => Promise<void>;
 	export let onSupprimerReponse: (id: number, repId: number) => void;
-	export let onSignaler: (cibleType: string, cibleId: number) => void;
+	export let onSignaler: (cibleType: CibleSignalement, cibleId: number) => void;
+	export let onMasquerAuteur: ((id: number, nom: string) => void) | null = null;
 	/**  L'identifiant de l'annonce en cours de correction, ou `null` (#787).
 	 *
 	 *   🔴 Le formulaire s'ouvrait EN BAS DE PAGE : « c'est tout en bas, et on ne
@@ -73,6 +74,7 @@
 		onSupprimerReponse={(rid) => onSupprimerReponse(annonce.id, rid)}
 		onSignalerAnnonce={() => onSignaler('annonce', annonce.id)}
 		onSignalerReponse={(rid) => onSignaler('reponse', rid)}
+		{onMasquerAuteur}
 		formulaireOuvert={editId === annonce.id}
 	>
 		<svelte:fragment slot="formulaire">

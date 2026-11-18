@@ -33,6 +33,7 @@
 	import EnteteCarte from '#lib/components/EnteteCarte.svelte';
 	import ExtraitsReglement from '#lib/components/ExtraitsReglement.svelte';
 	import IconeAction from '#lib/components/IconeAction.svelte';
+	import { signaler } from '#lib/signalements.ts';
 	import type { QuestionReglement } from '#lib/api/index.ts';
 	import { fmtDatetime } from '#lib/date.ts';
 	import { safeHtml } from '#lib/sanitize.ts';
@@ -68,6 +69,15 @@
 	<EnteteCarte titre={q.question} basculable on:toggle={() => dispatch('basculer')}>
 		<svelte:fragment slot="actions">
 			<BoutonLien ancre="question-reglement-{q.id}" quoi="la question" />
+			<!--  🚩 Signaler la RÉPONSE de l'assistant au conseil (#2861, « 2a ») : les
+			      magasins exigent qu'une réponse de l'IA se signale sans quitter l'app. -->
+			<button
+				class="btn-icon"
+				aria-label="Signaler la réponse de l'assistant au conseil syndical"
+				title="Signaler la réponse de l'assistant"
+				on:click|stopPropagation={() => signaler('question_reglement', q.id)}
+				><IconeAction icone="flag" /></button
+			>
 			<!--  Le conseil seul publie (11/10/2026) : le copropriétaire lit sa réponse,
 			      il ne la verse pas à la FAQ. Le serveur refuse aussi. -->
 			{#if $estModerateur && !q.faq_item_id}
