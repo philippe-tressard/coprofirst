@@ -109,3 +109,15 @@ def test_le_motif_publie_juge_comme_le_serveur():
     assert (
         publie["famillesFichiers"]["valeur"]["image"]["plafond_mo"] == FAMILLES["image"].plafond_mo
     )
+
+
+def test_une_cle_ajoutee_a_un_objet_est_un_ajout_et_une_cle_retiree_un_retrait():
+    """Un type de notification neuf (#2789) : l'app générée avant le lit par son défaut."""
+    ancien = {"t": _publiee({"a": {"p": "x"}})}
+    ajout = {"t": _publiee({"a": {"p": "x"}, "b": {"p": "y"}})}
+    assert cc.refus(ancien, ajout, {}) == []
+    assert cc.version_suivante("1.2.3", ancien, ajout) == "1.3.0"
+    #  Le cas fautif : la clé `a` disparaît, ou change de forme — une rupture.
+    assert cc.refus(ajout, ancien, {}) == ["t : retirée ou de forme changée, sans annonce"]
+    assert cc.refus(ancien, {"t": _publiee({"a": 1})}, {}) != []
+    assert cc.version_suivante("1.2.3", ajout, ancien) == "2.0.0"

@@ -1,6 +1,6 @@
 {
   "format": 1,
-  "version": "1.4.0",
+  "version": "1.5.0",
   "constantes": {
     "appareilsParCanal": {
       "source": "api/app/utils/canaux_audience.py#APPAREILS_PAR_CANAL",
@@ -295,6 +295,10 @@
         "system": {
           "pictogramme": "settings",
           "libelle": "Système"
+        },
+        "urgence": {
+          "pictogramme": "zap",
+          "libelle": "Alerte"
         }
       }
     }

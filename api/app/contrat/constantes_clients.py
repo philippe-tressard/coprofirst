@@ -171,13 +171,30 @@ def type_de(valeur) -> str:
     return type(valeur).__name__
 
 
-def refus(ancien: dict, nouveau: dict, annonces: dict = RETRAITS_CONSTANTES) -> list[str]:
-    """Les retraits et changements de forme NON annoncés, et les annonces qui ne servent plus."""
-    ecarts = {
+def compatible(ancienne, nouvelle) -> bool:
+    """PURE. Une app générée sur `ancienne` lit-elle encore `nouvelle` ?
+
+    Même forme, ou un objet qui garde chacune de ses clés, chacune lisible : une
+    clé AJOUTÉE est un ajout (un type de notification neuf, que l'app connaît par
+    son défaut, #2789), jamais un changement de forme.
+    """
+    if isinstance(ancienne, dict) and isinstance(nouvelle, dict):
+        return all(k in nouvelle and compatible(v, nouvelle[k]) for k, v in ancienne.items())
+    return type_de(ancienne) == type_de(nouvelle)
+
+
+def _rompues(ancien: dict, nouveau: dict) -> set[str]:
+    """Les constantes retirées, ou qu'une app générée avant ne lirait plus."""
+    return {
         nom
         for nom, t in ancien.items()
-        if nom not in nouveau or type_de(t["valeur"]) != type_de(nouveau[nom]["valeur"])
+        if nom not in nouveau or not compatible(t["valeur"], nouveau[nom]["valeur"])
     }
+
+
+def refus(ancien: dict, nouveau: dict, annonces: dict = RETRAITS_CONSTANTES) -> list[str]:
+    """Les retraits et changements de forme NON annoncés, et les annonces qui ne servent plus."""
+    ecarts = _rompues(ancien, nouveau)
     messages = [
         f"{n} : retirée ou de forme changée, sans annonce" for n in sorted(ecarts - set(annonces))
     ]
@@ -188,10 +205,7 @@ def refus(ancien: dict, nouveau: dict, annonces: dict = RETRAITS_CONSTANTES) -> 
 def version_suivante(version: str, ancien: dict, nouveau: dict) -> str:
     """Majeure sur un retrait (annoncé), mineure sur tout autre écart, sinon la même."""
     majeure, mineure, _ = (int(x) for x in version.split("."))
-    if any(
-        n not in nouveau or type_de(t["valeur"]) != type_de(nouveau[n]["valeur"])
-        for n, t in ancien.items()
-    ):
+    if _rompues(ancien, nouveau):
         return f"{majeure + 1}.0.0"
     if ancien != nouveau:
         return f"{majeure}.{mineure + 1}.0"
