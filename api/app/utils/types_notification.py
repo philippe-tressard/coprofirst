@@ -29,6 +29,8 @@ TYPES_NOTIFICATION: dict[str, dict[str, str]] = {
     "vigik": {"pictogramme": "key-round", "libelle": "Badge"},
     "moderation": {"pictogramme": "flag", "libelle": "Modération"},
     "system": {"pictogramme": "settings", "libelle": "Système"},
+    #  L'alerte d'une actualité ⚡ urgente, la seule qui sonne sur un téléphone (#2789).
+    "urgence": {"pictogramme": "zap", "libelle": "Alerte"},
 }
 
 #: Le type que l'app ne connaît pas.

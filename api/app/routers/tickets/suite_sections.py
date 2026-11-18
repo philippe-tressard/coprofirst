@@ -48,6 +48,8 @@ from app.utils.suivi_fil import (
 )
 from app.utils.visibility import destinataires_par_defaut, trace_droits, trace_lecture_par_defaut
 
+from app.utils.alerte_actualite import sonner_l_alerte
+
 from .actualite import appliquer_acces
 from .commun import appliquer_options
 from .correction import _appliquer_quand
@@ -66,7 +68,8 @@ def appliquer_sections_suite(
     est_cs = est_moderateur(user)
     #  Le formulaire montre le DERNIER état, ce qu'on enregistre DEVIENT l'état
     #  (05/09/2026) — la table et le droit vivent dans `appliquer_options`.
-    if appliquer_options(ticket, body, est_cs=est_cs):
+    options = appliquer_options(ticket, body, est_cs=est_cs)
+    if options:
         ticket.mis_a_jour_le = horloge.maintenant()
         session.add(ticket)
     #  📅🛠️ Le conseil les pose dans une Suite (#1207) : mêmes règles que la
@@ -106,6 +109,8 @@ def appliquer_sections_suite(
     #  L'invariant d'accès : une Suite qui referme l'actualité archive ses affiches.
     if est_actualite(ticket):
         appliquer_acces(ticket, session)
+    #  ⚡ devenue urgente dans cette Suite, droits posés : l'alerte (#2789).
+    sonner_l_alerte(session, ticket, user, options)
 
 
 def appliquer_statut(

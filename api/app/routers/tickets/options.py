@@ -9,6 +9,7 @@ ré-exporte.
 
 from app.models.core import Ticket
 from app.utils.suivi_actualite import poser_suivi
+from app.utils.valeurs import valeur
 
 
 #: Les options de publication d'un ticket, et la colonne que chacune pilote.
@@ -84,26 +85,29 @@ def appliquer_options(ticket: Ticket, body, *, est_cs: bool) -> list[str]:
     """
     changees: list[str] = []
     for option in OPTIONS_TICKET:
-        valeur = getattr(body, option, None)
-        if valeur is None:
+        demande = getattr(body, option, None)
+        if demande is None:
             continue
         if option in OPTIONS_RESERVEES_AU_CS and not est_cs:
             continue
         if option == "urgente":
             #  Pas de colonne `urgente` : l'urgence d'un ticket EST sa priorité.
-            nouvelle = "haute" if valeur else "normale"
-            if str(ticket.priorite) != nouvelle:
+            nouvelle = "haute" if demande else "normale"
+            #  `valeur`, jamais `str` : relue de la base, la priorité est une
+            #  énumération, et `str` rendait « PrioriteTicket.haute » — le geste ⚡
+            #  passait pour changé à chaque enregistrement (#2789).
+            if valeur(ticket.priorite) != nouvelle:
                 ticket.priorite = nouvelle
                 changees.append(option)
             continue
         if option == "suivre_actualite":
             #  Pas de colonne booléenne : la case pose l'ÉTAT du suivi, et la
             #  décocher l'efface (`utils/suivi_actualite`).
-            if poser_suivi(ticket, valeur):
+            if poser_suivi(ticket, demande):
                 changees.append(option)
             continue
-        if getattr(ticket, option) != valeur:
-            setattr(ticket, option, valeur)
+        if getattr(ticket, option) != demande:
+            setattr(ticket, option, demande)
             changees.append(option)
     return changees
 
@@ -116,7 +120,7 @@ def options_du_ticket(ticket: Ticket) -> dict[str, bool]:
     """
     return {
         "epingle": bool(ticket.epingle),
-        "urgente": str(ticket.priorite) == "haute",
+        "urgente": valeur(ticket.priorite) == "haute",
         "confidentiel": bool(ticket.confidentiel),
         "suivi_kanban": bool(ticket.suivi_kanban),
         "suivre_actualite": bool(ticket.suivi_actualite),

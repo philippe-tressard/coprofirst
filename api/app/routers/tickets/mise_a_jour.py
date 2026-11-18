@@ -58,9 +58,9 @@ from app.utils.fichiers import chemins_locaux
 from app.utils.liens import lien_ticket
 from app.utils.recuperer import ou_404
 from app.utils.visibility import reservee_au_conseil
+from app.utils.alerte_actualite import sonner_l_alerte
 
 from .actualite import appliquer_acces, diffuser_actualite
-
 from .commun import (
     appliquer_options,
     STATUT_LABELS,
@@ -245,7 +245,7 @@ def update_ticket(
         raise HTTPException(
             403, "Seul le CS ou un administrateur peut rendre un ticket confidentiel"
         )
-    appliquer_options(ticket, body, est_cs=is_cs_admin)
+    options = appliquer_options(ticket, body, est_cs=is_cs_admin)
 
     #  Champs du CONTENU — le droit a déjà été vérifié plus haut
     #  (`peut_editer`) : auteur, « saisi pour », ou admin.
@@ -446,6 +446,8 @@ def update_ticket(
     #  l'instant, plus ceux que la réserve du conseil retenait si elle vient
     #  d'être levée.
     if est_actualite(ticket) and is_cs_admin:
+        if sonner_l_alerte(session, ticket, user, options):  # ⚡ (#2789)
+            session.commit()
         sortie = reservee_avant and not reservee_au_conseil(ticket)
         diffuser_actualite(
             session,

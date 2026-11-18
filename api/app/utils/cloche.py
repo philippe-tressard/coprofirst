@@ -55,8 +55,14 @@ MOTIFS_SYSTEME: dict[str, str] = {
 def _poser(session: Session, destinataire_id: int, champs: dict) -> None:
     session.add(Notification(destinataire_id=destinataire_id, **champs))
     #  La seule porte des notifications push (#2493) : une cloche qui sonne
-    #  avertit les téléphones du destinataire, après le commit, si le service est allumé.
-    noter(session, destinataire_id, urgente=bool(champs.get("urgente", False)))
+    #  avertit les téléphones du destinataire, après le commit, si le service est
+    #  allumé — et si c'est l'alerte d'une actualité ⚡ urgente (#2789, `porte.TYPE_POUSSE`).
+    noter(
+        session,
+        destinataire_id,
+        urgente=bool(champs.get("urgente", False)),
+        type_notification=str(champs.get("type", "")),
+    )
 
 
 def sonner(
