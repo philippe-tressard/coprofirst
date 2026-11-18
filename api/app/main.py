@@ -82,6 +82,7 @@ from app.routers import (
     flux,
 )
 from app.routers import uploads, faq, signalements, annonces_hall, patrimoine
+from app.routers import masquages
 from app.routers import patrimoine_branche
 from app.routers import equipements
 from app.routers import lectures, manuel, noms
@@ -406,6 +407,7 @@ app.include_router(telemetry.router)
 app.include_router(telemetry_collecte.router)
 app.include_router(flux.router)
 app.include_router(signalements.router)
+app.include_router(masquages.router)
 app.include_router(patrimoine.router)
 app.include_router(patrimoine_branche.router)
 app.include_router(equipements.router)

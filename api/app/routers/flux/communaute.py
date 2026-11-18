@@ -161,6 +161,8 @@ def _collecter_annonces(ctx: ContexteFlux) -> list[FluxItem]:
                 lien=lien_element("annonce", a.id),
                 meta={
                     "annonce_id": a.id,
+                    #  Qui l'a publiée : le fil retire ce qu'un lecteur a masqué (#2861).
+                    "auteur_id": a.auteur_id,
                     "type_annonce": a.type_annonce,
                     "statut": a.statut,
                     #  En clair, comme le badge d'état le rend (#2633).

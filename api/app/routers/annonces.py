@@ -1,6 +1,7 @@
 """Router petites annonces — communauté résidence."""
 
 import json
+from app.utils.masquage import auteurs_masques, garder
 from app.utils import horloge
 from typing import List, Optional
 
@@ -260,6 +261,7 @@ def list_annonces(
     #  pas un filtre. C'est le MÊME appel que les publications et les sondages
     #  (`cible_visible`), et il n'y a pas de seconde règle à maintenir.
     annonces = [a for a in annonces if annonce_visible(a, user)]
+    annonces = garder(annonces, auteurs_masques(session, user))  # #2861
     if type_annonce:
         annonces = [a for a in annonces if a.type_annonce == type_annonce]
     if categorie:

@@ -70,6 +70,7 @@ masque l'origine sans rien apporter (`standards/02` §1, règle 6).
 
 from datetime import date, timedelta
 from typing import Annotated, Optional
+from app.utils.masquage import auteurs_masques, garder
 from app.utils import horloge
 
 from fastapi import APIRouter, Depends, Query
@@ -160,6 +161,11 @@ def get_flux(
     #  exactement ce que la demande du 31/08/2026 dit.
     masques = set(session.exec(select(FluxMasque.item_id)).all())
     items = [i for i in items if i.id not in masques]
+    #  Et, au même point, ce que publie qui CE lecteur a masqué (#2861) : les cartes
+    #  qui disent leur auteur (`meta["auteur_id"]`, une petite annonce) ; une affaire,
+    #  qui regarde le bâtiment, reste au fil, et une idée ou un sondage, dont l'auteur
+    #  n'est jamais affiché, aussi (`utils/masquage`).
+    items = garder(items, auteurs_masques(session, user), lambda i: i.meta.get("auteur_id"))
     #  « Ce qui me concerne » (#2215), au même point d'assemblage et pour la même
     #  raison : la règle de l'accès (`visibility.concerne`), une fois, sur chaque
     #  élément qui porte un lieu. Ceux qui n'en portent pas restent `None` : ils
