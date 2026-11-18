@@ -15,6 +15,7 @@
 	import { onDestroy } from 'svelte';
 	import { membre } from '#lib/accordeon.ts';
 	import IconeAction from '#lib/components/IconeAction.svelte';
+	import { masquer } from '#lib/masquages.ts';
 
 	export let reponses: ReponseCommunaute[] = [];
 	export let currentUserId: number | undefined = undefined;
@@ -23,6 +24,9 @@
 	export let onSubmit: (contenu: string) => Promise<void> | void;
 	export let onDelete: (repId: number) => Promise<void> | void;
 	export let onReport: ((repId: number) => Promise<void> | void) | null = null;
+	/** Proposer « Masquer ce que publie… » sur la réponse d'un autre résident (#2861) :
+	 *  le geste vit dans `#lib/masquages` ; ses réponses quittent la liste aussitôt. */
+	export let masquable = false;
 	export let expanded = false;
 
 	//  L'accordéon (30/09/2026) : ouvrir les réponses d'une idée replie celles
@@ -35,6 +39,9 @@
 		expanded = !expanded;
 		if (expanded) accordeon.prendre(zone);
 	}
+
+	const masquerAuteur = (id: number | null, nom: string) =>
+		id && masquer(id, nom, () => (reponses = reponses.filter((r) => r.auteur_id !== id)));
 
 	let content = '';
 	let submitting = false;
@@ -99,6 +106,17 @@
 								title="Signaler cette réponse au conseil syndical"
 								aria-label="Signaler cette réponse"
 								on:click={() => onReport?.(rep.id)}><IconeAction icone="flag" /></button
+							>
+						{/if}
+						<!--  Le conseil ne se masque pas (`utils/masquage`) : le geste ne s'offre
+						      pas sur sa réponse, et le serveur refuserait de toute façon. -->
+						{#if masquable && rep.auteur_id && rep.auteur_id !== currentUserId && !rep.est_cs}
+							<button
+								class="btn-icon"
+								title="Masquer ce que publie {rep.auteur_nom}"
+								aria-label="Masquer ce que publie {rep.auteur_nom}"
+								on:click={() => masquerAuteur(rep.auteur_id, rep.auteur_nom)}
+								><IconeAction icone="eye-off" /></button
 							>
 						{/if}
 						<!--  `peut_supprimer` : la conclusion de `peut_commenter`, servie (#2506). -->

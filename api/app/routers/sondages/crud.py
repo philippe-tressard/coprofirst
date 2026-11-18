@@ -5,6 +5,7 @@ lui-même — `participation`, dont les chemins sont nus, le reçoit du paquet.
 """
 
 import json
+from app.utils.masquage import auteurs_masques, garder
 from app.utils import horloge
 
 from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException
@@ -165,6 +166,7 @@ def get_sondage(
     commentaires_db = session.exec(
         select(CommentaireSondage).where(CommentaireSondage.sondage_id == sondage_id)
     ).all()
+    commentaires_db = garder(commentaires_db, auteurs_masques(session, user))  # #2861
     commentaires_out = tri_reponses(
         [enrich_reponse(c, session, lecteur=user) for c in commentaires_db]
     )

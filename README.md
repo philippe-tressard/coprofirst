@@ -32,7 +32,7 @@
 - **Carnet d'entretien** — l'histoire du bâti exigée par le décret n° 2001-477, constituée par équipement à partir des contrats et des affaires résolues, avec un bilan d'exercice pour le conseil.
 - **Mes lots & accès** — lots, badges Vigik, télécommandes de parking et gestion locative (baux, locataires, inventaire de remise). Le conseil voit les portes que les lots d'un badge justifient — proposées, jamais posées seules — et les badges qui s'en écartent.
 - **FAQ** — questions fréquentes filtrées par profil.
-- **Communauté** — idées, sondages, petites annonces et avis sur l'application, réservés aux résidents.
+- **Communauté** — idées, sondages, petites annonces et avis sur l'application, réservés aux résidents. Tout contenu se **signale** au conseil syndical, une affaire, ses suites et la réponse de l'assistant IA comprises ; chacun peut **masquer**, pour lui seul, ce que signe un autre résident (annonces, réponses, messages), et revenir sur ce choix dans son profil.
 - **Prestataires & Contrats** — annuaire, contrats d'entretien, échéances de visite, résiliation d'un contrat et prestataire qui le remplace, notation, synthèse de contrat par l'assistant IA ; une affaire peut désigner plusieurs prestataires, dans l'ordre.
 - **Annonces de hall** — affiche PDF aux couleurs de la résidence, diffusable au conseil, au syndic et au groupe WhatsApp.
 - **Écrans du hall** — une Apple TV appairée par le conseil (code court saisi dans l'Espace CS) fait défiler les affiches en cours de son périmètre, sans auteur ni destinataires ; son jeton n'ouvre que cette lecture, comme celui d'une montre n'ouvre que la cloche (un seul mécanisme de jeton d'appareil, à portée unique).

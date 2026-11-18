@@ -247,7 +247,16 @@ export interface PetiteAnnonce {
 	peut_supprimer: boolean;
 }
 
-export type CibleSignalement = 'idee' | 'annonce' | 'sondage' | 'reponse' | 'commentaire';
+/**  Ce qui se signale — `utils/signalement_cibles.CIBLES`, seule liste (#2861). */
+export type CibleSignalement =
+	| 'idee'
+	| 'annonce'
+	| 'sondage'
+	| 'reponse'
+	| 'commentaire'
+	| 'affaire'
+	| 'suite'
+	| 'question_reglement';
 
 /**  Une entrée de la file de modération — `signalements._enrich`. */
 export interface Signalement {
@@ -264,6 +273,16 @@ export interface Signalement {
 	signale_par: string;
 	auteur_cible: string | null;
 	auteur_cible_id: number | null;
+	/** Où lire le contenu signalé, calculé par le serveur ; `null` s'il a disparu. */
+	lien: string | null;
+}
+
+/**  Un masque posé sur ce que publie un autre résident (`GET /masquages`, #2861). */
+export interface Masquage {
+	auteur_id: number;
+	/** Le nom tel que l'affichent ses publications. */
+	auteur: string;
+	cree_le: string;
 }
 
 /** Les gestes qui ne rendent qu'un message (`voter`, `cloturer`). */
@@ -340,7 +359,7 @@ export const annonces = {
 };
 
 export const signalements = {
-	creer: (cible_type: string, cible_id: number, motif: string) =>
+	creer: (cible_type: CibleSignalement, cible_id: number, motif: string) =>
 		api.post<{ id: number; statut: string }>('/signalements', { cible_type, cible_id, motif }),
 	liste: (statut = 'en_attente') => api.get<Signalement[]>(`/signalements?statut=${statut}`),
 	//  🔴 `count` A ÉTÉ RETIRÉE le 06/09/2026 (#801) : l'écran charge déjà
@@ -351,4 +370,13 @@ export const signalements = {
 	//  écran qui voudrait le compte SANS la liste.
 	resoudre: (id: number, statut: 'traite' | 'rejete') =>
 		api.patch<{ id: number; statut: string }>(`/signalements/${id}`, { statut }),
+};
+
+/**  Masquer, pour soi seul, ce que signe un autre résident (#2861) — la règle est
+ *  au serveur (`utils/masquage`) : il refuse en 422, avec son motif, ce qui ne se
+ *  masque pas (soi-même, le conseil syndical, l'administration). */
+export const masquages = {
+	liste: () => api.get<Masquage[]>('/masquages'),
+	masquer: (auteur_id: number) => api.post<Masquage>('/masquages', { auteur_id }),
+	demasquer: (auteur_id: number) => api.delete(`/masquages/${auteur_id}`),
 };

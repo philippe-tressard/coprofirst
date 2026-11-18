@@ -43,7 +43,7 @@
 	import BadgePerimetre from '#lib/components/BadgePerimetre.svelte';
 	import PastilleLecture from '#lib/components/PastilleLecture.svelte';
 	import { STATUTS_IDEE, STATUT_IDEE_LABELS } from '#lib/idees.ts';
-	import type { Idee } from '#lib/api/index.ts';
+	import type { CibleSignalement, Idee } from '#lib/api/index.ts';
 
 	/** Les idées à rendre, déjà filtrées et triées par l'appelant. */
 	export let idees: Idee[] = [];
@@ -67,7 +67,7 @@
 	 *   ⚠️ Une idée ne se déplie pas (« elle montre tout ») : il n'y a donc pas de
 	 *   corps à ouvrir, seulement une description à remplacer. */
 	export let editId: number | null = null;
-	export let onSignaler: (cibleType: string, cibleId: number) => void;
+	export let onSignaler: (cibleType: CibleSignalement, cibleId: number) => void;
 	export let onRepondre: (id: number, contenu: string) => Promise<void> | void;
 	export let onSupprimerReponse: (id: number, reponseId: number) => void;
 </script>
@@ -197,6 +197,7 @@
 				onSubmit={(c) => onRepondre(idee.id, c)}
 				onDelete={(rid) => onSupprimerReponse(idee.id, rid)}
 				onReport={(rid) => onSignaler('reponse', rid)}
+				masquable
 			/>
 		</div>
 	</CarteListe>

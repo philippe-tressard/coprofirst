@@ -43,7 +43,12 @@
 	import ReglagesListe from '#lib/components/ReglagesListe.svelte';
 	import { CATEGORIES_ANNONCE, TRIS_ANNONCE, TYPES_ANNONCE } from '#lib/annonces.ts';
 	import { enCours } from '#lib/archives.ts';
-	import { annonces as annoncesApi, type PetiteAnnonce } from '#lib/api/index.ts';
+	import {
+		annonces as annoncesApi,
+		type CibleSignalement,
+		type PetiteAnnonce,
+	} from '#lib/api/index.ts';
+	import { masquer } from '#lib/masquages.ts';
 	import { messageErreur, tenter } from '#lib/erreurs.ts';
 	import { toast } from '#lib/components/Toast.svelte';
 	import { confirmerPuis, SUPPRESSION } from '#lib/confirmation.ts';
@@ -60,7 +65,13 @@
 	/** L'annonce dépliée — liée aussi : un lien profond (`#annonce-12`) la désigne. */
 	export let expandedAnnonce: number | null = null;
 	export let currentUserId: number | undefined = undefined;
-	export let onSignaler: (cibleType: string, cibleId: number) => void;
+	export let onSignaler: (cibleType: CibleSignalement, cibleId: number) => void;
+
+	//  Masquer l'auteur d'une annonce (#2861) : la liste se relit, ses annonces la quittent.
+	const masquerAuteur = (id: number, nom: string) =>
+		masquer(id, nom, async () => {
+			annonces = await annoncesApi.list();
+		});
 
 	let filtreType = '';
 	let filtreCategorie = '';
@@ -285,6 +296,7 @@
 				onRepondre={repondre}
 				onSupprimerReponse={supprimerReponse}
 				{onSignaler}
+				onMasquerAuteur={masquerAuteur}
 			>
 				<svelte:fragment slot="formulaire" let:annonce>
 					<!--  `{#key}` remonte le composant d'une annonce à l'autre : ses champs

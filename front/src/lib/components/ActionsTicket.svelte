@@ -25,6 +25,7 @@
 	import BoutonLien from './BoutonLien.svelte';
 	import BoutonOptions from './BoutonOptions.svelte';
 	import IconeAction from './IconeAction.svelte';
+	import { signaler } from '#lib/signalements.ts';
 	import type { Ticket } from '#lib/api/index.ts';
 
 	export let ticket: Ticket;
@@ -56,6 +57,18 @@
 	      dans une liste que le destinataire n'a peut-être pas le droit de voir
 	      en entier. Même adresse que `lien_ticket()` côté API. -->
 <BoutonLien chemin="/tickets/{ticket.id}" quoi="l'affaire" />
+<!--  🚩 Signaler l'affaire au conseil (#2861) — à qui la lit sans pouvoir la
+      corriger : son auteur, le conseil et l'administration ont d'autres gestes. Comme
+      🔗, le geste est complet ici (`#lib/signalements`), rien ne remonte à la page. -->
+{#if !peutCorriger && !archive}
+	<button
+		class="btn-icon"
+		aria-label="Signaler cette affaire au conseil syndical"
+		title="Signaler au conseil syndical"
+		on:click|stopPropagation={() => signaler('affaire', ticket.id)}
+		><IconeAction icone="flag" /></button
+	>
+{/if}
 {#if peutSuivre}
 	<!--  Un bouton ÉCRIT, plus une icône (14/11/2026, #2723) : la bulle de « Répondre »
 	      et les flèches de « Ajouter une suite » se confondaient, et une réponse est

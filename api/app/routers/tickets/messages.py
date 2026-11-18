@@ -3,6 +3,7 @@
 Extrait de `tickets.py` le 08/08/2026. Voir `__init__.py` pour la règle de découpage.
 """
 
+from app.utils.masquage import auteurs_masques, garder
 from app.utils import horloge
 
 from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException
@@ -64,9 +65,10 @@ def get_messages(
     # Messages internes réservés CS/admin
     if not lit_les_notes_internes(user):
         stmt = stmt.where(MessageTicket.interne == False)  # noqa: E712
-    return [
-        message_lu(m, session, user) for m in session.exec(stmt.order_by(MessageTicket.cree_le))
-    ]
+    messages = garder(
+        session.exec(stmt.order_by(MessageTicket.cree_le)).all(), auteurs_masques(session, user)
+    )  # #2861
+    return [message_lu(m, session, user) for m in messages]
 
 
 def _prevenir(

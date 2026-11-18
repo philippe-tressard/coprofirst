@@ -50,6 +50,11 @@
 						<span class="muted">(signalé par {sig.signale_par})</span>
 					</div>
 					<div class="moderation-actions">
+						<!--  Le lien est SERVI (`signalements._enrich`, #2861) : une affaire, une
+						      suite ou une réponse de l'assistant ne vit pas dans la Communauté. -->
+						{#if sig.lien}
+							<a class="btn btn-sm btn-outline" href={sig.lien}>Voir le contenu</a>
+						{/if}
 						<button
 							class="btn btn-sm btn-outline"
 							on:click={() => dispatch('resoudre', { id: sig.id, decision: 'traite' })}

@@ -31,10 +31,22 @@ from app.routers.prestataires_lecture import lire_contrat
 from app.routers.reporting_renouvellements import _contrats
 from app.utils.echeance_contrat import echeance_du_contrat, resiliation_effective
 from app.utils.remplacement_contrat import successeur_en_vigueur, verifier_remplacement
-from tests.aides_affaire import _contrat, _prestataire
+from tests.aides_affaire import _contrat as _contrat_commun
+from tests.aides_affaire import _prestataire
 
 DERNIER_JOUR = date(2026, 11, 17)  # « résiliation effective au 17 novembre »
 LENDEMAIN = date(2026, 11, 18)  # « lancez votre contrat au 18 novembre »
+DEBUT = date(2020, 1, 1)  # avant toute résiliation du fichier, quel que soit le jour
+
+
+def _contrat(session, p, **champs):
+    """Le contrat partagé, à une date de début FIXE (#2870).
+
+    Sans elle, `date_debut` prend le jour d'exécution : le 18/11/2026, un contrat
+    créé ce jour-là commençait après sa résiliation au `DERNIER_JOUR`, et trois cas
+    sont passés au rouge.
+    """
+    return _contrat_commun(session, p, **{"date_debut": DEBUT, **champs})
 
 
 class _Contrat:
