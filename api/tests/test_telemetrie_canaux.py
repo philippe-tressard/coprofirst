@@ -1,4 +1,4 @@
-"""La mesure d'audience distingue le CANAL d'accès : site web, app iPhone (14/11/2026).
+"""La mesure d'audience distingue le CANAL d'accès : site web, app Apple (14/11/2026).
 
 Demandé : « savoir si une page est consultée depuis l'accès web ou depuis
 l'application iOS ». Ce que ces tests figent :
@@ -207,7 +207,7 @@ def test_le_jour_reparti_les_vues_et_les_visiteurs_par_canal(gestionnaire_http):
         },
         {
             "canal": "ios",
-            "libelle": "App iPhone",
+            "libelle": "App Apple",
             "vues": 4,
             "part": 67,
             "visiteurs": 2,
@@ -243,7 +243,7 @@ def test_l_annee_lit_le_mensuel_sans_visiteurs(gestionnaire_http):
     assert donnees["canaux"] == [
         {
             "canal": "ios",
-            "libelle": "App iPhone",
+            "libelle": "App Apple",
             "vues": 5,
             "part": 100,
             "visiteurs": None,

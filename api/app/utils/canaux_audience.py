@@ -1,4 +1,4 @@
-"""Les CANAUX d'accès de la mesure d'audience : le site web, l'app iPhone, l'app Android.
+"""Les CANAUX d'accès de la mesure d'audience : le site web, l'app Apple, l'app Android.
 
 Demandé le 14/11/2026 : « comprendre comment l'appli est consommée » — pour une page
 consultée, savoir si elle l'a été depuis le site ou depuis l'application. Jusque-là,
@@ -38,7 +38,11 @@ CANAL_PAR_DEFAUT: Canal = "site"
 
 _LIBELLES = {
     "site": "Web",
-    "ios": "App iPhone",
+    #  « App Apple », pas « App iPhone » (#2877) : l'app est universelle — iPad, Mac à
+    #  puce Apple, Vision Pro, et demain Apple TV et Apple Watch (`APPAREILS_PAR_CANAL`).
+    #  Ni « App iOS » : le Mac, la TV, la montre et le casque n'ont pas iOS. Symétrique
+    #  d'« App Android », qui couvre aussi tablette, TV et montre. Le CODE `ios` reste.
+    "ios": "App Apple",
     "android": "App Android",
 }
 

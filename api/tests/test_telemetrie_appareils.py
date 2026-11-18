@@ -27,7 +27,12 @@ from app.models.core import ConfigSite, RoleUtilisateur, TelemetryEvent
 from app.models.telemetrie import AudienceCanalJour, AudienceCanalMois
 from app.seed.contenus_legaux_canal import TELEMETRIE_ACCES
 from app.utils import horloge, telemetry_aggregation
-from app.utils.canaux_audience import APPAREILS_PAR_CANAL
+from app.utils.canaux_audience import (
+    APPAREILS_PAR_CANAL,
+    CANAUX,
+    libelle_appareil,
+    libelle_canal,
+)
 from app.utils.limiter import limiter
 from app.utils.textes_livres import forme_editeur
 from tests.aides_base import moteur_de_test
@@ -176,3 +181,15 @@ def test_les_classes_d_appareil_sont_publiees_aux_apps():
     reference = json.loads(constantes_clients.REFERENCE.read_text(encoding="utf-8"))
     publiee = reference["constantes"]["appareilsParCanal"]["valeur"]
     assert publiee == {canal: list(classes) for canal, classes in APPAREILS_PAR_CANAL.items()}
+
+
+@pytest.mark.parametrize("canal", CANAUX)
+def test_un_canal_ne_porte_le_nom_d_aucun_de_ses_appareils(canal):
+    """🔴 #2877 : le canal `ios` s'appelait « App iPhone » et se dépliait sur « iPad »,
+    « Mac »… Le libellé d'un canal nomme la famille, jamais l'un de ses appareils."""
+    nom = libelle_canal(canal).casefold()
+    for appareil in APPAREILS_PAR_CANAL[canal]:
+        assert libelle_appareil(appareil).casefold() not in nom, (
+            f"le canal {canal} (« {libelle_canal(canal)} ») porte le nom de l'appareil "
+            f"« {libelle_appareil(appareil)} », l'un de ceux qu'il regroupe"
+        )

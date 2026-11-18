@@ -56,7 +56,7 @@ def export_telemetrie(
                 "page": ev.page,
                 "action": ev.action,
                 "detail": ev.detail,
-                "canal": ev.canal,  # site, app iPhone… (14/11/2026)
+                "canal": ev.canal,  # site, app Apple… (14/11/2026)
                 "appareil": ev.appareil,  # téléphone, tablette… ; None = non précisé (#2774)
                 "date": ev.cree_le.isoformat() if ev.cree_le else None,
             }
