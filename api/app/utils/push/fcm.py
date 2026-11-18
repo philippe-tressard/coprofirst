@@ -3,8 +3,8 @@
 Spécification : `specs/architecture/notifications-push.md` §4 et §5. Comme la clé `.p8`
 d'Apple (N1), le **compte de service** du projet Firebase de CoproFirst n'est détenu que
 par la RÉFÉRENCE — jamais une installation, jamais le dépôt. Ce transport est celui que
-le relais de la plateforme (#2494) emploiera pour un appareil `fcm` ; tant qu'il n'est pas
-branché, `transport.TRANSPORT` reste `RelaisNonBranche` et rien ne part.
+le relais de la plateforme emploie pour un appareil `fcm` (`utils/push/relais`) ; sans
+compte de service posé (`FCM_COMPTE_SERVICE`), le relais refuse et rien ne part.
 
 ## Le geste
 

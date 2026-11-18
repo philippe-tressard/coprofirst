@@ -45,6 +45,16 @@ def test_chaque_champ_dit_sa_finalite(schema, nom, champ):
     assert (champ.description or "").strip(), f"{schema.__name__}.{nom} : finalité absente"
 
 
+#: Les données de RÉSIDENT admises au contrat, chacune avec sa raison et sa date.
+#: Hors d'elles, une donnée personnelle n'est que celle de l'administrateur.
+PERSONNELS_DE_RESIDENT = {
+    ("DemandeNotification", "envoi"): (
+        "le jeton d'appareil, pseudonyme, que le relais transmet à Apple ou Google et "
+        "oublie (notifications-push.md §7, N8) — 18/11/2026, #2789"
+    ),
+}
+
+
 def test_les_donnees_personnelles_sont_celles_de_l_administrateur_seul():
     personnels = {
         (schema.__name__, nom)
@@ -53,7 +63,9 @@ def test_les_donnees_personnelles_sont_celles_de_l_administrateur_seul():
     }
     #  Témoin : l'administrateur en déclare bien.
     assert ("AdministrateurInstallation", "courriel") in personnels
-    assert {s for s, _ in personnels} == {"AdministrateurInstallation"}
+    hors_admin = {(s, n) for s, n in personnels if s != "AdministrateurInstallation"}
+    #  Égalité, pas inclusion : une exception qui cesse de servir fait échouer.
+    assert hors_admin == set(PERSONNELS_DE_RESIDENT)
 
 
 def test_aucun_champ_hors_administrateur_ne_designe_une_personne():
