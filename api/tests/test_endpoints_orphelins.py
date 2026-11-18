@@ -53,10 +53,6 @@ SANS_CONSOMMATEUR_FRONT = {
     "/ecrans/appairage/jeton": "idem : l'écran échange son code d'appareil contre son jeton (#2770)",
     "/ecrans/moi/affiches": "idem : ce que lit l'écran de hall appairé, par son jeton (#2770)",
     "/ecrans/moi/affiches/{affiche_id}/images/{rang}": "idem : les images de ses affiches (#2770)",
-    "/masquages": "appelée par les apps iOS et Android (contrat publié, #2456), pour les "
-    "magasins (#2861) ; le site la consomme au lot suivant de #2861 (Profil, « Masquer »), "
-    "qui retire cette ligne",
-    "/masquages/{auteur_id}": "idem : défaire un masque (#2861)",
     "/notifications/supprimer-selection": "la sélection de l'application iOS (« Supprimer (n) », "
     "#2535) ; le site n'offre que « Supprimer les lues » et la corbeille d'une ligne",
     "/prestataires/releves/{r_id}/photo/{nom}": "idem, pour `releve_compteur.photo_url` — le GET passait auparavant par "
