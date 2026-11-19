@@ -374,21 +374,23 @@ def test_le_releve_voit_une_ecriture_d_adresse():
         ("a@exemple..test", False),
         ("a@exemple.test.", False),
         ("a b@exemple.test", False),
+        ("a@b@exemple.test", False),
+        ("@exemple.test", False),
     ],
 )
 def test_la_forme_d_une_adresse(adresse, admise):
-    from app.utils.verification_adresse import _FORME_ADRESSE
+    from app.utils.verification_adresse import forme_adresse_valide
 
-    assert bool(_FORME_ADRESSE.fullmatch(adresse)) is admise
+    assert forme_adresse_valide(adresse) is admise
 
 
 def test_la_forme_d_une_adresse_se_lit_en_temps_lineaire():
     """Le point flottant du domaine coûtait n² sur une saisie sans point (#2882)."""
     import time
 
-    from app.utils.verification_adresse import _FORME_ADRESSE
+    from app.utils.verification_adresse import forme_adresse_valide
 
     debut = time.perf_counter()
-    assert not _FORME_ADRESSE.fullmatch("a@" + "!" * 50_000 + "@")
-    assert not _FORME_ADRESSE.fullmatch("a@" + "!." * 50_000 + " ")
+    assert not forme_adresse_valide("a@" + "!" * 50_000 + "@")
+    assert not forme_adresse_valide("a@" + "!." * 50_000 + " ")
     assert time.perf_counter() - debut < 1
