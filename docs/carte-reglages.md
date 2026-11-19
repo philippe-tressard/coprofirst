@@ -275,6 +275,8 @@ Les champs de `Settings` (`api/app/config.py`). Un `.env` qui porte une variable
 | `HOTE_REGISTRE` | str | vide |
 | `CLE_SIGNATURE_BAUX` | str | secret |
 | `FCM_COMPTE_SERVICE` | str | secret |
+| `APNS_CLE` | str | secret |
+| `APNS_ID_CLE` | str | vide |
 | `REGISTRE_URL` | str | `https://registre.coprofirst.fr` |
 | `INSTALLATION_DIR` | str | `/app/data/installation` |
 | `INSTALLATION_ESSAI` | bool | `False` |

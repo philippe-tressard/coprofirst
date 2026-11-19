@@ -1,12 +1,12 @@
 # Notifications push — le relais APNs de la plateforme (#2458)
 
-> ⏸ **État au 18/11/2026 : le relais est écrit, et éteint faute de secrets.** Le relais
-> répond sous le nom dédié du registre (`registre/relais.py`, #2789) ; une installation
-> lui parle par `transport.TransportDeLInstallation`. Rien ne part pourtant : le compte
-> de service FCM (geste de Philippe, `scripts/exploitation/poser-compte-fcm.sh`) n'est
-> pas posé, la clé `.p8` d'Apple non plus (#2494, l'APNs est refusé jusqu'à son lot), et
-> le service `notifications_push` est coupé partout. Seule l'**alerte d'une actualité ⚡
-> urgente** sonne sur un téléphone (décisions de Philippe des 17 et 18/11/2026, §6.4 et §12).
+> ⏸ **État au 19/11/2026 : le relais est écrit, branché sur FCM et APNs, et éteint
+> faute de secrets posés.** Le relais répond sous le nom dédié du registre
+> (`registre/relais.py`) ; une installation lui parle par `transport.TransportDeLInstallation`.
+> Rien ne part tant que Philippe n'a pas posé le compte de service FCM et la clé `.p8`
+> (`scripts/exploitation/poser-secret-push.sh`) ni allumé le service `notifications_push`,
+> coupé partout. Seule l'**alerte d'une actualité ⚡ urgente** sonne sur un téléphone
+> (décisions de Philippe des 17 et 18/11/2026, §6.4 et §12).
 > Côté apps : philippe-tressard/coprofirst-ios#283 et philippe-tressard/coprofirst-android#280.
 
 > 🧭 **Spécification de CIBLE, validée par Philippe le 03/11/2026** (§10). Écrite le
@@ -100,9 +100,9 @@ jamais en les recopiant :
    raison).
 
 **Puis la transmission** (`utils/push/relais.transmettre`, la même pour la route et
-pour la référence elle-même) : FCM pour un appareil `fcm` (§11) ; pour un appareil
-`apns`, un refus motivé tant que la clé `.p8` manque (#2494). Le lot de l'APNs y
-branchera ceci — l'envoi à APNs : HTTP/2 vers `api.push.apple.com` (ou
+pour la référence elle-même) : FCM pour un appareil `fcm` (§11), APNs pour un appareil
+`apns` (`utils/push/apns.TransportApns`, #2494) ; un refus motivé tant que le secret de
+la plateforme manque. L'envoi à APNs : HTTP/2 (`httpx[http2]`) vers `api.push.apple.com` (ou
 `api.sandbox.push.apple.com` pour un appareil de développement), jeton
 d'authentification JWT ES256 signé par la clé `.p8`, renouvelé entre 20 et
 60 minutes comme Apple l'exige, `apns-topic: fr.coprofirst.app`.
@@ -282,7 +282,7 @@ l'application.
 
 | Lot | Contenu | Dépend de |
 |---|---|---|
-| P1 | **Le relais** côté référence : route, gardes, transmission, journal — **écrit le 18/11/2026 avec FCM** (#2789) ; reste la transmission APNs et le réglage de la clé `.p8` | la clé `.p8` créée par Philippe dans le compte Apple Developer |
+| P1 | **Le relais** côté référence : route, gardes, transmission, journal — **écrit le 18/11/2026 avec FCM** (#2789), **APNs branché le 19/11/2026** (#2494, clé `.p8` en `APNS_CLE` et `APNS_ID_CLE`) | la clé `.p8` créée par Philippe dans le compte Apple Developer — créée le 18/11/2026, à poser |
 | P2 | **L'installation** : table `appareil` et sa migration, routes, porte d'envoi dans `utils/cloche`, service, purges, suppression avec les sessions | P1 (pour l'essai de bout en bout ; le code peut précéder) |
 | P3 | **L'application** (dépôt `coprofirst-ios`) : demande d'autorisation, enregistrement à la connexion, retrait à la déconnexion, lecture de `GET /notifications` à l'ouverture | P2 et le contrat publié (#2456) |
 | P4 | **Politique de confidentialité** et fiche de l'App Store | P2 |
@@ -320,7 +320,7 @@ appareil `fcm` par `TransportFcm`, au compte de service du réglage `FCM_COMPTE_
 
 **Gestes de Philippe** : créer le projet Firebase et son compte de service (rôle
 *Firebase Cloud Messaging API Admin*), le poser sur la référence seule par
-`scripts/exploitation/poser-compte-fcm.sh` (les deux `.env`, le fichier effacé) ; le
+`scripts/exploitation/poser-secret-push.sh` (les deux `.env`, le fichier effacé) ; le
 fichier `google-services.json` de l'app Android ; allumer le service
 `notifications_push`.
 

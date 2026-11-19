@@ -88,7 +88,7 @@ def _etat_vierge(monkeypatch):
     """Ni nonce, ni envoi d'un test à l'autre ; le transport FCM est un double."""
     monkeypatch.setattr(route_relais, "_nonces", {})
     monkeypatch.setattr(route_relais, "_envois", {})
-    monkeypatch.setattr(relais, "_fcm", {})
+    monkeypatch.setattr(relais, "_transports", {})
     monkeypatch.setattr(relais, "TransportFcm", FcmDouble)
     FcmDouble.instances = []
 
