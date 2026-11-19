@@ -266,7 +266,10 @@ const URL_ADMISE = {
 
 /** La raison du refus, ou null si `html` appartient à la grammaire. */
 function horsGrammaire(html) {
-	const jeton = /[^<>]+|<(\/?)([a-z][a-z0-9]*)((?: [a-z]+="[^"<>]*")*)>/gy;
+	//  Blancs avant `>` et casse admis À LA LECTURE : le nom lu se juge ensuite
+	//  contre `ALLOWED_TAGS` (minuscules), donc `<SCRIPT>` ou `<p \n>` ne passent
+	//  pas pour autant — et le motif ne se prend pas pour un filtre de balises.
+	const jeton = /[^<>]+|<(\/?)([a-z][a-z0-9]*)((?: [a-z]+="[^"<>]*")*)\s*>/giy;
 	let fin = 0;
 	for (const m of html.matchAll(jeton)) {
 		if (m.index !== fin) break;
