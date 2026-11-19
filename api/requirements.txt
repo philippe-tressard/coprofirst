@@ -27,7 +27,9 @@ bcrypt==4.0.1
 python-multipart==0.0.33
 fastapi-mail==1.6.8
 apscheduler==3.11.3
-httpx==0.28.1
+#  `[http2]` : APNs n'accepte que HTTP/2 (`utils/push/apns`, #2494) — h2, hpack et
+#  hyperframe, sous licence MIT.
+httpx[http2]==0.28.1
 #  Lecture du texte d'un PDF — la synthèse assistée d'un contrat (#899). Pur
 #  Python, aucune bibliothèque système : rien à ajouter au Dockerfile, à la
 #  différence de WeasyPrint qui, lui, ÉCRIT des PDF et réclame GTK.

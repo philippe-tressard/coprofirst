@@ -126,9 +126,9 @@ DU_PROCESSUS = {
         "les instants des derniers envois au relais, par identifiant d'INSTALLATION "
         "(le plafond par installation, #2494)"
     ),
-    ("utils/push/relais.py", "_fcm"): (
-        "le transport FCM de la plateforme et son jeton d'accès OAuth d'une heure — un "
-        "secret de la référence, aucune donnée de copropriété (#2789)"
+    ("utils/push/relais.py", "_transports"): (
+        "les transports FCM et APNs de la plateforme et leurs jetons d'accès d'une heure "
+        "au plus — des secrets de la référence, aucune donnée de copropriété (#2789, #2494)"
     ),
     ("installation_commune/declaration.py", "_lue"): (
         "la déclaration des copropriétés d'une installation commune, relue quand son "
