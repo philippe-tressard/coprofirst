@@ -94,7 +94,7 @@ class TelemetryMonthly(SQLModel, table=True):
 
 
 class _AudienceCanal(SQLModel):
-    """Les vues d'une page par CANAL d'accès (site, app iPhone…) — 0335, 14/11/2026.
+    """Les vues d'une page par CANAL d'accès (site, app Apple…) — 0335, 14/11/2026.
 
     À part des agrégats `telemetry_daily|monthly`, qui restent ce qu'ils étaient :
     les lecteurs existants n'ont pas à apprendre à ne pas additionner deux fois. Les
