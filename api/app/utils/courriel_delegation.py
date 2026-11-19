@@ -76,7 +76,9 @@ SIGNATAIRES_PARTAGES = frozenset(
     }
 )
 
-_SEPARATEUR = re.compile(r"\s*(?:=|→|->)\s*")
+#  Sans les blancs autour (#2882) : `\s*` des deux côtés relisait une suite de
+#  blancs en n² ; chaque morceau est `strip()` ensuite, le résultat est le même.
+_SEPARATEUR = re.compile(r"=|→|->")
 _DOMAINE = re.compile(r"^(?=.{4,253}$)([a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z]{2,63}$")
 
 

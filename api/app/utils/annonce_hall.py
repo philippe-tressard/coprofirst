@@ -197,7 +197,9 @@ def texte_brut(html: str) -> str:
     (17/10/2026). Une passe unique ne décode pas deux fois (`&amp;lt;` reste
     `&lt;`). Le texte rendu est du TEXTE : chaque rendu l'échappe à nouveau.
     """
-    txt = unescape(re.sub(r"<[^>]*>", " ", html or ""))
+    #  `[^<>]`, pas `[^>]` (#2882) : sans `>`, chaque `<` relisait la saisie
+    #  jusqu'au bout — n² sur une suite de `<`, dans le process de l'API.
+    txt = unescape(re.sub(r"<[^<>]*>", " ", html or ""))
     return re.sub(r"\s+", " ", txt).strip()
 
 
