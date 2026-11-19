@@ -231,61 +231,191 @@ if (erreurs.length) {
 	process.exit(1);
 }
 
-// ── 5. L'assainisseur de SECOURS, éprouvé (#2159) ───────────────────────────
+// ── 5. L'assainisseur de SECOURS, éprouvé (#2159, #2882) ────────────────────
 //  Tant que DOMPurify n'est pas chargé (rendu serveur, premier rendu), c'est lui
 //  qui assainit — et un rendu fait par lui le reste. Il gardait
-//  `href="javascript:…"` : seule la CSP l'arrêtait. On l'exécute ici sur des
-//  charges réelles, tiré du SOURCE de `sanitize.ts` (aucune copie à tenir).
-const sourceSanitize = readFileSync(SOURCE_SANITIZE, 'utf8');
-
-function assainisseurDeSecours() {
-	const morceau = (motif) => {
-		const m = sourceSanitize.match(motif);
-		if (!m) throw new Error(`introuvable dans sanitize.ts : ${motif}`);
-		return m[0];
-	};
-	const code = [
-		morceau(/const ALLOWED_TAGS = \[[\s\S]*?\];/).replace(/\/\/[^\n]*/g, ''),
-		morceau(/const ALLOWED_ATTR = \[[^\]]*\];/),
-		'const _allowedTagSet = new Set(ALLOWED_TAGS);',
-		'const _allowedAttrSet = new Set(ALLOWED_ATTR);',
-		morceau(/const URL_HREF_ADMISE = [^\n]*;/),
-		morceau(/const URL_SRC_ADMISE = [^\n]*;/),
-		morceau(/function _serverSanitize[\s\S]*?\n\}/).replace(/: string/g, ''),
-		'return _serverSanitize;',
-	].join('\n');
-	return new Function(code)();
-}
-
+//  `href="javascript:…"` (#2159), puis se contournait en recollant un
+//  gestionnaire (#2882) : seule la CSP l'arrêtait.
+//
+//  Hors navigateur, `safeHtml` n'a pas DOMPurify : c'est donc le secours qui
+//  répond ici, importé tel quel (Node lit le TypeScript, aucune copie à tenir).
+//  On n'y cherche pas des motifs interdits — on exige que CHAQUE sortie
+//  appartienne à la grammaire fermée que le module promet :
+//    - du texte sans `<` ni `>` ;
+//    - `<balise attr="valeur">` ou `</balise>`, balise de `ALLOWED_TAGS`,
+//      attribut de `ALLOWED_ATTR`, valeur sans `"`, `<` ni `>` ;
+//    - un `href` / `src` qui commence par un début admis.
+//  Une telle sortie, lue par un navigateur, ne peut porter ni gestionnaire ni
+//  balise refusée. Corpus hostile, 20 000 entrées tirées (graine fixe),
+//  contenus légitimes qui doivent survivre, et durée bornée sur une entrée longue.
 let secours;
 try {
-	secours = assainisseurDeSecours();
+	secours = await import(SOURCE_SANITIZE);
 } catch (e) {
 	console.error(`✗ INCONNU : l'assainisseur de secours ne se lit plus (${e.message}).`);
 	process.exit(1);
 }
-const CHARGES = [
-	['<a href="javascript:alert(1)">x</a>', /javascript:/i],
-	['<a href=" javascript:alert(1)">x</a>', /javascript:/i],
-	['<a href="&#106;avascript:alert(1)">x</a>', /href/],
-	['<a href="//tiers.example/x">x</a>', /href/],
-	['<img src="javascript:alert(1)">', /src/],
-	['<img src="data:text/html;base64,PHNjcmlwdD4=">', /src/],
-	['<img src=x onerror=alert(1)>', /onerror/i],
-	['<svg onload=alert(1)>', /svg|onload/i],
+const { safeHtml, safeRichContent, safeDescription, ALLOWED_TAGS, ALLOWED_ATTR } = secours;
+let echecs = 0;
+const BALISES = new Set(ALLOWED_TAGS);
+const ATTRIBUTS = new Set(ALLOWED_ATTR);
+const URL_ADMISE = {
+	href: /^(?:https?:\/\/|mailto:|\/(?!\/)|#|\.{1,2}\/)/i,
+	src: /^(?:https?:\/\/|\/(?!\/))/i,
+};
+
+/** La raison du refus, ou null si `html` appartient à la grammaire. */
+function horsGrammaire(html) {
+	//  Blancs avant `>` et casse admis À LA LECTURE : le nom lu se juge ensuite
+	//  contre `ALLOWED_TAGS` (minuscules), donc `<SCRIPT>` ou `<p \n>` ne passent
+	//  pas pour autant — et le motif ne se prend pas pour un filtre de balises.
+	const jeton = /[^<>]+|<(\/?)([a-z][a-z0-9]*)((?: [a-z]+="[^"<>]*")*)\s*>/giy;
+	let fin = 0;
+	for (const m of html.matchAll(jeton)) {
+		if (m.index !== fin) break;
+		fin = m.index + m[0].length;
+		if (!m[2]) continue;
+		if (!BALISES.has(m[2])) return `balise refusée <${m[2]}>`;
+		if (m[1] && m[3]) return `balise fermante avec attributs : ${m[0]}`;
+		for (const [, nom, valeur] of m[3].matchAll(/ ([a-z]+)="([^"]*)"/g)) {
+			if (!ATTRIBUTS.has(nom)) return `attribut refusé ${nom}`;
+			if (URL_ADMISE[nom] && !URL_ADMISE[nom].test(valeur.trim()))
+				return `URL refusée ${nom}="${valeur}"`;
+		}
+	}
+	return fin === html.length
+		? null
+		: `hors grammaire à la position ${fin} : ${JSON.stringify(html.slice(fin, fin + 40))}`;
+}
+
+const HOSTILES = [
+	'<img alt=">" src=x oonclick=""nerror=alert(1)>',
+	'<p title=">" oonmouseover=""nmouseover=alert(1)>x</p>',
+	'<a href="/x" title=">" oonclick=""nclick=alert(1)>lien</a>',
+	'<scr<script>ipt>alert(1)</script>',
+	'<script>alert(1)</script >',
+	'<SCRIPT>alert(1)</SCRIPT>',
+	'<script src=//x></script>',
+	'<style>*{x:y}</style ><p>ok</p>',
+	'<!--><img src=x onerror=alert(1)>-->',
+	'<!-- a --!><img src=x onerror=alert(1)>',
+	'<img src=x onerror=alert(1)//',
+	'<img/src=x/onerror=alert(1)>',
+	'<a href="javascript:alert(1)">x</a>',
+	'<a href=" javascript:alert(1)">x</a>',
+	'<a href="&#106;avascript:alert(1)">x</a>',
+	'<a href=//evil.example>x</a>',
+	'<img src="data:image/svg+xml,<svg onload=alert(1)>">',
+	"<a title='\"><img src=x onerror=alert(1)>'>x</a>",
+	'<svg><script>alert(1)</script></svg>',
+	'<iframe srcdoc="<script>alert(1)</script>"></iframe>',
+	'<p class=a onclick=alert(1)>x</p>',
+	'<p\tonclick=alert(1)>x</p>',
+	'<p onclick\n=alert(1)>x</p>',
+	'<math><mi xlink:href="javascript:alert(1)">x</mi></math>',
+	'<<p>>',
+	'</p onclick=alert(1)>',
+	'<a href="/ok" target=_blank rel=noopener>lien</a>',
+	'<img src="javascript:alert(1)">',
+	'<img src="data:text/html;base64,PHNjcmlwdD4=">',
+	'<svg onload=alert(1)>',
 ];
-const TEMOINS = [
-	['<a href="https://exemple.test/x">x</a>', 'href="https://exemple.test/x"'],
-	['<a href="/tickets/3">x</a>', 'href="/tickets/3"'],
-	['<a href="mailto:a@exemple.test">x</a>', 'href="mailto:a@exemple.test"'],
-	['<img src="/uploads/fichiers/a.jpg" alt="a">', 'src="/uploads/fichiers/a.jpg"'],
+
+const verifier = (entree, sortie) => {
+	const raison = horsGrammaire(sortie);
+	if (raison) {
+		echecs++;
+		console.error(
+			`  ✗ ${JSON.stringify(entree)}\n      → ${JSON.stringify(sortie)}\n      ${raison}`,
+		);
+	}
+};
+
+for (const h of HOSTILES)
+	for (const f of [safeHtml, safeRichContent, safeDescription]) verifier(h, f(h));
+
+//  Fuzz : des fragments dangereux recollés au hasard (graine fixe, rejouable).
+const FRAGMENTS = [
+	'<',
+	'>',
+	'/',
+	'"',
+	"'",
+	'=',
+	' ',
+	'on',
+	'error',
+	'click',
+	'img',
+	'a',
+	'p',
+	'script',
+	'style',
+	'src',
+	'href',
+	'alt',
+	'x',
+	'javascript:',
+	'<!--',
+	'-->',
+	'--!>',
+	'\n',
+	'\t',
+	'alert(1)',
+	'o',
+	'n',
 ];
-const fuites = CHARGES.filter(([entree, interdit]) => interdit.test(secours(entree)));
-const perdus = TEMOINS.filter(([entree, garde]) => !secours(entree).includes(garde));
-if (fuites.length || perdus.length) {
-	console.error("✗ L'assainisseur de secours (`_serverSanitize`) est faux :\n");
-	for (const [e] of fuites) console.error(`  • laisse passer : ${e} → ${secours(e)}`);
-	for (const [e] of perdus) console.error(`  • retire un contenu légitime : ${e} → ${secours(e)}`);
+let graine = 2882;
+const hasard = (n) => (graine = (graine * 1103515245 + 12345) % 2147483648) % n;
+for (let i = 0; i < 20000; i++) {
+	let s = '';
+	for (let j = 0, k = 1 + hasard(30); j < k; j++) s += FRAGMENTS[hasard(FRAGMENTS.length)];
+	verifier(s, safeHtml(s));
+}
+
+//  Contenu légitime : il doit SURVIVRE (un assainisseur qui vide tout passerait la grammaire).
+const LEGITIMES = [
+	['<p>Bonjour <strong>à tous</strong></p>', '<p>Bonjour <strong>à tous</strong></p>'],
+	[
+		'<a href="https://exemple.test/a?b=1&amp;c=2" target="_blank">lien</a>',
+		'<a href="https://exemple.test/a?b=1&amp;c=2" target="_blank">lien</a>',
+	],
+	['<img src="/uploads/x.webp" alt="Hall">', '<img src="/uploads/x.webp" alt="Hall">'],
+	['3 < 4 et 5 > 2', '3 &lt; 4 et 5 &gt; 2'],
+	['<ul><li>un</li><li>deux</li></ul>', '<ul><li>un</li><li>deux</li></ul>'],
+	['<a href="/tickets/3">x</a>', '<a href="/tickets/3">x</a>'],
+	['<a href="mailto:a@exemple.test">x</a>', '<a href="mailto:a@exemple.test">x</a>'],
+];
+for (const [entree, attendu] of LEGITIMES) {
+	const obtenu = safeHtml(entree);
+	if (obtenu !== attendu) {
+		echecs++;
+		console.error(
+			`  ✗ contenu légitime altéré ${JSON.stringify(entree)}\n      attendu ${JSON.stringify(attendu)}\n      obtenu  ${JSON.stringify(obtenu)}`,
+		);
+	}
+}
+
+//  Durée : des motifs qui reculeraient sur une entrée longue.
+for (const [nom, entree] of [
+	['<aaaa… sans >', '<' + 'a'.repeat(200000)],
+	['< répétés', '<a '.repeat(70000)],
+	['guillemets ouverts', '<a "'.repeat(50000)],
+	['commentaires ouverts', '<!--'.repeat(50000)],
+]) {
+	const t = performance.now();
+	safeHtml(entree);
+	const ms = performance.now() - t;
+	if (ms > 1000) {
+		echecs++;
+		console.error(`  ✗ ${nom} : ${Math.round(ms)} ms (> 1000)`);
+	}
+}
+
+if (echecs) {
+	console.error(
+		`\n✗ L'assainisseur de secours (\`_serverSanitize\`) est faux : ${echecs} échec(s) (#2882).`,
+	);
 	process.exit(1);
 }
 
@@ -293,5 +423,5 @@ console.log(
 	`✓ HTML : ${prises} occurrences de {@html} dans ${fichiers.length} composants — ` +
 		`toutes assainies par ${[...assainisseurs].join('/')}, ` +
 		`${Object.keys(EXCEPTIONS).length} exceptions déclarées et servies ; ` +
-		`assainisseur de secours éprouvé (${CHARGES.length} charges, ${TEMOINS.length} témoins).`,
+		`assainisseur de secours éprouvé (${HOSTILES.length} charges, 20 000 tirées, ${LEGITIMES.length} témoins, durée bornée).`,
 );

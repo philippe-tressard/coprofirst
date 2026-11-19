@@ -362,3 +362,33 @@ def test_le_releve_voit_une_ecriture_d_adresse():
     assert _ecritures_d_adresse("Utilisateur(email=a)\nx = user.email\n") == []
     source = next(m.source for m in modules_app() if m.rel == ECRITURE_PERMISE)
     assert _ecritures_d_adresse(source), f"app/{ECRITURE_PERMISE} n'écrit plus l'adresse"
+
+
+@pytest.mark.parametrize(
+    "adresse, admise",
+    [
+        ("prenom.nom@exemple.test", True),
+        ("a+b@sous.exemple.test", True),
+        ("sans-point@exemple", False),
+        ("a@.exemple.test", False),
+        ("a@exemple..test", False),
+        ("a@exemple.test.", False),
+        ("a b@exemple.test", False),
+    ],
+)
+def test_la_forme_d_une_adresse(adresse, admise):
+    from app.utils.verification_adresse import _FORME_ADRESSE
+
+    assert bool(_FORME_ADRESSE.fullmatch(adresse)) is admise
+
+
+def test_la_forme_d_une_adresse_se_lit_en_temps_lineaire():
+    """Le point flottant du domaine coûtait n² sur une saisie sans point (#2882)."""
+    import time
+
+    from app.utils.verification_adresse import _FORME_ADRESSE
+
+    debut = time.perf_counter()
+    assert not _FORME_ADRESSE.fullmatch("a@" + "!" * 50_000 + "@")
+    assert not _FORME_ADRESSE.fullmatch("a@" + "!." * 50_000 + " ")
+    assert time.perf_counter() - debut < 1

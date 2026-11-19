@@ -152,3 +152,12 @@ def test_put_config_ecrit_la_forme_normale_et_journalise_le_geste(session, monke
     ((evenement, champs),) = vus
     assert evenement == "signataires_delegues_modifies"
     assert champs["acteur_id"] == _Admin.id
+
+
+def test_une_ligne_de_blancs_se_lit_en_temps_lineaire():
+    """`\\s*` des deux côtés du séparateur relisait une suite de blancs en n² (#2882)."""
+    import time
+
+    debut = time.perf_counter()
+    assert cd.refus_des_delegations("a" + " " * 50_000 + "b")
+    assert time.perf_counter() - debut < 1

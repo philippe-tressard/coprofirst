@@ -26,3 +26,13 @@ from app.utils.annonce_hall import texte_brut
 )
 def test_texte_brut_decode_les_entites(html, attendu):
     assert texte_brut(html) == attendu
+
+
+def test_une_suite_de_chevrons_ouvrants_se_lit_en_temps_lineaire():
+    """Sans `>`, `<[^>]*>` relisait la saisie depuis chaque `<` : n² (#2882)."""
+    import time
+
+    debut = time.perf_counter()
+    assert texte_brut("<" * 100_000).startswith("<")
+    assert time.perf_counter() - debut < 1
+    assert texte_brut("a < b <p>c</p>") == "a < b c"

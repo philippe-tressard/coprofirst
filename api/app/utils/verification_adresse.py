@@ -73,7 +73,9 @@ ADRESSE_PRISE = "Cette adresse e-mail est déjà utilisée."
 
 #: Une adresse a UN « @ », une partie locale, un domaine avec un point — rien de
 #: plus fin : le lien envoyé est la seule vraie preuve qu'elle existe.
-_FORME_ADRESSE = re.compile(r"[^@\s]+@[^@\s]+\.[^@\s]+")
+#  Le domaine se lit LABEL par label (#2882) : `[^@\s]+\.[^@\s]+` laissait le
+#  point flotter, et une saisie sans point se relisait en n² avant d'échouer.
+_FORME_ADRESSE = re.compile(r"[^@\s]+@[^@\s.]+(?:\.[^@\s.]+)+")
 
 
 def _expire_heures() -> int:
