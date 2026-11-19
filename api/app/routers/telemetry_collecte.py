@@ -29,7 +29,7 @@ client du site n'envoie rien de tel, une charge hors norme vient d'ailleurs.
 
 ## Le canal d'accès (14/11/2026)
 
-Le lot dit d'où il vient — le site, l'app iPhone, plus tard l'app Android
+Le lot dit d'où il vient — le site, l'app Apple, plus tard l'app Android
 (`canal`, `utils/canaux_audience`) ; chaque page vue le garde. Seules les pages
 vues le portent : erreurs, durées et gestes restent comptés sans lui.
 

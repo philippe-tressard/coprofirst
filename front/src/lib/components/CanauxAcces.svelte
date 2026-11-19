@@ -1,7 +1,7 @@
 <script lang="ts">
 	/**
 	 * **Accès : web ou application, par appareil** — les vues de la période par canal d'accès
-	 * (site web, app iPhone, plus tard app Android). Demandé le 14/11/2026 :
+	 * (site web, app Apple, plus tard app Android). Demandé le 14/11/2026 :
 	 * « c'est important de comprendre comment l'appli est consommée ».
 	 *
 	 * Un BLOC de la section « Fréquentation », au tableau comme « Qui vient » :

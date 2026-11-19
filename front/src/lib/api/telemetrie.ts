@@ -233,6 +233,6 @@ export interface TableauTelemetrie {
 	/** Dormants et arrivants, à seuils fixes quelle que soit la vue (#1629). */
 	retour: RetourComptes;
 	filtre_gestionnaire: EtatFiltreGestionnaire;
-	/** Les vues par canal d'accès : site web, app iPhone… (14/11/2026). */
+	/** Les vues par canal d'accès : site web, app Apple… (14/11/2026). */
 	canaux?: PartCanal[];
 }

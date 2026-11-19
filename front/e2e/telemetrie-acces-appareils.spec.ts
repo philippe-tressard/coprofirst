@@ -29,7 +29,7 @@ const CANAUX = [
 	},
 	{
 		canal: 'ios',
-		libelle: 'App iPhone',
+		libelle: 'App Apple',
 		vues: 4,
 		part: 40,
 		visiteurs: 1,
@@ -58,7 +58,7 @@ async function ouvrir(page: Page) {
 
 test('un canal se déplie sur ses appareils, avec leur part du canal', async ({ page }) => {
 	await ouvrir(page);
-	const deplier = page.getByRole('button', { name: /App iPhone/ });
+	const deplier = page.getByRole('button', { name: /App Apple/ });
 	await expect(deplier).toHaveAttribute('aria-expanded', 'false');
 	await expect(page.getByRole('cell', { name: 'iPad', exact: true })).toHaveCount(0);
 
