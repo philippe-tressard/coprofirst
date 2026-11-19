@@ -41,7 +41,6 @@ un jeton connu dont l'effet est acquis répond « déjà confirmée ».
 
 from __future__ import annotations
 
-import re
 import secrets
 from datetime import timedelta
 from typing import Optional
@@ -71,11 +70,18 @@ LIEN_INVALIDE = "Lien de vérification invalide ou expiré."
 MOT_DE_PASSE_INCORRECT = "Mot de passe actuel incorrect."
 ADRESSE_PRISE = "Cette adresse e-mail est déjà utilisée."
 
+
 #: Une adresse a UN « @ », une partie locale, un domaine avec un point — rien de
 #: plus fin : le lien envoyé est la seule vraie preuve qu'elle existe.
-#  Le domaine se lit LABEL par label (#2882) : `[^@\s]+\.[^@\s]+` laissait le
-#  point flotter, et une saisie sans point se relisait en n² avant d'échouer.
-_FORME_ADRESSE = re.compile(r"[^@\s]+@[^@\s.]+(?:\.[^@\s.]+)+")
+#  SANS expression régulière (#2882) : `[^@\s]+\.[^@\s]+` laissait le point
+#  flotter, et une saisie sans point se relisait en n² avant d'échouer. Un découpage
+#  ne recule jamais : une passe par caractère, quelle que soit la saisie.
+def forme_adresse_valide(adresse: str) -> bool:
+    if any(c.isspace() for c in adresse) or adresse.count("@") != 1:
+        return False
+    locale, _, domaine = adresse.partition("@")
+    labels = domaine.split(".")
+    return bool(locale) and len(labels) >= 2 and all(labels)
 
 
 def _expire_heures() -> int:
@@ -174,7 +180,7 @@ def demander_changement_adresse(
     nouvelle = normaliser_adresse(nouvelle_adresse)
     if nouvelle == normaliser_adresse(cible.email):
         return None
-    if not _FORME_ADRESSE.fullmatch(nouvelle):
+    if not forme_adresse_valide(nouvelle):
         raise HTTPException(400, "Adresse e-mail invalide.")
     if not verify_password(mot_de_passe or "", acteur.hashed_password or ""):
         journaliser_securite("connexion_refusee", cible_id=acteur.id, detail="mot de passe actuel")
