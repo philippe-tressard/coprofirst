@@ -125,7 +125,7 @@ if (!/npm run lint:/.test(workflow)) {
 }
 
 const manquants = declares.filter(
-	(n) => !new RegExp(`\\b${n.replace(':', ':')}(\\s|$|"|')`).test(workflow) && !(n in EXCEPTIONS),
+	(n) => !new RegExp(`\\b${n}(\\s|$|"|')`).test(workflow) && !(n in EXCEPTIONS),
 );
 const perimees = Object.keys(EXCEPTIONS).filter(
 	(n) => !declares.includes(n) || new RegExp(`\\b${n}(\\s|$|"|')`).test(workflow),

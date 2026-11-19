@@ -81,34 +81,82 @@ const URL_HREF_ADMISE = /^(?:https?:\/\/|mailto:|\/(?!\/)|#|\.{1,2}\/)/i;
 const URL_SRC_ADMISE = /^(?:https?:\/\/|\/(?!\/))/i;
 const _allowedAttrSet = new Set(ALLOWED_ATTR);
 
-/** Nettoyage regex basique pour le SSR (les clients ré-hydrateront avec DOMPurify). */
+//  L'assainisseur de SECOURS : rendu serveur, et premier rendu du navigateur tant
+//  que DOMPurify n'est pas chargé (son import est asynchrone, ci-dessus).
+//
+//  🔴 Il LIT l'entrée en jetons, il ne RETIRE pas des motifs (#2882). L'ancienne
+//  version enchaînait des `replace` : retirer `on…=` pouvait en RECOLLER un
+//  (`oonclick=""nerror=` → `onerror=`), et une valeur entre guillemets qui
+//  contenait `>` coupait la balise — le reste, gestionnaire compris, passait tel
+//  quel. Seule la CSP (`script-src` sans `unsafe-inline`) arrêtait encore le script.
+//
+//  Ce qui sort est une GRAMMAIRE fermée, éprouvée par `npm run lint:html`
+//  (`scripts/check-html.mjs` §5, corpus hostile et fuzz) :
+//    - du texte sans `<` ni `>` (ceux de l'entrée sortent en `&lt;` / `&gt;`) ;
+//    - `<balise attr="valeur">` ou `</balise>`, balise de `ALLOWED_TAGS`, attribut
+//      de `ALLOWED_ATTR`, valeur toujours entre `"` et sans `"`, `<` ni `>`.
+//  Ce que la grammaire n'admet pas ne sort pas : rien n'est « réparé ».
+//
+//  ⚠️ Les deux motifs sont LINÉAIRES : le nom de balise se clôt par une
+//  anticipation (sans elle, `<aaaa…` sans `>` coûtait n² au rendu serveur), et
+//  les trois formes d'un attribut commencent par des caractères disjoints.
+const _JETON =
+	/<!--[\s\S]*?(?:--!?>|$)|<(\/?)([a-zA-Z][a-zA-Z0-9]*)(?![a-zA-Z0-9])((?:[^<>"']|"[^"]*"|'[^']*')*)>|[<>]/g;
+const _ATTRIBUT = /([^\s"'<>/=]+)(?:\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s"'<>=`]+)))?/g;
+//  Balises dont le CONTENU tombe avec elles (il sortirait en texte inerte, mais
+//  illisible) — le reste d'une balise refusée garde son texte.
+const _CONTENU_RETIRE = new Set(['script', 'style']);
+
+const _echapperValeur = (v: string) =>
+	v.replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+
+function _attributs(brut: string): string {
+	let sortie = '';
+	for (const a of brut.matchAll(_ATTRIBUT)) {
+		const nom = a[1].toLowerCase();
+		if (!_allowedAttrSet.has(nom)) continue;
+		const valeur = a[2] ?? a[3] ?? a[4] ?? '';
+		//  🔴 Une URL n'est admise que par son DÉBUT (#2159) : la liste blanche
+		//  gardait `href="javascript:…"`, que seule la CSP arrêtait encore.
+		//  Ni décodage ni liste noire : un schéma déguisé (entités, blancs)
+		//  ne commence par aucun des débuts admis, donc il tombe.
+		if (nom === 'href' || nom === 'src') {
+			const admis = nom === 'src' ? URL_SRC_ADMISE : URL_HREF_ADMISE;
+			if (!admis.test(valeur.trim())) continue;
+		}
+		sortie += ` ${nom}="${_echapperValeur(valeur)}"`;
+	}
+	return sortie;
+}
+
+/** Éprouvé par `npm run lint:html` (`scripts/check-html.mjs` §5), par `safeHtml` hors navigateur. */
 function _serverSanitize(input: string): string {
-	return input
-		.replace(/<script[\s>][\s\S]*?<\/script>/gi, '')
-		.replace(/<style[\s>][\s\S]*?<\/style>/gi, '')
-		.replace(/on\w+\s*=\s*(?:"[^"]*"|'[^']*'|[^\s>]*)/gi, '')
-		.replace(/<\/?([a-z][a-z0-9]*)\b([^>]*)>/gi, (match, tag, attrs) => {
-			const tagLower = tag.toLowerCase();
-			if (!_allowedTagSet.has(tagLower)) return '';
-			const cleanAttrs = (attrs || '').replace(
-				/\s([a-z][a-z-]*)(?:\s*=\s*("[^"]*"|'[^']*'|[^\s>]*))?/gi,
-				(_: string, attrName: string, valeur: string) => {
-					const nom = attrName.toLowerCase();
-					if (!_allowedAttrSet.has(nom)) return '';
-					//  🔴 Une URL n'est admise que par son DÉBUT (#2159) : la liste blanche
-					//  gardait `href="javascript:…"`, que seule la CSP arrêtait encore.
-					//  Ni décodage ni liste noire : un schéma déguisé (entités, blancs)
-					//  ne commence par aucun des débuts admis, donc il tombe.
-					if (nom === 'href' || nom === 'src') {
-						const url = (valeur || '').replace(/^["']|["']$/g, '').trim();
-						const admis = nom === 'src' ? URL_SRC_ADMISE : URL_HREF_ADMISE;
-						if (!admis.test(url)) return '';
-					}
-					return _;
-				},
-			);
-			return match.startsWith('</') ? `</${tagLower}>` : `<${tagLower}${cleanAttrs}>`;
-		});
+	let sortie = '';
+	let retire: string | null = null; //  la balise dont on saute le contenu
+	let depuis = 0;
+	for (const m of input.matchAll(_JETON)) {
+		if (retire === null) sortie += input.slice(depuis, m.index);
+		depuis = (m.index ?? 0) + m[0].length;
+		const [jeton, fermante, nomBrut, attrs] = m;
+		if (!nomBrut) {
+			//  Un commentaire tombe ; un `<` ou un `>` isolé devient du texte.
+			if (retire === null && !jeton.startsWith('<!--')) sortie += jeton === '<' ? '&lt;' : '&gt;';
+			continue;
+		}
+		const nom = nomBrut.toLowerCase();
+		if (retire !== null) {
+			if (fermante && nom === retire) retire = null;
+			continue;
+		}
+		if (!fermante && _CONTENU_RETIRE.has(nom)) {
+			retire = nom;
+			continue;
+		}
+		if (!_allowedTagSet.has(nom)) continue;
+		sortie += fermante ? `</${nom}>` : `<${nom}${_attributs(attrs)}>`;
+	}
+	if (retire === null) sortie += input.slice(depuis);
+	return sortie;
 }
 
 /**

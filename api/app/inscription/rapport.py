@@ -94,6 +94,8 @@ def _certificat_servi(hote: str, port: int) -> bytes:
     contexte_tls = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
     contexte_tls.check_hostname = False
     contexte_tls.verify_mode = ssl.CERT_NONE
+    #  Explicite (#2882) : on lit un certificat, on ne négocie rien d'ancien.
+    contexte_tls.minimum_version = ssl.TLSVersion.TLSv1_2
     with socket.create_connection((hote, port), timeout=5) as brut:
         with contexte_tls.wrap_socket(brut, server_hostname=hote) as tls:
             der = tls.getpeercert(binary_form=True)
