@@ -348,27 +348,20 @@ def update_ticket(
             f"{STATUT_LABELS.get(body.statut, body.statut)}",
         )
 
-    #  🔴 CORRIGER UN CHAMP N'ÉCRIT PLUS RIEN DANS L'HISTORIQUE (18/08/2026).
+    #  🔴 UNE CORRECTION ÉCRIT TOUJOURS SA LIGNE (20/11/2026, #2886).
     #
-    #  Signalé à l'écran : « j'ai fait une édition d'un ticket pour corriger sa
-    #  catégorie et ça m'a créé un historique ! c'est à supprimer ». L'Historique
-    #  raconte la VIE du dossier — ce que le conseil syndical a fait, où en est la
-    #  demande. Une faute de frappe rattrapée n'en fait pas partie : elle ajoute une
-    #  ligne qui n'apprend rien, et pousse vers le bas celles qui apprennent quelque
-    #  chose.
+    #  Du 18/08 au 20/11/2026, seule une correction qui changeait l'ÉTAT s'inscrivait
+    #  (« corriger la catégorie m'a créé un historique, c'est à supprimer »). Le prix
+    #  s'est vu sur une affaire : le conseil y ajoute un second prestataire sans
+    #  toucher à l'état, rien ne s'écrit, et la seule ligne visible — celle d'avant,
+    #  « Prestataire ajouté : <le premier> » — semble nommer le mauvais. Décision de
+    #  Philippe : « oui, une correction doit toujours écrire sa ligne ».
     #
-    #  ⚠️ Le changement d'ÉTAT, lui, continue de laisser une trace : ce n'est pas une
-    #  correction de saisie mais un mouvement de workflow, et savoir quand un ticket
-    #  est passé « En cours » est précisément ce que le fil sert à conserver. Il
-    #  reste inscrit comme une CORRECTION et non comme une transition — sans
-    #  `ancien_statut`/`nouveau_statut`, donc sans jalon de suivi — pour la raison
-    #  détaillée juste au-dessus : le ticket n'a pas « été » dans un état qu'on
-    #  corrige. C'est ce que `test_correction_pas_transition.py` verrouille.
-    #
-    #  ⚠️ Ce que ce lot NE fait pas : les publications et le calendrier gardent leur
-    #  auto-log de correction. R5 — un écran à la fois, constaté avant d'être
-    #  généralisé. La divergence est donc VOULUE et temporaire ; elle est nommée
-    #  dans le test, qui vérifie chaque entité séparément.
+    #  Ce qui ne change pas : réenregistrer à l'identique n'écrit rien (`changes`
+    #  est vide), et la ligne reste une CORRECTION, jamais une transition — sans
+    #  `ancien_statut`/`nouveau_statut`, donc sans jalon de suivi, ni courriel, ni
+    #  place dans « Seulement les avancées » (`utils/corrections.est_correction`).
+    #  C'est ce que `test_correction_pas_transition.py` verrouille.
     etat_a_change = body.statut is not None and body.statut != ancien_statut
     #  Le suivi d'une actualité laisse la même trace de correction que l'état.
     if ticket.suivi_actualite != suivi_avant:
@@ -378,7 +371,7 @@ def update_ticket(
             f"{STATUT_LABELS.get(ticket.suivi_actualite or '', 'Aucun')}",
         )
         etat_a_change = True
-    if changes and etat_a_change:
+    if changes:
         #  Le préfixe et son assemblage viennent de `app/utils/corrections.py` :
         #  la chaîne était écrite quatre fois, et le fil avait besoin d'un
         #  cinquième pour la RECONNAÎTRE (01/09/2026).

@@ -43,15 +43,21 @@ def _sans_trace(session):
 
 
 def _suivi(session, ticket_id) -> str:
-    """Le contenu de LA correction écrite — relu en base."""
+    """Le contenu de la DERNIÈRE correction écrite — relu en base.
+
+    Chaque correction écrit sa ligne, état changé ou non (#2886) : une préparation
+    (`fin` posée d'abord) en laisse une, et c'est la suivante qu'on juge.
+    """
     evols = session.exec(
-        select(TicketEvolution).where(TicketEvolution.ticket_id == ticket_id)
+        select(TicketEvolution)
+        .where(TicketEvolution.ticket_id == ticket_id)
+        .order_by(TicketEvolution.id)
     ).all()
     corrections = [
         e for e in evols if est_correction(e) or (e.contenu or "").startswith("Correction")
     ]
-    assert len(corrections) == 1, [e.contenu for e in evols]
-    return corrections[0].contenu
+    assert corrections, [e.contenu for e in evols]
+    return corrections[-1].contenu
 
 
 def test_la_correction_dit_le_geste_et_la_valeur(session):

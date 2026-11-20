@@ -287,6 +287,23 @@ def test_la_suite_du_conseil_ecrit_l_historique_au_fil(session):
     assert f"Prestataire ajouté : {b.nom}" in contenus
 
 
+def test_la_correction_sans_changement_d_etat_nomme_le_prestataire_ajoute(session):
+    """#2886 : un second prestataire ajouté par une CORRECTION, l'état inchangé.
+
+    Rien ne s'écrivait (la ligne n'était due qu'à un changement d'état) : la seule
+    ligne visible restait celle du premier, et semblait nommer le mauvais.
+    """
+    cs = _compte(session, role=CS)
+    a, b = _prestataire(session), _prestataire(session)
+    t = _creer(session, cs, categorie="panne", prestataire_ids=[a.id])
+    _corriger(session, cs, t.id, statut=t.statut, prestataire_ids=[a.id, b.id])
+    contenus = session.exec(
+        select(TicketEvolution.contenu).where(TicketEvolution.ticket_id == t.id)
+    ).all()
+    assert [c for c in contenus if f"Prestataire ajouté : {b.nom}" in (c or "")], contenus
+    assert not [c for c in contenus if a.nom in (c or "")], "le premier est renommé à tort"
+
+
 # ── Le droit servi (Q1) ─────────────────────────────────────────────────────
 
 
