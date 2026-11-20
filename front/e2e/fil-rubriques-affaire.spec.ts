@@ -17,10 +17,18 @@
  *      différence.
  *
  *  Le serveur est tenu par `test_flux_affaire_rubriques.py`.
+ *
+ *  L'horloge est FIXÉE quatre jours après la clôture simulée (21/10/2026) : le fil
+ *  récent ne garde que trente jours, et le 20/11/2026 les cartes sont passées aux
+ *  archives repliées — les trois tests ont échoué ce jour-là, sur toutes les PR.
  */
 import type { Locator, Page } from '@playwright/test';
 import { attendreHydratation, expect, simulerApi, test } from './aides';
 import { AFFAIRE, ETAT_SYNTHESE, FIL } from './affaire-close-donnees';
+
+test.beforeEach(async ({ page }) => {
+	await page.clock.setFixedTime(new Date('2026-10-25T12:00:00+02:00'));
+});
 
 const LIGNE = {
 	numero: 'TK-142',

@@ -115,20 +115,18 @@ def test_patch_ticket_ecrit_une_correction_et_pas_une_transition(cs):
         session.commit()
 
 
-def test_patch_ticket_corriger_un_champ_n_ecrit_rien_dans_le_fil(cs):
-    """Corriger la CATÉGORIE (ou tout autre champ) ne doit rien inscrire.
+def test_patch_ticket_corriger_un_champ_ecrit_une_correction_et_rien_d_autre(cs):
+    """Corriger la CATÉGORIE (ou tout autre champ) écrit UNE ligne de correction.
 
-    🔴 Signalé à l'écran le 18/08/2026 : *« j'ai fait une édition d'un ticket pour
-    corriger sa catégorie et ça m'a créé un historique ! c'est à supprimer »*.
+    Du 18/08/2026 (« corriger sa catégorie m'a créé un historique ! c'est à
+    supprimer ») au 20/11/2026, rien ne s'écrivait sans changement d'état. Le prix :
+    un prestataire ajouté sans toucher à l'état restait invisible, et la ligne
+    précédente semblait nommer le mauvais (#2886). Décision de Philippe : « une
+    correction doit toujours écrire sa ligne ».
 
-    L'Historique raconte la vie du dossier — ce que le conseil syndical a fait, où
-    en est la demande. Une faute de frappe rattrapée n'en fait pas partie : elle
-    ajoute une ligne qui n'apprend rien et pousse vers le bas celles qui apprennent
-    quelque chose.
-
-    ⚠️ Ce test vérifie AUSSI que la correction a bien été appliquée. Sans cela, il
-    passerait au vert sur un endpoint qui n'écrit plus rien du tout — un « rien dans
-    le fil » obtenu en ne faisant rien serait le pire des faux verts.
+    La ligne reste une CORRECTION : préfixée, sans `ancien_statut`/`nouveau_statut`
+    (aucun jalon), et elle ne dit que ce qui a changé — les champs renvoyés à
+    l'identique par le formulaire n'y figurent pas.
     """
     with Session(engine) as session:
         ticket = Ticket(
@@ -165,10 +163,13 @@ def test_patch_ticket_corriger_un_champ_n_ecrit_rien_dans_le_fil(cs):
         evols = session.exec(
             select(TicketEvolution).where(TicketEvolution.ticket_id == ticket.id)
         ).all()
-        assert evols == [], (
-            "Corriger un champ ne doit RIEN écrire dans l'Historique : "
-            f"{[(e.type, e.contenu) for e in evols]}"
-        )
+        assert [e.type for e in evols] == ["commentaire"], [(e.type, e.contenu) for e in evols]
+        contenu = evols[0].contenu or ""
+        assert contenu.startswith(PREFIXE_CORRECTION), contenu
+        assert (evols[0].ancien_statut, evols[0].nouveau_statut) == (None, None)
+        assert "catégorie" in contenu, contenu
+        for intact in ("Titre", "titre", "Description", "description", "État", "périmètre"):
+            assert intact not in contenu, f"« {intact} » n'a pas changé : {contenu}"
         #  Le fait, pas le symptôme : la correction a-t-elle été appliquée ?
         assert session.get(Ticket, ticket.id).categorie == "sinistre"
 
