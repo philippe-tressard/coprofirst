@@ -30,6 +30,8 @@ from app.utils.synthese_contrat import (
     construire_matiere,
     construire_message,
     documents_du_contrat,
+    MOTIF_INTROUVABLE,
+    MOTIF_TROP_LOURD,
     exemples,
     synthese_disponible,
 )
@@ -315,7 +317,7 @@ def test_un_fichier_ABSENT_est_ecarte_avec_son_motif(session):
     _config(session)
     m = construire_matiere(session, c, avec_document=True)
     assert m.fichiers == ()
-    assert m.ecartes == (("Fantôme", "illisible ou trop volumineux"),)
+    assert m.ecartes == (("Fantôme", MOTIF_INTROUVABLE),)
 
 
 def test_un_fichier_TROP_LOURD_n_est_pas_joint(session, disque_jetable, monkeypatch):
@@ -323,13 +325,31 @@ def test_un_fichier_TROP_LOURD_n_est_pas_joint(session, disque_jetable, monkeypa
     l'alourdit encore d'un tiers. Mieux vaut l'écarter en le disant."""
     import app.utils.synthese_contrat as mod
 
-    monkeypatch.setattr(mod, "MAX_OCTETS_DOCUMENT_JOINT", 10)
+    monkeypatch.setattr(mod, "MAX_OCTETS_JOINTS", 10)
     c = _contrat(session)
     _document(session, c, titre="Plan", fichier_cle=_pdf_sans_texte(disque_jetable))
     _config(session)
     m = construire_matiere(session, c, avec_document=True)
     assert m.fichiers == ()
-    assert m.ecartes == (("Plan", "illisible ou trop volumineux"),)
+    assert m.ecartes == (("Plan", MOTIF_TROP_LOURD),)
+
+
+def test_un_scan_de_plus_de_4_Mio_part_s_il_tient_dans_la_requete(session, disque_jetable):
+    """#2889 : un devis signé de 4,5 Mio était écarté par un plafond PAR fichier,
+    alors que la requête le portait avec l'autre devis. Tailles du 22/11/2026 ;
+    un troisième qui déborde est écarté SEUL, les deux premiers restent joints."""
+    c = _contrat(session)
+    for jour, nom, taille in (
+        (15, "initial", 4_735_203),
+        (22, "modifie", 984_716),
+        (23, "plan", 2 << 20),
+    ):
+        (disque_jetable / nom).write_bytes(b"\0" * taille)  # illisible par pypdf, comme un scan
+        _document(session, c, titre=nom, fichier_cle=nom, publie_le=datetime(2026, 11, jour))
+    _config(session)
+    m = construire_matiere(session, c, avec_document=True)
+    assert m.joints == ("initial", "modifie")
+    assert m.ecartes == (("plan", MOTIF_TROP_LOURD),)
 
 
 # ── 3. Ce que la consigne EXIGE ────────────────────────────────────────────

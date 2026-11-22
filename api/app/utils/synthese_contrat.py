@@ -74,14 +74,19 @@ logger = logging.getLogger("hostachy.synthese")
 #: de le laisser conclure sur un texte tronqué sans le savoir.
 MAX_CARACTERES_DOCUMENT = 60_000
 
-#: Au-delà, on ne joint pas le fichier : une requête trop lourde est refusée par
-#: le service, et l'encodage en base64 l'alourdit encore d'un tiers. Un contrat
-#: numérisé de quelques pages pèse deux à cinq cents kilo-octets ; ce qui dépasse
-#: ce plafond n'est pas un contrat, c'est un rapport ou un plan.
-MAX_OCTETS_DOCUMENT_JOINT = 4 * 1024 * 1024
-
-#: Et au total, pour la requête entière.
+#: Ce que les fichiers joints pèsent au plus, EN BASE64, pour la requête entière :
+#: au-delà, le service la refuse, et le repli de `llm._appeler` retirerait alors
+#: TOUS les fichiers, pas seulement le dernier.
+#:
+#: 🔴 C'est la seule borne (#2889). Un plafond PAR fichier de 4 Mio, plus strict
+#: que celle-ci, a écarté le 22/11/2026 un devis signé de 4,5 Mio alors que la
+#: requête pouvait le porter avec l'autre : « ce qui dépasse n'est pas un contrat »
+#: était faux, un scan de quelques pages le dépasse.
 MAX_OCTETS_JOINTS = 8 * 1024 * 1024
+
+#: Les deux motifs d'un document écarté — l'encart les nomme tels quels.
+MOTIF_INTROUVABLE = "fichier introuvable"
+MOTIF_TROP_LOURD = "trop volumineux pour ce que le service accepte en une requête"
 
 #: Combien de synthèses déjà écrites servent d'exemples. Trois suffisent à faire
 #: passer un format ; au-delà on paie des jetons pour répéter la même leçon.
@@ -224,23 +229,26 @@ class Matiere:
     ecartes: tuple[tuple[str, str], ...]
 
 
-def piece_jointe(doc: Document) -> PieceJointe | None:
-    """Le document tel quel, prêt à être lu par le modèle — ou `None`.
+def piece_jointe(doc: Document, budget_b64: int) -> PieceJointe | str:
+    """Le document tel quel, prêt à être lu par le modèle — ou le MOTIF de l'écart.
 
     ⚠️ On ne joint QUE ce qu'on n'a pas su lire : un PDF dont le texte s'extrait
     coûte bien moins cher en texte qu'en fichier, pour le même contenu.
+
+    La taille se juge sur le disque, AVANT de lire : un plan de 200 Mo ne monte
+    pas en mémoire sur le Raspberry Pi pour être refusé ensuite.
     """
     chemin = stockage().fichier_de(doc)
     if chemin is None:
-        return None
-    if os.path.getsize(chemin) > MAX_OCTETS_DOCUMENT_JOINT:
-        return None
+        return MOTIF_INTROUVABLE
     try:
+        if 4 * -(-os.path.getsize(chemin) // 3) > budget_b64:  # taille en base64
+            return MOTIF_TROP_LOURD
         with open(chemin, "rb") as fichier:
             octets = fichier.read()
     except OSError as exc:  # noqa: BLE001 - un fichier illisible n'est pas une panne
         logger.warning("Lecture du fichier %s impossible : %s", doc.id, exc)
-        return None
+        return MOTIF_INTROUVABLE
     return PieceJointe(
         nom=doc.fichier_nom or f"document-{doc.id}.pdf",
         mime=doc.mime_type or "application/pdf",
@@ -260,7 +268,7 @@ def construire_matiere(
     |---|---|---|
     | **texte extrait** | `pypdf` en tire quelque chose | bien moins cher, et exact |
     | **fichier joint** | aucun texte — une numérisation | le modèle le lit lui-même |
-    | **écarté** | absent, trop lourd | on le DIT plutôt que de le taire |
+    | **écarté** | introuvable, ou hors du budget de la requête | on le DIT, motif compris |
 
     La deuxième ligne est née d'un vrai contrat : les deux PDF de la porte de
     parking étaient des numérisations signées, `pypdf` en tirait zéro caractère,
@@ -308,12 +316,9 @@ def construire_matiere(
             continue
         #  Pas de texte : le fichier part tel quel. C'est le cas NORMAL d'un
         #  contrat signé, donc numérisé.
-        piece = piece_jointe(doc)
-        if piece is None:
-            ecartes.append((doc.titre, "illisible ou trop volumineux"))
-            continue
-        if len(piece.donnees_b64) > budget_octets:
-            ecartes.append((doc.titre, "au-delà du volume que le service accepte"))
+        piece = piece_jointe(doc, budget_octets)
+        if isinstance(piece, str):
+            ecartes.append((doc.titre, piece))
             continue
         budget_octets -= len(piece.donnees_b64)
         fichiers.append(piece)
