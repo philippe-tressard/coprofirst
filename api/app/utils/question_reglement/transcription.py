@@ -162,15 +162,16 @@ def nettoyer(texte: str) -> str:
 
 def _matiere(pv: Document) -> tuple[str, tuple]:
     """Le message et les fichiers : le texte du PV s'il en a, le fichier sinon."""
-    from app.utils.synthese_contrat import piece_jointe, texte_du_document
+    from app.utils.synthese_contrat import MAX_OCTETS_JOINTS, piece_jointe, texte_du_document
 
     entete = f"Procès-verbal : {titre_ag(pv)}."
     texte = texte_du_document(pv)
     if texte:
         return f"{entete}\n\n<<<PV\n{texte}\nPV>>>", ()
-    piece = piece_jointe(pv)
-    if piece is None:
-        raise ValueError("Le procès-verbal est introuvable, ou trop volumineux pour être lu.")
+    #  Seul fichier de la requête : il a le budget entier (#2889).
+    piece = piece_jointe(pv, MAX_OCTETS_JOINTS)
+    if isinstance(piece, str):
+        raise ValueError(f"Le procès-verbal n'a pas pu être joint : {piece}.")
     return f"{entete}\n\nLe procès-verbal est joint : lis-le toi-même (document numérisé).", (
         piece,
     )
