@@ -47,8 +47,8 @@ avec les blocs dépliables (#992 ; `open` est volontairement hors `ALLOWED_ATTR`
 🔴 **Le geste ne se réécrit pas, il s'appelle.** Un fichier reçu s'écrit sur
 disque par `utils/fichiers.enregistrer_fichier_recu`, et nulle part ailleurs.
 Les règles vivent dans `FAMILLES` du même module — liste blanche de types,
-plafond de taille, extensions autorisées —, une entrée par famille :
-`image`, `document`, `document_prive`, `tableur`.
+plafond de taille, extensions autorisées —, une entrée par famille (lire
+`FAMILLES`, jamais une liste recopiée ici).
 
 **Un routeur nomme une famille**, il ne redéfinit pas ce qu'il accepte.
 
@@ -77,7 +77,7 @@ cette question se mesure par des contrôles, et non en relisant les routeurs.
 | Contrôle | Ce qu'il refuse |
 |---|---|
 | `test_televersement_source_unique.py` | une écriture de fichier reçu hors du module ; une liste MIME ou un plafond redéclaré dans un routeur ; une famille qui oublie l'une des trois règles |
-| `test_signature_fichiers.py` | un point de réception qui n'appelle pas la règle — **les sept**, imports de tableur compris |
+| `test_signature_fichiers.py` | un point de réception — toute route déclarée dont un paramètre est un `UploadFile`, relevée sur les routes, jamais une liste — qui n'APPELLE pas la règle, directement ou par une aide résolue par ses imports (`aides_sources.atteint`) ; un nom en commentaire ou un import non appelé ne suffit pas (#2912) |
 | `test_pieces_jointes.py` | une divergence entre ce que le front propose et ce que le serveur accepte |
 
 Le PDF d'affiche de hall est la **seule** écriture déclarée hors du module :
