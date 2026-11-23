@@ -374,3 +374,78 @@ def test_aucun_script_ne_regenere_env_ni_caddyfile():
         f"AJUSTEMENTS_DECLARES retient {sorted(restants)}, qu'aucun script n'écrit "
         f"plus : une exception qui ne sert plus finit par couvrir autre chose"
     )
+
+
+# ── L'installation locale nomme ce sans quoi rien ne démarre (#2923) ─────────────
+#
+#  Le « Démarrage rapide » du README ne nommait que `SECRET_KEY`, `WHATSAPP_API_KEY`
+#  et `ORIGIN` : qui le suivait lançait `docker compose up` sans mot de passe de
+#  base — l'image PostgreSQL refuse de s'initialiser — ni mot de passe de
+#  réplication — `initdb/10-replication.sh` arrête l'initialisation. Et il
+#  n'installait que Chromium, quand `npm run e2e` joue aussi WebKit (#2640).
+#  `CONTRIBUTING.md` en portait une seconde écriture, plus courte encore : il
+#  renvoie désormais au README, seule écriture de l'installation locale.
+
+README = RACINE / "README.md"
+
+#: Ce que le compose de ce dépôt exige sans `:?` ni champ de `Settings` pour le
+#: dire, et le fichier qui le refuse. Une raison qui cesse d'être écrite dans son
+#: fichier fait échouer le test : l'entrée se corrige ou se retire alors.
+EXIGEES_PAR_UN_SCRIPT = {
+    "SECRET_KEY": ("api/app/config.py", "def secret_key_must_be_secure"),
+    "POSTGRES_PASSWORD": ("docker-compose.yml", "POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-}"),
+    "PG_REPLICATION_PASSWORD": (
+        "infra/postgresql/initdb/10-replication.sh",
+        "PG_REPLICATION_PASSWORD absent",
+    ),
+}
+
+
+def _bloc_installation_du_readme() -> str:
+    """Le texte de « ### Installation », jusqu'au titre suivant."""
+    texte = README.read_text(encoding="utf-8-sig")
+    debut = texte.index("### Installation")
+    suite = re.search(r"(?m)^#{2,3} ", texte[debut + 3 :])
+    return texte[debut : debut + 3 + suite.start()] if suite else texte[debut:]
+
+
+def test_l_installation_du_readme_nomme_ce_sans_quoi_rien_ne_demarre():
+    obligatoires_compose = set(re.findall(r"\$\{([A-Z0-9_]+):\?", COMPOSE_TXT))
+    #  Un champ de `Settings` sans valeur par défaut : `database_url: str`.
+    sans_defaut = {
+        m.group(1).upper()
+        for m in re.finditer(r"(?m)^\s{4}([a-z][a-z0-9_]*)\s*:\s*[^=\n]+$", CONFIG_TXT)
+    }
+    for nom, (fichier, preuve) in EXIGEES_PAR_UN_SCRIPT.items():
+        assert preuve in (RACINE / fichier).read_text(encoding="utf-8"), (
+            f"{nom} : « {preuve} » n'est plus dans {fichier} — l'exigence a changé, "
+            "corriger ou retirer l'entrée d'EXIGEES_PAR_UN_SCRIPT"
+        )
+    exigees = obligatoires_compose | sans_defaut | set(EXIGEES_PAR_UN_SCRIPT)
+    #  Cas zéro : WHATSAPP_API_KEY (compose) et DATABASE_URL (Settings) sont lues.
+    assert {"WHATSAPP_API_KEY", "DATABASE_URL"} <= exigees, sorted(exigees)
+    bloc = _bloc_installation_du_readme()
+    absentes = sorted(n for n in exigees if n not in bloc)
+    assert not absentes, (
+        f"Le « Démarrage rapide » du README ne nomme pas {absentes} : qui le suit "
+        "lance une stack qui ne démarre pas. Les nommer dans « ### Installation »."
+    )
+
+
+def test_le_readme_installe_les_navigateurs_que_la_ci_joue():
+    ci = (RACINE / ".github" / "workflows" / "ci.yml").read_text(encoding="utf-8")
+    defaut = re.search(r"npx playwright install \$\{E2E_NAVIGATEURS:-([a-z ]+)\}", ci)
+    assert defaut, "la CI n'installe plus ses navigateurs par `E2E_NAVIGATEURS` : motif à revoir"
+    navigateurs = defaut.group(1).split()
+    assert "webkit" in navigateurs  # cas zéro : `npm run e2e` joue WebKit (#2640)
+    lignes = [
+        ligne
+        for ligne in README.read_text(encoding="utf-8-sig").splitlines()
+        if "playwright install" in ligne
+    ]
+    assert lignes, "le README ne dit plus comment installer les navigateurs de `npm run e2e`"
+    manquants = [n for n in navigateurs if not any(n in ligne for ligne in lignes)]
+    assert not manquants, (
+        f"le README n'installe pas {manquants}, que `npm run e2e` joue (la CI installe "
+        f"« {' '.join(navigateurs)} ») : le premier essai local échoue"
+    )
