@@ -46,7 +46,7 @@ export const PAGES_ROLES: PageDef[] = [
 				route: '/espace-cs/badges',
 				label: '\u{1F3F7}\uFE0F Badges & télécommandes',
 				descriptif:
-					'Tous les badges Vigik et télécommandes de la copropriété, avec leur porteur et leur lot. Vue de consultation : un badge s’enregistre par l’import du syndic, ou par son porteur.',
+					'Tous les badges Vigik et télécommandes de la copropriété, avec leur porteur et leur lot. Vue de consultation : un badge s’enregistre par l’import du syndic, fait depuis l’administration (Admin › Imports), ou par son porteur.',
 			},
 			{
 				id: 'reporting',

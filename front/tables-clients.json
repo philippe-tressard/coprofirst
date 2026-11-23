@@ -1,6 +1,6 @@
 {
   "format": 1,
-  "version": "1.6.0",
+  "version": "1.7.0",
   "tables": {
     "attributsAdmis": {
       "source": "front/src/lib/sanitize.ts#ALLOWED_ATTR",
@@ -1378,7 +1378,7 @@
               "id": "badges",
               "route": "/espace-cs/badges",
               "label": "🏷️ Badges & télécommandes",
-              "descriptif": "Tous les badges Vigik et télécommandes de la copropriété, avec leur porteur et leur lot. Vue de consultation : un badge s’enregistre par l’import du syndic, ou par son porteur."
+              "descriptif": "Tous les badges Vigik et télécommandes de la copropriété, avec leur porteur et leur lot. Vue de consultation : un badge s’enregistre par l’import du syndic, fait depuis l’administration (Admin › Imports), ou par son porteur."
             },
             {
               "id": "reporting",
