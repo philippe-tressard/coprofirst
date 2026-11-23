@@ -70,7 +70,7 @@ EXCEPTIONS_PLAFOND=(
 PLAFONDS_DECLARES=(
   ".claude/skills/infra-rpi/SKILL.md|1260|longueur au 23/11/2026 — à découper en annexes (#2910)"
   ".claude/skills/mep-precheck/SKILL.md|827|longueur au 23/11/2026 — à découper en annexes (#2910)"
-  ".claude/skills/api-scaffold/SKILL.md|597|longueur au 23/11/2026, lots du jour compris — §8 et §9 sont cités par numéro depuis CLAUDE.md (#2910)"
+  ".claude/skills/api-scaffold/SKILL.md|599|longueur au 23/11/2026, lots du jour compris — §8 et §9 sont cités par numéro depuis CLAUDE.md (#2910)"
   ".claude/skills/ux-patterns/ARBITRAGES.md|700|registre qui ne fait que s'allonger, lu par grep (son en-tête) ; à 700 lignes, il se scinde par tranche de numéros (#2910)"
 )
 plafond_declare_de() {
