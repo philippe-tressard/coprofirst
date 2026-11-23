@@ -84,8 +84,7 @@ DEBUT=$(date +%s)
 [ -f .env ] || { journal "✗ .env introuvable : lancer depuis le dossier de l'installation."; exit 1; }
 [ -n "$(lire_env COPROPRIETES_FICHIER)" ] || { journal "✗ COPROPRIETES_FICHIER absent de .env : ce n'est pas une installation commune."; exit 1; }
 
-COMPOSE=(docker compose -f docker-compose.yml -f deploiement/standard/compose.images.yml
-         -f deploiement/standard/commune/compose.commune.yml)
+definir_compose  # COPROPRIETES_FICHIER vient d'être exigé : surcouche commune comprise
 psql_installation() { "${COMPOSE[@]}" exec -T postgres psql -v ON_ERROR_STOP=1 -U coprofirst -d coprofirst "$@"; }
 pgq() { psql_installation -Atc "$1" 2>/dev/null; }
 

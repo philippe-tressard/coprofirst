@@ -32,6 +32,7 @@ from app.auth.session_ouverte import ouvrir_session
 from app.auth.deps import get_current_user
 from app.auth.empreinte_jeton import empreinte
 from app.auth.jetons_rafraichissement import est_rejoue, fermer_apres_rejeu, remplacer
+from app import contexte
 from app.config import get_settings
 from app.database import get_session
 from app.models.core import (
@@ -56,6 +57,7 @@ from app.utils.mots_de_passe import verifier_robustesse as _check_password_stren
 from app.utils.liens import adresse_du_site, nom_site
 
 from app.utils.noms import contexte_personne
+from app.utils.recuperer import present_ou_404
 from app.utils.stockage import cle_de_url
 from app.utils.visibility.fichiers import exiger_fichier_lisible
 from app.utils.roles_du_statut import poser_roles_du_statut
@@ -326,7 +328,14 @@ def verifier_acces(
     coût dominant est le trajet HTTP interne, pas la lecture en base qu'elle effectue :
     l'économiser ne rapporterait presque rien et laisserait un compte désactivé
     conserver l'accès jusqu'à l'expiration de son jeton (120 min).
+
+    🔴 Sur une installation COMMUNE, toujours 404 (claude-config#604) : Caddy n'y sert
+    pas les fichiers, il les relaie à l'API (`installation_commune/fichiers`), qui lit
+    la racine de la copropriété que l'hôte désigne. Une configuration de Caddy qui
+    servirait encore sa racine unique ne sert donc rien — le sens fermé.
     """
+    if contexte.est_commune():
+        present_ou_404(None, "Fichier introuvable")
     adresse = unquote(urlsplit(request.headers.get("x-forwarded-uri", "")).path)
     exiger_fichier_lisible(session, user, cle_de_url(adresse))
     return Response(status_code=204)
