@@ -25,6 +25,7 @@ export const PAGES_ROLES: PageDef[] = [
 	{
 		id: 'espace-cs',
 		href: '/espace-cs',
+		acces: 'cs',
 		nom: 'Espace CS',
 		titre: 'Espace Conseil Syndical (CS)',
 		navLabel: 'Espace CS',
@@ -95,6 +96,7 @@ export const PAGES_ROLES: PageDef[] = [
 	{
 		id: 'admin',
 		href: '/admin',
+		acces: 'admin',
 		nom: 'Paramétrage',
 		titre: 'Paramétrage',
 		navLabel: 'Admin',
@@ -284,6 +286,7 @@ export const PAGES_ROLES: PageDef[] = [
 	{
 		id: 'delegations',
 		href: '/delegations',
+		acces: 'cs-ou-aidant',
 		nom: 'Délégations',
 		titre: 'Délégations aidant',
 		navLabel: 'Délégations',

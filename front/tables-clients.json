@@ -1,6 +1,6 @@
 {
   "format": 1,
-  "version": "1.6.0",
+  "version": "1.7.0",
   "tables": {
     "attributsAdmis": {
       "source": "front/src/lib/sanitize.ts#ALLOWED_ATTR",
@@ -1162,6 +1162,7 @@
         {
           "id": "tableau-de-bord",
           "href": "/tableau-de-bord",
+          "acces": "tous",
           "nom": "Tableau de bord",
           "titre": "Tableau de bord",
           "navLabel": "Accueil",
@@ -1171,6 +1172,7 @@
         {
           "id": "residence",
           "href": "/residence",
+          "acces": "tous",
           "nom": "Ma résidence",
           "titre": "Ma résidence",
           "navLabel": "Résidence",
@@ -1202,6 +1204,7 @@
         {
           "id": "mes-demandes",
           "href": "/tickets",
+          "acces": "tous",
           "nom": "Affaires",
           "titre": "Mes affaires",
           "navLabel": "Affaires",
@@ -1232,6 +1235,7 @@
         {
           "id": "mon-lot",
           "href": "/mon-lot",
+          "acces": "tous",
           "nom": "Mes lots & accès",
           "titre": "Mes lots & accès",
           "navLabel": "Mes lots & accès",
@@ -1277,6 +1281,7 @@
         {
           "id": "annuaire",
           "href": "/annuaire",
+          "acces": "tous",
           "nom": "Annuaire",
           "titre": "Annuaire",
           "navLabel": "Annuaire",
@@ -1286,6 +1291,7 @@
         {
           "id": "prestataires",
           "href": "/prestataires",
+          "acces": "cs",
           "nom": "Prestataires",
           "titre": "Prestataires",
           "navLabel": "Prestataires",
@@ -1315,6 +1321,7 @@
         {
           "id": "communaute",
           "href": "/sondages",
+          "acces": "resident",
           "nom": "Communauté",
           "titre": "Communauté",
           "navLabel": "Communauté",
@@ -1353,6 +1360,7 @@
         {
           "id": "faq",
           "href": "/faq",
+          "acces": "tous",
           "nom": "FAQ",
           "titre": "FAQ",
           "navLabel": "FAQ",
@@ -1362,6 +1370,7 @@
         {
           "id": "espace-cs",
           "href": "/espace-cs",
+          "acces": "cs",
           "nom": "Espace CS",
           "titre": "Espace Conseil Syndical (CS)",
           "navLabel": "Espace CS",
@@ -1415,6 +1424,7 @@
         {
           "id": "admin",
           "href": "/admin",
+          "acces": "admin",
           "nom": "Paramétrage",
           "titre": "Paramétrage",
           "navLabel": "Admin",
@@ -1579,6 +1589,7 @@
         {
           "id": "delegations",
           "href": "/delegations",
+          "acces": "cs-ou-aidant",
           "nom": "Délégations",
           "titre": "Délégations aidant",
           "navLabel": "Délégations",
