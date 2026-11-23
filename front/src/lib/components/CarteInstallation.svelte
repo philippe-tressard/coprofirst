@@ -179,8 +179,10 @@
 					v{pkg.version}{#if etat.empreinte}&nbsp;·&nbsp;<a
 							href={lienSource(etat.empreinte)}
 							target="_blank"
-							rel="noopener noreferrer"><code>{etat.empreinte}</code></a
-						>{/if}
+							rel="noopener noreferrer"
+						>
+							<code>{etat.empreinte}</code>
+						</a>{/if}
 				</dd>
 				<dt>En service depuis</dt>
 				<dd>{fmtDatetime(etat.demarree_le)}</dd>

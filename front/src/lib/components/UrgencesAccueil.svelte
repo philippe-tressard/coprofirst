@@ -62,8 +62,8 @@
 	{@const progress = progression(u)}
 	{@const lien = typeLink(u)}
 	<fieldset class="urgence-fieldset">
-		<legend class="urgence-legend"
-			>🔴 URGENCE
+		<legend class="urgence-legend">
+			🔴 URGENCE
 			<span
 				class="flux-type-chip"
 				style="background:{typeFond(u.type)};color:{typeCouleur(u.type)}"
@@ -80,9 +80,9 @@
 					{:else}
 						<strong class="urgence-titre">{u.titre}</strong>
 					{/if}
-					{#if u.meta?.perimetre}<span class="urgence-perimetre"
-							>{SEPARATEUR.tiret}{u.meta.perimetre}</span
-						>{/if}
+					{#if u.meta?.perimetre}<span class="urgence-perimetre">
+							{SEPARATEUR.tiret}{u.meta.perimetre}
+						</span>{/if}
 				</div>
 			</div>
 			{#if u.meta?.debut && u.meta?.fin}

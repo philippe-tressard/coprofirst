@@ -37,7 +37,9 @@
 	export let ton: 'neutre' | 'info' | 'succes' = 'neutre';
 	/** Ce que dit la rubrique PLIÉE, sur une ligne — l'état, jamais l'invitation. */
 	export let resume = '';
-	/** « 5 entrées » à côté du titre — absent si rien ne se compte. */
+	/** « 5 entrées » à côté du titre — absent si rien ne se compte. Rendu en UNE
+	    expression : prettier couperait `{a} {b}` en deux lignes, et le texte lu
+	    (`textContent`) garderait le saut et les tabulations (#2900). */
 	export let compte: number | null = null;
 	export let ouverte = false;
 	export let onBasculer: () => void;
@@ -53,8 +55,10 @@
 		class:ton-neutre={ton === 'neutre'}
 		class:ton-info={ton === 'info'}
 		class:ton-succes={ton === 'succes'}
-		aria-hidden="true"><Icon name={icone} size={15} /></span
+		aria-hidden="true"
 	>
+		<Icon name={icone} size={15} />
+	</span>
 	<section
 		class="encart"
 		class:ton-neutre={ton === 'neutre'}
@@ -69,15 +73,15 @@
 				aria-controls={idCorps}
 				on:click={onBasculer}
 			>
-				<span class="encart-titre"
-					>{titre}{#if compte !== null}<span class="encart-compte"
-							>{compte} {compte > 1 ? 'entrées' : 'entrée'}</span
-						>{/if}</span
-				>
+				<span class="encart-titre">
+					{titre}{#if compte !== null}<span class="encart-compte">
+							{`${compte} ${compte > 1 ? 'entrées' : 'entrée'}`}
+						</span>{/if}
+				</span>
 				{#if !ouverte && resume}<span class="encart-resume">{resume}</span>{/if}
-				<span class="encart-chevron" class:ouvert={ouverte}
-					><Icon name="chevron-down" size={16} /></span
-				>
+				<span class="encart-chevron" class:ouvert={ouverte}>
+					<Icon name="chevron-down" size={16} />
+				</span>
 			</button>
 		</h4>
 		<div class="encart-corps" id={idCorps} hidden={!ouverte}>

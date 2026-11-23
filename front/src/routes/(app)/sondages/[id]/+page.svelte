@@ -192,17 +192,21 @@
 							aria-label="Modifier ce sondage"
 							aria-pressed={edition}
 							title="Modifier"
-							on:click={() => (edition = !edition)}><IconeAction icone="pencil" /></button
+							on:click={() => (edition = !edition)}
 						>
-						<button class="btn btn-outline btn-sm btn-stopper" on:click={stopperSondage}
-							>⏹ Stopper</button
-						>
+							<IconeAction icone="pencil" />
+						</button>
+						<button class="btn btn-outline btn-sm btn-stopper" on:click={stopperSondage}>
+							⏹ Stopper
+						</button>
 					{/if}
 					<button
 						class="btn btn-outline btn-sm btn-supprimer"
 						disabled={deleting}
-						on:click={supprimerSondage}>&#x1F5D1; Supprimer</button
+						on:click={supprimerSondage}
 					>
+						&#x1F5D1; Supprimer
+					</button>
 				</div>
 			{/if}
 		</div>
@@ -253,8 +257,10 @@
 							<span>{opt.libelle}</span>
 							{#if opt.champ_libre}<span
 									class="champ-libre-badge"
-									title="Cette réponse inclut un champ de précision">✏️</span
-								>{/if}
+									title="Cette réponse inclut un champ de précision"
+								>
+									✏️
+								</span>{/if}
 						</label>
 					{/each}
 

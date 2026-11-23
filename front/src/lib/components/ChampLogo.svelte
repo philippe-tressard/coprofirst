@@ -109,16 +109,16 @@
 				/>
 			{/key}
 			{#if logo}
-				<button type="button" class="btn btn-outline btn-sm" on:click={() => retirer('clair')}
-					>Revenir au logo neutre</button
-				>
+				<button type="button" class="btn btn-outline btn-sm" on:click={() => retirer('clair')}>
+					Revenir au logo neutre
+				</button>
 			{/if}
 		</div>
-		<span class="aide"
-			>PNG ou JPEG, 2 Mo au plus, carré de préférence (512 px). Il remplace l’icône du menu et de
+		<span class="aide">
+			PNG ou JPEG, 2 Mo au plus, carré de préférence (512 px). Il remplace l’icône du menu et de
 			l’écran de connexion, devient l’icône de l’onglet et de l’application installée, et figure sur
-			les documents et en tête des courriels. Sans logo, celui de {NOM_PLATEFORME}.</span
-		>
+			les documents et en tête des courriels. Sans logo, celui de {NOM_PLATEFORME}.
+		</span>
 	</div>
 
 	{#if logo}
@@ -138,18 +138,18 @@
 					/>
 				{/key}
 				{#if logoSombre}
-					<button type="button" class="btn btn-outline btn-sm" on:click={() => retirer('sombre')}
-						>Retirer</button
-					>
+					<button type="button" class="btn btn-outline btn-sm" on:click={() => retirer('sombre')}>
+						Retirer
+					</button>
 				{/if}
 			</div>
-			<span class="aide"
-				>Facultatif. Le même dessin en traits clairs, sur fond transparent (PNG, 2 Mo au plus). Il
+			<span class="aide">
+				Facultatif. Le même dessin en traits clairs, sur fond transparent (PNG, 2 Mo au plus). Il
 				remplace le logo partout où le fond est sombre : le site au thème sombre, l’en-tête des
 				courriels, de la fiche arrivant et des affiches de hall, le manuel.
 				{#if !logoSombre}L’aperçu montre ce qui s’y affiche aujourd’hui : le logo tel quel, avec son
-					fond.{/if}</span
-			>
+					fond.{/if}
+			</span>
 		</div>
 	{/if}
 </div>

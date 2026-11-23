@@ -100,11 +100,17 @@ def test_le_titre_d_une_section_porte_son_identifiant_dans_ses_trois_etats():
     """Le contenu d'une section PLIÉE ou éteinte reste dans la page, et ce qui
     s'y rattache (`aria-labelledby="…-titre"`) pointait sur un identifiant
     absent : seul le titre OUVERT le portait (#1329, relevé en production sur la
-    Description d'un prestataire). Les quatre rendus du titre — éteint, plié,
-    `<label>`, `<h4>` — posent `idTitre`."""
+    Description d'un prestataire). Chaque rendu du titre — éteint, plié, ouvert
+    (`<label>` ou `<h4>`, un seul `<svelte:element>` depuis #2900) — pose `idTitre`.
+
+    Compté sur les rendus eux-mêmes (`{titre}` en contenu), pas sur un nombre
+    écrit ici : la fusion de `<label>` et `<h4>` en avait retiré un, et le seuil
+    figé à 4 refusait une factorisation qui ne perdait aucun identifiant."""
     source = (_FRONT / "lib" / "components" / "SectionFormulaire.svelte").read_text(
         encoding="utf-8"
     )
-    assert source.count("id={idTitre || undefined}") >= 4, (
+    rendus = len(re.findall(r"^\s*\{titre\}", source, flags=re.MULTILINE))
+    assert rendus >= 3, f"rendus du titre introuvables ({rendus}) : le test ne lit plus rien"
+    assert source.count("id={idTitre || undefined}") >= rendus, (
         "un rendu du titre de section ne pose pas `idTitre`"
     )

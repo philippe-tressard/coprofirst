@@ -60,10 +60,12 @@
 			      perd au formatage, et « Paul Bernard(Gestionnaire) » se lisait collé
 			      (17/10/2026). -->
 			{#each g.presents as p, i (p.id)}{i ? ' · ' : ''}{nomPresent(p)}{#if precisionPresent(p)}<span
-						class="precision">{` (${precisionPresent(p)})`}</span
-					>{/if}{#if p.telephone || p.email}<span class="precision"
-						>{` — ${[p.telephone, p.email].filter(Boolean).join(', ')}`}</span
-					>{/if}{/each}
+						class="precision"
+					>
+						{` (${precisionPresent(p)})`}
+					</span>{/if}{#if p.telephone || p.email}<span class="precision">
+						{` — ${[p.telephone, p.email].filter(Boolean).join(', ')}`}
+					</span>{/if}{/each}
 		</p>
 	{:else}
 		<p class="vide">Aucun présent indiqué.</p>
@@ -80,11 +82,12 @@
 						lecture={affaires.get(affaire.id)?.lecture}
 					/>{/if}
 				{#if cr.brouillon}<Badge teinte="badge-gray" compact>Brouillon</Badge>{/if}
-				{#if cr.conseil_seul}<Badge teinte="badge-purple" compact>{LIBELLE_CS_ET_PRESENTS}</Badge
-					>{/if}
-				{#if cr.etat_cible}<Badge teinte="badge-blue" compact title="À la validation"
-						>→ {cr.etat_cible_libelle}</Badge
-					>{/if}
+				{#if cr.conseil_seul}<Badge teinte="badge-purple" compact>
+						{LIBELLE_CS_ET_PRESENTS}
+					</Badge>{/if}
+				{#if cr.etat_cible}<Badge teinte="badge-blue" compact title="À la validation">
+						→ {cr.etat_cible_libelle}
+					</Badge>{/if}
 				{#if marque}<Badge teinte="badge-orange" compact>{marque}</Badge>{/if}
 			</p>
 			<div class="contenu">{@html safeHtml(cr.contenu)}</div>
@@ -96,9 +99,9 @@
 	{#if compteRendu.non_traitees.length}
 		<h4 class="partie">Non traitées{SEPARATEUR.point}{compteRendu.non_traitees.length}</h4>
 		<p class="non-traitees">
-			{#each compteRendu.non_traitees as a, i (a.id)}{i ? ' · ' : ''}<a href={lienTicket(a.id)}
-					>{a.numero}</a
-				>
+			{#each compteRendu.non_traitees as a, i (a.id)}{i ? ' · ' : ''}<a href={lienTicket(a.id)}>
+					{a.numero}
+				</a>
 				{a.titre}{/each}
 		</p>
 	{/if}

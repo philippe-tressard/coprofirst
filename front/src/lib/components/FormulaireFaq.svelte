@@ -108,15 +108,15 @@
 			<EtatListe compact erreur={erreurCategories} />
 		</div>
 		{#if form.estNouvelleCategorie}
-			<label class="field"
-				><span
-					>Nom de la nouvelle catégorie<EtoileRequis vide={!form.nouvelleCategorie.trim()} /></span
-				><input
+			<label class="field">
+				<span>
+					Nom de la nouvelle catégorie<EtoileRequis vide={!form.nouvelleCategorie.trim()} />
+				</span><input
 					type="text"
 					bind:value={form.nouvelleCategorie}
 					placeholder="Ex : 🗑️ Tri des déchets"
-				/></label
-			>
+				/>
+			</label>
 		{/if}
 	</SectionFormulaire>
 

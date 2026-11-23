@@ -99,11 +99,13 @@
 				<div class="loc-contact">
 					{#if premierBail.locataire_email}<a
 							href="mailto:{premierBail.locataire_email}"
-							class="courriel-locataire">📬 {premierBail.locataire_email}</a
-						>{/if}
-					{#if premierBail.locataire_telephone}<span class="text-muted-md"
-							>📞 {premierBail.locataire_telephone}</span
-						>{/if}
+							class="courriel-locataire"
+						>
+							📬 {premierBail.locataire_email}
+						</a>{/if}
+					{#if premierBail.locataire_telephone}<span class="text-muted-md">
+							📞 {premierBail.locataire_telephone}
+						</span>{/if}
 				</div>
 			</div>
 			<div class="loc-lots">
@@ -113,28 +115,30 @@
 						<div class="loc-lot-row">
 							<span class="lbc-lot-badge">{lot.batiment_nom ?? '—'} / {lot.numero}</span>
 							<span class="badge badge-gray type-lot">{lot.libelle_type_complet}</span>
-							<span class="text-muted-sm"
-								>Depuis le {fmt(bail.date_entree)}{bail.date_sortie_prevue
+							<span class="text-muted-sm">
+								Depuis le {fmt(bail.date_entree)}{bail.date_sortie_prevue
 									? ` · Sortie prévue ${fmt(bail.date_sortie_prevue)}`
-									: ''}</span
-							>
+									: ''}
+							</span>
 						</div>
 					{/if}
 				{/each}
 			</div>
 			<div class="lbc-actions">
-				<button class="btn btn-sm btn-outline" on:click={() => goto(routeGestion)}
-					>📋 Gestion locative</button
-				>
-				<button class="btn btn-sm btn-outline" on:click={() => onAcces(premierBail)}
-					>🔑 Accès</button
-				>
+				<button class="btn btn-sm btn-outline" on:click={() => goto(routeGestion)}>
+					📋 Gestion locative
+				</button>
+				<button class="btn btn-sm btn-outline" on:click={() => onAcces(premierBail)}>
+					🔑 Accès
+				</button>
 				<button
 					class="btn-icon-edit"
 					aria-label="Modifier le locataire"
 					title="Modifier"
-					on:click={() => onModifierLocataire(premierBail)}>&#x270F;&#xFE0F;</button
+					on:click={() => onModifierLocataire(premierBail)}
 				>
+					&#x270F;&#xFE0F;
+				</button>
 			</div>
 		</div>
 	{/each}
@@ -146,9 +150,9 @@
 		🔓 Lots vacants ({lotsVacants.length})
 	</div>
 	<p class="note-vacants">
-		Ces lots n'ont pas de bail actif. Créez un bail depuis la fiche du lot ci-dessus ou l'onglet <strong
-			>Gestion locative</strong
-		>.
+		Ces lots n'ont pas de bail actif. Créez un bail depuis la fiche du lot ci-dessus ou l'onglet <strong>
+			Gestion locative
+		</strong>.
 	</p>
 {/if}
 

@@ -76,8 +76,9 @@
 				aria-label="Signaler la réponse de l'assistant au conseil syndical"
 				title="Signaler la réponse de l'assistant"
 				on:click|stopPropagation={() => signaler('question_reglement', q.id)}
-				><IconeAction icone="flag" /></button
 			>
+				<IconeAction icone="flag" />
+			</button>
 			<!--  Le conseil seul publie (11/10/2026) : le copropriétaire lit sa réponse,
 			      il ne la verse pas à la FAQ. Le serveur refuse aussi. -->
 			{#if $estModerateur && !q.faq_item_id}
@@ -87,8 +88,9 @@
 					title="Publier dans la FAQ"
 					aria-pressed={publication}
 					on:click|stopPropagation={() => dispatch('publier')}
-					><IconeAction icone="book-open-check" /></button
 				>
+					<IconeAction icone="book-open-check" />
+				</button>
 			{/if}
 			<!--  Son auteur et l'administration (11/10/2026) — le serveur le dit. -->
 			{#if q.peut_supprimer}
@@ -97,8 +99,9 @@
 					aria-label="Supprimer la question"
 					title="Supprimer la question et sa réponse"
 					on:click|stopPropagation={() => dispatch('supprimer')}
-					><IconeAction icone="trash-2" /></button
 				>
+					<IconeAction icone="trash-2" />
+				</button>
 			{/if}
 		</svelte:fragment>
 		<svelte:fragment slot="apercu">
@@ -109,12 +112,12 @@
 		<svelte:fragment slot="tags">
 			<BadgeVerdict ton={q.verdict_ton} libelle={q.verdict_libelle} />
 			{#if q.extraits.length}
-				<span class:alerte={verifies < q.extraits.length}
-					>{verifies}/{q.extraits.length} extrait{q.extraits.length > 1 ? 's' : ''} vérifié{verifies >
+				<span class:alerte={verifies < q.extraits.length}>
+					{verifies}/{q.extraits.length} extrait{q.extraits.length > 1 ? 's' : ''} vérifié{verifies >
 					1
 						? 's'
-						: ''}</span
-				>
+						: ''}
+				</span>
 			{/if}
 			{#if !q.texte_en_vigueur}
 				<span class="alerte">Texte remplacé depuis</span>

@@ -133,12 +133,12 @@
 						currentCompteur && saveCompteurPrestataire(currentCompteur)}
 				>
 					<div class="compteur-config-row">
-						<label class="field compteur-champ"
-							>Fournisseur<select bind:value={editCompteurPrestId}>
+						<label class="field compteur-champ">
+							Fournisseur<select bind:value={editCompteurPrestId}>
 								<option value="">— Aucun —</option>
 								{#each prestataires as p (p.id)}<option value={String(p.id)}>{p.nom}</option>{/each}
-							</select></label
-						>
+							</select>
+						</label>
 						{#if compteurConfigs.length > 1}
 							<button
 								type="button"
@@ -146,8 +146,9 @@
 								aria-label="Supprimer la catégorie"
 								title="Supprimer la catégorie"
 								on:click={() => currentCompteur && deleteCompteurConfig(currentCompteur)}
-								><IconeAction icone="trash-2" /></button
 							>
+								<IconeAction icone="trash-2" />
+							</button>
 						{/if}
 					</div>
 					<PiedFormulaire petit on:annule={() => (editCompteurId = null)} />
@@ -166,8 +167,9 @@
 					aria-label="Modifier le fournisseur"
 					title="Modifier le fournisseur"
 					on:click={() => currentCompteur && startEditCompteur(currentCompteur)}
-					><IconeAction icone="pencil" /></button
 				>
+					<IconeAction icone="pencil" />
+				</button>
 			{/if}
 			<button
 				class="btn btn-sm btn-outline ajout-categorie"
@@ -175,21 +177,23 @@
 					showAddCompteur = !showAddCompteur;
 					newCompteurLabel = '';
 				}}
-				title="Ajouter une catégorie">+ Catégorie</button
+				title="Ajouter une catégorie"
 			>
+				+ Catégorie
+			</button>
 		</div>
 
 		{#if showAddCompteur}
 			<!--  Même forme : « Ajouter » AVANT « Annuler » et « … » en cours, c'était
 			      l'inverse de tous les formulaires du site (#1329). -->
 			<form class="compteur-edition ligne-config" on:submit|preventDefault={addCompteurConfig}>
-				<label class="field"
-					><span>Nouvelle catégorie<EtoileRequis vide={!newCompteurLabel.trim()} /></span><input
+				<label class="field">
+					<span>Nouvelle catégorie<EtoileRequis vide={!newCompteurLabel.trim()} /></span><input
 						type="text"
 						bind:value={newCompteurLabel}
 						placeholder="Ex. EDF Parking privé"
-					/></label
-				>
+					/>
+				</label>
 				<PiedFormulaire
 					petit
 					enCours={addCompteurSaving}

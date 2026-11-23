@@ -109,9 +109,9 @@
 							<td>{e.exercice_cloture}</td>
 							<td class="nombre">{fmtNombre(e.affaires)}</td>
 							<td class="nombre">
-								{fmtNombre(e.fichiers)}{SEPARATEUR.point}{fmtOctets(e.octets)}<span class="muted"
-									>{absentes(e.absents)}</span
-								>
+								{fmtNombre(e.fichiers)}{SEPARATEUR.point}{fmtOctets(e.octets)}<span class="muted">
+									{absentes(e.absents)}
+								</span>
 							</td>
 						</tr>
 					{/each}
@@ -150,9 +150,9 @@
 							<td>
 								{a.libelle}{SEPARATEUR.point}{a.exercice}
 								{#if !a.retiree_le}
-									<a class="telecharger" href={conservation.archiveUrl(a.id)} download={a.nom}
-										>Télécharger</a
-									>
+									<a class="telecharger" href={conservation.archiveUrl(a.id)} download={a.nom}>
+										Télécharger
+									</a>
 								{/if}
 							</td>
 							<td class="nombre">{fmtNombre(a.affaires)}</td>
@@ -160,9 +160,9 @@
 							<td>{fmtDatetime(a.cree_le)}</td>
 							<td>
 								{#if a.copiee_le}
-									Copiée le {fmtDate(a.copiee_le)}{#if a.retiree_le}<span class="muted"
-											>{SEPARATEUR.point}retirée du serveur</span
-										>{/if}
+									Copiée le {fmtDate(a.copiee_le)}{#if a.retiree_le}<span class="muted">
+											{SEPARATEUR.point}retirée du serveur
+										</span>{/if}
 								{:else}
 									<span class="muted">En attente de la sauvegarde hors site</span>
 								{/if}

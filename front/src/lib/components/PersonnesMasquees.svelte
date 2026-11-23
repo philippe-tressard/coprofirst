@@ -59,8 +59,9 @@
 						class="btn btn-sm btn-outline"
 						on:click={() => demasquer(m)}
 						aria-label="Ne plus masquer {m.auteur}"
-						><IconeAction icone="eye" /> Ne plus masquer</button
 					>
+						<IconeAction icone="eye" /> Ne plus masquer
+					</button>
 				</li>
 			{/each}
 		</ul>

@@ -66,8 +66,9 @@
 		aria-label="Signaler cette affaire au conseil syndical"
 		title="Signaler au conseil syndical"
 		on:click|stopPropagation={() => signaler('affaire', ticket.id)}
-		><IconeAction icone="flag" /></button
 	>
+		<IconeAction icone="flag" />
+	</button>
 {/if}
 {#if peutSuivre}
 	<!--  Un bouton ÉCRIT, plus une icône (14/11/2026, #2723) : la bulle de « Répondre »
@@ -81,9 +82,11 @@
 		aria-label={SUITE.libelle}
 		title={SUITE.libelle}
 		on:click|stopPropagation={() => dispatch('evoluer_ouvrir')}
-		><IconeAction icone="plus" /><span class="suite-long" aria-hidden="true">{SUITE.libelle}</span
-		><span class="suite-court" aria-hidden="true">{SUITE.court}</span></button
 	>
+		<IconeAction icone="plus" /><span class="suite-long" aria-hidden="true">
+			{SUITE.libelle}
+		</span><span class="suite-court" aria-hidden="true">{SUITE.court}</span>
+	</button>
 {/if}
 {#if peutCorriger}
 	<!--  « Modifier » tout court, comme l'actualité (21/09/2026, signalé à
@@ -94,8 +97,10 @@
 		aria-pressed={mode === 'edition'}
 		aria-label="Modifier"
 		title="Modifier"
-		on:click|stopPropagation={() => dispatch('modifier')}><IconeAction icone="pencil" /></button
+		on:click|stopPropagation={() => dispatch('modifier')}
 	>
+		<IconeAction icone="pencil" />
+	</button>
 {/if}
 <!--  ⚠️ La corbeille NE SUIT PAS le droit d'édition : supprimer
 	      définitivement est irréversible, et cela reste à l'administrateur.
@@ -125,15 +130,19 @@
 		class="btn-icon"
 		aria-label="Archiver"
 		title="Archiver — rejoint l'onglet Archives"
-		on:click|stopPropagation={() => dispatch('archiver')}><IconeAction icone="archive" /></button
+		on:click|stopPropagation={() => dispatch('archiver')}
 	>
+		<IconeAction icone="archive" />
+	</button>
 {:else if archive && peutAdministrer}
 	<button
 		class="btn-icon-danger"
 		aria-label="Supprimer"
 		title="Supprimer définitivement"
-		on:click|stopPropagation={() => dispatch('supprimer')}><IconeAction icone="trash-2" /></button
+		on:click|stopPropagation={() => dispatch('supprimer')}
 	>
+		<IconeAction icone="trash-2" />
+	</button>
 {/if}
 
 <style>

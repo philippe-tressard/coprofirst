@@ -46,8 +46,10 @@
 				class:etat-neutre={e === 'neutre'}
 				class:etat-excellent={e === 'excellent'}
 				aria-pressed={etat === e}
-				on:click={() => (etat = e)}>{LIBELLE_ETAT[e]}</button
+				on:click={() => (etat = e)}
 			>
+				{LIBELLE_ETAT[e]}
+			</button>
 		{/each}
 	</div>
 

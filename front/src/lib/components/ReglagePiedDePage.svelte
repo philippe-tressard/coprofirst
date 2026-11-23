@@ -80,27 +80,33 @@
 										aria-label="Monter « {e.libelle} »"
 										title="Monter"
 										disabled={i === 0}
-										on:click={() => bouger(code, -1)}><IconeAction icone="arrow-up" /></button
+										on:click={() => bouger(code, -1)}
 									>
+										<IconeAction icone="arrow-up" />
+									</button>
 									<button
 										type="button"
 										class="btn-icon deplacer"
 										aria-label="Descendre « {e.libelle} »"
 										title="Descendre"
 										disabled={i === codes.length - 1}
-										on:click={() => bouger(code, 1)}><IconeAction icone="arrow-down" /></button
+										on:click={() => bouger(code, 1)}
 									>
+										<IconeAction icone="arrow-down" />
+									</button>
 									{#if e.verrouille}
-										<span class="fixe" title="Toujours affiché : {e.verrouille}"
-											><Icon name="lock" size={13} />{e.libelle}</span
-										>
+										<span class="fixe" title="Toujours affiché : {e.verrouille}">
+											<Icon name="lock" size={13} />{e.libelle}
+										</span>
 									{:else}
 										<Pastille
 											petite
 											bascule
 											active={!reglage.masques.includes(code)}
-											on:click={() => basculer(code)}>{e.libelle}</Pastille
+											on:click={() => basculer(code)}
 										>
+											{e.libelle}
+										</Pastille>
 									{/if}
 								</li>
 							{/if}
@@ -119,9 +125,9 @@
 			<label class="field">
 				Année de création
 				<input type="number" bind:value={reglage.anneeDebut} min="1900" max="9999" />
-				<span class="aide"
-					>« © 2026 » cette année, « © 2026–2027 » l’an prochain. Vide : l’année en cours seule.</span
-				>
+				<span class="aide">
+					« © 2026 » cette année, « © 2026–2027 » l’an prochain. Vide : l’année en cours seule.
+				</span>
 			</label>
 			<label class="field">
 				Texte avant le nom

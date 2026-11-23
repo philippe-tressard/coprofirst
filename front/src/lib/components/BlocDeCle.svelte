@@ -18,10 +18,11 @@
 
 <div class="bloc-entete">
 	<span class="cle">{ligne.libelle}</span>
-	<span
-		><strong>{fmtNombre(ligne.total)}/{fmtNombre(ligne.denominateur)}</strong
-		>{SEPARATEUR.point}{fmtPartEnPourcent(ligne.total, ligne.denominateur)}</span
-	>
+	<span>
+		<strong>
+			{fmtNombre(ligne.total)}/{fmtNombre(ligne.denominateur)}
+		</strong>{SEPARATEUR.point}{fmtPartEnPourcent(ligne.total, ligne.denominateur)}
+	</span>
 </div>
 {#if ligne.description}<span class="detail">{ligne.description}</span>{/if}
 {#if ligne.libelle_syndic}

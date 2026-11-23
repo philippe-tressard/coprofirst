@@ -73,22 +73,26 @@
 	</div>
 {/if}
 <div class="destinataire-pills">
-	<Pastille active={!concerneActif && isTous} icone="users-round" on:click={selectTous}
-		>{LIBELLE_TOUS}</Pastille
-	>
+	<Pastille active={!concerneActif && isTous} icone="users-round" on:click={selectTous}>
+		{LIBELLE_TOUS}
+	</Pastille>
 	{#each DESTINATAIRES as o (o.code)}
 		{#if concerne !== null && o.code === 'conseil_syndical'}
 			<Pastille
 				active={concerneActif}
 				icone="lock"
-				on:click={() => dispatch('concerne', !concerneActif)}>{concerne}</Pastille
+				on:click={() => dispatch('concerne', !concerneActif)}
 			>
+				{concerne}
+			</Pastille>
 		{/if}
 		<Pastille
 			active={!concerneActif && !isTous && selected.has(o.code)}
 			icone={o.icone}
-			on:click={() => toggleItem(o.code)}>{o.libelle}</Pastille
+			on:click={() => toggleItem(o.code)}
 		>
+			{o.libelle}
+		</Pastille>
 	{/each}
 </div>
 

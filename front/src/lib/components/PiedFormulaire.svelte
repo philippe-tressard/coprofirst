@@ -100,8 +100,10 @@
 		class="btn btn-outline"
 		class:btn-sm={petit}
 		disabled={enCours}
-		on:click={() => dispatch('annule')}>{libelleAnnuler}</button
+		on:click={() => dispatch('annule')}
 	>
+		{libelleAnnuler}
+	</button>
 	{#if soumission}
 		<button
 			type="submit"

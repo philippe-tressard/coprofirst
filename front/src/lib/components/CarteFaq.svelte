@@ -79,22 +79,25 @@
 					title="Modifier"
 					aria-pressed={enEdition}
 					on:click|stopPropagation={() => dispatch('modifier')}
-					><IconeAction icone="pencil" /></button
 				>
+					<IconeAction icone="pencil" />
+				</button>
 				<button
 					class={item.actif ? 'btn-icon-warn' : 'btn-icon-edit'}
 					aria-label={item.actif ? 'Masquer' : 'Afficher'}
 					title={item.actif ? 'Masquer' : 'Afficher'}
 					on:click|stopPropagation={() => dispatch('basculerActif')}
-					><IconeAction icone={item.actif ? 'eye-off' : 'eye'} /></button
 				>
+					<IconeAction icone={item.actif ? 'eye-off' : 'eye'} />
+				</button>
 				<button
 					class="btn-icon-danger"
 					aria-label="Supprimer"
 					title="Supprimer"
 					on:click|stopPropagation={() => dispatch('supprimer')}
-					><IconeAction icone="trash-2" /></button
 				>
+					<IconeAction icone="trash-2" />
+				</button>
 			{/if}
 		</svelte:fragment>
 	</EnteteCarte>
@@ -119,9 +122,9 @@
 				      simplement le lecteur en haut de l'écran, sans qu'il sache
 				      pourquoi. -->
 				<div class="faq-cta-row">
-					<a class="btn btn-primary btn-sm" href="/mon-lot/badges"
-						>Faire une nouvelle demande d'accès</a
-					>
+					<a class="btn btn-primary btn-sm" href="/mon-lot/badges">
+						Faire une nouvelle demande d'accès
+					</a>
 					<a class="btn btn-outline btn-sm" href="/mon-lot/badges">Voir mes accès</a>
 				</div>
 			{/if}

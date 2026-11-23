@@ -67,7 +67,8 @@
 </main>
 
 <footer class="legal-footer">
-	© {year}{SEPARATEUR.point}<a href={siteUrl} target="_blank" rel="noopener noreferrer">{siteNom}</a
-	>
+	© {year}{SEPARATEUR.point}<a href={siteUrl} target="_blank" rel="noopener noreferrer">
+		{siteNom}
+	</a>
 	<slot name="pied" />
 </footer>

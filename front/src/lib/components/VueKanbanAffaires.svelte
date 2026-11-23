@@ -135,12 +135,13 @@
 					{#if prestatairesDeLaCarte(t).premier}
 						{@const prest = prestatairesDeLaCarte(t)}
 						<!--  Le premier, puis « +N » (#2704) ; la liste entière en infobulle et à l'oreille. -->
-						<span class="kanban-card-prest" title={prest.tous}
-							><span class="kanban-card-prest-nom" aria-hidden="true">{prest.premier}</span
-							>{#if prest.suite}<span class="kanban-card-prest-plus" aria-hidden="true"
-									>+{prest.suite}</span
-								>{/if}<span class="sr-only">{prest.tous}</span></span
-						>
+						<span class="kanban-card-prest" title={prest.tous}>
+							<span class="kanban-card-prest-nom" aria-hidden="true">
+								{prest.premier}
+							</span>{#if prest.suite}<span class="kanban-card-prest-plus" aria-hidden="true">
+									+{prest.suite}
+								</span>{/if}<span class="sr-only">{prest.tous}</span>
+						</span>
 					{/if}
 					<strong class="kanban-card-titre">{t.titre}</strong>
 					<div class="kanban-card-footer">

@@ -301,8 +301,9 @@
 									title="Non applicable à cette copropriété"
 									disabled={togglingNonApplicableId === dtype.id}
 									on:click={() => toggleNonApplicable(dtype.id, true)}
-									><IconeAction icone="eye-off" /></button
 								>
+									<IconeAction icone="eye-off" />
+								</button>
 							{/if}
 						</svelte:fragment>
 						<p class="diag-texte" slot="apercu">{dtype.texte_legislatif}</p>
@@ -331,9 +332,9 @@
 
 						{#if peutModifier}
 							<div class="diag-add">
-								<button class="btn btn-sm" on:click={() => startAddRapport(dtype.id)}
-									>+ Ajouter un rapport</button
-								>
+								<button class="btn btn-sm" on:click={() => startAddRapport(dtype.id)}>
+									+ Ajouter un rapport
+								</button>
 							</div>
 						{/if}
 					</div>
@@ -364,8 +365,9 @@
 										class="btn btn-sm"
 										disabled={togglingNonApplicableId === dtype.id}
 										on:click={() => toggleNonApplicable(dtype.id, false)}
-										><Icon name="undo-2" size={14} /> Réactiver</button
 									>
+										<Icon name="undo-2" size={14} /> Réactiver
+									</button>
 								</div>
 								<p class="diag-texte">{dtype.texte_legislatif}</p>
 							</div>

@@ -54,9 +54,9 @@
       ignore bien les nœuds blancs, mais il met chaque enfant sur sa propre
       ligne — le texte de rechange « obligatoire » se retrouvait alors annoncé
       comme un bloc. Mesuré par le test de navigateur, pas deviné. -->
-<span class="requis" class:requis--vide={vide}
-	><span aria-hidden="true">*</span><span class="sr-only">obligatoire</span></span
->
+<span class="requis" class:requis--vide={vide}>
+	<span aria-hidden="true">*</span><span class="sr-only">obligatoire</span>
+</span>
 
 <style>
 	/*  Collée au libellé : aucune marge à gauche, c'est la règle. */

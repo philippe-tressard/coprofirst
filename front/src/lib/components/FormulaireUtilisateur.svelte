@@ -66,16 +66,16 @@
 		/>
 		<label class="field">Téléphone<input type="text" bind:value={editForm.telephone} /></label>
 		<label class="field">Société<input type="text" bind:value={editForm.societe} /></label>
-		<label class="field"
-			>Statut
+		<label class="field">
+			Statut
 			<select bind:value={editForm.statut}>
 				{#each Object.entries(statutLabels) as [val, lbl] (val)}
 					<option value={val}>{lbl}</option>
 				{/each}
 			</select>
 		</label>
-		<label class="field"
-			>Bâtiment
+		<label class="field">
+			Bâtiment
 			<select bind:value={editForm.batiment_id}>
 				<option value={null}>— Aucun —</option>
 				{#each batimentsList as b (b.id)}
@@ -85,14 +85,14 @@
 		</label>
 		<!--  #1155 : ce que l'inscription demande, l'administration le corrige.
 		      Mêmes bornes et mêmes capitales côté serveur (`AdminUserUpdate`). -->
-		<label class="field"
-			>Étage où il habite
+		<label class="field">
+			Étage où il habite
 			<input type="number" min={ETAGE_MIN} max={ETAGE_MAX} bind:value={editForm.etage} />
 		</label>
 		{#if editForm.statut === 'locataire'}
-			<label class="field"
-				>Nom du bailleur<input type="text" bind:value={editForm.nom_proprietaire} /></label
-			>
+			<label class="field">
+				Nom du bailleur<input type="text" bind:value={editForm.nom_proprietaire} />
+			</label>
 		{/if}
 		<label class="case case-alignee">
 			<input type="checkbox" bind:checked={editForm.actif} />

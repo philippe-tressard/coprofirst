@@ -220,12 +220,12 @@
 
 <div class="ah-panel">
 	<div class="perimetre-pills choix-vue">
-		<Pastille active={ahVue === 'nouvelle'} on:click={() => (ahVue = 'nouvelle')}
-			>&#x1F4DD; Nouvelle annonce</Pastille
-		>
-		<Pastille active={ahVue === 'historique'} on:click={() => (ahVue = 'historique')}
-			>&#x1F4C1; Archives</Pastille
-		>
+		<Pastille active={ahVue === 'nouvelle'} on:click={() => (ahVue = 'nouvelle')}>
+			&#x1F4DD; Nouvelle annonce
+		</Pastille>
+		<Pastille active={ahVue === 'historique'} on:click={() => (ahVue = 'historique')}>
+			&#x1F4C1; Archives
+		</Pastille>
 	</div>
 
 	{#if ahVue === 'nouvelle'}

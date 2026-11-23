@@ -46,8 +46,10 @@
 			active={valeur === o.value}
 			on:click={() => {
 				if (!lecture) dispatch('choisir', o.value);
-			}}>{o.label}</Pastille
+			}}
 		>
+			{o.label}
+		</Pastille>
 	{/each}
 </div>
 

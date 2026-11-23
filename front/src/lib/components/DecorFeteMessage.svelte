@@ -67,7 +67,7 @@
 </script>
 
 {#if actif}
-	<span class="message-fete" class:visible style:--reflet={degradeReflet(fete)}
-		>{messageDeFete(fete, jour)}</span
-	>
+	<span class="message-fete" class:visible style:--reflet={degradeReflet(fete)}>
+		{messageDeFete(fete, jour)}
+	</span>
 {/if}

@@ -46,8 +46,9 @@
 		<div class="result-row" class:winner={opt.id === monVote}>
 			<div class="result-label">
 				{opt.libelle}
-				{#if opt.champ_libre}<span class="champ-libre-badge" title="Champ de précision">✏️</span
-					>{/if}
+				{#if opt.champ_libre}<span class="champ-libre-badge" title="Champ de précision">
+						✏️
+					</span>{/if}
 				{#if opt.id === monVote}<span class="badge badge-blue mon-vote">Mon vote ✓</span>{/if}
 			</div>
 			<div class="result-bar-wrap">

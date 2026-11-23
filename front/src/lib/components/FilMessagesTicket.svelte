@@ -147,15 +147,19 @@
 							class="btn-icon"
 							aria-label="Modifier mon message"
 							title="Modifier"
-							on:click={() => commencer(msg)}><IconeAction icone="pencil" /></button
+							on:click={() => commencer(msg)}
 						>
+							<IconeAction icone="pencil" />
+						</button>
 						<button
 							type="button"
 							class="btn-icon-danger"
 							aria-label="Supprimer mon message"
 							title="Supprimer"
-							on:click={() => supprimer(msg)}><IconeAction icone="trash-2" /></button
+							on:click={() => supprimer(msg)}
 						>
+							<IconeAction icone="trash-2" />
+						</button>
 					</div>
 				{/if}
 				{#if msg.fichiers_urls?.length}

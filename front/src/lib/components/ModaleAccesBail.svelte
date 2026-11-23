@@ -245,18 +245,18 @@
 			<div class="acces-presets">
 				<!--  Pas de ✨ : la présélection est une RÈGLE (le type du bail), pas
 				      l'assistant — ✨ ne se dit que de l'IA, sur tout le site (`IconeIA`). -->
-				<button class="btn btn-sm" on:click={preselectionRecommandee}
-					>Présélection recommandée</button
-				>
+				<button class="btn btn-sm" on:click={preselectionRecommandee}>
+					Présélection recommandée
+				</button>
 				<button class="btn btn-sm btn-outline" on:click={clearSelection}>Effacer</button>
 			</div>
 			{#if lotsSourcesAcces.length > 1}
 				<div class="acces-filters">
 					<span class="text-muted-sm">Filtrer lots source :</span>
 					{#each lotsSourcesAcces as ls (ls.id)}
-						<Pastille active={filtreLotsAcces.has(ls.id)} on:click={() => toggleFiltreLot(ls.id)}
-							>{ls.label}</Pastille
-						>
+						<Pastille active={filtreLotsAcces.has(ls.id)} on:click={() => toggleFiltreLot(ls.id)}>
+							{ls.label}
+						</Pastille>
 					{/each}
 				</div>
 			{/if}
@@ -287,10 +287,10 @@
 										/>
 									{/if}
 								</td>
-								<td
-									>{acces.lot_label ?? '—'}
-									<span class="badge badge-gray type-lot">{acces.lot_libelle_type ?? '—'}</span></td
-								>
+								<td>
+									{acces.lot_label ?? '—'}
+									<span class="badge badge-gray type-lot">{acces.lot_libelle_type ?? '—'}</span>
+								</td>
 								<td>{acces.type === 'vigik' ? '\u{1F3F7}️ Vigik' : '\u{1F4E1} Télécommande'}</td>
 								<td class="texte-code">{acces.code}</td>
 								<td>
@@ -317,9 +317,9 @@
 									{#if acces.recommande}
 										<span class="badge badge-green">Recommandé</span>
 									{:else if acces.motif_non_eligible}
-										<span class="badge badge-gray" title={acces.motif_non_eligible}
-											>{acces.motif_non_eligible}</span
-										>
+										<span class="badge badge-gray" title={acces.motif_non_eligible}>
+											{acces.motif_non_eligible}
+										</span>
 									{/if}
 								</td>
 							</tr>

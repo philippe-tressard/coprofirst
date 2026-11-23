@@ -145,15 +145,19 @@
 						class="pj-fleche pj-fleche-prec"
 						aria-hidden="true"
 						tabindex="-1"
-						on:click|stopPropagation={() => glisser(-1)}>&#x2039;</button
+						on:click|stopPropagation={() => glisser(-1)}
 					>
+						&#x2039;
+					</button>
 					<button
 						type="button"
 						class="pj-fleche pj-fleche-suiv"
 						aria-hidden="true"
 						tabindex="-1"
-						on:click|stopPropagation={() => glisser(1)}>&#x203A;</button
+						on:click|stopPropagation={() => glisser(1)}
 					>
+						&#x203A;
+					</button>
 
 					<div class="pj-jauge">
 						<!--  Le compteur suit le DÉFILEMENT, pas les seuls boutons : piloté par

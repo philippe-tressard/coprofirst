@@ -36,8 +36,9 @@
 			<table class="table">
 				<thead>
 					<tr>
-						<th>Mesure</th><th class="nombre">Médiane</th><th class="nombre">3 sur 4 en moins de</th
-						><th class="nombre">Mesures</th>
+						<th>Mesure</th><th class="nombre">Médiane</th><th class="nombre">
+							3 sur 4 en moins de
+						</th><th class="nombre">Mesures</th>
 					</tr>
 				</thead>
 				<tbody>
@@ -56,10 +57,9 @@
 		<div class="table-wrap">
 			<table class="table">
 				<thead>
-					<tr
-						><th>Page</th><th class="nombre">3 sur 4 en moins de</th><th class="nombre">Mesures</th
-						></tr
-					>
+					<tr>
+						<th>Page</th><th class="nombre">3 sur 4 en moins de</th><th class="nombre">Mesures</th>
+					</tr>
 				</thead>
 				<tbody>
 					{#each durees.pages as p (`${p.page}|${p.indicateur}`)}

@@ -52,9 +52,9 @@
 				<tbody>
 					<tr class="global">
 						<td>{adoption.global.libelle}</td>
-						<td class="nombre"
-							>{fmtNombre(adoption.global.actifs)} / {fmtNombre(adoption.global.comptes)}</td
-						>
+						<td class="nombre">
+							{fmtNombre(adoption.global.actifs)} / {fmtNombre(adoption.global.comptes)}
+						</td>
 						<td class="nombre">{pourcentage(adoption.global)}</td>
 					</tr>
 				</tbody>

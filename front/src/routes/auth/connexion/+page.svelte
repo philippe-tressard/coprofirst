@@ -103,9 +103,9 @@
 					{#if emailNotVerified}
 						<div class="renvoi">
 							{#if resendDone}
-								<span class="text-muted-md"
-									>Un nouveau lien a été envoyé si un compte non vérifié existe pour cette adresse.</span
-								>
+								<span class="text-muted-md">
+									Un nouveau lien a été envoyé si un compte non vérifié existe pour cette adresse.
+								</span>
 							{:else}
 								<button
 									type="button"

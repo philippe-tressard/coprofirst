@@ -49,8 +49,10 @@
 				{#if rep.tickets.length}
 					<p class="rep-tickets">
 						Relance portant sur&nbsp;: {#each rep.tickets as num, i (num)}<span
-								class="badge badge-gray">#{num}</span
-							>{#if i < rep.tickets.length - 1}&nbsp;{/if}{/each}
+								class="badge badge-gray"
+							>
+								#{num}
+							</span>{#if i < rep.tickets.length - 1}&nbsp;{/if}{/each}
 					</p>
 				{/if}
 				<p class="rep-texte">{rep.contenu || '(message sans texte lisible)'}</p>

@@ -141,9 +141,9 @@
 {:else}
 	{#if $estModerateur}
 		<div class="barre-delegation">
-			<button class="btn btn-primary" on:click={() => (showForm = true)}
-				>+ Nouvelle délégation</button
-			>
+			<button class="btn btn-primary" on:click={() => (showForm = true)}>
+				+ Nouvelle délégation
+			</button>
 		</div>
 	{/if}
 
@@ -167,9 +167,9 @@
 						</div>
 						<div class="deleg-meta">
 							<Badge teinte={statutBadge(d.statut)}>{statutLabel(d.statut)}</Badge>
-							<span class="deleg-date"
-								>Du {fmt(d.date_debut)}{d.date_fin ? ` au ${fmt(d.date_fin)}` : ' — illimité'}</span
-							>
+							<span class="deleg-date">
+								Du {fmt(d.date_debut)}{d.date_fin ? ` au ${fmt(d.date_fin)}` : ' — illimité'}
+							</span>
 						</div>
 						{#if d.motif}
 							<p class="deleg-motif">{d.motif}</p>
@@ -177,13 +177,14 @@
 					</div>
 					<div class="deleg-actions">
 						{#if d.peut_accepter}
-							<button class="btn btn-sm btn-primary" on:click={() => accepter(d.id)}
-								>Accepter</button
-							>
+							<button class="btn btn-sm btn-primary" on:click={() => accepter(d.id)}>
+								Accepter
+							</button>
 						{/if}
 						{#if d.peut_revoquer}
-							<button class="btn btn-sm btn-danger" on:click={() => revoquer(d.id)}>Révoquer</button
-							>
+							<button class="btn btn-sm btn-danger" on:click={() => revoquer(d.id)}>
+								Révoquer
+							</button>
 						{/if}
 					</div>
 				</div>
@@ -201,8 +202,9 @@
 		<!--  Un vrai `<form>` (#1329) : la touche Entrée ne soumettait pas. -->
 		<form on:submit|preventDefault={creer}>
 			<div class="field">
-				<label for="d-mandant">Personne aidée (mandant)<EtoileRequis vide={!formMandantId} /></label
-				>
+				<label for="d-mandant">
+					Personne aidée (mandant)<EtoileRequis vide={!formMandantId} />
+				</label>
 				<select id="d-mandant" bind:value={formMandantId}>
 					<option value={0} disabled>Choisir…</option>
 					{#each users.filter((u) => u.actif) as u (u.id)}

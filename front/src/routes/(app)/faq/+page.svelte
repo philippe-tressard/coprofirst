@@ -232,9 +232,9 @@
 <EntetePage titre={_pc.titre} descriptif={_pc.descriptif} icone={_pc.icone || 'help-circle'}>
 	{#if canEdit}
 		{#if !reorderMode}
-			<button class="btn btn-outline page-header-btn" on:click={() => (reorderMode = true)}
-				><Icon name="move" size={15} /> Réorganiser</button
-			>
+			<button class="btn btn-outline page-header-btn" on:click={() => (reorderMode = true)}>
+				<Icon name="move" size={15} /> Réorganiser
+			</button>
 			<BoutonNouveau
 				ouvert={showForm && !editingItem}
 				libelle={FAQ.libelleNouveau}
@@ -295,15 +295,19 @@
 						on:click={saveCategory}
 						disabled={savingCategory}
 						title="Valider"
-						aria-label="Valider"><IconeAction icone="check" /></button
+						aria-label="Valider"
 					>
+						<IconeAction icone="check" />
+					</button>
 					<button
 						class="btn-icon-edit"
 						on:click={cancelEditCategory}
 						disabled={savingCategory}
 						title="Annuler"
-						aria-label="Annuler"><IconeAction icone="x" /></button
+						aria-label="Annuler"
 					>
+						<IconeAction icone="x" />
+					</button>
 				</div>
 			{:else}
 				<h2 class="categorie-title">{categorie}</h2>
@@ -312,8 +316,10 @@
 						class="btn-icon-edit btn-edit-cat"
 						on:click={() => startEditCategory(categorie)}
 						title="Renommer la catégorie"
-						aria-label="Renommer la catégorie"><IconeAction icone="pencil" /></button
+						aria-label="Renommer la catégorie"
 					>
+						<IconeAction icone="pencil" />
+					</button>
 				{/if}
 			{/if}
 		</div>

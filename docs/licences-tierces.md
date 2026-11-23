@@ -50,7 +50,7 @@ Compilés dans l'image, jamais pris en roue PyPI — `pillow-heif` : ses roues P
 
 Icônes de `front/src/lib/icones-svg.json` qui ne viennent pas de Lucide — `balcony` : absente de Lucide — dessinée pour le projet le 10/11/2026; `stairs` : absente de Lucide — présumée dessinée pour le projet, à confirmer par l'auteur; `whatsapp` : Simple Icons.
 
-## Dépendances — `front` (568 paquets)
+## Dépendances — `front` (569 paquets)
 
 | Paquet | Licence | Déclaré | Admise |
 |---|---|---|---|
@@ -249,6 +249,7 @@ Icônes de `front/src/lib/icones-svg.json` qui ne viennent pas de Lucide — `ba
 | `@standard-schema/spec` | `MIT` | devDependencies | oui |
 | `@sveltejs/acorn-typescript` | `MIT` | devDependencies | oui |
 | `@sveltejs/adapter-node` | `MIT` | devDependencies | oui |
+| `@sveltejs/adapter-server` | `MIT` | devDependencies | oui |
 | `@sveltejs/kit` | `MIT` | devDependencies | oui |
 | `@sveltejs/load-config` | `MIT` | devDependencies | oui |
 | `@sveltejs/vite-plugin-svelte` | `MIT` | devDependencies | oui |

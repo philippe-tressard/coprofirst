@@ -190,8 +190,10 @@
 					class="kb-nav-btn"
 					disabled={mobileKanbanIdx === 0}
 					on:click={() => mobileKanbanIdx--}
-					aria-label="Colonne précédente">‹</button
+					aria-label="Colonne précédente"
 				>
+					‹
+				</button>
 				<div class="kb-mobile-nav-center">
 					<span class="kb-mobile-col-label" style="color:{mobileKanbanCurrent?.color}">
 						{mobileKanbanCurrent?.label}
@@ -202,8 +204,10 @@
 					class="kb-nav-btn"
 					disabled={mobileKanbanIdx >= mobileKanbanCols.length - 1}
 					on:click={() => mobileKanbanIdx++}
-					aria-label="Colonne suivante">›</button
+					aria-label="Colonne suivante"
 				>
+					›
+				</button>
 			</div>
 			{#if mobileKanbanCurrent}
 				<div class="kb-mobile-items">
@@ -214,8 +218,9 @@
 						<p class="kb-mobile-plus">
 							+{mobileKanbanCurrent.total - 5} élément{mobileKanbanCurrent.total - 5 > 1
 								? 's'
-								: ''}{SEPARATEUR.tiret}<a href={lienKanban} class="kb-mobile-plus-lien">voir tout</a
-							>
+								: ''}{SEPARATEUR.tiret}<a href={lienKanban} class="kb-mobile-plus-lien">
+								voir tout
+							</a>
 						</p>
 					{/if}
 				</div>

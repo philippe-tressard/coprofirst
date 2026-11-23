@@ -170,9 +170,9 @@
 		      rien d'autre ne dit. La date de prochaine visite existe en base depuis
 		      toujours ; aucun écran ne la comparait à aujourd'hui. -->
 		<EncartAvertissement role="status">
-			⚠️ <strong
-				>{enRetard} visite{enRetard > 1 ? 's' : ''} attendue{enRetard > 1 ? 's' : ''}</strong
-			>
+			⚠️ <strong>
+				{enRetard} visite{enRetard > 1 ? 's' : ''} attendue{enRetard > 1 ? 's' : ''}
+			</strong>
 			dont l'échéance est dépassée :
 			<ul class="concernees">
 				{#each enAlerte as entree (entree.origine + entree.lien + entree.date)}
@@ -182,10 +182,10 @@
 						{:else}
 							<strong>{entree.libelle}</strong>
 						{/if}
-						<span class="concernee-detail"
-							>({libellesDesGroupes.get(entree.equipement) ??
-								''}{SEPARATEUR.point}{entree.perimetre_libelle}){SEPARATEUR.tiret}{entree.alerte}</span
-						>
+						<span class="concernee-detail">
+							({libellesDesGroupes.get(entree.equipement) ??
+								''}{SEPARATEUR.point}{entree.perimetre_libelle}){SEPARATEUR.tiret}{entree.alerte}
+						</span>
 					</li>
 				{/each}
 			</ul>
@@ -243,8 +243,9 @@
 													title="Synthèse de l'affaire"
 													on:click|stopPropagation={() =>
 														(ouverte = basculer(ouverte, entree.lien))}
-													><IconeAction icone="receipt" /></button
 												>
+													<IconeAction icone="receipt" />
+												</button>
 											{/if}
 										</svelte:fragment>
 										<!--  Juste sous le titre, les trois lignes de l'aperçu :

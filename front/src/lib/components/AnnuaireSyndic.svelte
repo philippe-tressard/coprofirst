@@ -178,8 +178,10 @@
 		{#if m.est_principal}
 			<span
 				class="summary-role-badge summary-role-badge-principal"
-				title="Interlocuteur principal du syndic">&#x2B50; Interlocuteur principal</span
+				title="Interlocuteur principal du syndic"
 			>
+				&#x2B50; Interlocuteur principal
+			</span>
 		{/if}
 	</svelte:fragment>
 

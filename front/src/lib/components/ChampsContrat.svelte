@@ -147,13 +147,13 @@
 		rempli={!!contratForm.date_debut}
 	>
 		<div class="form-grid">
-			<label class="field"
-				><span>Début<EtoileRequis vide={!contratForm.date_debut} /></span><input
+			<label class="field">
+				<span>Début<EtoileRequis vide={!contratForm.date_debut} /></span><input
 					type="date"
 					bind:value={contratForm.date_debut}
 					required
-				/></label
-			>
+				/>
+			</label>
 			<!--  Un `<div>` et non un `<label>` : l'unité est un groupe de pastilles,
 			      et des boutons dans un label lui voleraient son clic (#1329). -->
 			<div class="field">
@@ -176,9 +176,9 @@
 					/>
 				</div>
 			</div>
-			<label class="field"
-				>Prochaine visite<input type="date" bind:value={contratForm.prochaine_visite} /></label
-			>
+			<label class="field">
+				Prochaine visite<input type="date" bind:value={contratForm.prochaine_visite} />
+			</label>
 		</div>
 		<!--  La fréquence SOUS la rangée des dates, comme sur une affaire d'entretien
 		      (`FormulaireTicket`) : posée dans une cellule de la grille, sa propre
@@ -194,30 +194,30 @@
 		      propose qu'une fois ce jour saisi. Le sens inverse (« remplace… ») se lit
 		      sur la carte du nouveau contrat, il ne se saisit pas (`utils/remplacement_contrat`). -->
 		<div class="form-grid">
-			<label class="field"
-				>Résilié le<input
+			<label class="field">
+				Résilié le<input
 					type="date"
 					min={contratForm.date_debut}
 					bind:value={contratForm.resilie_le}
 					aria-describedby="{idNotes}-resilie-aide"
-				/><span id="{idNotes}-resilie-aide" class="aide"
-					>Le dernier jour du contrat. Il ne se reconduit plus, et le contrat qui le remplace peut
-					commencer le lendemain.</span
-				></label
-			>
+				/><span id="{idNotes}-resilie-aide" class="aide">
+					Le dernier jour du contrat. Il ne se reconduit plus, et le contrat qui le remplace peut
+					commencer le lendemain.
+				</span>
+			</label>
 			{#if contratForm.resilie_le}
-				<label class="field"
-					>Remplacé par<select bind:value={contratForm.remplace_par_id}>
+				<label class="field">
+					Remplacé par<select bind:value={contratForm.remplace_par_id}>
 						<option value="">— Aucun —</option>
 						{#each suites as c (c.id)}
-							<option value={String(c.id)}
-								>{c.libelle}{nomPrestataire(c.prestataire_id)
+							<option value={String(c.id)}>
+								{c.libelle}{nomPrestataire(c.prestataire_id)
 									? ` — ${nomPrestataire(c.prestataire_id)}`
-									: ''} (dès le {fmtDateShort(c.date_debut)})</option
-							>
+									: ''} (dès le {fmtDateShort(c.date_debut)})
+							</option>
 						{/each}
-					</select></label
-				>
+					</select>
+				</label>
 			{/if}
 		</div>
 	</SectionFormulaire>

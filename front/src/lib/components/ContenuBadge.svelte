@@ -22,10 +22,11 @@
 </script>
 
 {#if icones.length || icone}
-	<span class="contenu-badge"
-		>{#each icones as nom, i (i)}<Icon name={nom} size={taille} />{/each}<span>{texte}</span
-		>{#if icone}<Icon name={icone} size={taille - 1} />{/if}</span
-	>
+	<span class="contenu-badge">
+		{#each icones as nom, i (i)}<Icon name={nom} size={taille} />{/each}<span>
+			{texte}
+		</span>{#if icone}<Icon name={icone} size={taille - 1} />{/if}
+	</span>
 {:else}{texte}{/if}
 
 <style>

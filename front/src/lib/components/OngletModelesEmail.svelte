@@ -242,10 +242,9 @@
 		</div>
 		<table class="table">
 			<thead>
-				<tr
-					><th>Code</th><th>Nom</th><th>Sujet</th><th>Intention</th><th>Actif</th><th>Action</th
-					></tr
-				>
+				<tr>
+					<th>Code</th><th>Nom</th><th>Sujet</th><th>Intention</th><th>Actif</th><th>Action</th>
+				</tr>
 			</thead>
 			<tbody>
 				{#each emailTemplates as tpl (tpl.code)}
@@ -254,9 +253,9 @@
 						<td class="libelle-modele">{tpl.libelle ?? '—'}</td>
 						<td class="text-muted-sm">{tpl.sujet}</td>
 						<td>
-							{#if tpl.intention}<span class="badge badge-blue"
-									>{labelIntention(tpl.intention)}</span
-								>
+							{#if tpl.intention}<span class="badge badge-blue">
+									{labelIntention(tpl.intention)}
+								</span>
 							{:else}<span class="muted texte-sm">—</span>{/if}
 						</td>
 						<td>
@@ -264,8 +263,10 @@
 							      dit ni « Oui » ni « Non », elle dit qu'il n'y a pas de case. -->
 							{#if !tpl.desactivable}<span
 									class="badge badge-green"
-									title="Ce courriel ne se désactive pas">Toujours</span
+									title="Ce courriel ne se désactive pas"
 								>
+									Toujours
+								</span>
 							{:else if tpl.actif}<span class="badge badge-green">Oui</span>
 							{:else}<span class="badge badge-gray">Non</span>{/if}
 						</td>
@@ -279,8 +280,9 @@
 								aria-pressed={emailEdit?.code === tpl.code}
 								on:click={() =>
 									emailEdit?.code === tpl.code ? (emailEdit = null) : openEmailEdit(tpl)}
-								><IconeAction icone="pencil" /></button
 							>
+								<IconeAction icone="pencil" />
+							</button>
 						</td>
 					</tr>
 					{#if emailEdit?.code === tpl.code}
@@ -310,17 +312,18 @@
 											/>
 										</div>
 										<div class="field">
-											<label for="email-intention"
-												>Intention{SEPARATEUR.tiret}ce que le message attend du destinataire</label
-											>
+											<label for="email-intention">
+												Intention{SEPARATEUR.tiret}ce que le message attend du destinataire
+											</label>
 											<select id="email-intention" bind:value={emailIntention}>
-												{#each INTENTIONS as i (i.valeur)}<option value={i.valeur}>{i.label}</option
-													>{/each}
+												{#each INTENTIONS as i (i.valeur)}<option value={i.valeur}>
+														{i.label}
+													</option>{/each}
 											</select>
-											<span class="aide"
-												>Affichée en bandeau au-dessus du corps, pour que le lecteur sache d'emblée
-												s'il doit agir. « Aucun bandeau » n'affiche rien.</span
-											>
+											<span class="aide">
+												Affichée en bandeau au-dessus du corps, pour que le lecteur sache d'emblée
+												s'il doit agir. « Aucun bandeau » n'affiche rien.
+											</span>
 										</div>
 										<div class="field">
 											<div class="entete-corps">

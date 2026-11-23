@@ -82,10 +82,10 @@
 		{fmtNombre(releve?.total_tickets)} pourrai{propositions.length > 1 ? 'ent' : 't'} changer de catégorie.
 		<strong>{hautes.length}</strong> proposition{hautes.length > 1 ? 's' : ''} à confiance haute.
 		<br />
-		<em
-			>Ce relevé ne modifie rien : il propose. La correction se fait affaire par affaire, depuis sa
-			fiche.</em
-		>
+		<em>
+			Ce relevé ne modifie rien : il propose. La correction se fait affaire par affaire, depuis sa
+			fiche.
+		</em>
 	</p>
 
 	<!--  🔴 `haute` est un BOOLÉEN, pas une classe interpolée. `class="badge
@@ -97,9 +97,9 @@
 		{#if groupe.lignes.length > 0}
 			<h4 class="sous-titre">
 				{groupe.titre}
-				<span class="badge" class:badge-green={groupe.haute} class:badge-orange={!groupe.haute}
-					>{groupe.lignes.length}</span
-				>
+				<span class="badge" class:badge-green={groupe.haute} class:badge-orange={!groupe.haute}>
+					{groupe.lignes.length}
+				</span>
 			</h4>
 			<div class="table-wrap">
 				<table class="table">

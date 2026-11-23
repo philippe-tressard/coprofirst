@@ -117,9 +117,9 @@
 <div class="validation">
 	{#if point.etat === 'a_valider'}
 		<p class="etat">
-			Envoyé aux présents{SEPARATEUR.tiret}<strong
-				>{fmtNombre(v.valides)} sur {fmtNombre(v.destinataires)}</strong
-			>
+			Envoyé aux présents{SEPARATEUR.tiret}<strong>
+				{fmtNombre(v.valides)} sur {fmtNombre(v.destinataires)}
+			</strong>
 			{v.destinataires > 1 ? 'ont validé' : 'a validé'}.
 			{#if v.suspendue}
 				<span class="alerte">Un commentaire attend : la validation automatique est suspendue.</span>
@@ -132,9 +132,9 @@
 				{#each destinataires as p (p.id)}
 					<li class:valide={p.valide_le}>
 						<IconeAction icone={p.valide_le ? 'check' : 'clock'} />
-						{nomPresent(p)}{#if p.par_derogation}<span class="derogation"
-								>&nbsp;(par dérogation)</span
-							>{/if}
+						{nomPresent(p)}{#if p.par_derogation}<span class="derogation">
+								&nbsp;(par dérogation)
+							</span>{/if}
 						{#if $isAdmin && !p.valide_le}
 							<button
 								type="button"

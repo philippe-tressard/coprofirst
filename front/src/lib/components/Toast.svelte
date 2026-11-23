@@ -147,8 +147,10 @@
 				type="button"
 				class="btn-icon toast-fermer"
 				aria-label="Fermer le message"
-				on:click={() => fermer(t.id)}><IconeAction icone="x" /></button
+				on:click={() => fermer(t.id)}
 			>
+				<IconeAction icone="x" />
+			</button>
 		</div>
 	{/each}
 </section>

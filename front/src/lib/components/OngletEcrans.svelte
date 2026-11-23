@@ -123,9 +123,9 @@
 				valable dix minutes. Saisissez-le ici.
 			</p>
 			<div class="field">
-				<label for="ecran-code"
-					>Code affiché par l'écran<EtoileRequis vide={lettres.length !== 8} /></label
-				>
+				<label for="ecran-code">
+					Code affiché par l'écran<EtoileRequis vide={lettres.length !== 8} />
+				</label>
 				<input
 					id="ecran-code"
 					class="champ-code"
@@ -189,8 +189,10 @@
 				<button
 					class="btn btn-sm btn-danger"
 					aria-label={`Retirer l'écran ${e.nom}`}
-					on:click={() => retirer(e)}>Retirer</button
+					on:click={() => retirer(e)}
 				>
+					Retirer
+				</button>
 			</li>
 		{/each}
 	</ul>

@@ -87,15 +87,19 @@
 				<div class="reponse" class:cs={rep.est_cs}>
 					<div class="reponse-tete">
 						<span class="reponse-auteur">{rep.auteur_nom}</span>
-						{#if rep.auteur_batiment}<span class="badge badge-gray">{rep.auteur_batiment}</span
-							>{/if}
+						{#if rep.auteur_batiment}<span class="badge badge-gray">
+								{rep.auteur_batiment}
+							</span>{/if}
 						{#if rep.auteur_role}<span
 								class="badge"
 								class:badge-blue={rep.est_cs}
-								class:badge-gray={!rep.est_cs}>{rep.auteur_role}</span
-							>{/if}
-						{#if rep.est_cs}<span class="reponse-poids" title="Réponse du conseil syndical">⭐</span
-							>{/if}
+								class:badge-gray={!rep.est_cs}
+							>
+								{rep.auteur_role}
+							</span>{/if}
+						{#if rep.est_cs}<span class="reponse-poids" title="Réponse du conseil syndical">
+								⭐
+							</span>{/if}
 						<small class="reponse-date">{fmtDateShort(rep.cree_le)}</small>
 						{#if onReport && rep.auteur_id !== currentUserId}
 							<!--  Au trait, comme toutes les actions du site (10/10/2026) : le
@@ -105,8 +109,10 @@
 								class="btn-icon reponse-signaler"
 								title="Signaler cette réponse au conseil syndical"
 								aria-label="Signaler cette réponse"
-								on:click={() => onReport?.(rep.id)}><IconeAction icone="flag" /></button
+								on:click={() => onReport?.(rep.id)}
 							>
+								<IconeAction icone="flag" />
+							</button>
 						{/if}
 						<!--  Le conseil ne se masque pas (`utils/masquage`) : le geste ne s'offre
 						      pas sur sa réponse, et le serveur refuserait de toute façon. -->
@@ -116,8 +122,9 @@
 								title="Masquer ce que publie {rep.auteur_nom}"
 								aria-label="Masquer ce que publie {rep.auteur_nom}"
 								on:click={() => masquerAuteur(rep.auteur_id, rep.auteur_nom)}
-								><IconeAction icone="eye-off" /></button
 							>
+								<IconeAction icone="eye-off" />
+							</button>
 						{/if}
 						<!--  `peut_supprimer` : la conclusion de `peut_commenter`, servie (#2506). -->
 						{#if rep.peut_supprimer}
@@ -125,8 +132,10 @@
 								class="btn-icon-danger reponse-suppr"
 								title="Supprimer cette réponse"
 								aria-label="Supprimer cette réponse"
-								on:click={() => remove(rep.id)}><IconeAction icone="trash-2" /></button
+								on:click={() => remove(rep.id)}
 							>
+								<IconeAction icone="trash-2" />
+							</button>
 						{/if}
 					</div>
 					<div class="reponse-contenu">{rep.contenu}</div>

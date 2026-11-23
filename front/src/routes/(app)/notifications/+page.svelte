@@ -168,9 +168,9 @@
 				</div>
 				<div class="notif-actions">
 					{#if !n.lue}
-						<button class="btn btn-outline btn-sm" on:click={() => markRead(n.id)}
-							>Marquer lu</button
-						>
+						<button class="btn btn-outline btn-sm" on:click={() => markRead(n.id)}>
+							Marquer lu
+						</button>
 					{/if}
 					<!--  Le glyphe ✕ ne dit rien à un lecteur d'écran, et ce bouton SUPPRIME :
 					      le libellé nomme donc le geste et son objet, pas la croix. -->
@@ -179,8 +179,10 @@
 						aria-label="Supprimer cette notification"
 						title="Supprimer cette notification"
 						disabled={deleting.has(n.id)}
-						on:click={() => remove(n.id)}>✕</button
+						on:click={() => remove(n.id)}
 					>
+						✕
+					</button>
 				</div>
 			</div>
 		{/each}

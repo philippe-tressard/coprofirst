@@ -56,21 +56,21 @@
 {:else if avis.reponse}
 	<div class="avis-reponse">
 		<p class="avis-reponse-titre">
-			Réponse de l'équipe{#if avis.reponse_le}<span class="avis-reponse-date"
-					>{SEPARATEUR.point}{fmtDate(avis.reponse_le)}</span
-				>{/if}
+			Réponse de l'équipe{#if avis.reponse_le}<span class="avis-reponse-date">
+					{SEPARATEUR.point}{fmtDate(avis.reponse_le)}
+				</span>{/if}
 		</p>
 		<p class="avis-reponse-texte">{avis.reponse}</p>
 		{#if gestionnaire}
-			<button type="button" class="btn btn-outline btn-sm" on:click={ouvrir}
-				>Modifier la réponse</button
-			>
+			<button type="button" class="btn btn-outline btn-sm" on:click={ouvrir}>
+				Modifier la réponse
+			</button>
 		{/if}
 	</div>
 {:else if gestionnaire}
-	<button type="button" class="btn btn-outline btn-sm avis-repondre" on:click={ouvrir}
-		>Répondre</button
-	>
+	<button type="button" class="btn btn-outline btn-sm avis-repondre" on:click={ouvrir}>
+		Répondre
+	</button>
 {/if}
 
 <style>

@@ -82,19 +82,21 @@
 				class:badge-orange={i.etat === 'en_attente'}
 				class:badge-green={i.etat === 'active'}
 				class:badge-red={i.etat === 'suspendue'}
-				class:badge-gray={i.etat === 'resiliee'}>{LIBELLE_ETAT_REGISTRE[i.etat]}</span
+				class:badge-gray={i.etat === 'resiliee'}
 			>
+				{LIBELLE_ETAT_REGISTRE[i.etat]}
+			</span>
 			{#if i.alertes.length}
-				<span class="badge" class:badge-red={alertes.grave} class:badge-orange={!alertes.grave}
-					>{alertes.texte}</span
-				>
+				<span class="badge" class:badge-red={alertes.grave} class:badge-orange={!alertes.grave}>
+					{alertes.texte}
+				</span>
 			{/if}
 			{#if i.version_logicielle}<span class="badge badge-gray">v{i.version_logicielle}</span>{/if}
-			{#if i.canal !== 'main'}<span title="Version cible du prochain bail"
-					>{SEPARATEUR.fleche}{libelleVersionCible(
+			{#if i.canal !== 'main'}<span title="Version cible du prochain bail">
+					{SEPARATEUR.fleche}{libelleVersionCible(
 						i.version_cible,
-					)}{#if vagueDe}&nbsp;({vagueDe.libelle}){/if}</span
-				>{/if}
+					)}{#if vagueDe}&nbsp;({vagueDe.libelle}){/if}
+				</span>{/if}
 			{#if i.conditions_acceptees}<span>Contrat v{i.conditions_acceptees}</span>{/if}
 			<span>{servicesAccordes(i.services_autorises.length)}</span>
 		</svelte:fragment>

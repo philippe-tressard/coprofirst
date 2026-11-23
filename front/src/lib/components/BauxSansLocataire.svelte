@@ -83,12 +83,12 @@
 	>
 		{#if manquants.length}
 			<p class="bsl-titre-groupe">
-				<strong
-					>{manquants.length} rattachement{manquants.length > 1 ? 's' : ''} manquant{manquants.length >
+				<strong>
+					{manquants.length} rattachement{manquants.length > 1 ? 's' : ''} manquant{manquants.length >
 					1
 						? 's'
-						: ''}</strong
-				>{SEPARATEUR.tiret}un compte existe à ce nom, mais il n’est pas lié au bail.
+						: ''}
+				</strong>{SEPARATEUR.tiret}un compte existe à ce nom, mais il n’est pas lié au bail.
 			</p>
 			<div class="table-wrap">
 				<table class="table bsl-table">
@@ -105,12 +105,13 @@
 							<tr>
 								<td>
 									{l.locataire_nom}
-									{#if l.locataire_email}<br /><span class="bsl-mail">{l.locataire_email}</span
-										>{/if}
+									{#if l.locataire_email}<br /><span class="bsl-mail">
+											{l.locataire_email}
+										</span>{/if}
 								</td>
-								<td
-									>{l.lot}{#if l.batiment !== '—'}{SEPARATEUR.point}{l.batiment}{/if}</td
-								>
+								<td>
+									{l.lot}{#if l.batiment !== '—'}{SEPARATEUR.point}{l.batiment}{/if}
+								</td>
 								<td>{fmtDate(l.date_entree)}</td>
 								<td>
 									{#each l.candidats as c (c.id)}
@@ -126,9 +127,10 @@
 
 		{#if sansCompte.length}
 			<p class="bsl-titre-groupe bsl-normal">
-				<strong>{sansCompte.length} locataire{sansCompte.length > 1 ? 's' : ''} sans compte</strong
-				>{SEPARATEUR.tiret}personne ne s’est inscrit sous ce nom. C’est la situation ordinaire, rien
-				à corriger.
+				<strong>
+					{sansCompte.length} locataire{sansCompte.length > 1 ? 's' : ''} sans compte
+				</strong>{SEPARATEUR.tiret}personne ne s’est inscrit sous ce nom. C’est la situation
+				ordinaire, rien à corriger.
 			</p>
 			<div class="table-wrap">
 				<table class="table bsl-table">
@@ -139,9 +141,9 @@
 						{#each sansCompte as l (l.bail_id)}
 							<tr>
 								<td>{l.locataire_nom}</td>
-								<td
-									>{l.lot}{#if l.batiment !== '—'}{SEPARATEUR.point}{l.batiment}{/if}</td
-								>
+								<td>
+									{l.lot}{#if l.batiment !== '—'}{SEPARATEUR.point}{l.batiment}{/if}
+								</td>
 								<td>{fmtDate(l.date_entree)}</td>
 							</tr>
 						{/each}

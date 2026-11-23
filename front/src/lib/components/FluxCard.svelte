@@ -152,8 +152,10 @@
 					title="Retirer du fil (l'élément reste à son origine)"
 					aria-label="Retirer cette carte du fil"
 					on:click|stopPropagation={() => dispatch('masquer', item.id)}
-					on:keydown|stopPropagation><IconeAction icone="trash-2" /></button
+					on:keydown|stopPropagation
 				>
+					<IconeAction icone="trash-2" />
+				</button>
 			{/if}
 		</svelte:fragment>
 		<svelte:fragment slot="apercu">
@@ -166,8 +168,9 @@
 						      « Mise à jour » ou « Pris en charge » disent qu'il s'est passé
 						      quelque chose sans dire quoi. -->
 						<p class="flux-detail clamp-3">
-							{#if item.detail}<span class="flux-detail-libelle">{item.detail}</span
-								>{/if}{#if item.detail && extraitReplie}&#8201;—&#8201;{/if}{extraitReplie}
+							{#if item.detail}<span class="flux-detail-libelle">
+									{item.detail}
+								</span>{/if}{#if item.detail && extraitReplie}&#8201;—&#8201;{/if}{extraitReplie}
 						</p>
 					{/if}
 					<FluxVignette

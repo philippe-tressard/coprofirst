@@ -47,11 +47,11 @@
 					class="quick-pill quick-pill-agenda"
 					aria-label="Prochain rendez-vous : {rdv.titre}, le {jour.jour} {jour.mois} {jour.annee}"
 				>
-					<span class="quick-date" aria-hidden="true"
-						><span class="quick-date-jour">{jour.jour}</span><span class="quick-date-mois"
-							>{jour.mois}</span
-						></span
-					>
+					<span class="quick-date" aria-hidden="true">
+						<span class="quick-date-jour">{jour.jour}</span><span class="quick-date-mois">
+							{jour.mois}
+						</span>
+					</span>
 					<span class="quick-agenda-titre">{rdv.titre}</span>
 				</a>
 			{/if}
@@ -73,15 +73,17 @@
 								class="quick-count quick-count-lien"
 								class:quick-count-urgent={c.ton === 'urgent'}
 								class:quick-count-orange={c.ton === 'orange'}
-								>{c.libelle ? c.libelle(c.valeur) : c.valeur}</a
 							>
+								{c.libelle ? c.libelle(c.valeur) : c.valeur}
+							</a>
 						{:else}
 							<span
 								class="quick-count"
 								class:quick-count-urgent={c.ton === 'urgent'}
 								class:quick-count-orange={c.ton === 'orange'}
-								>{c.libelle ? c.libelle(c.valeur) : c.valeur}</span
 							>
+								{c.libelle ? c.libelle(c.valeur) : c.valeur}
+							</span>
 						{/if}
 					{/if}
 				{/each}

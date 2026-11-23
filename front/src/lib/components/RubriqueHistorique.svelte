@@ -232,9 +232,9 @@
 						<!--  🔴 La marque ✨ est COLLÉE au nom (06/10/2026) : enfant direct de la
 						      ligne en `space-between`, elle se répartissait au milieu. -->
 						<span class="evol-qui">
-							<span class="evol-meta"
-								>{fmtDatetime(evol.cree_le)}{evol.auteur_nom ? ` · ${evol.auteur_nom}` : ''}</span
-							>
+							<span class="evol-meta">
+								{fmtDatetime(evol.cree_le)}{evol.auteur_nom ? ` · ${evol.auteur_nom}` : ''}
+							</span>
 							<MarqueIA assiste={evol.assiste_ia} />
 						</span>
 						<!--  🔴 LES DEUX ICÔNES DANS UN MÊME GROUPE, cadré à droite
@@ -255,8 +255,10 @@
 										class="btn-icon"
 										aria-label="Signaler cette suite au conseil syndical"
 										title="Signaler au conseil syndical"
-										on:click={() => signaler('suite', evol.id)}><IconeAction icone="flag" /></button
+										on:click={() => signaler('suite', evol.id)}
 									>
+										<IconeAction icone="flag" />
+									</button>
 									{#if evol.auteur_id && evol.auteur_nom}
 										<button
 											type="button"
@@ -264,8 +266,9 @@
 											aria-label="Masquer ce que publie {evol.auteur_nom}"
 											title="Masquer ce que publie {evol.auteur_nom}"
 											on:click={() => masquerAuteur(evol.auteur_id, evol.auteur_nom)}
-											><IconeAction icone="eye-off" /></button
 										>
+											<IconeAction icone="eye-off" />
+										</button>
 									{/if}
 								{/if}
 								{#if peutCorriger(evol)}
@@ -278,8 +281,9 @@
 										aria-label="Modifier cette entrée"
 										title="Modifier"
 										on:click={() => dispatch('modifier', evol.id)}
-										><IconeAction icone="pencil" /></button
 									>
+										<IconeAction icone="pencil" />
+									</button>
 								{/if}
 								{#if peutEffacer(evol)}
 									<!--  La corbeille EN DERNIER parce qu'elle est irréversible. -->
@@ -288,8 +292,10 @@
 										class="btn-icon-danger"
 										aria-label="Supprimer cette entrée"
 										title="Supprimer cette entrée"
-										on:click={() => effacer(evol)}><IconeAction icone="trash-2" /></button
+										on:click={() => effacer(evol)}
 									>
+										<IconeAction icone="trash-2" />
+									</button>
 								{/if}
 							</span>
 						{/if}
@@ -297,10 +303,11 @@
 
 					{#if evol.type === 'etat'}
 						<span class="evol-text">
-							Statut : <strong>{statutLabels[evol.ancien_statut ?? ''] || 'Aucun'}</strong
-							>{SEPARATEUR.fleche}<strong
-								>{statutLabels[evol.nouveau_statut ?? ''] || evol.nouveau_statut}</strong
-							>
+							Statut : <strong>
+								{statutLabels[evol.ancien_statut ?? ''] || 'Aucun'}
+							</strong>{SEPARATEUR.fleche}<strong>
+								{statutLabels[evol.nouveau_statut ?? ''] || evol.nouveau_statut}
+							</strong>
 						</span>
 					{/if}
 

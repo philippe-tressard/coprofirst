@@ -137,9 +137,9 @@
 					<span class="badge badge-yellow en-attente">En attente d'activation</span>
 				{/if}
 			</div>
-			<button class="btn btn-xs btn-outline" on:click={reinitialiser} title="Changer de locataire"
-				>✕ Changer</button
-			>
+			<button class="btn btn-xs btn-outline" on:click={reinitialiser} title="Changer de locataire">
+				✕ Changer
+			</button>
 		</div>
 	{:else}
 		{#if suggestionsChargees && suggestions.length > 0}

@@ -168,10 +168,10 @@
 					<input type="checkbox" bind:checked={smtpConfig.enabled} />
 					Activer l'envoi d'e-mails
 				</span>
-				<span class="aide"
-					>Si activé, les notifications (réinitialisation de mot de passe, etc.) seront envoyées par
-					e-mail.</span
-				>
+				<span class="aide">
+					Si activé, les notifications (réinitialisation de mot de passe, etc.) seront envoyées par
+					e-mail.
+				</span>
 			</label>
 			<label class="field">
 				Serveur SMTP
@@ -184,10 +184,10 @@
 			<label class="field">
 				Adresse expéditeur{SEPARATEUR.tiret}messages SANS réponse attendue
 				<input type="email" bind:value={smtpConfig.from} placeholder="noreply@example.com" />
-				<span class="aide"
-					>Employée pour ce qui informe seulement : compte activé, changement d'état, nouveau
-					document. C'est la seule adresse qui peut s'appeler « noreply ».</span
-				>
+				<span class="aide">
+					Employée pour ce qui informe seulement : compte activé, changement d'état, nouveau
+					document. C'est la seule adresse qui peut s'appeler « noreply ».
+				</span>
 			</label>
 			<label class="field">
 				Adresse expéditeur{SEPARATEUR.tiret}messages qui APPELLENT une réponse
@@ -196,12 +196,12 @@
 					bind:value={smtpConfig.from_reponse}
 					placeholder="contact@example.com"
 				/>
-				<span class="aide"
-					>Employée dès qu'on attend quelque chose du destinataire : affaire au syndic, relance,
+				<span class="aide">
+					Employée dès qu'on attend quelque chose du destinataire : affaire au syndic, relance,
 					demande d'accès, annonce de hall. Une adresse qui s'annonce « ne répondez pas » décourage
 					la réponse qu'on sollicite. <strong>Vide</strong> : tout part de l'adresse ci-dessus, comme
-					avant.</span
-				>
+					avant.
+				</span>
 			</label>
 			<label class="field">
 				Adresse des affaires{SEPARATEUR.tiret}expédition ET réponses
@@ -210,13 +210,13 @@
 					bind:value={smtpConfig.from_affaires}
 					placeholder="affaire@example.com"
 				/>
-				<span class="aide"
-					>Un courriel d'affaire (au syndic, au conseil) part de cette adresse, et la réponse y
+				<span class="aide">
+					Un courriel d'affaire (au syndic, au conseil) part de cette adresse, et la réponse y
 					revient : elle se rattache à l'affaire par son numéro « Affaire #TK-… » dans l'objet. La
 					boîte qui la reçoit doit être celle de la <strong>Réception des réponses</strong>
 					ci-dessous (un alias qui y aboutit convient). <strong>Vide</strong> : l'adresse des messages
-					qui appellent une réponse.</span
-				>
+					qui appellent une réponse.
+				</span>
 			</label>
 			<label class="field">
 				Nom expéditeur
@@ -249,10 +249,10 @@
 						SSL/TLS (port 465)
 					</span>
 				</span>
-				<span class="aide"
-					>STARTTLS et SSL/TLS sont mutuellement exclusifs. Décocher les deux pour connexion non
-					chiffrée.</span
-				>
+				<span class="aide">
+					STARTTLS et SSL/TLS sont mutuellement exclusifs. Décocher les deux pour connexion non
+					chiffrée.
+				</span>
 			</label>
 		</div>
 		<div class="largeur-saisie form-actions">
@@ -314,9 +314,9 @@
 					rows="2"
 					placeholder="— Le conseil syndical de la résidence"
 					class="saisie-gabarit"></textarea>
-				<span class="aide"
-					>Texte ajouté automatiquement en bas de chaque e-mail envoyé par la plateforme.</span
-				>
+				<span class="aide">
+					Texte ajouté automatiquement en bas de chaque e-mail envoyé par la plateforme.
+				</span>
 			</label>
 		</div>
 	</SectionFormulaire>

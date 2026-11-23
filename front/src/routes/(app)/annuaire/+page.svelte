@@ -119,10 +119,9 @@
 				<QRCode data={data.whatsapp_url} size={45} />
 				<div>
 					<strong>Groupe WhatsApp copropriété</strong>
-					<span class="contact-societe"
-						><a href={data.whatsapp_url} target="_blank" rel="noopener">{data.whatsapp_url}</a
-						></span
-					>
+					<span class="contact-societe">
+						<a href={data.whatsapp_url} target="_blank" rel="noopener">{data.whatsapp_url}</a>
+					</span>
 				</div>
 			</div>
 		{/if}
@@ -180,11 +179,11 @@
 					<QRCode data={data.syndic.site_web} size={45} />
 					<div>
 						<strong>Espace client</strong>
-						<span class="contact-societe"
-							><a href={data.syndic.site_web} target="_blank" rel="noopener"
-								>{data.syndic.site_web}</a
-							></span
-						>
+						<span class="contact-societe">
+							<a href={data.syndic.site_web} target="_blank" rel="noopener">
+								{data.syndic.site_web}
+							</a>
+						</span>
 					</div>
 				</div>
 			{/if}

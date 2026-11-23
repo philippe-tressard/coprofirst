@@ -181,14 +181,14 @@
 		<section class="card config-section">
 			<h3 class="config-section-title">Votre question</h3>
 			<form on:submit|preventDefault={poser}>
-				<label class="field"
-					><span>Question<EtoileRequis vide={!question.trim()} /></span><textarea
+				<label class="field">
+					<span>Question<EtoileRequis vide={!question.trim()} /></span><textarea
 						rows="3"
 						maxlength="2000"
 						bind:value={question}
 						placeholder="Ex. : Un copropriétaire peut-il installer une climatisation sur son balcon ?"
-					></textarea></label
-				>
+					></textarea>
+				</label>
 				{#if !etat.disponible}
 					<EncartAvertissement compact>
 						{#if $estModerateur}
@@ -213,9 +213,10 @@
 						class="btn btn-primary"
 						disabled={envoi || !question.trim() || !etat.disponible || !etat.texte_disponible}
 						aria-busy={envoi}
-						><IconeIA enCours={envoi} />
-						{envoi ? 'Lecture du règlement…' : 'Poser la question'}</button
 					>
+						<IconeIA enCours={envoi} />
+						{envoi ? 'Lecture du règlement…' : 'Poser la question'}
+					</button>
 				</div>
 				{#if envoi}
 					<p class="aide">

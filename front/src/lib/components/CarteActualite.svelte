@@ -177,8 +177,9 @@
 									class="btn-icon"
 									aria-label="Supprimer le document {doc.titre || doc.fichier_nom}"
 									on:click|stopPropagation={() => onRetirerDocument?.(doc)}
-									><IconeAction icone="trash-2" /></button
 								>
+									<IconeAction icone="trash-2" />
+								</button>
 							{/if}
 						{/each}
 					</div>

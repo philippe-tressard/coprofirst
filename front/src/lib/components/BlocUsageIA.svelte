@@ -179,9 +179,9 @@
 	<summary class="bloc-usage-resume">
 		<Icon name="zap" size={16} />
 		<span class="bloc-usage-titre">{usage.libelle}</span>
-		<span class="badge" class:badge-green={actif} class:badge-gray={!actif}
-			>{actif ? 'Activé' : 'Désactivé'}</span
-		>
+		<span class="badge" class:badge-green={actif} class:badge-gray={!actif}>
+			{actif ? 'Activé' : 'Désactivé'}
+		</span>
 	</summary>
 	<p class="aide bloc-usage-description">{usage.description}</p>
 
@@ -249,8 +249,10 @@
 							title="Chercher et enregistrer le tarif de ce modèle"
 							aria-busy={tarif.etat === 'encours'}
 							disabled={!modele || tarif.etat === 'encours'}
-							on:click={demanderTarif}><IconeIA enCours={tarif.etat === 'encours'} /></button
+							on:click={demanderTarif}
 						>
+							<IconeIA enCours={tarif.etat === 'encours'} />
+						</button>
 					{/if}
 				</div>
 				{#if tarif.etat === 'ko'}

@@ -53,8 +53,10 @@
 				class:succes={l.ton === 'succes'}
 				class:danger={l.ton === 'danger'}
 				class:alerte={l.ton === 'alerte'}
-				aria-hidden="true"><Icon name={l.icone} size={18} /></span
+				aria-hidden="true"
 			>
+				<Icon name={l.icone} size={18} />
+			</span>
 			<span class="quand">{l.quand}</span>
 			<span class="quoi">
 				{l.libelle}

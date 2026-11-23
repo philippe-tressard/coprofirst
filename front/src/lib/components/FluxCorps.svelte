@@ -97,9 +97,9 @@
 			<div class="flux-reaction">
 				<span class="flux-reaction-icon">💬</span>
 				<div class="flux-reaction-body">
-					{#if item.meta?.evol_auteur}<span class="flux-reaction-auteur"
-							>{item.meta.evol_auteur}</span
-						>{/if}
+					{#if item.meta?.evol_auteur}<span class="flux-reaction-auteur">
+							{item.meta.evol_auteur}
+						</span>{/if}
 					<p class="flux-reaction-text">{item.meta.evol_contenu}</p>
 				</div>
 			</div>

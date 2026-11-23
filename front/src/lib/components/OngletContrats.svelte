@@ -275,15 +275,15 @@
       (#603). Ils portent sur les MÊMES contrats qu'il lisait ; ils sont
       seulement rendus là où vivent les contrats. -->
 <div class="contrats-summary">
-	<span class="contrats-summary-count"
-		>{contrats.length} contrat{contrats.length !== 1 ? 's' : ''} actif{contrats.length !== 1
+	<span class="contrats-summary-count">
+		{contrats.length} contrat{contrats.length !== 1 ? 's' : ''} actif{contrats.length !== 1
 			? 's'
-			: ''}</span
-	>
+			: ''}
+	</span>
 	{#if echeancesEnRetard.length > 0}
-		<span class="badge echeance-badge echeance-badge--retard"
-			>⚠️ {echeancesEnRetard.length} visite{echeancesEnRetard.length > 1 ? 's' : ''} en retard</span
-		>
+		<span class="badge echeance-badge echeance-badge--retard">
+			⚠️ {echeancesEnRetard.length} visite{echeancesEnRetard.length > 1 ? 's' : ''} en retard
+		</span>
 	{/if}
 	{#if echeancesAVenir.length > 0}
 		<span class="badge echeance-badge echeance-badge--ok">🗓 {echeancesAVenir.length} à venir</span>

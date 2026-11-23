@@ -70,9 +70,9 @@
 	<BadgePerimetre libelle={affaire.perimetre_libelle} />
 	<PastilleLecture lecture={affaire.lecture} />
 	{#if affaire.urgente}
-		<Badge teinte={BADGE_PRIORITE[affaire.priorite] ?? 'badge-gray'}
-			>{PRIORITE_BREVE[affaire.priorite]}</Badge
-		>
+		<Badge teinte={BADGE_PRIORITE[affaire.priorite] ?? 'badge-gray'}>
+			{PRIORITE_BREVE[affaire.priorite]}
+		</Badge>
 	{/if}
 	{#each marqueurs as opt (opt.cle)}
 		<span class="badge badge-gray" title={opt.aide}>{opt.glyphe} {opt.etat}</span>
@@ -80,9 +80,9 @@
 	<!--  🧾 Une synthèse VALIDÉE l'accompagne (maquette A, 15/10/2026) : la carte
 	      repliée le dit, comme un marqueur. Le serveur en décide (`synthese_validee`). -->
 	{#if affaire.synthese_validee}
-		<span class="badge badge-gray" title="Une synthèse validée accompagne cette affaire"
-			>🧾 Synthèse</span
-		>
+		<span class="badge badge-gray" title="Une synthèse validée accompagne cette affaire">
+			🧾 Synthèse
+		</span>
 	{/if}
 	<svelte:fragment slot="fin">
 		<AuteurCarte nom={auteur} />

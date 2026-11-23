@@ -55,9 +55,9 @@
 </script>
 
 <section class="metriques-presta" aria-labelledby="metriques-presta-{prestataireId}">
-	<span class="detail-label" id="metriques-presta-{prestataireId}"
-		>📊 Affaires traitées{SEPARATEUR.tiret}conseil syndical</span
-	>
+	<span class="detail-label" id="metriques-presta-{prestataireId}">
+		📊 Affaires traitées{SEPARATEUR.tiret}conseil syndical
+	</span>
 	<EtatListe
 		{chargement}
 		{erreur}

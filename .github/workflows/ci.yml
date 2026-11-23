@@ -1480,6 +1480,8 @@ jobs:
           node scripts/check-charge-utile.mjs --selftest
           node scripts/check-modificateurs.mjs --selftest
           node scripts/lib-commentaires.mjs --selftest
+          # 🔒 Un reformatage se PROUVE sans effet : le rendu compilé avant/après (#2900).
+          node scripts/comparer-rendu.mjs --selftest
           # 🔒 Une modale qui contient une saisie ne se ferme pas au clic sur le
           # fond. La protection reposait sur deux déclarations que l'écran devait
           # penser à poser — trois modales d'administration portant 8, 3 et 2

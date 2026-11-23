@@ -36,10 +36,10 @@
 		</p>
 	</section>
 
-	<svelte:fragment slot="pied"
-		>{SEPARATEUR.point}<a href={sourceEnService} target="_blank" rel="noopener noreferrer"
-			>{NOM_PLATEFORME}</a
-		>
+	<svelte:fragment slot="pied">
+		{SEPARATEUR.point}<a href={sourceEnService} target="_blank" rel="noopener noreferrer">
+			{NOM_PLATEFORME}
+		</a>
 	</svelte:fragment>
 </PageLegale>
 

@@ -69,11 +69,9 @@
 				</tbody>
 				<tfoot>
 					<tr class="total">
-						<td
-							>Total{SEPARATEUR.tiret}{fmtNombre(pages.length)} page{pages.length > 1
-								? 's'
-								: ''}</td
-						>
+						<td>
+							Total{SEPARATEUR.tiret}{fmtNombre(pages.length)} page{pages.length > 1 ? 's' : ''}
+						</td>
 						<td class="num">{fmtNombre(totalVues)}</td>
 						<td class="num-attenue">
 							<!--  Additionner la colonne serait FAUX : un même utilisateur compte
@@ -82,8 +80,9 @@
 						      est celui de l'indicateur en tête d'écran. -->
 							<span
 								title="La somme des utilisateurs par page compterait plusieurs fois la même personne. Le nombre d'utilisateurs distincts est donné par l'indicateur « Utilisateurs » en haut de cette page."
-								>—</span
 							>
+								—
+							</span>
 						</td>
 						<td class="num-attenue">
 							{fmtPartEnPourcent(totalVues, totalVues, 1)}

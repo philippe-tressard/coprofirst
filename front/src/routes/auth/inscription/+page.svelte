@@ -185,9 +185,9 @@
 
 				{#if isLocataire}
 					<div class="field">
-						<label for="nom-proprietaire"
-							>Nom du propriétaire<EtoileRequis vide={!nom_proprietaire} /></label
-						>
+						<label for="nom-proprietaire">
+							Nom du propriétaire<EtoileRequis vide={!nom_proprietaire} />
+						</label>
 						<input
 							id="nom-proprietaire"
 							type="text"
@@ -302,11 +302,11 @@
 						/>
 						<strong>Finalité :</strong> Gestion de la copropriété (Art. 6.1.b RGPD).<br />
 						<strong>Conservation :</strong> Durée de résidence + 3 ans.<br />
-						<a href="/politique-de-confidentialite" target="_blank" rel="noopener"
-							>Voir la politique complète</a
-						>{SEPARATEUR.point}<a href="/mentions-legales" target="_blank" rel="noopener"
-							>Mentions légales</a
-						>
+						<a href="/politique-de-confidentialite" target="_blank" rel="noopener">
+							Voir la politique complète
+						</a>{SEPARATEUR.point}<a href="/mentions-legales" target="_blank" rel="noopener">
+							Mentions légales
+						</a>
 					</p>
 
 					<label class="checkbox-field">
@@ -316,8 +316,10 @@
 							href="/politique-de-confidentialite"
 							target="_blank"
 							rel="noopener"
-							on:click|stopPropagation>politique de confidentialité</a
-						>*
+							on:click|stopPropagation
+						>
+							politique de confidentialité
+						</a>*
 					</label>
 
 					<!--  🔴 La case « J'accepte de recevoir les notifications par e-mail »

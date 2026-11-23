@@ -66,14 +66,16 @@
 					      gabarit d'un seul côté. -->
 					<p class="mentions">
 						{#each mentions as code (code)}
-							<span class="element"
-								>{#if code === 'annee'}{mentionAnnee(
+							<span class="element">
+								{#if code === 'annee'}{mentionAnnee(
 										reglage.anneeDebut,
 										anneeCourante,
 									)}{:else if code === 'texte'}{reglage.texte}{:else if code === 'version'}<span
-										title={build}>{version}</span
-									>{:else if code === 'serveur'}RPi{serveur}{/if}</span
-							>
+										title={build}
+									>
+										{version}
+									</span>{:else if code === 'serveur'}RPi{serveur}{/if}
+							</span>
 						{/each}
 					</p>
 				{/if}
@@ -90,8 +92,11 @@
 						target="_blank"
 						rel="noopener noreferrer"
 						title={e.lien.infobulle}
-						>{e.libelle}<span class="sortie"><Icon name="external-link" size={14} /></span></a
-					>{:else if e?.lien}<a class="element" href={e.lien.cible(empreinte)}>{e.libelle}</a>{/if}
+					>
+						{e.libelle}<span class="sortie"><Icon name="external-link" size={14} /></span>
+					</a>{:else if e?.lien}<a class="element" href={e.lien.cible(empreinte)}>
+						{e.libelle}
+					</a>{/if}
 			{/each}
 		</nav>
 	</div>

@@ -51,9 +51,9 @@
 			Installez-la depuis l'App Store.
 		</p>
 		<div class="actions">
-			<a class="btn btn-primary btn-sm" href={APPLI_IOS} rel="noopener"
-				>Télécharger sur l'App Store</a
-			>
+			<a class="btn btn-primary btn-sm" href={APPLI_IOS} rel="noopener">
+				Télécharger sur l'App Store
+			</a>
 			<button type="button" class="btn btn-outline btn-sm" on:click={plusTard}>Plus tard</button>
 		</div>
 	</aside>
