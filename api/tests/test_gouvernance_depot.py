@@ -118,6 +118,24 @@ REGIMES_NON_ACCORDES = (
     r"clauses? (?:d'usage )?commercial(?:e|es)?\b",
     r"Licence 5Hostachy",
     r"\w*GPL-like",
+    #  #2916 : le bandeau de `CONTRIBUTING.md`, écrit le 19/09/2026 et resté tel
+    #  quel après le passage à l'AGPL — une NÉGATION de « libre » que les motifs
+    #  ci-dessus, qui cherchent un NOM de licence, ne voyaient pas.
+    r"\bpas (?:un logiciel )?libre\b",
+    r"au sens de l'OSI",
+    r"\bcode (?:est|reste) \**accessible\b",
+)
+
+#: Les textes fautifs, tels qu'ils ont été publiés : chaque motif de
+#: `REGIMES_NON_ACCORDES` doit en refuser au moins un (`standards/04` §2).
+TEMOINS_ANCIEN_REGIME = (
+    #  Le descriptif GitHub du 09/10/2026 (#1771).
+    "Application de gestion des résidents pour une copropriété multi-bâtiments "
+    "avec syndic — v1.0.0, Licence 5Hostachy (source-available, copyleft "
+    "AGPL-like + clauses commerciales)",
+    #  Le bandeau de `CONTRIBUTING.md` du 19/09/2026 (#2916).
+    "Le code est *accessible*, il n'est pas libre au sens de l'OSI, et une "
+    "contribution est versée sous la licence du projet.",
 )
 
 #: L'exception, et la seule : la section de `NOTICE.md` qui RACONTE le
@@ -232,16 +250,13 @@ def _sans_licence(texte: str) -> str:
     return texte.replace(identifiant_spdx_accorde(), " ")
 
 
-def test_les_motifs_attrapent_le_descriptif_du_09_10():
-    """Cas témoin : le texte fautif lui-même est refusé, motif par motif (`standards/04` §2)."""
-    fautif = (
-        "Application de gestion des résidents pour une copropriété multi-bâtiments "
-        "avec syndic — v1.0.0, Licence 5Hostachy (source-available, copyleft "
-        "AGPL-like + clauses commerciales)"
-    )
+def test_les_motifs_attrapent_les_textes_fautifs():
+    """Cas témoins : les textes fautifs eux-mêmes sont refusés, motif par motif (`standards/04` §2)."""
     for motif in REGIMES_NON_ACCORDES:
-        assert re.search(motif, fautif, re.I), f"le motif {motif!r} ne sert plus"
-    assert re.search(VERSION, _sans_licence(fautif))
+        assert any(re.search(motif, fautif, re.I) for fautif in TEMOINS_ANCIEN_REGIME), (
+            f"le motif {motif!r} ne refuse aucun témoin : il ne sert plus, ou son témoin manque"
+        )
+    assert re.search(VERSION, _sans_licence(TEMOINS_ANCIEN_REGIME[0]))
     assert not re.search(
         VERSION, _sans_licence(f"Logiciel libre sous {identifiant_spdx_accorde()}")
     )
