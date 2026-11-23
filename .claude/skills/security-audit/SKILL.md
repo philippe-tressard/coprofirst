@@ -198,7 +198,9 @@ dit rien des routes qu'elle omet — c'est précisément ce qui manquait (#1027)
 relève les routes par ce qu'elles ATTEIGNENT (`aides_sources.routes_qui_atteignent`) :
 `verify_password` → `LIMITE_SECRET_EPROUVE`, `exiger_cle_maintenance` → `LIMITE_CLE_PARTAGEE`,
 plus toute route d'un module `auth*.py` (audit du 23/11/2026 : la portée était un nom de
-fichier). Il exige que sa
+fichier). Une route qui n'éprouve le secret que dans un cas compte la TENTATIVE
+(`utils/limiter.compter_tentative_secret`), jamais l'enregistrement (🔒 `test_tentative_secret.py`).
+Il exige que sa
 valeur vienne d'une constante de `utils.limiter`, que le décorateur soit **sous**
 celui de la route (au-dessus, il n'a aucun effet, en silence) et que la fonction
 reçoive une `request` (sans elle, slowapi lève au premier visiteur, pas au

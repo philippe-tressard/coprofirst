@@ -26,6 +26,12 @@ plafond. La portée est désormais relevée dans le code (`aides_sources.routes_
 | `exiger_cle_maintenance` (la clé partagée des nœuds) | `LIMITE_CLE_PARTAGEE` |
 | — toute route d'un module `routers/auth*.py` | une constante de `utils.limiter` |
 
+Une route qui n'éprouve le secret que dans UN cas (le profil et la fiche d'un compte, au
+changement d'adresse) peut compter la TENTATIVE au lieu de limiter la route :
+`utils.limiter.compter_tentative_secret`, appelée avant le secret. Limiter la route entière
+bloquait un administrateur qui corrige plusieurs fiches d'affilée (décision du 23/11/2026 :
+aucune régression) ; `test_tentative_secret_comptee` le prouve dans les deux sens.
+
 ## Ce que le contrôle exige, sur chacune
 
 1. **Une limite**, sans liste d'exceptions : le jour où une route légitime devra s'en
@@ -107,10 +113,22 @@ def portee(modules=None) -> dict[tuple[str, str], str | None]:
     return exigences
 
 
-def fautes_de_limite(module: Module, nom: str, exigee: str | None, connues: set[str]) -> list[str]:
+#: La porte qui compte la tentative d'un secret, et la limite qu'elle applique.
+A_LA_TENTATIVE = ("compter_tentative_secret", "LIMITE_SECRET_EPROUVE")
+
+
+def fautes_de_limite(
+    module: Module, nom: str, exigee: str | None, connues: set[str], *, tentative: bool = False
+) -> list[str]:
+    """`tentative` : la route atteint `compter_tentative_secret` — la limite des secrets
+    s'y applique à la tentative, la route garde la sienne (ou aucune)."""
     decores, arguments = _route(module, nom)
     limites = [d for d in decores if "limiter.limit" in d]
     ici = f"{module.rel}::{nom}"
+    if tentative and exigee == A_LA_TENTATIVE[1]:
+        exigee = None
+        if not limites:
+            return [] if "request" in arguments else [f"{ici} : compte la tentative sans `request`"]
     if not limites:
         return [f"{ici} : aucune limite de débit"]
     fautes = []
@@ -141,10 +159,13 @@ def test_le_controle_voit_bien_des_routes():
 
 def test_toute_route_qui_eprouve_un_secret_porte_sa_limite():
     connues = _constantes_de_limite()
+    comptees = set(routes_qui_atteignent({A_LA_TENTATIVE[0]}))
     fautes = [
         faute
         for (rel, nom), exigee in sorted(portee().items(), key=lambda x: x[0])
-        for faute in fautes_de_limite(module_app(rel), nom, exigee, connues)
+        for faute in fautes_de_limite(
+            module_app(rel), nom, exigee, connues, tentative=(rel, nom) in comptees
+        )
     ]
     assert not fautes, (
         "Limite de débit absente, mal nommée ou sans effet :\n  "

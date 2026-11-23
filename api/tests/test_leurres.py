@@ -41,7 +41,7 @@ _S6 = _RACINE / "scripts" / "lib" / "lib-audit-acces.sh"
 
 ADRESSE = "secours-leurre@exemple.invalid"
 CLE_LEURRE = "cle-leurre-de-test"
-VRAIE_CLE = "vraie-cle-de-maintenance"
+VRAIE_CLE = "vraie-cle-de-maintenance-de-trente-deux-caracteres"
 
 
 @pytest.fixture()

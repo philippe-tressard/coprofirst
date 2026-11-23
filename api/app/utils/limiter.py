@@ -24,6 +24,8 @@ bougeront ensemble.
 exactement le plafond qu'elle avait. Renommer et rerégler sont deux gestes.
 """
 
+from fastapi import HTTPException, Request
+from limits import parse
 from slowapi import Limiter
 from slowapi.util import get_remote_address
 
@@ -39,6 +41,23 @@ limiter = Limiter(key_func=get_remote_address)
 #: transforme une attaque par force brute en attaque impraticable : c'est donc la
 #: seule dont l'absence est un défaut de sécurité, et non une imprudence.
 LIMITE_SECRET_EPROUVE = "5/minute"
+
+
+def compter_tentative_secret(request: Request) -> None:
+    """La limite des secrets, comptée sur la TENTATIVE qui éprouve un secret — 429 au-delà.
+
+    Pour une route qui n'éprouve un secret que dans UN cas : le profil et la fiche d'un
+    compte ne présentent le mot de passe de qui agit qu'à un changement d'adresse. Limiter
+    la route entière bloquerait un administrateur qui corrige plusieurs fiches d'affilée,
+    sans rien éprouver (décision du 23/11/2026, aucune régression) ; la tentative, elle,
+    se compte par visiteur, comme le ferait `@limiter.limit(LIMITE_SECRET_EPROUVE)`.
+    🔒 `test_limites_debit_auth.py` exige l'une ou l'autre forme.
+    """
+    if limiter.enabled and not limiter.limiter.hit(
+        parse(LIMITE_SECRET_EPROUVE), "tentative_secret", get_remote_address(request)
+    ):
+        raise HTTPException(429, "Trop de tentatives : réessayez dans une minute.")
+
 
 #: Une requête qui présente la **clé partagée** des tâches planifiées des nœuds
 #: (`auth/cle_maintenance`). La clé n'est pas devinable comme un mot de passe : ce
