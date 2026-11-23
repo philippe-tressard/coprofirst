@@ -40,6 +40,7 @@ changement de la purge (#2959).
 from app.seed.contenus_legaux_avis import AVIS_SITE_PRESENTATION
 from app.seed.contenus_legaux_cookies import COOKIES
 from app.seed.contenus_legaux_decisions_ag import DECISIONS_AG
+from app.seed.contenus_legaux_destinataires import CONSERVATION_BAUX, PERSONNES_SANS_COMPTE
 from app.seed.contenus_legaux_etat_descriptif import LECTURE_ETAT_DESCRIPTIF
 from app.seed.contenus_legaux_canal import TELEMETRIE_ACCES
 from app.seed.contenus_legaux_licence import PARAGRAPHE_LICENCE
@@ -359,6 +360,7 @@ DEFAULT_LEGAL = {
         + TELEMETRIE_ACCES
         + TELEMETRIE_GESTES
         + JOURNAL_SECURITE
+        + PERSONNES_SANS_COMPTE
         + "</ul><h2>3. Finalités et bases légales</h2><ul><li><strong>Gestion de la copropriété</strong> — base\xa0: "
         "intérêt légitime (art.\xa06-1-f).</li><li><strong>Authentification et sécurité</strong> — "
         "base\xa0: intérêt légitime (art.\xa06-1-f).</li><li><strong>Communication résidents/CS</strong> — "
@@ -407,6 +409,7 @@ DEFAULT_LEGAL = {
         + "</li>"
         + CONSERVATION_RELEVES
         + CONSERVATION_NOTIFICATIONS
+        + CONSERVATION_BAUX
         + "</ul><h2>6. Vos droits</h2><p>Conformément au RGPD vous disposez "
         "des droits d'accès (art.\xa015), rectification (art.\xa016), effacement (art.\xa017), portabilité "
         "(art.\xa020), opposition (art.\xa021) et retrait du consentement (art.\xa07-3). Pour les exercer, "

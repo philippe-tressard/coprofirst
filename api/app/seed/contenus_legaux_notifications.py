@@ -21,8 +21,14 @@ from __future__ import annotations
 from app.utils.purge_notifications import CONSERVATION_JOURS
 from app.utils.push.appareils import ABANDON_JOURS
 
-#: Le service tiers qui reçoit une donnée : Apple, par le relais de CoproFirst.
-NOTIFICATIONS_PUSH = (
+#: Le service tiers qui reçoit une donnée : Apple ou Google, par le relais de CoproFirst.
+#:
+#: 🔴 #2981 (audit du 23/11/2026) : la rédaction du 16/11 laissait croire que tout avis
+#: part vers le téléphone, l'urgent avec une marque de plus. Depuis la décision du
+#: 18/11/2026 (#2789), seule l'alerte d'une actualité ⚡ urgente part
+#: (`utils/push/porte.TYPE_POUSSE`), toujours au niveau urgent. L'ancienne est gardée
+#: littérale : la migration la remplace dans le texte servi.
+NOTIFICATIONS_PUSH_ANCIEN = (
     "<li><strong>Notifications sur téléphone (applications iOS et Android)</strong> — "
     "service coupé par défaut, que l'administration peut activer. Si vous utilisez "
     "l'application et autorisez ses notifications, votre téléphone est enregistré auprès de "
@@ -40,9 +46,29 @@ NOTIFICATIONS_PUSH = (
     "téléphone en reprend l'avis, sans rien recevoir de plus. Vous pouvez couper ces "
     "notifications dans les réglages du téléphone.</li>"
 )
+NOTIFICATIONS_PUSH = (
+    "<li><strong>Notifications sur téléphone (applications iOS et Android)</strong> — "
+    "service coupé par défaut, que l'administration peut activer. Si vous utilisez "
+    "l'application et autorisez ses notifications, votre téléphone est enregistré auprès de "
+    "ce site par le <strong>jeton</strong> que lui attribue le service de notifications de "
+    "son système —\xa0le service de notifications d'Apple (APNs) pour un iPhone, Firebase "
+    "Cloud Messaging de Google (FCM) pour un téléphone Android\xa0— et par un identifiant "
+    "tiré au hasard par l'application. <strong>Seule l'alerte d'une actualité marquée "
+    "urgente</strong> (fuite, ascenseur bloqué) part vers votre téléphone\xa0; tout autre "
+    "avis reste dans l'application. Pour vous prévenir, ce site transmet ce jeton et cet "
+    "identifiant au <strong>relais de notifications de CoproFirst</strong>, qui les "
+    "transmet à ce service avec un texte fixe —\xa0«\xa0Vous avez une nouvelle "
+    "notification\xa0»\xa0—, le niveau «\xa0urgent\xa0» et <strong>rien d'autre</strong>\xa0: "
+    "ni votre nom, ni la résidence, ni le contenu de l'avis, que l'application lit ensuite "
+    "sur ce site. Une montre reliée au téléphone en reprend l'avis, sans rien recevoir de "
+    "plus. Vous pouvez couper ces notifications dans les réglages du téléphone.</li>"
+)
 
 #: La conservation, telle que les purges la pratiquent (#2535, décidée le 08/11/2026).
-CONSERVATION_NOTIFICATIONS = (
+#: #2981 : l'enregistrement part aussi avec le compte (`push/appareils`), et le délai
+#: court depuis le dernier RENOUVELLEMENT par l'application, pas depuis la dernière
+#: connexion. L'ancienne rédaction reste pour la migration.
+CONSERVATION_NOTIFICATIONS_ANCIEN = (
     "<li>Notifications de l'application\xa0: une notification <strong>lue</strong> est "
     f"conservée <strong>{CONSERVATION_JOURS}\xa0jours</strong> après sa création, puis "
     "<strong>supprimée automatiquement</strong>\xa0; une notification non lue reste "
@@ -50,6 +76,18 @@ CONSERVATION_NOTIFICATIONS = (
     "pour les notifications est retiré à la déconnexion, et après "
     f"<strong>{ABANDON_JOURS}\xa0jours</strong> sans connexion.</li>"
 )
+CONSERVATION_NOTIFICATIONS = CONSERVATION_NOTIFICATIONS_ANCIEN.replace(
+    "est retiré à la déconnexion, et après ",
+    "est retiré à la déconnexion, à la suppression du compte, et après ",
+).replace(
+    "\xa0jours</strong> sans connexion.</li>",
+    "\xa0jours</strong> sans que l'application l'ait renouvelé.</li>",
+)
 
 
-__all__ = ["CONSERVATION_NOTIFICATIONS", "NOTIFICATIONS_PUSH"]
+__all__ = [
+    "CONSERVATION_NOTIFICATIONS",
+    "CONSERVATION_NOTIFICATIONS_ANCIEN",
+    "NOTIFICATIONS_PUSH",
+    "NOTIFICATIONS_PUSH_ANCIEN",
+]
