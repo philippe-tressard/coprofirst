@@ -43,7 +43,7 @@ VEILLE_TITRE="Veille sécurité nocturne"
 VEILLE_ETIQUETTE="securite"
 #: Les étapes attendues, dans l'ordre du rapport. Une étape ABSENTE du dossier
 #: (jamais lancée, workflow interrompu) est un rouge : INCONNU n'est pas vert.
-VEILLE_ETAPES="python node trivy-api trivy-front trivy-caddy trivy-whatsapp-bridge attestation"
+VEILLE_ETAPES="python node node-bridge trivy-api trivy-front trivy-caddy trivy-whatsapp-bridge attestation"
 #: Combien de lignes de la sortie d'une étape rouge entrent dans l'issue.
 VEILLE_LIGNES=40
 
