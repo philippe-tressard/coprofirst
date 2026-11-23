@@ -119,10 +119,9 @@ décision que `from_attributes`, pas une seconde manière de l'écrire.
   `schemas.py` ;
 - propres à UN routeur (le corps d'un geste, la réponse d'un écran) → à côté de
   lui, dans le routeur ou son `_schemas.py`.
-- servis tels qu'un utilitaire les CALCULE (`app/utils/…`) → dans le module de la
-  fonction qui les construit, que le routeur importe : `utils/tableau_charges`
-  (`TableauCharges`, rendu par `tableau_des_charges`), `utils/constats` (`Constat`) et
-  `utils/apercu_diffusion` (`ApercuDiffusion`), servis chacun par deux routeurs.
+- servis tels qu'un utilitaire les CALCULE (`app/utils/…`) → dans le module de cet
+  utilitaire, que le routeur importe : `utils/tableau_charges` (`TableauCharges`,
+  rendu par `tableau_des_charges`), `utils/constats` (`Constat`, servi par deux routeurs).
 - ⚠️ `schemas_communs.py` n'importe RIEN du projet : c'est ce qui évite le cycle
   `schemas` ⇄ `schemas_tickets`. Ne pas lui en ajouter.
 
@@ -226,7 +225,7 @@ def modifier(entite_id: int, body: EntiteUpdate, session: Session = Depends(get_
 
 - **`ou_404(session, Modele, id, "libellé")`**, jamais `session.get` + `raise
   HTTPException(404)` : le 404 nomme ce qui manque, et c'est écrit une fois.
-- **`model_dump()`**, pas `.dict()` (déprécié).
+- **`model_dump()`**, pas `.dict()` (déprécié). 🔒 `test_model_dump_pas_dict.py` (#2956).
 - **Rendre un objet** : `return obj` ou `EntiteRead.model_validate(obj)` ; s'il
   y a des champs CALCULÉS, `lire_objet(EntiteRead, obj, champ_calcule=…)`
   (`app/utils/lecture.py`) — jamais `EntiteRead(id=obj.id, nom=obj.nom, …)`,
