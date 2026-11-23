@@ -160,10 +160,9 @@ s'abstient s'il n'est pas `active` (`decide_suite_tunnel`, `--selftest`). Un tun
 qui ne démarre pas sur le standby a souvent une cause **commune** — jeton, config,
 compte : basculer ne peut rien réparer.
 
-**Changer le jeton** : `sudo bash /opt/5hostachy/scripts/exploitation/changer-jeton-tunnel.sh`,
-l'**actif** d'abord (le jeton est éprouvé par un connecteur temporaire avant de
-toucher à celui qui sert), puis le secours (tunnel laissé arrêté). Jamais
-`cloudflared service install` sur le standby : il démarre et active l'unité.
+**Changer le jeton** : `sudo bash /opt/5hostachy/scripts/exploitation/changer-jeton-tunnel.sh`, l'**actif** d'abord (jeton éprouvé
+par un connecteur temporaire), puis le secours (tunnel laissé arrêté) ; jamais `cloudflared service install` sur le standby.
+Le jeton se **colle à l'invite masquée**, jamais en argument, nœud neuf compris (`lire_jeton_saisi`, 🔒 `test_jeton_tunnel_saisi.py`).
 
 🔴 **Le jeton vit dans un FICHIER, jamais dans l'unité** (#2115, 22/10/2026).
 `ExecStart` ne porte que `--token-file /etc/cloudflared/jeton` (root 600 ; le
