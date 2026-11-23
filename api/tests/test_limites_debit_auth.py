@@ -210,7 +210,8 @@ def test_temoin_une_route_hors_d_auth_qui_eprouve_un_secret_est_relevee():
         chemin=pathlib.Path("forge.py"),
         rel="routers/forge.py",
         source=(
-            "@router.patch('/x')\n@limiter.limit(LIMITE_PREFERENCE)\n"
+            "@router.patch('/x')\n"
+            "@limiter.limit(LIMITE_PREFERENCE)\n"
             "def modifier(request, body):\n    pass\n"
         ),
     )
