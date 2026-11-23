@@ -48,6 +48,7 @@ from app.utils.gestes_roles import (
     refus_operateur,
     titulaires,
 )
+from app.utils.roles_du_statut import changer_statut
 
 router = APIRouter()
 
@@ -298,8 +299,9 @@ class AdminUserUpdate(BaseModel):
 
 
 #: Ce que le formulaire porte sans que ce soit un champ de la fiche à recopier :
-#: l'adresse passe par sa demande de changement, le mot de passe ne s'écrit pas.
-_HORS_FICHE = {"email", "mot_de_passe_actuel"}
+#: l'adresse passe par sa demande de changement, le mot de passe ne s'écrit pas,
+#: le statut passe par `changer_statut` — il emporte les rôles (claude-config#603).
+_HORS_FICHE = {"email", "mot_de_passe_actuel", "statut"}
 
 
 @router.patch("/utilisateurs/{user_id}", response_model=UserRead)
@@ -331,6 +333,12 @@ def modifier_utilisateur(
         )
     for field, val in body.model_dump(exclude_unset=True, exclude=_HORS_FICHE).items():
         setattr(user, field, val)
+    #  🔴 Les rôles suivent le statut (#2161) : `require_proprietaire` lit les
+    #  RÔLES. Recopié ici champ par champ, un copropriétaire passé locataire
+    #  gardait `propriétaire`. Seulement si le statut CHANGE : renvoyer le même
+    #  ne retouche pas des rôles que l'administration a pu poser.
+    if body.statut is not None and body.statut != user.statut:
+        changer_statut(user, body.statut, acteur_id=admin.id)
     #  Basculer `actif` — dans un sens comme dans l'autre — EST une décision de
     #  l'administration sur ce compte. Sans cette ligne, désactiver un résident
     #  qui déménage le renvoyait dans la file des comptes à valider, où plus rien
