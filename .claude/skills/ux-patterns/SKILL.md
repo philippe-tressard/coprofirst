@@ -156,11 +156,11 @@ dans les **deux sens** — une exception qui ne sert plus est aussi grave qu'une
 exception qui manque. C'est ainsi qu'une liste de justifications devient une
 liste de passe-droits.
 
-Les trois arbitrées le 20/09/2026 : **Au nom de** (obligatoire mais pliée, le
-défaut étant juste presque toujours), **Pièces jointes** (facultative mais
-dépliée — premier geste sur téléphone). « Destinataires » devait être la
-troisième : le contrôle a montré qu'elle n'est pas déclarée `requis`, donc son
-pliage SUIT la règle et n'a rien à justifier.
+**Sur l'affaire, aucune exception** (registre n° 84) : les deux arbitrées le
+20/09/2026 — Au nom de pliée, Pièces jointes dépliée — ont été défaites les 21 et
+22/09/2026, à l'écran (« pour éviter toute exception »). Les exceptions en vigueur se
+lisent là où elles se déclarent, chacune avec sa raison, jamais recopiées ici :
+`git grep -n exceptionPliage -- front/src/lib/entites`.
 
 ⚠️ **Et toujours : une valeur autre que le défaut rouvre la section d'office.**
 Cette partie-là n'est pas déclarative — elle dépend de ce que l'objet PORTE.
@@ -538,11 +538,14 @@ caves.
 > plus consultée est celle qui trompe le plus longtemps.
 
 **Écrire un code de périmètre est interdit** — `npm run lint:perimetres` échoue
-dessus. Utiliser, depuis `#lib/perimetres` :
+dessus. Le **libellé** d'un lieu ne se compose plus au front (#2633, 11/11/2026) : il
+est SERVI. Utiliser :
 
-| Besoin | Fonction |
+| Besoin | Où |
 |---|---|
-| libellé affichable | `perimetreLabel(items)` — accepte tableau **ou** chaîne CSV |
+| libellé d'un contenu enregistré | le champ servi avec lui — `perimetre_libelle` (et `perimetre_precise_libelle`, `perimetres_libelle`), lu tel quel |
+| libellé d'une saisie en cours | `$libellePerimetre(codes, place)` (`#lib/apercu-perimetre.ts`, `POST /perimetres/libelle`) |
+| libellé d'UN nœud (le sélecteur) | `perimetreLabelUn(code)` (`#lib/perimetres`) |
 | « c'est le périmètre par défaut ? » | `estPerimetreParDefaut(items)` — **remplace** `=== 'résidence'` |
 | valeur initiale d'un formulaire | `perimetreDefautListe()` |
 | périmètre d'un bâtiment | `perimetreDuBatiment(batimentId)` |
@@ -552,7 +555,7 @@ dessus. Utiliser, depuis `#lib/perimetres` :
 **Condition d'affichage** : ne jamais afficher le badge si `estPerimetreParDefaut()`
 est vrai (c'est le défaut, le redire n'apprend rien).
 
-### Comment un périmètre S'ÉCRIT — trois règles, portées par `perimetreLabel()`
+### Comment un périmètre S'ÉCRIT — trois règles, portées par le serveur (`perimetre_label`, `api/app/utils/perimetres/libelles.py`)
 
 1. **Un espace est qualifié par son parent** — « Bât. 3 › Toit », « AFUL › Voie
    d'accès » — **et le parent par le sien** : « Bât. 1 › Logement › Terrasses Balcons »
@@ -571,14 +574,15 @@ est vrai (c'est le défaut, le redire n'apprend rien).
    Les deux constantes sont exportées (`SEPARATEUR_ELEMENT`, `SEPARATEUR_GROUPE`) —
    **les importer, jamais les retaper**, le sélecteur le fait.
 3. **L'ordre affiché est celui de l'arbre, jamais celui des clics.** Le sélecteur
-   stocke l'ordre de sélection ; `perimetreLabel()` trie et regroupe. Un rendu qui
+   stocke l'ordre de sélection ; le serveur trie et regroupe. Un rendu qui
    dépend du chemin de saisie n'est pas un rendu, c'est un hasard.
 
-🔒 **Deux garde-fous en CI, tenus par la MÊME chaîne attendue** : la règle est
-écrite deux fois (front et API — les contextes de build interdisent le partage), et
-le 18/08 elle n'a été corrigée que d'un côté. `api/tests/test_perimetre_label_batiment.py`
-exécute la forme serveur ; `npm run lint:libelle-perimetre` transpile et exécute la
-forme front, puis vérifie que le test Python attend la même chaîne.
+🔒 **La règle ne s'écrit qu'au serveur** depuis #2633 — l'app iOS lit le même
+libellé. `api/tests/test_perimetre_label_batiment.py` l'exécute ;
+`npm run lint:regles-partagees` refuse le retour de sa copie au front (qui a été,
+jusqu'au 11/11/2026, corrigée d'un seul côté) ; `npm run lint:libelle-perimetre`
+exécute ce qui reste au front, le libellé d'un nœud (`perimetreLabelUn`), contre la
+même chaîne attendue que le test Python.
 
 **Sélecteur** : `PerimetrePicker.svelte`, alimenté par le store — premier niveau de
 pastilles, puis une rangée « Préciser dans … » facultative par niveau ouvert, **trois
@@ -590,17 +594,18 @@ geste qui en poserait un quatrième (`utils/perimetres/niveaux`, un regroupement
 « Bâtiments » ne compte pas).
 
 Rendu — l'icône du périmètre est **🔹**, jamais 📍 (cf. §1), et il s'écrit **une
-seule fois** : `<BadgePerimetre perimetre={…} />` (prop `perimetre`, un code ou
-une liste de codes ; `ton` en choisit la teinte). Le composant lit le libellé,
-tait le périmètre par défaut et porte l'icône — aucune page ne compose son propre
+seule fois** : `<BadgePerimetre libelle={objet.perimetre_libelle} />` (prop
+`libelle`, le libellé SERVI ; `""` pour le périmètre par défaut, que le badge tait ;
+`ton` en choisit la teinte). Le composant ne compose rien : il porte l'icône — aucune page ne compose son propre
 `<span class="badge">` ni son `<p style="…">`. 🔒 `npm run lint:pictogrammes`
 refuse le badge 🔹 écrit ailleurs, `lint:styles-en-ligne` l'attribut `style`.
 Les trois rendus par page que cette section listait (actualités, calendrier,
 tickets) sont tous passés par ce composant ; la page Calendrier n'existe plus
 (#1092).
 
-Le label vient de `perimetreLabel()` (`#lib/utils`) — ne pas réimplémenter la table
-de correspondance dans une page.
+Le libellé vient du serveur — ne jamais réimplémenter la table de correspondance
+dans une page (`perimetreLabel`, l'ancienne composition du front, a été retirée le
+11/11/2026).
 
 ## 2 bis. Les DESTINATAIRES — la nomenclature (arbitrée le 25/09/2026)
 
@@ -625,8 +630,9 @@ n'est pas résident. »* Les libellés sont **au pluriel**.
 - Le manuel suit (cartes d'écran « Tous »).
 - La **pastille de lecture** — livrée au lot 1 (25/09/2026), maquette :
   https://claude.ai/artifact/WRVxXqqJaFATAmWfz7WTsn
-  - calcul **unique** : `#lib/lecture` (`lectureDe`), appliqué à l'objet par
-    `#lib/lecture-ticket` ; rendu `PastilleLecture` (carte) et badge d'état de
+  - calcul **unique**, au serveur (`api/app/utils/lecture_pastille`) : servi avec
+    l'objet (`lecture`), et pour une saisie par `#lib/apercu-lecture.ts` ;
+    `#lib/lecture-ticket.ts` ne garde que ce qu'un écran en lit ; rendu `PastilleLecture` (carte) et badge d'état de
     `SectionDestinataires` (icônes par `ContenuBadge`). **Une** couleur, bleue ;
     rien sur la carte quand personne n'est exclu ; cadenas `lock` quand le
     périmètre est réservé ; « CS » remplace tout quand elle est confidentielle.
@@ -895,8 +901,8 @@ arbitré le 27/09/2026) : état · 🔹 (jamais teinté) · **qui la lit** · le
 propres (prix, votants…) · ✍️ · ✨ en fin de ligne, plus à côté du titre.
 - La **pastille de lecture** remplace le badge orange des destinataires :
   `<PastilleLecture cible={objet} />` (`masculin` pour un sondage). Leur règle est
-  `cible_visible` — le périmètre restreint **toujours**, d'où le cadenas —, résumée par
-  `lectureCiblee` et tenue par les cas `objet` de `lecture_pastille.json`.
+  `cible_visible` — le périmètre restreint **toujours**, d'où le cadenas —, résumée au
+  serveur (`utils/lecture_pastille`) et tenue par les cas `objet` de `lecture_pastille.json`.
 - 🔴 L'auteur d'une **idée** ou d'un **sondage** n'est **jamais** affiché (arbitré le
   27/09/2026) : leurs API ne l'exposent pas, et l'exposer serait une décision de données
   personnelles. La petite annonce nomme le sien — le nom que l'API sert déjà.
@@ -958,12 +964,16 @@ fois**, dans `front/src/styles/composants.css`. Actualités et tickets les redé
 de leur côté, avec les mêmes valeurs et un simple préfixe qui change — rien
 n'empêchait la troisième copie.
 
+Le conteneur ne s'écrit que dans `CarteListe.svelte` (🔒 `npm run lint:carte-liste`) ;
+un écran le POSE :
+
 ```svelte
-<div class="carte-liste pub-expand" class:expanded class:urgent={item.urgente}>
+<CarteListe id="ticket-{ticket.id}" {expanded} urgent={ticket.urgente} {archive}
+  onDeplier={() => gestes.basculer(ticket)}>…</CarteListe>
 ```
 
-La page ne garde chez elle que ses **différences** (`.pub-expand.brouillon`,
-`.tk-cat`…). Ne jamais y redéfinir marge, bordure gauche, rayon, fond ou ombre.
+La carte de l'écran ne garde chez elle que ses **différences**. Ne jamais y
+redéfinir marge, bordure gauche, rayon, fond ou ombre.
 
 **Espacement** : `.75rem` entre deux cartes (`.6rem` sous 640 px). Il était de
 `.3rem`, et l'aperçu tronqué **net** au ras du bord : deux cartes voisines
@@ -1408,7 +1418,7 @@ fond beige, contour de focus, état lecture seule. Les deux écritures convienne
 et elles seules :
 
 ```svelte
-<label class="field">Titre *<input type="text" bind:value={titre} /></label>
+<label class="field">Titre <EtoileRequis vide={!titre} /><input type="text" bind:value={titre} /></label>
 
 <div class="field">
   <label for="ah-source">Pré-remplir depuis une actualité</label>
@@ -1764,9 +1774,9 @@ composant, qui porte leur ordre, leurs intitulés et leurs séparations
   avecDescription descriptionRequise bind:description
   avecPhotos bind:photos={photosUrls}
   avecDocuments bind:documents={fichiersUrls}
-  avecDiffusion bind:whatsapp bind:syndic bind:cs
+  avecDiffusion bind:whatsapp bind:syndic bind:cs bind:auteur
 >
-  <svelte:fragment slot="diffusion">…options propres à l'écran…</svelte:fragment>
+  {#snippet creneauDiffusion()}…options propres à l'écran…{/snippet}
 </ChampsCommuns>
 ```
 
@@ -1851,7 +1861,7 @@ façon de ne pas les voir revenir est qu'un seul endroit les écrive.
 
 ⚠️ **Une rubrique dont le parent n'existe pas encore** (documents d'actualité,
 fichiers de prestation : leur endpoint réclame l'identifiant) passe par le mode
-**différé** de `FichiersUpload` — `documentsDifferes` + `bind:documentsFichiers`.
+**différé** de `FichiersUpload` — `differes` + `bind:fichiersDifferes`.
 L'écran téléverse après création. Ne PAS retomber sur un `<input type="file">`
 nu : c'est ce qui produisait la deuxième apparence.
 
@@ -1930,7 +1940,7 @@ Structure pour les tickets/publications avec historique :
 
 **Les états proposables ne s'écrivent jamais dans un écran.** Pour un ticket, ils
 viennent de `#lib/tickets` (`STATUT_TICKET_OPTIONS`, `…_LABELS`, `…_BADGE`,
-`STATUTS_TICKET_FILTRE`, `estTicketActif`), qui répond à
+`STATUTS_TICKET_ACTIFS`, `estTicketActif`), qui répond à
 `StatutTicket` côté serveur. `api/tests/test_statuts_tickets.py` échoue sur toute
 liste réécrite — y compris dans un fichier qui importe déjà le module.
 « Cette affaire est close » ne se calcule pas à l'écran : elle est SERVIE (`close`
@@ -2136,7 +2146,7 @@ conteneur, le titre (icône + libellé + taille), le retour et la zone d'actions
 ```svelte
 <EntetePage titre={_pc.titre} icone={_pc.icone || 'newspaper'}>
   {#if $estModerateur}
-    <BoutonNouveau ouvert={showForm} libelle="Nouvelle publication" on:basculer={() => (showForm = true)} />
+    <BoutonNouveau ouvert={showForm} libelle={TICKET.libelleNouveau} on:basculer={() => (showForm = true)} />
   {/if}
 </EntetePage>
 ```
@@ -2265,8 +2275,9 @@ déjà regardée, et son inversion se lit sans être lue.
 | formulaire **dans la carte d'un objet** | l'icône qui l'a ouvert, **inversée** |
 
 ```svelte
-<button class="btn-icon" aria-pressed={mode === 'evolution'} …>🔄</button>
-<button class="btn-icon" aria-pressed={mode === 'edition'} …>✏️</button>
+<button class="btn-icon" aria-pressed={mode === 'edition'} aria-label="Modifier" title="Modifier" …>
+  <IconeAction icone="pencil" />
+</button>
 ```
 
 Le style vit dans `styles/composants.css`, une seule fois : fond plein en couleur primaire,
@@ -2294,14 +2305,12 @@ sont le modèle, désigné par l'utilisateur.
 ```svelte
 <EntetePage titre={_pc.titre} icone={_pc.icone} alignerSaisie={showForm}>
   {#if $estModerateur}
-    <button class="btn btn-primary page-header-btn" on:click={() => (showForm = !showForm)}>
-      {showForm ? '✕ Annuler' : '+ Nouvelle publication'}
-    </button>
+    <BoutonNouveau ouvert={showForm} libelle={TICKET.libelleNouveau} on:basculer={() => (showForm = true)} />
   {/if}
 </EntetePage>
 
 {#if showForm}
-  <FormulaireCreation titre="Nouvelle publication">
+  <FormulaireCreation titre={TICKET.libelleNouveau}>
     <form on:submit|preventDefault={creer}> … </form>
   </FormulaireCreation>
 {/if}
@@ -2635,9 +2644,9 @@ introuvable. Les deux sont arrivés le même jour dans `RubriqueHistorique`.
 Le pendant du droit ci-dessus, et il a mis six jours à le rejoindre. Un objet
 « Saisi pour » appartient à celui **pour qui** il a été ouvert :
 
-| Ce qu'on demande | La fonction, dans `#lib/saisi-pour` |
+| Ce qu'on demande | Où le lire |
 |---|---|
-| le nom que l'écran **affiche** | `nomProprietaire(objet)` |
+| le nom que l'écran **affiche** | le champ servi `nom_proprietaire` (#2508), jamais recomposé |
 | le nom que la case « Envoyer une copie à … » **annonce** | `nomCopie(objet, saisie?)` |
 
 Elles rendent le même nom dans le cas courant, et ce sont **deux questions** :
@@ -2951,7 +2960,7 @@ détail de chaque motif est plus haut dans cette skill.
 - [ ] Onglet réservé à un rôle : `reserve:` sur l'onglet dans `pages.ts`, jamais un masquage
       dans la page — `BarreOnglets` masque ET refuse la route directe (`npm run
       lint:onglets-reserves`)
-- [ ] Nom affiché d'un objet « Saisi pour » : `nomProprietaire` (`#lib/saisi-pour`), jamais
+- [ ] Nom affiché d'un objet « Saisi pour » : le champ servi `nom_proprietaire`, jamais
       `objet.auteur_nom` (le rédacteur) ; la case de copie dit `nomCopie` (`npm run
       lint:nom-proprietaire`)
 - [ ] Section d'un formulaire : déclarée dans `#lib/entites/<entité>`, dans l'ordre de

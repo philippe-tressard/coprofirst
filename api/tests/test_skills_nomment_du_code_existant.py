@@ -272,3 +272,198 @@ def test_aucun_nom_cite_n_a_disparu():
         "« supprimé le… ») : le contrôle ignore alors la ligne, et le lecteur "
         "sait à quoi s'en tenir."
     )
+
+
+# ── Les noms IMPORTÉS dans un exemple, et les règles parties au serveur (#2913) ──
+#
+#  🔴 Récidive de #1035, onze semaines après : `CLAUDE.md` et `svelte-patterns`
+#  enseignaient `import { fmtMontant, perimetreLabel } from '#lib/utils.ts'` — un
+#  import qui ne compile plus depuis le 11/11/2026, quand le libellé d'un lieu est
+#  parti au serveur (#2633). Les familles ci-dessus vérifient le MODULE (`#lib/x.ts`
+#  existe), jamais le NOM qu'on en importe ; et `perimetreLabel` n'est pas un
+#  composant. Deux contrôles de plus :
+#
+#  1. chaque nom d'un `import { … } from '#lib/…'` écrit dans une consigne du front
+#     est exporté par ce module (réexportations `export * from` suivies) ;
+#  2. aucune règle servie de `REGLES_PARTAGEES` — celles que `lint:regles-partagees`
+#     refuse au front — n'est nommée sur une ligne vivante : la consigne la ferait
+#     réécrire.
+
+_LIB = _FRONT / "src" / "lib"
+_IMPORT_LIB = re.compile(r"import\s*\{([^}]*)\}\s*from\s*'#lib/([^']+)'")
+_EXPORT_NOMME = re.compile(
+    #  Indenté : le `<script context="module">` d'un composant (`toast`, `Toast.svelte`).
+    r"^[ \t]*export\s+(?:declare\s+)?(?:async\s+)?"
+    r"(?:function\*?|const|let|var|class|interface|type|enum)\s+(\w+)",
+    re.MULTILINE,
+)
+_EXPORT_LISTE = re.compile(r"^export\s+(?:type\s+)?\{([^}]*)\}", re.MULTILINE)
+_EXPORT_ETOILE = re.compile(r"^export\s+\*\s+from\s+'([^']+)'", re.MULTILINE)
+
+#: Les noms de GABARIT d'un exemple, qui ne désignent aucun export : `entity` est
+#: la ressource que l'exemple de page invite à remplacer (`svelte-patterns`).
+JOKERS_D_IMPORT = frozenset({"entity", "Entity"})
+
+
+def _documents_front_et_claude() -> list[tuple[str, pathlib.Path]]:
+    return [*_documents_front(), ("CLAUDE.md", _RACINE / "CLAUDE.md")]
+
+
+def _resoudre_lib(chemin: str, depuis: pathlib.Path | None = None) -> pathlib.Path | None:
+    """`#lib/x`, `#lib/x.ts`, `./x` → le fichier ; un dossier → son `index.ts`."""
+    base = (depuis.parent / chemin) if depuis else (_LIB / chemin)
+    for candidat in (base, base.with_name(base.name + ".ts"), base / "index.ts"):
+        if candidat.is_file():
+            return candidat
+    return None
+
+
+def _exports(fichier: pathlib.Path, vus: frozenset = frozenset()) -> set[str]:
+    """Les noms exportés par un module du front, réexportations comprises."""
+    if fichier in vus:
+        return set()
+    source = fichier.read_text(encoding="utf-8")
+    noms = set(_EXPORT_NOMME.findall(source))
+    for liste in _EXPORT_LISTE.findall(source):
+        for element in liste.split(","):
+            element = element.strip().removeprefix("type ").strip()
+            if element:
+                noms.add(element.split(" as ")[-1].strip())
+    for cible in _EXPORT_ETOILE.findall(source):
+        sous = _resoudre_lib(cible, fichier) if cible.startswith(".") else None
+        if cible.startswith("#lib/"):
+            sous = _resoudre_lib(cible.removeprefix("#lib/"))
+        if sous:
+            noms |= _exports(sous, vus | {fichier})
+    return noms
+
+
+def _imports_morts(texte: str) -> list[tuple[int, str]]:
+    """(ligne, `nom` de `#lib/x`) des noms importés que le module n'exporte pas."""
+    morts = []
+    for correspondance in _IMPORT_LIB.finditer(texte):
+        numero = texte.count("\n", 0, correspondance.start()) + 1
+        module = _resoudre_lib(correspondance.group(2))
+        if module is None:
+            morts.append((numero, f"#lib/{correspondance.group(2)} (module absent)"))
+            continue
+        exportes = _exports(module)
+        for element in correspondance.group(1).split(","):
+            nom = element.strip().removeprefix("type ").strip().split(" as ")[0].strip()
+            if nom and nom not in exportes and nom not in JOKERS_D_IMPORT:
+                morts.append((numero, f"{nom} de #lib/{correspondance.group(2)}"))
+    return morts
+
+
+def _regles_servies() -> list[str]:
+    """Les clés de `REGLES_PARTAGEES` que le serveur sert (`api`, sans `migration`)."""
+    source = (_FRONT / "scripts" / "check-regles-partagees.regles.mjs").read_text(encoding="utf-8")
+    entrees = re.findall(r"^\t(\w+): \{(.*?)^\t\},?$", source, re.MULTILINE | re.DOTALL)
+    return [cle for cle, corps in entrees if "api:" in corps and "migration:" not in corps]
+
+
+def test_les_imports_enseignes_existent():
+    """Un `import { x } from '#lib/y'` d'exemple : `y` exporte `x` (#2913)."""
+    fautes = [
+        f"  {etiquette}:{numero} — {quoi}"
+        for etiquette, chemin in _documents_front_et_claude()
+        for numero, quoi in _imports_morts(chemin.read_text(encoding="utf-8"))
+    ]
+    assert not fautes, "Ces consignes enseignent un import qui ne compile pas :\n" + "\n".join(
+        fautes
+    )
+
+
+def test_aucune_regle_servie_n_est_enseignee_au_front():
+    """Une règle que le serveur sert ne se nomme pas comme vivante au front (#2913)."""
+    regles = _regles_servies()
+    motif = re.compile(r"\b(" + "|".join(map(re.escape, regles)) + r")\b")
+    fautes = [
+        f"  {etiquette}:{numero} — {m.group(1)}"
+        for etiquette, chemin in _documents_front_et_claude()
+        for numero, ligne in _lignes_vivantes(chemin.read_text(encoding="utf-8"))
+        for m in motif.finditer(ligne)
+    ]
+    assert not fautes, (
+        "Ces consignes nomment comme vivante une règle que le serveur sert — "
+        "`lint:regles-partagees` la refuse au front, la consigne la ferait "
+        "réécrire. Renvoyer au champ servi :\n" + "\n".join(fautes)
+    )
+
+
+def test_les_deux_controles_d_import_savent_refuser():
+    """Cas zéro : la table est lue, les réexportations sont suivies, et le défaut
+    exact de #2913 est refusé."""
+    regles = _regles_servies()
+    assert {"nomProprietaire", "lectureDe"} <= set(regles), regles
+    assert "estPerimetreParDefaut" in _exports(_LIB / "perimetres" / "index.ts"), (
+        "`export * from` n'est plus suivi"
+    )
+    forge = "import { fmtMontant, perimetreLabel } from '#lib/utils.ts';"
+    assert _imports_morts(forge) == [(1, "perimetreLabel de #lib/utils.ts")]
+    assert _imports_morts("import { fmtMontant, type X as Y } from '#lib/absent.ts';") == [
+        (1, "#lib/absent.ts (module absent)")
+    ]
+
+
+# ── Les EXEMPLES ```svelte que la CI refuserait (#2930) ─────────────────────────
+#
+#  Récidive de #1556 : `ux-patterns` enseignait six blocs qu'un linter du front
+#  refuse ou qui visaient une API partie (le conteneur `.carte-liste` écrit à la
+#  main, l'astérisque tapée, un bouton d'action en émoji, un `<slot>` que
+#  `ChampsCommuns` ne rend plus). Les linters ne lisent que `front/src` ; ce relevé
+#  porte LEUR motif sur les blocs des skills, et nomme le linter qui fait foi. Un
+#  bloc volontairement fautif le dit sur sa ligne (marqueur d'historique, ou ❌).
+#
+#  ⚠️ Un motif par défaut CONSTATÉ, pas une copie des linters : chaque entrée
+#  exige que son linter existe encore — sinon c'est le motif qui est périmé.
+FORMES_REFUSEES = (
+    (re.compile(r'class="carte-liste\b'), "lint:carte-liste", "poser `<CarteListe …>`"),
+    (re.compile(r"\*\s*<input"), "lint:champs", "écrire `<EtoileRequis vide={…} />`"),
+    (
+        re.compile(r'class="btn-icon"[^>]*>\s*(?:🔄|✏️|🗑️|➕)'),
+        "lint:actions-au-trait",
+        "dessiner l'action par `<IconeAction icone=… />`",
+    ),
+    (
+        re.compile(r'<svelte:fragment slot="diffusion"'),
+        "lint:diffusion-auteur",
+        "`ChampsCommuns` prend des snippets : `{#snippet creneauDiffusion()}`",
+    ),
+    (re.compile(r"Nouvelle publication"), "lint:vocabulaire-ecran", "lire `libelleNouveau`"),
+)
+
+
+def _lignes_de_blocs_svelte(texte: str):
+    """(numéro, ligne) des lignes vivantes d'un bloc ```svelte."""
+    dans = False
+    for numero, ligne in enumerate(texte.split("\n"), 1):
+        if ligne.strip().startswith("```"):
+            dans = ligne.strip().startswith("```svelte") and not dans
+            continue
+        minuscule = ligne.lower()
+        if dans and "❌" not in ligne and not any(m in minuscule for m in MARQUEURS_HISTORIQUE):
+            yield numero, ligne
+
+
+def test_les_exemples_svelte_passent_les_linters_du_front():
+    """Un bloc d'exemple d'une skill du front ne porte aucune forme refusée (#2930)."""
+    scripts = _scripts_npm()
+    fautes = [
+        f"  {lint} n'existe plus — le motif est périmé"
+        for _m, lint, _a in FORMES_REFUSEES
+        if lint not in scripts
+    ]
+    for etiquette, chemin in _documents_front():
+        for numero, ligne in _lignes_de_blocs_svelte(chemin.read_text(encoding="utf-8")):
+            for motif, lint, a_la_place in FORMES_REFUSEES:
+                if motif.search(ligne):
+                    fautes.append(f"  {etiquette}:{numero} — refusé par {lint} : {a_la_place}")
+    assert not fautes, "Ces exemples enseignent ce que la CI refuse :\n" + "\n".join(fautes)
+
+
+def test_le_releve_des_exemples_voit_un_bloc():
+    """Cas zéro : un bloc forgé est lu, son motif refusé ; hors bloc, rien."""
+    forge = '```svelte\n<div class="carte-liste x">\n```\n<div class="carte-liste">'
+    lignes = list(_lignes_de_blocs_svelte(forge))
+    assert lignes == [(2, '<div class="carte-liste x">')], lignes

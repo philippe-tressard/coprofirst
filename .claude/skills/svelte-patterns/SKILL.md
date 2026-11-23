@@ -22,7 +22,8 @@ Conventions et patterns pour créer des pages et composants SvelteKit dans le pr
 	import { safeHtml } from '#lib/sanitize.ts';
 	import { toast } from '#lib/components/Toast.svelte';
 	import { fmtDate, fmtDatetime } from '#lib/date.ts';
-	import { fmtMontant, perimetreLabel } from '#lib/utils.ts';
+	import { fmtMontant } from '#lib/utils.ts';
+	// le lieu d'un contenu est SERVI (`perimetre_libelle`) : `BadgePerimetre libelle=…`
 </script>
 ```
 
@@ -295,8 +296,8 @@ Les formats de date et de montant sont **centralisés**. Une page qui redéfinit
 <script lang="ts">
 	// #lib/date.ts — TOUTES les dates affichées (locale fr-FR + TZ Europe/Paris figés)
 	import { fmtDate, fmtDateLong, fmtDateShort, fmtDatetime, fmtTime, fmtMonthYear } from '#lib/date.ts';
-	// #lib/utils.ts — montants, périmètre, extraits HTML
-	import { fmtMontant, perimetreLabel, stripHtml } from '#lib/utils.ts';
+	// #lib/utils.ts — montants, nombres, extraits HTML
+	import { fmtMontant, fmtNombre, stripHtml } from '#lib/utils.ts';
 </script>
 ```
 
@@ -305,7 +306,6 @@ Les formats de date et de montant sont **centralisés**. Une page qui redéfinit
 | `fmtDate(d)` | `'2026-07-25'` → `25/07/2026` |
 | `fmtDatetime(d)` | horodatage → date + heure de Paris |
 | `fmtMontant(v)` | `1234` → `1 234 €` · `1234.5` → `1 234,50 €` · `null` → `—` |
-| `perimetreLabel(items)` | `['bat:1','parking']` → `Bât. 1 · Parking` |
 | `fmtNombre(v)` | `27054` → `27 054` · `3864.9` → `3 864,9` — **tout** nombre reçu de l'API (#2358) |
 | `fmtPartEnPourcent(n, d, 1)` | `7500, 27054, 1` → `27,7 %` (deux décimales par défaut) |
 | `fmtMonthYear(cle)` | `'2026-05'` (`MoisIso`) → `mai 2026` |
@@ -424,8 +424,11 @@ test du dépôt (#1557).
 
 ## Accessibilité
 
-La règle : `standards/11-interface-et-ux.md` §2 (seule copie) ; son instanciation, `CLAUDE.md` —
-« Front », règle 3 ; ce qu'en vérifie la CI : `npm run lint:a11y`.
+La règle : `standards/11-interface-et-ux.md` §2, seule écriture — `role="button"` quand le
+clic est le seul chemin vers le geste, `role="presentation"` sans `tabindex` pour les trois cas
+qui n'en sont pas. Son instanciation : `CLAUDE.md`, « Front », règle 3 (le cas de
+`CarteListe`, ci-dessus) ; ce qu'en vérifie la CI : `npm run lint:a11y`,
+`npm run lint:bouton-icone`.
 
 🔴 Cette section en portait une septième copie, avec une ligne **fausse** depuis
 le 22/09/2026 — « Labels : `Titre *` (astérisque pour les champs requis) », là

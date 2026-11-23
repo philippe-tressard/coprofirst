@@ -337,7 +337,7 @@ vers un numéro absent, et un `lint:*` ou un fichier de test de « Tenu par » q
 
 ### n° 42 · en vigueur — Le nom affiché est celui du propriétaire
 12/09/2026 · #1104 (21/09) · l'utilisateur · §15
-- **Décidé** : un objet « Saisi pour » affiche `nomProprietaire` ; la case de copie dit `nomCopie` — deux questions.
+- **Décidé** : un objet « Saisi pour » affiche `nomProprietaire` ; la case de copie dit `nomCopie` — deux questions. (Le nom affiché a cessé d'être composé au front : servi en `nom_proprietaire` depuis #2508.)
 - **Pourquoi** : un écran affichait le rédacteur (`auteur_nom`) à trois lignes de la bonne fonction.
 - **Écarté** : `objet.auteur_nom` dans un écran.
 - **Tenu par** : `npm run lint:nom-proprietaire`, `test_proprietaire_expose.py`.
@@ -364,7 +364,7 @@ vers un numéro absent, et un `lint:*` ou un fichier de test de « Tenu par » q
 - **Tenu par** : `npm run lint:plafond-liste`.
 - **Historique** : 19/09 — « utilise le même UX des briques » ; 20/09 — le mot dans le pli ; 30/09 — une seule colonne vide dépliée (n° 17).
 
-### n° 46 · en vigueur — Le pliage : obligatoire → déplié, facultatif → plié
+### n° 46 · remplacé par n° 84 — Le pliage : obligatoire → déplié, facultatif → plié
 20/09/2026 · #1095 · l'utilisateur · §0 « Le pliage »
 - **Décidé** : la règle se calcule ; un écart exige `exceptionPliage`. Exceptions arbitrées : Au nom de (obligatoire mais pliée), Pièces jointes (facultative mais dépliée). Une valeur autre que le défaut rouvre la section.
 - **Pourquoi** : le défaut d'« Au nom de » est juste presque toujours ; les pièces jointes sont le premier geste au téléphone.
@@ -624,3 +624,35 @@ vers un numéro absent, et un `lint:*` ou un fichier de test de « Tenu par » q
 - **Pourquoi** : « l'icône répondre et l'icône ajouter une suite sont trop confusantes ; j'ai par erreur fait répondre au lieu d'une suite » — deux icônes muettes côte à côte, même taille, même couleur.
 - **Écarté** : B, Répondre en champ dans le fil (la tête garde « Suite » seul, à peu près ce qui est retenu, sans le champ toujours ouvert) ; C, un menu « + Ajouter » (un clic de plus pour les deux gestes courants) ; D, deux familles visuelles (deux codes à apprendre) ; E, le choix au moment d'écrire (un clic de plus, un défaut qui peut tromper). Remplace l'icône 💬 de la carte posée le 23/10/2026.
 - **Tenu par** : `front/e2e/repondre-sous-le-fil.spec.ts`, `front/e2e/message-corriger-supprimer.spec.ts`.
+
+### n° 84 · en vigueur — Le pliage, sans exception sur l'affaire
+22/09/2026 · #1143 · l'utilisateur, à l'écran · §0 « Le PLIAGE »
+- **Décidé** : la règle du n° 46 reste (obligatoire → déplié, facultatif → plié, un écart exige `exceptionPliage`, une valeur autre que le défaut rouvre), mais l'affaire n'a plus aucune exception : Pièces jointes est PLIÉE comme toute section facultative (21/09), Au nom de DÉPLIÉE comme toute section obligatoire (22/09). Les exceptions d'autres entités se lisent dans leur déclaration (`exceptionPliage`, avec sa raison), jamais recopiées ici ni dans `SKILL.md`.
+- **Pourquoi** : « pour éviter toute exception » ; une section marquée d'un astérisque qui arrive fermée demande de l'ouvrir pour voir qu'il n'y a rien à y faire, et un formulaire aux sections toutes ouvertes n'est pas lisible au pouce.
+- **Écarté** : les deux exceptions du n° 46 (Au nom de pliée, Pièces jointes dépliée).
+- **Tenu par** : `npm run lint:etats` (une exception qui manque ou qui ne sert plus échoue).
+- **Historique** : entrée écrite le 23/11/2026 (#2966) — le changement du 21–22/09 n'en avait pas, et le n° 46 se lisait toujours comme en vigueur.
+
+### n° 85 · en vigueur — Sur un fond sombre, le logo de sa variante sombre
+09/11/2026 (v3.77.0) · #2612 · non retrouvé · non écrit dans `SKILL.md`
+- **Décidé** : l'administration peut téléverser une seconde image, `site_logo_sombre` (`GET /config/logo?variante=sombre`), qui sert partout où le logo se pose sur un fond sombre — l'écran au thème sombre, l'en-tête des courriels, de la fiche arrivant et des affiches de hall, la page de garde et le menu du manuel ; l'onglet, l'icône de l'application et les rapports sur fond blanc gardent le logo. Sans aucun logo, le fond sombre reçoit le dessin neutre « Ivoire » ; un logo téléversé sans sa variante reste lui-même — on ne devine pas le dessin d'une résidence.
+- **Pourquoi** : un logo composé sur fond blanc porte ce fond avec lui ; au thème sombre, on voyait un cadre blanc.
+- **Écarté** : non dit.
+- **Tenu par** : aucun garde-fou nommé.
+- **Historique** : entrée écrite le 23/11/2026 (#2980), d'après `api/app/utils/logo.py` et `routers/config_logo.py`.
+
+### n° 86 · en vigueur — Télémétrie : « sans le gestionnaire », une case, et seulement si elle écarte quelque chose
+03/10/2026 · #1652 · non retrouvé · non écrit dans `SKILL.md`
+- **Décidé** : sur la rangée des vues de la télémétrie, une case à cocher « Sans le gestionnaire du site » écarte ses visites ; le serveur ne la propose que si elle écarte quelque chose (`filtrePropose`, `OngletTelemetrie.svelte`). Livré en v2.99.4, avec la fusion d'Indicateurs et Fréquentation.
+- **Pourquoi** : non retrouvé.
+- **Écarté** : non retrouvé (la forme écartée ne se lit pas dans le code).
+- **Tenu par** : aucun garde-fou nommé.
+- **Historique** : entrée écrite le 23/11/2026 (#2980), d'après le composant.
+
+### n° 87 · en vigueur — Écrans non visités : vues Mois et Année seulement
+04/10/2026 · #1630 · non retrouvé · non écrit dans `SKILL.md`
+- **Décidé** : la liste des écrans non visités ne s'affiche que sur les vues Mois et Année de la fréquentation (`FrequentationTelemetrie.svelte`, `EcransNonVisites.svelte`).
+- **Pourquoi** : sur une journée, presque tout écran est « non visité » (commentaire de `FrequentationTelemetrie.svelte`). Livré en v2.102.0.
+- **Écarté** : non retrouvé.
+- **Tenu par** : aucun garde-fou nommé.
+- **Historique** : entrée écrite le 23/11/2026 (#2980), d'après les composants.
