@@ -242,22 +242,22 @@ ETAPE=$(etape_reprise "$ETAT_MEMO")
 if [ "$ETAPE" = TRAIN ]; then
   assurer_dev
   # ── 1. Le lot ──
-  TITRE_LOT=""
+  TITRE_LOT=""; CORPS_LOT=""
   if [ "$LOT" != "-" ]; then
     read -r ST BASE <<<"$(etat_pr "$LOT")"
     [ "${BASE:-}" = dev ] || stop "la PR #$LOT vise « ${BASE:-?} », pas dev"
     case "${ST:-}" in
       MERGED) dire "lot #$LOT déjà fusionné dans dev" ;;
       OPEN)   TITRE_LOT=$(g pr view "$LOT" --json title --jq .title)
+              CORPS_LOT=$(g pr view "$LOT" --json body --jq .body)
               attendre_fusionnable "$LOT"; fusionner "$LOT"; sleep 15; synchroniser ;;
       *)      stop "lot #$LOT dans l'état « ${ST:-illisible} »" ;;
     esac
   fi
   # ── 2. La version du train ──
   V_MAIN=$(lire_version origin/main); V_DEV=$(lire_version origin/dev)
-  #  À blanc, le lot n'est pas fusionné : son titre deviendra le sujet du squash.
-  SUJETS=$( { git log origin/main..origin/dev --format='%s%n%b'; [ -n "$A_BLANC" ] && printf '%s\n' "$TITRE_LOT"; } \
-              | grep -v '^chore(version)')
+  #  À blanc, le lot n'est pas fusionné : le titre et le corps de sa PR deviendront ceux du squash.
+  SUJETS=$(declarations_train origin/main..origin/dev "${A_BLANC:+$TITRE_LOT}" "${A_BLANC:+$CORPS_LOT}")
   RANG=$(rang_attendu "$SUJETS")
   read -r GESTE CIBLE <<<"$(decision_version "$V_MAIN" "$V_DEV" "$RANG")"
   dire "train : main=${V_MAIN:-?} dev=${V_DEV:-?} rang=$RANG → ${GESTE:-?} ${CIBLE:-}"

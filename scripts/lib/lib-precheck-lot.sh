@@ -192,7 +192,7 @@ rapporter 0d "$V0D" "Un seul bump de version dans le lot" "$D0D"
 #      Le point 0d compte les bumps ; il ne regardait pas leur RANG, et six des
 #      dix-huit derniers lots en portaient un faux, tous surévalués. Le « pourquoi »
 #      complet vit avec les deux fonctions, dans `lib-verdicts-mep.sh`.
-SUJETS=$(git log origin/main..HEAD --format='%s%n%b' 2>/dev/null | grep -v '^chore(version)')
+SUJETS=$(declarations_train origin/main..HEAD)   # sujets et pied, jamais un corps cité (#2896)
 V0G=$(verdict_rang_version "$(rang_attendu "$SUJETS")" "${V_MAIN:-}" "${V_HEAD:-}")
 #  Un lot n'a pas de bump à juger : son rang ANNONCÉ entre dans le calcul du conducteur.
 [ "$MODE0D" = LOT ] && [ "$V0D" = OK ] && V0G=LOT
