@@ -319,11 +319,12 @@ def principal() -> int:
             dossier.chmod(0o755)
             config = adapter(dossier, image)
             if variante == "temoin-fautif":
-                if not eprouver(dossier, image, "commune"):
+                if eprouver(dossier, image, "commune"):
+                    print("témoin fautif : refusé, le contrôle discrimine")
+                else:
                     fautes.append(
                         "le relais placé après la racine passe : le contrôle ne juge rien"
                     )
-                print("témoin fautif : refusé, le contrôle discrimine")
                 continue
             fautes_variante = verdicts(config, variante) + eprouver(
                 dossier, image, variante
