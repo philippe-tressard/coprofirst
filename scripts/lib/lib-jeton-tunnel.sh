@@ -21,6 +21,13 @@
 #  de la rotation l'y écrivaient. L'unité ne porte plus que `--token-file <chemin>`.
 #  C39 (`lib-jeton-tunnel-clair.sh`) échoue si l'ancienne forme revient.
 #
+#  ── Comment le jeton arrive (23/11/2026, claude-config#614) ─────────────────
+#  Par la saisie masquée de `lire_jeton_saisi`, et par elle seule : jamais en
+#  argument de commande. Un argument reste dans l'historique de l'interpréteur et
+#  dans la trace des commandes privilégiées (`sudo`) ; il se lit aussi dans `ps`
+#  le temps du script. Les deux scripts qui reçoivent un jeton l'appellent ;
+#  🔒 `api/tests/test_jeton_tunnel_saisi.py` refuse l'argument positionnel.
+#
 #  Fonctions PURES : ni réseau, ni écriture, ni lecture de fichier. Elles rendent
 #  toujours 0 (sauf `unite_vers_fichier`, qui refuse en 1) : sous `set -e`, un
 #  `return 1` dans `X=$(…)` ferait avorter l'appelant avant son message.
@@ -77,6 +84,19 @@ motif_refus() {  # verdict → phrase pour la personne qui a collé
     vide)         echo "Rien n'a été collé." ;;
     *)            echo "Jeton refusé (${1:-})." ;;
   esac
+}
+
+# ── Lire le jeton : saisie masquée, jamais un argument ───────────────────────
+# Invite sur la sortie d'erreur, jeton lu sur l'entrée standard sans écho, rendu
+# sur la sortie sans aucun blanc (un copier-coller emporte souvent un retour à la
+# ligne). Seule lecture de l'entrée : la pureté vaut pour le reste du module.
+#   JETON=$(lire_jeton_saisi)
+lire_jeton_saisi() {
+  local saisi=""
+  printf '%s\n' "Collez le jeton (il commence par eyJ), puis Entrée. Rien ne s'affiche, c'est normal :" >&2
+  IFS= read -rs saisi || true
+  printf '\n' >&2
+  printf '%s' "$saisi" | tr -d '[:space:]'
 }
 
 # ── Masquer tout jeton dans un texte (filtre stdin → stdout) ─────────────────
@@ -153,6 +173,9 @@ if [ "${BASH_SOURCE[0]}" = "$0" ] && [ "${1:-}" = "--selftest" ]; then
   eq "verdict : jeton d'un autre tunnel"                "$(verdict_jeton "$AUTRE" "$ID")"   "refuse:autre-tunnel"
   eq "masquage : le jeton disparaît" "$(printf 'x --token %s y' "$BON" | masquer_jeton)" "x --token <jeton masqué> y"
   eq "motif : l'identifiant est nommé" "$(motif_refus refuse:format | grep -c IDENTIFIANT)" "1"
+  eq "saisie : le jeton collé, blancs et retour retirés" "$(printf '  %s \n' "$BON" | lire_jeton_saisi 2>/dev/null)" "$BON"
+  eq "saisie : l'invite ne va pas sur la sortie"         "$(printf '%s\n' "$BON" | lire_jeton_saisi 2>/dev/null | grep -c Collez)" "0"
+  eq "saisie : entrée fermée → vide, refusé ensuite"     "$(verdict_jeton "$(lire_jeton_saisi </dev/null 2>/dev/null)" "")" "refuse:vide"
   UNITE="[Service]
 ExecStart=/usr/bin/cloudflared --no-autoupdate tunnel run --token $BON
 Restart=on-failure"
