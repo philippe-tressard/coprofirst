@@ -124,8 +124,10 @@
 				<button
 					type="button"
 					class="btn btn-outline btn-sm"
-					on:click={() => (inclureArchives = true)}>Les inclure</button
+					on:click={() => (inclureArchives = true)}
 				>
+					Les inclure
+				</button>
 			{/if}
 		{/if}
 	</BilanRecherche>

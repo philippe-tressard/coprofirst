@@ -130,11 +130,11 @@
 		placeholder="Nom, lot ou bâtiment…"
 		dans="nom du compte, n° de lot et bâtiment"
 	>
-		<span class="compte"
-			>{filtered.length} association{filtered.length > 1
+		<span class="compte">
+			{filtered.length} association{filtered.length > 1
 				? 's'
-				: ''}{SEPARATEUR.tiret}{grouped.length} utilisateur{grouped.length > 1 ? 's' : ''}</span
-		>
+				: ''}{SEPARATEUR.tiret}{grouped.length} utilisateur{grouped.length > 1 ? 's' : ''}
+		</span>
 	</ChampRecherche>
 </div>
 
@@ -148,9 +148,9 @@
 			<div class="entete-compte">
 				<strong>{g.user_nom}</strong>
 				<span class="badge badge-gray statut-compte">{libelleStatut(g.user_statut)}</span>
-				<span class="nb-lots"
-					>{SEPARATEUR.tiret}{g.lots.length} lot{g.lots.length > 1 ? 's' : ''}</span
-				>
+				<span class="nb-lots">
+					{SEPARATEUR.tiret}{g.lots.length} lot{g.lots.length > 1 ? 's' : ''}
+				</span>
 				<button
 					class="btn btn-sm btn-outline suppr-tout"
 					disabled={deletingUserId === g.user_id}
@@ -162,11 +162,11 @@
 				</button>
 			</div>
 			<table class="table table-lots">
-				<colgroup
-					><col class="col-25" /><col class="col-20" /><col class="col-20" /><col
+				<colgroup>
+					<col class="col-25" /><col class="col-20" /><col class="col-20" /><col
 						class="col-20"
-					/><col class="col-15" /></colgroup
-				>
+					/><col class="col-15" />
+				</colgroup>
 				<thead><tr><th>Lot</th><th>Type lot</th><th>Bâtiment</th><th>Lien</th><th></th></tr></thead>
 				<tbody>
 					{#each g.lots as ul (ul.user_lot_id)}
@@ -180,8 +180,10 @@
 									class="btn-icon-danger"
 									aria-label="Supprimer cette association"
 									title="Supprimer cette association"
-									on:click={() => supprimer(ul)}><IconeAction icone="trash-2" /></button
+									on:click={() => supprimer(ul)}
 								>
+									<IconeAction icone="trash-2" />
+								</button>
 							</td>
 						</tr>
 					{/each}

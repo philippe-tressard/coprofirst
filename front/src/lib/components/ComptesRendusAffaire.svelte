@@ -90,8 +90,9 @@
 				<p class="tete">
 					<strong>Point CS / Syndic du {fmtDatetime(cr.debut)}</strong>
 					<span class="lieu">{SEPARATEUR.point}{cr.ou}</span>
-					{#if cr.conseil_seul}<Badge teinte="badge-purple" compact>{LIBELLE_CS_ET_PRESENTS}</Badge
-						>{/if}
+					{#if cr.conseil_seul}<Badge teinte="badge-purple" compact>
+							{LIBELLE_CS_ET_PRESENTS}
+						</Badge>{/if}
 					<span class="gestes">
 						{#if cr.pdf_disponible}
 							<button
@@ -100,8 +101,9 @@
 								disabled={pdfEnCours === cr.cr_id}
 								aria-busy={pdfEnCours === cr.cr_id}
 								on:click={() => telechargerPdf(cr)}
-								><IconeAction icone="file-text" /> Compte rendu du point (PDF)</button
 							>
+								<IconeAction icone="file-text" /> Compte rendu du point (PDF)
+							</button>
 						{/if}
 						{#if $estModerateur}
 							<button
@@ -113,8 +115,9 @@
 									: 'Réserver ce compte rendu au conseil syndical et aux présents'}
 								title={cr.conseil_seul ? 'Rouvrir à qui lit l’affaire' : LIBELLE_CS_ET_PRESENTS}
 								on:click={() => basculerConfidentialite(cr)}
-								><IconeAction icone="shield-check" /></button
 							>
+								<IconeAction icone="shield-check" />
+							</button>
 						{/if}
 					</span>
 				</p>

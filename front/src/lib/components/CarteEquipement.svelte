@@ -75,9 +75,9 @@
 >
 	<svelte:fragment slot="tags">
 		{#if equipement.systeme}
-			<span class="badge badge-gray" title="Le code s’en sert : il ne se retire pas"
-				><Icon name="lock" size={12} /> Système</span
-			>
+			<span class="badge badge-gray" title="Le code s’en sert : il ne se retire pas">
+				<Icon name="lock" size={12} /> Système
+			</span>
 		{/if}
 		{#if !equipement.pour_affaires}
 			<span class="badge badge-gray">Contrats seulement</span>
@@ -91,8 +91,10 @@
 				class="btn-icon-danger"
 				aria-label="Supprimer l’équipement"
 				title="Supprimer — plus rien ne le cite"
-				on:click|stopPropagation={onSupprimer}><IconeAction icone="trash-2" /></button
+				on:click|stopPropagation={onSupprimer}
 			>
+				<IconeAction icone="trash-2" />
+			</button>
 		{/if}
 	</svelte:fragment>
 

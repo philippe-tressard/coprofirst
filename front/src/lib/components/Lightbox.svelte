@@ -199,18 +199,21 @@
 	on:pointerup={finGeste}
 	on:pointercancel={abandonGeste}
 >
-	<button class="lb-fermer" aria-label="Fermer la photo" on:click|stopPropagation={fermer}>×</button
-	>
+	<button class="lb-fermer" aria-label="Fermer la photo" on:click|stopPropagation={fermer}>
+		×
+	</button>
 
 	{#if photos.length > 1}
 		<button
 			class="lb-nav lb-prec"
 			aria-label="Photo précédente"
-			on:click|stopPropagation={precedente}>‹</button
+			on:click|stopPropagation={precedente}
 		>
-		<button class="lb-nav lb-suiv" aria-label="Photo suivante" on:click|stopPropagation={suivante}
-			>›</button
-		>
+			‹
+		</button>
+		<button class="lb-nav lb-suiv" aria-label="Photo suivante" on:click|stopPropagation={suivante}>
+			›
+		</button>
 	{/if}
 
 	<!-- Aucun écouteur sur l'image : la fermeture ne se déclenche que si la cible

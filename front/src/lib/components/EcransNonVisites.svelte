@@ -57,8 +57,9 @@
 										<span
 											class="badge badge-gray"
 											title="Cet écran n’est pas ouvert à tous les profils (conseil syndical, administrateur, propriétaire, non-locataire) : moins de comptes le voient, il n’est pas mort pour autant."
-											>Réservé</span
 										>
+											Réservé
+										</span>
 									{/if}
 								</td>
 								<td><code>{e.route}</code></td>

@@ -314,8 +314,10 @@
 													objetRetour = objet;
 													retourDate = '';
 													retourPerdu = false;
-												}}><IconeAction icone="undo-2" /></button
+												}}
 											>
+												<IconeAction icone="undo-2" />
+											</button>
 										{/if}
 										<button
 											type="button"
@@ -323,15 +325,19 @@
 											title="Corriger"
 											aria-label="Corriger {objet.libelle}"
 											aria-pressed={saisie?.id === objet.id}
-											on:click={() => ouvrirCorrection(objet)}>&#x270F;&#xFE0F;</button
+											on:click={() => ouvrirCorrection(objet)}
 										>
+											&#x270F;&#xFE0F;
+										</button>
 										<button
 											type="button"
 											class="btn btn-xs btn-danger"
 											title="Supprimer"
 											aria-label="Supprimer {objet.libelle}"
-											on:click={() => supprimer(objet)}>✕</button
+											on:click={() => supprimer(objet)}
 										>
+											✕
+										</button>
 									</div>
 								</td>
 							{/if}

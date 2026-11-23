@@ -189,11 +189,11 @@
 				<span class="titre"></span>
 			{/if}
 			{#if synthese.statut === 'validee' && synthese.validee_le}
-				<span class="validee"
-					>Validée le {fmtDatetime(synthese.validee_le)}{synthese.validee_par_nom
+				<span class="validee">
+					Validée le {fmtDatetime(synthese.validee_le)}{synthese.validee_par_nom
 						? ` par ${synthese.validee_par_nom}`
-						: ''}</span
-				>
+						: ''}
+				</span>
 			{/if}
 			{#if gestes}
 				<!--  Le mode se lit sur l'icône qui a ouvert le formulaire (`aria-pressed`,
@@ -206,16 +206,20 @@
 						aria-label="Modifier la synthèse"
 						title="Modifier"
 						disabled={enCours || !!proposition}
-						on:click={ouvrirEdition}><IconeAction icone="pencil" /></button
+						on:click={ouvrirEdition}
 					>
+						<IconeAction icone="pencil" />
+					</button>
 					<button
 						type="button"
 						class="btn-icon-danger"
 						aria-label="Supprimer la synthèse"
 						title="Supprimer la synthèse"
 						disabled={enCours || edition || !!proposition}
-						on:click={supprimer}><IconeAction icone="trash-2" /></button
+						on:click={supprimer}
 					>
+						<IconeAction icone="trash-2" />
+					</button>
 				</span>
 			{/if}
 		</div>
@@ -354,11 +358,18 @@
 					class="btn btn-outline btn-sm"
 					type="button"
 					disabled={enCours}
-					on:click={() => (proposition = null)}>Annuler</button
+					on:click={() => (proposition = null)}
 				>
-				<button class="btn btn-primary btn-sm" type="button" disabled={enCours} on:click={appliquer}
-					>Appliquer</button
+					Annuler
+				</button>
+				<button
+					class="btn btn-primary btn-sm"
+					type="button"
+					disabled={enCours}
+					on:click={appliquer}
 				>
+					Appliquer
+				</button>
 			</div>
 		</section>
 	{/if}
@@ -371,22 +382,28 @@
 				class="btn btn-outline btn-sm"
 				disabled={enCours || edition || !!proposition}
 				aria-busy={sollicite === 'relancer'}
-				on:click={relancer}><IconeIA enCours={sollicite === 'relancer'} /> Relancer</button
+				on:click={relancer}
 			>
+				<IconeIA enCours={sollicite === 'relancer'} /> Relancer
+			</button>
 			<button
 				type="button"
 				class="btn btn-outline btn-sm"
 				disabled={enCours || edition || !!proposition}
 				aria-busy={sollicite === 'recommencer'}
-				on:click={recommencer}><IconeIA enCours={sollicite === 'recommencer'} /> Recommencer</button
+				on:click={recommencer}
 			>
+				<IconeIA enCours={sollicite === 'recommencer'} /> Recommencer
+			</button>
 			<button
 				type="button"
 				class="btn btn-primary btn-sm"
 				disabled={enCours || edition || vide || !!proposition}
 				title={vide ? 'Rédigez la synthèse avant de la valider' : undefined}
-				on:click={valider}>✅ Valider</button
+				on:click={valider}
 			>
+				✅ Valider
+			</button>
 		</div>
 	{/if}
 </section>

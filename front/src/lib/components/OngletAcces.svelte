@@ -295,19 +295,22 @@
 								<strong>{nomLocataire(premierBail)}</strong>
 								{#if premierBail.locataire_email}<a
 										href="mailto:{premierBail.locataire_email}"
-										class="courriel">{premierBail.locataire_email}</a
-									>{/if}
+										class="courriel"
+									>
+										{premierBail.locataire_email}
+									</a>{/if}
 							</div>
 							<div class="etat-locataire">
 								{#if items.length > 0}
-									<Badge teinte="badge-yellow" compact
-										>{items.length} accès confié{items.length > 1 ? 's' : ''}</Badge
-									>
+									<Badge teinte="badge-yellow" compact>
+										{items.length} accès confié{items.length > 1 ? 's' : ''}
+									</Badge>
 									<button
 										class="btn btn-sm btn-outline"
 										on:click={() => recupererTousLocataireAcces(baux.map((b) => b.id))}
-										>↩ Tout récupérer</button
 									>
+										↩ Tout récupérer
+									</button>
 								{:else}
 									<Badge teinte="badge-gray" compact>Aucun accès confié</Badge>
 								{/if}
@@ -324,9 +327,9 @@
 										>
 											{item.typeAcces === 'vigik' ? '🏷️ Vigik' : '📡 TC'}
 										</Badge>
-										<Badge teinte={statutAccesBadge(item.statut)} compact
-											>{statutAccesLabel(item.statut)}</Badge
-										>
+										<Badge teinte={statutAccesBadge(item.statut)} compact>
+											{statutAccesLabel(item.statut)}
+										</Badge>
 									</div>
 								{/each}
 							</div>

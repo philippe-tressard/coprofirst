@@ -118,9 +118,10 @@
 		{#if affairesLiees?.length}
 			<p class="fiche-intervenant fiche-liees">
 				Affaires liées :
-				{#each affairesLiees as a, i (a.id)}{i ? ' · ' : ''}<a href="/tickets/{a.id}"
-						><strong>{a.numero}</strong> {a.titre}</a
-					>{/each}
+				{#each affairesLiees as a, i (a.id)}{i ? ' · ' : ''}<a href="/tickets/{a.id}">
+						<strong>{a.numero}</strong>
+						{a.titre}
+					</a>{/each}
 			</p>
 		{/if}
 	{/if}

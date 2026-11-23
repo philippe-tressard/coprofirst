@@ -66,10 +66,10 @@
 			<span class="pastille-couleur" style:--nuance={choisie.fond}></span>
 		</div>
 	{/if}
-	<span class="aide"
-		>Les couleurs du site, des courriels et des affiches de hall. Le style ne change pas&nbsp;; le
-		choix s’applique aussitôt, et chaque résident garde son thème clair ou sombre.</span
-	>
+	<span class="aide">
+		Les couleurs du site, des courriels et des affiches de hall. Le style ne change pas&nbsp;; le
+		choix s’applique aussitôt, et chaque résident garde son thème clair ou sombre.
+	</span>
 </div>
 
 <style>

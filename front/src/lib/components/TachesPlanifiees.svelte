@@ -243,9 +243,9 @@
 								<!--  Affordance de dépliement DEVANT le libellé, pas au bout de la
 								      ligne : à droite, gris et petit, il n'était pas vu — l'utilisateur
 								      ignorait que les lignes s'ouvraient (11/08/2026). -->
-								<span class="chevron" class:open={ouverte === t.tache} aria-hidden="true"
-									>&#x25B8;</span
-								>
+								<span class="chevron" class:open={ouverte === t.tache} aria-hidden="true">
+									&#x25B8;
+								</span>
 								{LIBELLE_TACHE[t.tache] ?? t.tache}
 							</td>
 							<td class="muted">
@@ -267,16 +267,19 @@
 									<span
 										class="non-enregistre"
 										title="Cette exécution est antérieure à la migration 0137, qui a ajouté la colonne : on ne sait pas quel nœud l'a faite. Afficher le nœud qui répond aujourd'hui serait faux — le rôle alterne chaque nuit. La colonne se remplit à chaque exécution depuis."
-										>non enregistré</span
 									>
+										non enregistré
+									</span>
 								{:else}
 									<!-- Le nœud de la DERNIÈRE exécution. Les autres ont leur propre
 									     sous-ligne ci-dessous : plus rien n'est élu ni masqué (#331). -->
 									<span
 										title={t.noeuds?.length
 											? `Nœud de la dernière exécution. L'état de chaque nœud est détaillé sous cette ligne.`
-											: ''}>{t.noeud?.toUpperCase()}</span
+											: ''}
 									>
+										{t.noeud?.toUpperCase()}
+									</span>
 								{/if}
 							</td>
 							<td>

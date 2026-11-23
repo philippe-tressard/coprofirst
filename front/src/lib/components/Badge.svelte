@@ -34,8 +34,10 @@
 	class:badge-teal={teinte === 'badge-teal'}
 	class:badge-yellow={teinte === 'badge-yellow'}
 	class:compact
-	{...$$restProps}><slot /></span
+	{...$$restProps}
 >
+	<slot />
+</span>
 
 <style>
 	.compact {

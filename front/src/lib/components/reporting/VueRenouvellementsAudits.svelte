@@ -62,17 +62,18 @@
 						class="badge"
 						class:badge-orange={annee === ANNEE_COURANTE}
 						class:badge-blue={annee !== ANNEE_COURANTE}
-						>{diags.length} audit{diags.length > 1 ? 's' : ''}</span
 					>
+						{diags.length} audit{diags.length > 1 ? 's' : ''}
+					</span>
 				</h4>
 				<div class="report-table-wrap">
 					<table class="report-table compact">
 						<thead>
-							<tr
-								><th>Diagnostic</th><th>Code</th><th>Fréquence</th><th>Dernier rapport</th><th
-									>Prochaine échéance</th
-								><th>Statut</th></tr
-							>
+							<tr>
+								<th>Diagnostic</th><th>Code</th><th>Fréquence</th><th>Dernier rapport</th><th>
+									Prochaine échéance
+								</th><th>Statut</th>
+							</tr>
 						</thead>
 						<tbody>
 							{#each diags as d (d.id)}
@@ -84,9 +85,9 @@
 									<td>{d.prochaine_echeance ? fmtDate(d.prochaine_echeance) : '—'}</td>
 									<td>
 										{#if d.urgence === 'depasse'}<span class="badge badge-red">Dépassé</span>
-										{:else if d.urgence === 'annee'}<span class="badge badge-orange"
-												>À faire en {ANNEE_COURANTE}</span
-											>
+										{:else if d.urgence === 'annee'}<span class="badge badge-orange">
+												À faire en {ANNEE_COURANTE}
+											</span>
 										{:else}<span class="badge badge-blue">{annee}</span>
 										{/if}
 									</td>
@@ -109,11 +110,11 @@
 				<div class="report-table-wrap">
 					<table class="report-table compact">
 						<thead>
-							<tr
-								><th>Diagnostic</th><th>Code</th><th>Fréquence</th><th>Dernier rapport</th><th
-									>Statut</th
-								></tr
-							>
+							<tr>
+								<th>Diagnostic</th><th>Code</th><th>Fréquence</th><th>Dernier rapport</th><th>
+									Statut
+								</th>
+							</tr>
 						</thead>
 						<tbody>
 							{#each diagsPermanents as d (d.id)}
@@ -142,11 +143,11 @@
 				<div class="report-table-wrap">
 					<table class="report-table compact">
 						<thead>
-							<tr
-								><th>Diagnostic</th><th>Code</th><th>Fréquence</th><th>Dernier rapport</th><th
-									>Statut</th
-								></tr
-							>
+							<tr>
+								<th>Diagnostic</th><th>Code</th><th>Fréquence</th><th>Dernier rapport</th><th>
+									Statut
+								</th>
+							</tr>
 						</thead>
 						<tbody>
 							{#each diagsSansEcheance as d (d.id)}

@@ -338,11 +338,11 @@
 					{#if demandePending.batiment_nom_souhaite}
 						déménagement vers {demandePending.batiment_nom_souhaite}
 					{/if}
-					<span class="etat-demande"
-						><Badge teinte={STATUT_DEMANDE_BADGE[demandePending.statut_demande]}>
+					<span class="etat-demande">
+						<Badge teinte={STATUT_DEMANDE_BADGE[demandePending.statut_demande]}>
 							{STATUT_DEMANDE_LABEL[demandePending.statut_demande]}
-						</Badge></span
-					>
+						</Badge>
+					</span>
 				</EncartAvertissement>
 			</div>
 		{:else}

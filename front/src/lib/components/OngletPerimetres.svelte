@@ -314,8 +314,9 @@
 						<span
 							class="badge badge-blue"
 							title="Ce périmètre porte lui-même la portée globale : visible de tous les résidents"
-							>tous</span
 						>
+							tous
+						</span>
 					{:else if n.concerne_tous}
 						<!--  Hérité d'un ancêtre. Sans cette distinction, la pastille « tous »
 						      s'affichait à côté d'une case décochée — deux informations exactes
@@ -323,8 +324,9 @@
 						<span
 							class="badge badge-gray"
 							title="Hérité d’un périmètre parent — la case de ce nœud est décochée, et c’est normal"
-							>tous (hérité)</span
 						>
+							tous (hérité)
+						</span>
 					{/if}
 					{#if !n.selectionnable}
 						<span class="badge badge-gray" title="Non proposé à la saisie">regroupement</span>

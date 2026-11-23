@@ -64,9 +64,9 @@
 	<div class="modal-body">
 		<p class="saisie-message">{message}</p>
 		<div class="field">
-			<label for="saisie-texte"
-				>{libelle}{#if requis}<EtoileRequis vide={!valeur} />{/if}</label
-			>
+			<label for="saisie-texte">
+				{libelle}{#if requis}<EtoileRequis vide={!valeur} />{/if}
+			</label>
 			<!--  Ctrl/⌘+Entrée valide depuis la zone : Entrée seule y fait un retour à
 		      la ligne, et c'est la convention des zones multilignes du site.
 		      `autofocus` est VOULU, et déclaré dans `check-a11y.mjs` (#1045). -->

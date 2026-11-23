@@ -112,8 +112,10 @@
 							type="button"
 							class="btn btn-sm btn-outline btn-retirer"
 							aria-label="Retirer cette rubrique"
-							on:click={() => (saisie = saisie.filter((_, j) => j !== i))}>− Retirer</button
+							on:click={() => (saisie = saisie.filter((_, j) => j !== i))}
 						>
+							− Retirer
+						</button>
 					{/if}
 				</div>
 			{/each}
@@ -122,8 +124,9 @@
 					type="button"
 					class="btn btn-sm btn-outline"
 					on:click={() => (saisie = [...saisie, { titre: '', contenu: '' }])}
-					>+ Nouvelle rubrique</button
 				>
+					+ Nouvelle rubrique
+				</button>
 			{/if}
 			<p class="consignes-aide">
 				Une ligne par consigne. <code>**texte**</code> s’imprime en gras ;
@@ -158,8 +161,10 @@
 				class="btn-icon btn-icon-edit"
 				aria-label="Modifier les consignes"
 				title="Modifier les consignes"
-				on:click={modifier}><Icon name="pencil" size={13} /></button
+				on:click={modifier}
 			>
+				<Icon name="pencil" size={13} />
+			</button>
 		</div>
 	{/if}
 </EtatListe>

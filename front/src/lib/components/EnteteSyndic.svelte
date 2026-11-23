@@ -81,16 +81,18 @@
 {:else}
 	<div class="header-summary">
 		<span>{nom || 'Nom du syndic non renseigné'}{adresse ? ` · ${adresse}` : ''}</span>
-		{#if siteWeb}<span class="site-syndic"
-				>{SEPARATEUR.point}<a href={siteWeb} target="_blank" rel="noopener">Espace client</a></span
-			>{/if}
+		{#if siteWeb}<span class="site-syndic">
+				{SEPARATEUR.point}<a href={siteWeb} target="_blank" rel="noopener">Espace client</a>
+			</span>{/if}
 		<button
 			type="button"
 			class="btn-icon btn-icon-edit"
 			aria-label="Modifier"
 			title="Modifier"
-			on:click={() => (edition = true)}><IconeAction icone="pencil" /></button
+			on:click={() => (edition = true)}
 		>
+			<IconeAction icone="pencil" />
+		</button>
 	</div>
 {/if}
 

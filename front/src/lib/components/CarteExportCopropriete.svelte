@@ -129,9 +129,9 @@
 			)},
 			{fmtNombre(dernier.lignes)} lignes, {fmtNombre(dernier.fichiers)} fichiers{#if dernier.cree_le},
 				le {fmtDatetime(dernier.cree_le)}{/if}.
-			<button class="btn btn-sm btn-outline" type="button" on:click={relireDernier}
-				>Actualiser</button
-			>
+			<button class="btn btn-sm btn-outline" type="button" on:click={relireDernier}>
+				Actualiser
+			</button>
 		</p>
 	{:else if dernier}
 		<p class="aide">Aucun export dans le volume des sauvegardes.</p>

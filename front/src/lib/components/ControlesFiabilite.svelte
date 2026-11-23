@@ -133,10 +133,10 @@
 					{#if !nFail && !nWarn}
 						<span class="badge badge-green">Tout est vert</span>
 					{/if}
-					<span class="muted date"
-						>{textes.passage}
-						{heure(vuLe(r))}{SEPARATEUR.point}constats depuis {fmtDatetime(r.cree_le)}</span
-					>
+					<span class="muted date">
+						{textes.passage}
+						{heure(vuLe(r))}{SEPARATEUR.point}constats depuis {fmtDatetime(r.cree_le)}
+					</span>
 				</div>
 				<ListeConstats {constats} />
 			</div>
@@ -146,10 +146,10 @@
 			<div class="noeud">
 				<div class="noeud-entete">
 					<strong>Les deux nœuds</strong>
-					<span class="muted date"
-						>vu par {porteur.noeud?.toUpperCase()}{SEPARATEUR.point}{textes.passage}
-						{heure(vuLe(porteur))}</span
-					>
+					<span class="muted date">
+						vu par {porteur.noeud?.toUpperCase()}{SEPARATEUR.point}{textes.passage}
+						{heure(vuLe(porteur))}
+					</span>
 				</div>
 				<ListeConstats constats={porteur.details.communs} />
 			</div>

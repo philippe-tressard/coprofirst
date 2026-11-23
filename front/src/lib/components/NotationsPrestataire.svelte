@@ -161,13 +161,13 @@
 				>
 					<span class="chevron" aria-hidden="true">{exerciceOuvert === ex.annee ? '▾' : '▸'}</span>
 					<strong>Exercice {ex.libelle}</strong>
-					<span class="not-exercice-nombre"
-						>{fmtNombre(ex.nb_interventions)}
+					<span class="not-exercice-nombre">
+						{fmtNombre(ex.nb_interventions)}
 						{ex.nb_interventions > 1
 							? 'interventions'
 							: 'intervention'}{SEPARATEUR.point}{fmtNombre(ex.nb_notees)}
-						{ex.nb_notees > 1 ? 'notées' : 'notée'}</span
-					>
+						{ex.nb_notees > 1 ? 'notées' : 'notée'}
+					</span>
 					<span class="not-exercice-compte">
 						{#each ETATS as e (e)}
 							{#if ex.compte[e]}
@@ -198,12 +198,13 @@
 												? 'masquer'
 												: 'afficher'} l’avis de {n.auteur_nom ?? 'un membre du CS'}"
 											on:click|stopPropagation={() => (ouvert = basculerUn(ouvert, n.id))}
-											><Badge teinte={TEINTE_ETAT[n.etat]}
-												>{LIBELLE_ETAT[n.etat]}<span class="chevron not-chevron" aria-hidden="true"
-													>{ouvert === n.id ? '▾' : '▸'}</span
-												></Badge
-											></button
 										>
+											<Badge teinte={TEINTE_ETAT[n.etat]}>
+												{LIBELLE_ETAT[n.etat]}<span class="chevron not-chevron" aria-hidden="true">
+													{ouvert === n.id ? '▾' : '▸'}
+												</span>
+											</Badge>
+										</button>
 									{:else}
 										<span class="not-non-notee">non notée</span>
 									{/each}
@@ -222,8 +223,9 @@
 													title="Retirer cet avis"
 													aria-label="Retirer l’avis de {n.auteur_nom ?? 'ce membre'}"
 													on:click|stopPropagation={() => supprimer(n)}
-													><IconeAction icone="trash-2" /></button
 												>
+													<IconeAction icone="trash-2" />
+												</button>
 											{/if}
 										</div>
 										{#if n.commentaire}

@@ -206,17 +206,18 @@
 						rel="noopener"
 						on:click|stopPropagation
 					>
-						<IconeAction icone="file-text" /> PDF {#if annonce.taille_octets}<span class="ah-poids"
-								>{ahPoids(annonce.taille_octets)}</span
-							>{/if}
+						<IconeAction icone="file-text" /> PDF {#if annonce.taille_octets}<span class="ah-poids">
+								{ahPoids(annonce.taille_octets)}
+							</span>{/if}
 					</a>
 					<button
 						class="btn-icon"
 						title="Renvoyer au CS du périmètre"
 						aria-label="Renvoyer cette annonce au CS"
 						on:click|stopPropagation={() => ahRenvoyer(annonce)}
-						><IconeAction icone="mail" /></button
 					>
+						<IconeAction icone="mail" />
+					</button>
 					<!--  Le geste n'est offert que s'il a un effet (#515, 02/09/2026) :
 					      une affiche archivée par le TEMPS ne se restaure pas. La règle
 					      est SERVIE (`peut_archiver`, `peut_restaurer`, #2525). -->
@@ -226,8 +227,9 @@
 							title={annonce.archivee ? 'Restaurer' : 'Archiver'}
 							aria-label={annonce.archivee ? 'Restaurer cette annonce' : 'Archiver cette annonce'}
 							on:click|stopPropagation={() => ahArchiver(annonce)}
-							><IconeAction icone={annonce.archivee ? 'undo-2' : 'archive'} /></button
 						>
+							<IconeAction icone={annonce.archivee ? 'undo-2' : 'archive'} />
+						</button>
 					{/if}
 					{#if annonce.peut_supprimer}
 						<button
@@ -235,8 +237,9 @@
 							title="Supprimer définitivement"
 							aria-label="Supprimer définitivement cette annonce"
 							on:click|stopPropagation={() => ahSupprimer(annonce)}
-							><IconeAction icone="trash-2" /></button
 						>
+							<IconeAction icone="trash-2" />
+						</button>
 					{/if}
 				</svelte:fragment>
 				<!--  L'aperçu passe par l'en-tête, avant la dernière ligne — avec la
@@ -252,15 +255,18 @@
 				<svelte:fragment slot="tags">
 					{#if annonce.archivee}<span class="badge badge-gray">Archivée</span>{/if}
 					<BadgePerimetre libelle={annonce.perimetre_libelle} />
-					{#if annonce.ticket_id}<span class="badge badge-gray" title="Générée depuis une actualité"
-							>&#x1F4F0; Actualité</span
-						>{/if}
-					{#if annonce.destinataires.length}
-						<span class="badge badge-gray"
-							>&#x2709; {annonce.destinataires.length} destinataire{annonce.destinataires.length > 1
-								? 's'
-								: ''}</span
+					{#if annonce.ticket_id}<span
+							class="badge badge-gray"
+							title="Générée depuis une actualité"
 						>
+							&#x1F4F0; Actualité
+						</span>{/if}
+					{#if annonce.destinataires.length}
+						<span class="badge badge-gray">
+							&#x2709; {annonce.destinataires.length} destinataire{annonce.destinataires.length > 1
+								? 's'
+								: ''}
+						</span>
 					{:else}
 						<span class="badge badge-orange">Non envoyée</span>
 					{/if}

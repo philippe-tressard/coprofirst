@@ -90,8 +90,8 @@
 >
 	{#if estBatiment}
 		{#if libres.length}
-			<label class="field"
-				><span>Bâtiment<EtoileRequis /></span>
+			<label class="field">
+				<span>Bâtiment<EtoileRequis /></span>
 				<select bind:value={choix}>
 					<option value="nouveau">Nouveau bâtiment</option>
 					{#each libres as b (b.id)}
@@ -99,15 +99,15 @@
 					{/each}
 				</select>
 				{#if !neuf}
-					<span class="aide"
-						>Celui que représente la copie : ses résidents liront ce qui la cible.</span
-					>
+					<span class="aide">
+						Celui que représente la copie : ses résidents liront ce qui la cible.
+					</span>
 				{/if}
 			</label>
 		{/if}
 		{#if neuf}
-			<label class="field"
-				><span>Numéro du nouveau bâtiment<EtoileRequis vide={!numero.trim()} /></span>
+			<label class="field">
+				<span>Numéro du nouveau bâtiment<EtoileRequis vide={!numero.trim()} /></span>
 				<input bind:value={numero} autocomplete="off" />
 				<span class="aide">
 					{erreurBatiments ||

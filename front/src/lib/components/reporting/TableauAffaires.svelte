@@ -141,9 +141,9 @@
 						</td>
 					{/if}
 					<td class="age">
-						<Badge teinte={TEINTE_AGE[a.anciennete]} title="{fmtNombre(a.age_jours)} jours"
-							>{fmtNombre(a.age_jours)} j</Badge
-						>
+						<Badge teinte={TEINTE_AGE[a.anciennete]} title="{fmtNombre(a.age_jours)} jours">
+							{fmtNombre(a.age_jours)} j
+						</Badge>
 					</td>
 					<td class="date">{fmtDate(a.ouverte_le)}</td>
 					<td class="affaire">
@@ -158,34 +158,36 @@
 						{/if}
 						{#if a.a_evolue && !visites}
 							<!--  Le signal « a évolué » (#2044) : sous le titre, icône ET libellé. -->
-							<span class="evolution"
-								><Badge teinte="badge-orange" compact
-									><Icon name="bell" size={12} /> {motifEvolution(a.motif_evolution)}</Badge
-								></span
-							>
+							<span class="evolution">
+								<Badge teinte="badge-orange" compact>
+									<Icon name="bell" size={12} />
+									{motifEvolution(a.motif_evolution)}
+								</Badge>
+							</span>
 						{/if}
 						<!--  Le périmètre — tu quand c'est celui par défaut (règle 4). -->
 						<BadgePerimetre libelle={a.perimetre_libelle} />
 						{#if a.apercu}
 							<p class="descriptif clamp-rapport">
-								{#if a.apercu_ia}<span class="ia-signe" title="Résumé de l’assistant"
-										>✨<span class="sr-only">Résumé de l’assistant :</span></span
-									>{/if}{a.apercu}
+								{#if a.apercu_ia}<span class="ia-signe" title="Résumé de l’assistant">
+										✨<span class="sr-only">Résumé de l’assistant :</span>
+									</span>{/if}{a.apercu}
 							</p>
 						{/if}
 						{#if crs && (ajout || crs.has(a.id))}
 							<p class="cr">
 								{#if crs.get(a.id)}
-									<Badge teinte={crs.get(a.id)?.brouillon ? 'badge-gray' : 'badge-green'} compact
-										>{etatCr(crs.get(a.id))}</Badge
-									>
+									<Badge teinte={crs.get(a.id)?.brouillon ? 'badge-gray' : 'badge-green'} compact>
+										{etatCr(crs.get(a.id))}
+									</Badge>
 									{#if crs.get(a.id)?.etat_cible && crs.get(a.id)?.etat_cible !== a.statut}
 										<Badge
 											teinte="badge-blue"
 											compact
 											title="État posé à la validation du compte rendu"
-											>→ {crs.get(a.id)?.etat_cible_libelle}</Badge
 										>
+											→ {crs.get(a.id)?.etat_cible_libelle}
+										</Badge>
 									{/if}
 									{#if marques.get(a.id)}
 										<Badge teinte="badge-orange" compact>{marques.get(a.id)}</Badge>
@@ -206,9 +208,9 @@
 					</td>
 					<td class="categorie">
 						{#if visites && a.etat_visite}
-							<Badge teinte={ETATS_VISITE[a.etat_visite].teinte}
-								>{ETATS_VISITE[a.etat_visite].libelle}</Badge
-							>
+							<Badge teinte={ETATS_VISITE[a.etat_visite].teinte}>
+								{ETATS_VISITE[a.etat_visite].libelle}
+							</Badge>
 						{:else}
 							{a.libelle_categorie}
 						{/if}

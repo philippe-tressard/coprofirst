@@ -214,8 +214,10 @@
 						👤 Saisi par <strong>{ticket.auteur_nom ?? 'inconnu'}</strong> pour
 						<strong>{ticket.saisi_pour_affichage}</strong>
 						{#if ticket.saisi_pour_email}{SEPARATEUR.point}<a
-								href="mailto:{ticket.saisi_pour_email}">{ticket.saisi_pour_email}</a
+								href="mailto:{ticket.saisi_pour_email}"
 							>
+								{ticket.saisi_pour_email}
+							</a>
 						{/if}
 					</p>
 				{/if}

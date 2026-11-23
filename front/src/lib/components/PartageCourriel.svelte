@@ -70,8 +70,10 @@
 			type="button"
 			class="btn btn-outline btn-sm envoyer"
 			on:click={ouvrir}
-			on:keydown={clavier}>✉️ L’envoyer par courriel</button
+			on:keydown={clavier}
 		>
+			✉️ L’envoyer par courriel
+		</button>
 	{:else}
 		<form class="formulaire" on:submit|preventDefault={envoyer} novalidate>
 			<!--  `.field` porte la peau du champ et son focus (`champs.css`). -->

@@ -90,10 +90,10 @@
 			<input bind:value={valeurs.nom} required />
 			<!--  Le seul champ du nom (#2056) : il venait d’avoir un jumeau sous le même
 			      libellé dans Paramétrage site, et c’était celui-là que tout le site lisait. -->
-			<span class="aide"
-				>Affiché sur la page de connexion, dans le menu, en tête des courriels et sous l’icône de
-				l’application installée sur le téléphone.</span
-			>
+			<span class="aide">
+				Affiché sur la page de connexion, dans le menu, en tête des courriels et sous l’icône de
+				l’application installée sur le téléphone.
+			</span>
 		</label>
 		<label class="field">
 			<span>Adresse</span>
@@ -145,9 +145,9 @@
 					<option value={i + 1}>{nom}{i === 0 ? ' (année civile)' : ''}</option>
 				{/each}
 			</select>
-			<span class="aide"
-				>La synthèse d'une affaire close se compare aux affaires de cet exercice.</span
-			>
+			<span class="aide">
+				La synthèse d'une affaire close se compare aux affaires de cet exercice.
+			</span>
 		</label>
 	</div>
 </div>

@@ -324,8 +324,10 @@
 							class="photo-retirer"
 							title="Retirer cette photo"
 							aria-label="Retirer {p.nom}"
-							on:click={() => retirer(p)}>×</button
+							on:click={() => retirer(p)}
 						>
+							×
+						</button>
 					{/if}
 				</Vignette>
 			{/each}

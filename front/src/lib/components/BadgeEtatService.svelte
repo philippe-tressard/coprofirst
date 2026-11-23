@@ -22,5 +22,7 @@
 	class="badge"
 	class:badge-green={etat === 'actif'}
 	class:badge-gray={etat === 'coupe'}
-	class:badge-orange={etat === 'incomplet'}>{LIBELLE_ETAT[etat]}</span
+	class:badge-orange={etat === 'incomplet'}
 >
+	{LIBELLE_ETAT[etat]}
+</span>

@@ -56,12 +56,12 @@
 	déjà publiés.
 </p>
 
-<label class="field"
-	><span>Libellé<EtoileRequis vide={!form.libelle.trim()} /></span>
+<label class="field">
+	<span>Libellé<EtoileRequis vide={!form.libelle.trim()} /></span>
 	<input bind:value={form.libelle} required />
 </label>
-<label class="field"
-	>Libellé court
+<label class="field">
+	Libellé court
 	<input bind:value={form.libelle_court} placeholder={libelleParDefaut} />
 	<span class="aide">Employé sur les pastilles étroites du calendrier.</span>
 </label>
@@ -71,13 +71,13 @@
 	<span class="aide"> Affichée sur la pastille du sélecteur, devant le libellé. </span>
 </div>
 
-<label class="field"
-	>Description
+<label class="field">
+	Description
 	<textarea bind:value={form.description} rows="4"></textarea>
 	<span class="aide"> Affichée sous le sélecteur, au moment où l’on choisit ce périmètre. </span>
 </label>
-<label class="field"
-	>Ordre
+<label class="field">
+	Ordre
 	<input type="number" bind:value={form.ordre} />
 </label>
 

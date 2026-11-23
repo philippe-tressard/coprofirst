@@ -82,8 +82,10 @@
 				class="btn-icon-danger"
 				aria-label="Supprimer définitivement l'avis"
 				title="Supprimer définitivement"
-				on:click|stopPropagation={onSupprimer}><IconeAction icone="trash-2" /></button
+				on:click|stopPropagation={onSupprimer}
 			>
+				<IconeAction icone="trash-2" />
+			</button>
 		{/if}
 	</svelte:fragment>
 

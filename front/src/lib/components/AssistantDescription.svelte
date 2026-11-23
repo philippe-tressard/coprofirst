@@ -173,9 +173,9 @@
 				<h5 class="assistant-titre">
 					Proposition de l’assistant
 					{#if proposition.titre_modifie}<span class="badge badge-orange">Titre modifié</span>{/if}
-					{#if proposition.description_modifiee}<span class="badge badge-orange"
-							>Description modifiée</span
-						>{/if}
+					{#if proposition.description_modifiee}<span class="badge badge-orange">
+							Description modifiée
+						</span>{/if}
 				</h5>
 				{#if rienChange}
 					<p class="aide">L’assistant n’a rien changé au texte.</p>
@@ -198,9 +198,9 @@
 				<div class="assistant-actions">
 					<button class="btn btn-outline btn-sm" type="button" on:click={ignorer}>Ignorer</button>
 					{#if !rienChange}
-						<button class="btn btn-primary btn-sm" type="button" on:click={appliquer}
-							>Appliquer</button
-						>
+						<button class="btn btn-primary btn-sm" type="button" on:click={appliquer}>
+							Appliquer
+						</button>
 					{/if}
 				</div>
 			</section>

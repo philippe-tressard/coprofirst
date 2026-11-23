@@ -62,11 +62,11 @@
 					<td><strong>{p.nom}</strong></td>
 					<td>{$libelleEquipement(p.specialite)}</td>
 					<td>{typePrestataireLabel(p.type_prestataire)}</td>
-					<td
-						><button class="btn btn-sm btn-outline" on:click={() => loadPrestSynthese(p.id)}
-							>Fiche synthèse</button
-						></td
-					>
+					<td>
+						<button class="btn btn-sm btn-outline" on:click={() => loadPrestSynthese(p.id)}>
+							Fiche synthèse
+						</button>
+					</td>
 				</tr>
 			{/each}
 		</tbody>
@@ -80,9 +80,9 @@
 	<section class="report-card bloc-espace-large">
 		<div class="entete-fiche">
 			<h3 class="titre-fiche">&#x1F4C4; Fiche{SEPARATEUR.tiret}{reportPrestSynth.nom}</h3>
-			<button class="btn btn-sm btn-outline" on:click={() => (reportPrestSynth = null)}
-				>✕ Fermer</button
-			>
+			<button class="btn btn-sm btn-outline" on:click={() => (reportPrestSynth = null)}>
+				✕ Fermer
+			</button>
 		</div>
 		<div class="report-grid-2 bloc-espace">
 			<div>
@@ -150,10 +150,9 @@
 			<h4 class="sous-titre-fiche">Contrats</h4>
 			<div class="report-table-wrap">
 				<table class="report-table compact">
-					<thead
-						><tr><th>Libellé</th><th>Équipement</th><th>Début</th><th>Prochaine visite</th></tr
-						></thead
-					>
+					<thead>
+						<tr><th>Libellé</th><th>Équipement</th><th>Début</th><th>Prochaine visite</th></tr>
+					</thead>
 					<tbody>
 						{#each reportPrestSynth.contrats as c (c)}
 							<tr>

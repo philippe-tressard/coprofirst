@@ -66,8 +66,8 @@
 				resume={abreviationDe(form)}
 			>
 				<GrilleIcones icones={ICONES_EQUIPEMENT} bind:valeur={form.icone} libelle="Icône" />
-				<label class="field abreviation"
-					>Abréviation<input
+				<label class="field abreviation">
+					Abréviation<input
 						bind:value={form.abreviation}
 						maxlength={ABREVIATION_MAX}
 						placeholder={abreviationDe({ abreviation: null, libelle: form.libelle || 'Autre' })}

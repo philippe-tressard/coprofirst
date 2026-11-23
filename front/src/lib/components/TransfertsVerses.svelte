@@ -208,8 +208,10 @@
 							type="button"
 							class="btn btn-outline btn-sm"
 							disabled={enCours}
-							on:click={() => garder(t)}>Garder ici</button
+							on:click={() => garder(t)}
 						>
+							Garder ici
+						</button>
 					</div>
 				{:else}
 					<div class="transfert-decision" role="group" aria-labelledby="transfert-{t.id}-question">
@@ -238,10 +240,13 @@
 							>
 								{#if cible}
 									<Icon name="arrow-right" size={16} />
-									<span
-										>Déplacer vers <span class="numero">#{cible.numero}</span
-										>{SEPARATEUR.point}<span class="titre">{cible.titre}</span></span
-									>
+									<span>
+										Déplacer vers <span class="numero">#{cible.numero}</span>{SEPARATEUR.point}<span
+											class="titre"
+										>
+											{cible.titre}
+										</span>
+									</span>
 								{:else}
 									Déplacer vers l’{affaire} choisie
 								{/if}
@@ -257,22 +262,28 @@
 							type="button"
 							class="btn btn-outline btn-sm"
 							disabled={enCours}
-							on:click={() => garder(t)}>Garder ici</button
+							on:click={() => garder(t)}
 						>
+							Garder ici
+						</button>
 						{#if t.peut_deplacer && !t.affaire_creee}
 							<button
 								type="button"
 								class="btn btn-outline btn-sm"
 								disabled={enCours}
-								on:click={() => versNouvelle(t)}>En faire une nouvelle {affaire}</button
+								on:click={() => versNouvelle(t)}
 							>
+								En faire une nouvelle {affaire}
+							</button>
 						{/if}
 						<button
 							type="button"
 							class="btn btn-outline btn-sm"
 							disabled={enCours}
-							on:click={() => annuler(t)}>Annuler le transfert</button
+							on:click={() => annuler(t)}
 						>
+							Annuler le transfert
+						</button>
 					</div>
 				{/if}
 			</div>

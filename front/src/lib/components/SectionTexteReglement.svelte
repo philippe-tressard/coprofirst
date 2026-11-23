@@ -128,8 +128,10 @@
 				aria-label={edition ? 'Annuler la modification' : 'Modifier le texte du règlement'}
 				title={edition ? 'Annuler la modification' : 'Modifier'}
 				aria-pressed={edition}
-				on:click={basculerEdition}><IconeAction icone="pencil" /></button
+				on:click={basculerEdition}
 			>
+				<IconeAction icone="pencil" />
+			</button>
 		{/if}
 	</div>
 	{#if $isAdmin && etat.categorie_id !== null}

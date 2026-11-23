@@ -288,11 +288,13 @@
 								class="btn-icon-edit"
 								aria-label="Modifier"
 								title="Modifier"
-								on:click={() => ouvrirEditionLocataire(premierBail)}>&#x270F;&#xFE0F;</button
+								on:click={() => ouvrirEditionLocataire(premierBail)}
 							>
-							<button class="btn btn-sm" on:click={() => ouvrirAccesBail(premierBail)}
-								>&#x1F511; Accès</button
-							>
+								&#x270F;&#xFE0F;
+							</button>
+							<button class="btn btn-sm" on:click={() => ouvrirAccesBail(premierBail)}>
+								&#x1F511; Accès
+							</button>
 						</div>
 					{/if}
 

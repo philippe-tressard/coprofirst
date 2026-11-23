@@ -58,9 +58,9 @@
 </script>
 
 <div class="field">
-	<label for={id}
-		>{libelle}{#if requis}<EtoileRequis vide={!valeur} />{/if}</label
-	>
+	<label for={id}>
+		{libelle}{#if requis}<EtoileRequis vide={!valeur} />{/if}
+	</label>
 	<div class="saisie">
 		<input
 			{id}

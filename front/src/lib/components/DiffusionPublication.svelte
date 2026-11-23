@@ -84,9 +84,9 @@
 {:else if annonceHall}
 	<p class="aide">
 		&#x1F4C4; Une affiche PDF sera générée à partir du titre, du contenu, du périmètre et de l'image
-		de cette actualité, puis envoyée aux membres du CS du périmètre. Elle sera consultable dans <strong
-			>Espace CS{SEPARATEUR.fleche}Annonces Hall</strong
-		>.
+		de cette actualité, puis envoyée aux membres du CS du périmètre. Elle sera consultable dans <strong>
+			Espace CS{SEPARATEUR.fleche}Annonces Hall
+		</strong>.
 	</p>
 {/if}
 

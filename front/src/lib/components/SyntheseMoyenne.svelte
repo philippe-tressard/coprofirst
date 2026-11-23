@@ -64,15 +64,15 @@
 			{/each}
 		</dl>
 		<figcaption class="graphique-legende">
-			<span class="graphique-cle"
-				><span class="graphique-pastille affaire" aria-hidden="true"></span>cette affaire</span
-			>
-			<span class="graphique-cle"
-				><span class="graphique-pastille moyenne-barre" aria-hidden="true"></span>moyenne des {fmtNombre(
+			<span class="graphique-cle">
+				<span class="graphique-pastille affaire" aria-hidden="true"></span>cette affaire
+			</span>
+			<span class="graphique-cle">
+				<span class="graphique-pastille moyenne-barre" aria-hidden="true"></span>moyenne des {fmtNombre(
 					comparaison.nombre,
 				)}
-				affaires « {nomCategorie(comparaison.categorie)} » closes de l'exercice {comparaison.exercice}</span
-			>
+				affaires « {nomCategorie(comparaison.categorie)} » closes de l'exercice {comparaison.exercice}
+			</span>
 		</figcaption>
 	</figure>
 {/if}

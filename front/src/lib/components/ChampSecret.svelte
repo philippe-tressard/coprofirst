@@ -51,9 +51,9 @@
 </script>
 
 <label class="field">
-	<span
-		>{libelle}{#if requis}<EtoileRequis vide={!rempli} />{/if}</span
-	>
+	<span>
+		{libelle}{#if requis}<EtoileRequis vide={!rempli} />{/if}
+	</span>
 	<div class="champ-secret">
 		<input
 			type="password"

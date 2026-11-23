@@ -186,15 +186,14 @@
 			</div>
 		{:else}
 			<div class="header-summary">
-				<span
-					>{agAnnee ? `AG ${agAnnee}` : 'Année AG non renseignée'}{agDate
+				<span>
+					{agAnnee ? `AG ${agAnnee}` : 'Année AG non renseignée'}{agDate
 						? ` · ${fmtDateShort(agDate)}`
-						: ''}</span
-				>
-				{#if whatsappUrl}<span class="lien-whatsapp"
-						>{SEPARATEUR.point}<a href={whatsappUrl} target="_blank" rel="noopener">WhatsApp</a
-						></span
-					>{/if}
+						: ''}
+				</span>
+				{#if whatsappUrl}<span class="lien-whatsapp">
+						{SEPARATEUR.point}<a href={whatsappUrl} target="_blank" rel="noopener">WhatsApp</a>
+					</span>{/if}
 				<ActionsMembre barre={false} onModifier={() => (enTeteEdite = true)} />
 			</div>
 		{/if}
@@ -212,8 +211,10 @@
 		{#if m.est_president}
 			<span
 				class="summary-role-badge summary-role-badge-president"
-				title="Président du Conseil Syndical">&#x1F451; Président</span
+				title="Président du Conseil Syndical"
 			>
+				&#x1F451; Président
+			</span>
 		{/if}
 	</svelte:fragment>
 

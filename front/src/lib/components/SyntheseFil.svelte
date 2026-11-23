@@ -113,9 +113,10 @@
 					disabled={enCours}
 					aria-busy={enCours}
 					on:click={produire}
-					><IconeIA {enCours} />
-					{enCours ? 'Rédaction…' : 'Produire la synthèse'}</button
 				>
+					<IconeIA {enCours} />
+					{enCours ? 'Rédaction…' : 'Produire la synthèse'}
+				</button>
 			</div>
 		{:else if enAttente}
 			<p class="aide">

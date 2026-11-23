@@ -61,9 +61,13 @@
 
 <div class="largeur-saisie">
 	<div class="jv-outils">
-		<button class="btn btn-outline jv-rafraichir" on:click={recharger} aria-label={libelleRecharger}
-			><IconeAction icone="refresh-cw" /></button
+		<button
+			class="btn btn-outline jv-rafraichir"
+			on:click={recharger}
+			aria-label={libelleRecharger}
 		>
+			<IconeAction icone="refresh-cw" />
+		</button>
 	</div>
 	{#if erreur}
 		<EtatListe compact {erreur} />
@@ -78,8 +82,9 @@
 							<span class="jv-titre">{e.titre}</span>
 							<span class="jv-meta">
 								<Badge teinte={TEINTE_DU_TON[e.ton]}>{e.verdict}</Badge>
-								{#if e.date}<time class="jv-date" datetime={e.date}>{fmtDatetimeShort(e.date)}</time
-									>{/if}
+								{#if e.date}<time class="jv-date" datetime={e.date}>
+										{fmtDatetimeShort(e.date)}
+									</time>{/if}
 								{#if pliable}<span class="jv-chevron" aria-hidden="true">&#x203A;</span>{/if}
 							</span>
 						</svelte:element>

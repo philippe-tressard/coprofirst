@@ -35,10 +35,9 @@
 {:else}
 	<div class="card carte-historique">
 		<table class="table table-historique">
-			<thead class="sticky-head"
-				><tr><th>Date</th><th>Template</th><th>Destinataire</th><th>Sujet</th><th>Statut</th></tr
-				></thead
-			>
+			<thead class="sticky-head">
+				<tr><th>Date</th><th>Template</th><th>Destinataire</th><th>Sujet</th><th>Statut</th></tr>
+			</thead>
 			<tbody>
 				{#each historique as h (h.id)}
 					<tr>
@@ -48,9 +47,9 @@
 						<td class="sujet" title={h.sujet}>{h.sujet || '—'}</td>
 						<td>
 							{#if h.statut === 'succes'}<span class="badge badge-green">✓</span>
-							{:else if h.statut === 'erreur'}<span class="badge badge-red" title={h.erreur ?? ''}
-									>✗</span
-								>
+							{:else if h.statut === 'erreur'}<span class="badge badge-red" title={h.erreur ?? ''}>
+									✗
+								</span>
 							{:else}<span class="badge badge-gray" title={h.erreur ?? ''}>ignoré</span>{/if}
 						</td>
 					</tr>

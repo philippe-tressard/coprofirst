@@ -190,11 +190,11 @@
 			      titre seul ne dit pas si l'on reprend une actualité, un ticket ou
 			      un événement — et on ne rédige pas une affiche pareil selon le cas. -->
 			{#each pubs as source (source.cle)}
-				<option value={source.cle}
-					>{source.epingle ? '📌 ' : ''}{source.famille}{SEPARATEUR.point}{fmtDateShort(
+				<option value={source.cle}>
+					{source.epingle ? '📌 ' : ''}{source.famille}{SEPARATEUR.point}{fmtDateShort(
 						source.date,
-					)}{SEPARATEUR.point}{source.titre}</option
-				>
+					)}{SEPARATEUR.point}{source.titre}
+				</option>
 			{/each}
 		</select>
 	</div>
@@ -236,9 +236,9 @@
 	      balisage l'empêche, et c'est très exactement la raison d'être de `Pastille`. -->
 	<div class="perimetre-pills">
 		{#each formats as f (f.val)}
-			<Pastille petite active={format === f.val} on:click={() => (format = f.val)}
-				>{f.label}</Pastille
-			>
+			<Pastille petite active={format === f.val} on:click={() => (format = f.val)}>
+				{f.label}
+			</Pastille>
 		{/each}
 	</div>
 	<p class="aide">

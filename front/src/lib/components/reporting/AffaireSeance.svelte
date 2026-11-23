@@ -67,9 +67,9 @@
 	{#if ouvert}
 		<form class="formulaire" on:submit|preventDefault={ouvrir}>
 			<div class="field">
-				<label for="seance-titre-{pointId}"
-					>Titre de l’affaire<EtoileRequis vide={!titre.trim()} /></label
-				>
+				<label for="seance-titre-{pointId}">
+					Titre de l’affaire<EtoileRequis vide={!titre.trim()} />
+				</label>
 				<input id="seance-titre-{pointId}" type="text" maxlength="200" bind:value={titre} />
 			</div>
 			<div class="field">

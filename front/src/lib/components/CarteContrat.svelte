@@ -167,22 +167,23 @@
 		      remplace. Le sens inverse n'est pas saisi, il est déduit par l'API
 		      (`utils/remplacement_contrat`) — les deux pastilles ne peuvent pas diverger. -->
 		{#if contrat.remplace_par}
-			<span class="badge badge-gray"
-				>🔁 Remplacé par {contrat.remplace_par.prestataire_nom}{SEPARATEUR.point}dès le {fmtDateShort(
+			<span class="badge badge-gray">
+				🔁 Remplacé par {contrat.remplace_par.prestataire_nom}{SEPARATEUR.point}dès le {fmtDateShort(
 					contrat.remplace_par.date_debut,
-				)}</span
-			>
+				)}
+			</span>
 		{:else if contrat.resilie_le}
-			<span class="badge badge-gray"
-				>{contrat.resilie ? 'Résilié le' : 'Résilié au'} {fmtDateShort(contrat.resilie_le)}</span
-			>
+			<span class="badge badge-gray">
+				{contrat.resilie ? 'Résilié le' : 'Résilié au'}
+				{fmtDateShort(contrat.resilie_le)}
+			</span>
 		{/if}
 		{#each contrat.remplace as ancien (ancien.id)}
-			<span class="badge badge-gray"
-				>🔁 Remplace {ancien.prestataire_nom}{ancien.resilie_le
+			<span class="badge badge-gray">
+				🔁 Remplace {ancien.prestataire_nom}{ancien.resilie_le
 					? ` (résilié au ${fmtDateShort(ancien.resilie_le)})`
-					: ''}</span
-			>
+					: ''}
+			</span>
 		{/each}
 		{#if contrat.prochaine_visite && enRetard}
 			<span class="badge badge-red">⚠️ Visite en retard</span>
@@ -206,8 +207,9 @@
 				disabled={syntheseEnCoursId !== null}
 				aria-busy={syntheseEnCoursId === contrat.id}
 				on:click|stopPropagation={() => onSynthetiser(contrat)}
-				><IconeIA enCours={syntheseEnCoursId === contrat.id} /></button
 			>
+				<IconeIA enCours={syntheseEnCoursId === contrat.id} />
+			</button>
 		{/if}
 	</svelte:fragment>
 
@@ -249,9 +251,9 @@
 					<div><span class="detail-label">Fréquence</span>{contrat.frequence_libelle}</div>
 				{/if}
 				{#if contrat.prochaine_visite}<div>
-						<span class="detail-label">Prochaine visite</span><span class="prochaine-visite"
-							>🗓 {fmtDateShort(contrat.prochaine_visite)}</span
-						>
+						<span class="detail-label">Prochaine visite</span><span class="prochaine-visite">
+							🗓 {fmtDateShort(contrat.prochaine_visite)}
+						</span>
 					</div>{/if}
 				{#if contrat.resilie_le}
 					<div><span class="detail-label">Résilié le</span>{fmtDateShort(contrat.resilie_le)}</div>
@@ -264,8 +266,9 @@
 				{/if}
 				{#each contrat.remplace as ancien (ancien.id)}
 					<div>
-						<span class="detail-label">Remplace</span
-						>{ancien.libelle}{SEPARATEUR.tiret}{ancien.prestataire_nom}
+						<span class="detail-label">
+							Remplace
+						</span>{ancien.libelle}{SEPARATEUR.tiret}{ancien.prestataire_nom}
 					</div>
 				{/each}
 			</div>

@@ -295,8 +295,10 @@
 					class="btn-icon-edit"
 					aria-label="Modifier la fiche de la résidence"
 					title="Modifier"
-					on:click={startEdit}><IconeAction icone="pencil" /></button
+					on:click={startEdit}
 				>
+					<IconeAction icone="pencil" />
+				</button>
 			{/if}
 		</div>
 
@@ -355,9 +357,9 @@
 		<svelte:fragment slot="badges" let:doc>
 			<!--  Une capsule NEUTRE : elle décrit, elle ne signale pas (la page
 			      Affaires, standard du site depuis le 10/10/2026). -->
-			<span class="badge badge-gray"
-				>{doc.batiment_id ? batimentLabel(doc.batiment_id) : 'Copropriété'}</span
-			>
+			<span class="badge badge-gray">
+				{doc.batiment_id ? batimentLabel(doc.batiment_id) : 'Copropriété'}
+			</span>
 		</svelte:fragment>
 	</RubriqueDocuments>
 

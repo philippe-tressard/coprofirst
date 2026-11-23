@@ -126,9 +126,10 @@
 <section class="card config-section">
 	<h2 class="config-section-title"><Icon name="user" size={17} />Identité nommée par les textes</h2>
 	<p class="muted intro-texte">
-		Écrivez un champ entre doubles crochets{SEPARATEUR.tiret}<code>[[syndic]]</code
-		>{SEPARATEUR.tiret}: chaque page le remplace par sa valeur ci-dessous, ou par « À RENSEIGNER »
-		s'il n'en a pas.
+		Écrivez un champ entre doubles crochets{SEPARATEUR.tiret}<code>
+			[[syndic]]
+		</code>{SEPARATEUR.tiret}: chaque page le remplace par sa valeur ci-dessous, ou par « À
+		RENSEIGNER » s'il n'en a pas.
 	</p>
 	<div class="largeur-saisie">
 		<label class="field">
@@ -138,19 +139,20 @@
 				bind:value={siteConfig.contact_donnees}
 				placeholder="donnees@example.com"
 			/>
-			<span class="aide"
-				>Le champ <code>[[contact]]</code> : joignable sans compte, au nom du responsable du
+			<span class="aide">
+				Le champ <code>[[contact]]</code> : joignable sans compte, au nom du responsable du
 				traitement{SEPARATEUR.tiret}un droit d'effacement s'exerce souvent après la suppression du
-				compte.</span
-			>
+				compte.
+			</span>
 		</label>
 	</div>
 	<dl class="champs">
 		{#each champs as c (c.nom)}
 			<dt><code>[[{c.nom}]]</code></dt>
 			<dd>
-				{#if c.valeur}{c.valeur}{:else}<span class="a-renseigner">À renseigner</span
-					>{SEPARATEUR.tiret}{c.ou}{/if}
+				{#if c.valeur}{c.valeur}{:else}<span class="a-renseigner">
+						À renseigner
+					</span>{SEPARATEUR.tiret}{c.ou}{/if}
 			</dd>
 		{/each}
 	</dl>

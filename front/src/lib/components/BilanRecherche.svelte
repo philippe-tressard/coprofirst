@@ -21,9 +21,9 @@
 
 <p class="bilan-recherche" role="status">
 	<slot />
-	<button type="button" class="btn btn-outline btn-sm effacer" on:click={() => (recherche = '')}
-		>Effacer la recherche</button
-	>
+	<button type="button" class="btn btn-outline btn-sm effacer" on:click={() => (recherche = '')}>
+		Effacer la recherche
+	</button>
 </p>
 
 <style>

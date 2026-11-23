@@ -170,9 +170,9 @@
 			<EtatListe chargement messageChargement="L’assistant propose un titre et une description…" />
 		{:else}
 			<div class="field">
-				<label for="fusion-titre-{principale.id}"
-					>Titre de l’affaire fusionnée<EtoileRequis vide={!titre.trim()} /></label
-				>
+				<label for="fusion-titre-{principale.id}">
+					Titre de l’affaire fusionnée<EtoileRequis vide={!titre.trim()} />
+				</label>
 				<input id="fusion-titre-{principale.id}" type="text" maxlength="200" bind:value={titre} />
 			</div>
 			<SectionDescription

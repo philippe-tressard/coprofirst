@@ -44,8 +44,10 @@
 		class="btn-icon-edit"
 		aria-label="Modifier"
 		title="Modifier"
-		on:click={() => dispatch('editer')}><IconeAction icone="pencil" /></button
+		on:click={() => dispatch('editer')}
 	>
+		<IconeAction icone="pencil" />
+	</button>
 	<!--  Au niveau 3, plus de sous-périmètre : l'arborescence s'y arrête
 	      (`niveaux_libres`, servi par `utils/perimetres/niveaux`, 10/11/2026). -->
 	{#if noeud.niveaux_libres > 0}
@@ -53,24 +55,30 @@
 			class="btn-icon"
 			aria-label="Ajouter un sous-périmètre"
 			title="Ajouter un sous-périmètre"
-			on:click={() => dispatch('creer')}><IconeAction icone="plus" /></button
+			on:click={() => dispatch('creer')}
 		>
+			<IconeAction icone="plus" />
+		</button>
 	{/if}
 	{#if noeud.dupliquable}
 		<button
 			class="btn-icon"
 			aria-label="Dupliquer avec ses sous-périmètres"
 			title="Dupliquer avec ses sous-périmètres"
-			on:click={() => dispatch('dupliquer')}><IconeAction icone="copy" /></button
+			on:click={() => dispatch('dupliquer')}
 		>
+			<IconeAction icone="copy" />
+		</button>
 	{/if}
 	{#if noeud.copiable}
 		<button
 			class="btn-icon"
 			aria-label="Copier sous d’autres périmètres"
 			title="Copier sous d’autres périmètres"
-			on:click={() => dispatch('copier')}><IconeAction icone="copy-plus" /></button
+			on:click={() => dispatch('copier')}
 		>
+			<IconeAction icone="copy-plus" />
+		</button>
 	{/if}
 	{#each FLECHES as f (f.sens)}
 		<button
@@ -78,15 +86,19 @@
 			aria-label={f.libelle}
 			title={f.libelle}
 			disabled={!noeud.deplacements.includes(f.sens)}
-			on:click={() => dispatch('deplacer', f.sens)}><IconeAction icone={f.icone} /></button
+			on:click={() => dispatch('deplacer', f.sens)}
 		>
+			<IconeAction icone={f.icone} />
+		</button>
 	{/each}
 	<button
 		class="btn-icon-danger"
 		aria-label="Supprimer"
 		title="Supprimer"
-		on:click={() => dispatch('supprimer')}><IconeAction icone="trash-2" /></button
+		on:click={() => dispatch('supprimer')}
 	>
+		<IconeAction icone="trash-2" />
+	</button>
 </div>
 
 <style>

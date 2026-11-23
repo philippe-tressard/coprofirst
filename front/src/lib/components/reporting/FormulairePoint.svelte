@@ -166,8 +166,10 @@
 								petite
 								bascule
 								active={coches.has(cleMembre(g.nature, m.id))}
-								on:click={() => basculer(cleMembre(g.nature, m.id))}>{nomPresent(m)}</Pastille
+								on:click={() => basculer(cleMembre(g.nature, m.id))}
 							>
+								{nomPresent(m)}
+							</Pastille>
 						{/each}
 					{:else}
 						<span class="aide">Aucun membre dans l’annuaire.</span>

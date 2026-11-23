@@ -79,15 +79,19 @@
 		aria-pressed={commentaireOuvertId === pub.id}
 		aria-label={SUITE.libelle}
 		title={SUITE.libelle}
-		on:click|stopPropagation={() => onCommenter(pub)}><IconeAction icone="refresh-cw" /></button
+		on:click|stopPropagation={() => onCommenter(pub)}
 	>
+		<IconeAction icone="refresh-cw" />
+	</button>
 	<button
 		class="btn-icon-edit"
 		aria-pressed={editionOuverteId === pub.id}
 		aria-label="Modifier"
 		title="Modifier"
-		on:click|stopPropagation={() => onModifier(pub)}><IconeAction icone="pencil" /></button
+		on:click|stopPropagation={() => onModifier(pub)}
 	>
+		<IconeAction icone="pencil" />
+	</button>
 	<!--  🔴 « Transformer en affaire » (#1094) — le geste qui évite de TOUT
 	      RETAPER quand une actualité dérape. Titre, description, pièces jointes
 	      et périmètre suivent ; on ajoute un statut.
@@ -99,8 +103,10 @@
 		class="btn-icon"
 		aria-label="Transformer en affaire"
 		title="Transformer en affaire"
-		on:click|stopPropagation={() => onPromouvoir(pub)}><IconeAction icone="target" /></button
+		on:click|stopPropagation={() => onPromouvoir(pub)}
 	>
+		<IconeAction icone="target" />
+	</button>
 	<!--  Le bouton vit dans `BoutonOptions` depuis le 12/09/2026 : tickets et
 	      événements portent les mêmes options, et le recopier chez eux aurait
 	      recopié aussi ses règles d'accessibilité et sa cible tactile. -->
@@ -115,16 +121,20 @@
 			class="btn-icon"
 			aria-label="Archiver"
 			title="Archiver — rejoint l'onglet Archives"
-			on:click|stopPropagation={() => onArchiver(pub)}><IconeAction icone="archive" /></button
+			on:click|stopPropagation={() => onArchiver(pub)}
 		>
+			<IconeAction icone="archive" />
+		</button>
 	{/if}
 {:else if archive && $isAdmin}
 	<button
 		class="btn-icon-danger"
 		aria-label="Supprimer"
 		title="Supprimer définitivement"
-		on:click|stopPropagation={() => onSupprimer(pub)}><IconeAction icone="trash-2" /></button
+		on:click|stopPropagation={() => onSupprimer(pub)}
 	>
+		<IconeAction icone="trash-2" />
+	</button>
 {/if}
 
 <style>

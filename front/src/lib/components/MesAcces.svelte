@@ -85,11 +85,11 @@
 					{#each items as item (item.id)}
 						<tr>
 							<td class="mes-acces-code">{item.code}</td>
-							<td
-								><Badge teinte={statutAccesBadge(item.statut)}
-									>{statutAccesLabel(item.statut)}</Badge
-								></td
-							>
+							<td>
+								<Badge teinte={statutAccesBadge(item.statut)}>
+									{statutAccesLabel(item.statut)}
+								</Badge>
+							</td>
 							<!--  🔹 Le MÊME composant que l'écran du conseil syndical : ce que
 							      le badge ouvre se lit d'une seule façon sur tout le site. -->
 							<td>

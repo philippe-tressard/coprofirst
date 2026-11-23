@@ -217,11 +217,11 @@
 		<div class="card">
 			<table class="table">
 				<thead>
-					<tr
-						><th>Nom</th><th>E-mail</th><th>Type</th><th>Bâtiment</th><th>Compte</th><th
-							>Rôles actifs</th
-						><th>Ajouter / Retirer un rôle</th><th>Actions</th></tr
-					>
+					<tr>
+						<th>Nom</th><th>E-mail</th><th>Type</th><th>Bâtiment</th><th>Compte</th><th>
+							Rôles actifs
+						</th><th>Ajouter / Retirer un rôle</th><th>Actions</th>
+					</tr>
 				</thead>
 				<tbody>
 					{#each filteredUsers as u (u.id)}
@@ -244,8 +244,9 @@
 											class:utag-manque={e === 'manque'}
 											class:utag-sans_objet={e === 'sans_objet'}
 											title={e === 'ok' ? t.ok : e === 'manque' ? t.manque : t.sansObjet}
-											>{t.libelle}</span
 										>
+											{t.libelle}
+										</span>
 									{/each}
 								</div>
 							</td>
@@ -262,8 +263,9 @@
 								{#if u.actif}
 									<span class="badge badge-green">Actif</span>
 								{:else if u.email_verifie === false}
-									<span class="badge badge-orange" title="Email non vérifié">Email non vérifié</span
-									>
+									<span class="badge badge-orange" title="Email non vérifié">
+										Email non vérifié
+									</span>
 								{:else}
 									<span class="badge badge-gray">En attente</span>
 								{/if}
@@ -293,22 +295,27 @@
 										class="btn-icon-edit"
 										aria-label="Modifier"
 										title="Modifier"
-										on:click={() => openEdit(u)}><IconeAction icone="pencil" /></button
+										on:click={() => openEdit(u)}
 									>
+										<IconeAction icone="pencil" />
+									</button>
 									<button
 										class="btn-icon"
 										aria-label="Accueil nouvel arrivant"
 										title="Accueil nouvel arrivant"
-										on:click={() => (accueilPour = u)}><IconeAction icone="home" /></button
+										on:click={() => (accueilPour = u)}
 									>
+										<IconeAction icone="home" />
+									</button>
 									{#if u.actif && !u.has_lots}
 										<button
 											class="btn-icon"
 											aria-label="Rejouer auto-match lots"
 											title="Rejouer auto-match lots"
 											on:click={() => relancerAutoMatch(u.id)}
-											><IconeAction icone="refresh-cw" /></button
 										>
+											<IconeAction icone="refresh-cw" />
+										</button>
 									{/if}
 									<button
 										class={u.communaute_banni ? 'btn-icon-success' : 'btn-icon-warn'}
@@ -339,8 +346,9 @@
 										aria-label="Supprimer"
 										title="Supprimer"
 										on:click={() => void supprimerUtilisateur(u)}
-										><IconeAction icone="trash-2" /></button
 									>
+										<IconeAction icone="trash-2" />
+									</button>
 								</div>
 							</td>
 						</tr>

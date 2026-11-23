@@ -59,9 +59,9 @@
 				{#each [['type', 'Type'], ['code', 'Code'], ['porteur', 'Porteur'], ['lot', 'Lot'], ['acces', 'Accès'], ['statut', 'Statut']] as [col, libelle] (col)}
 					<th aria-sort={triCol === col ? (triAsc ? 'ascending' : 'descending') : 'none'}>
 						<button type="button" class="th-tri" on:click={() => dispatch('trier', col)}>
-							{libelle}<span class="th-fleche" aria-hidden="true"
-								>{triCol === col ? (triAsc ? '▲' : '▼') : ''}</span
-							>
+							{libelle}<span class="th-fleche" aria-hidden="true">
+								{triCol === col ? (triAsc ? '▲' : '▼') : ''}
+							</span>
 						</button>
 					</th>
 				{/each}
@@ -105,16 +105,20 @@
 							title="Corriger cet accès"
 							aria-label="Corriger cet accès"
 							aria-pressed={editId === `${a.type}-${a.id}`}
-							on:click={() => dispatch('editer', a)}><IconeAction icone="pencil" /></button
+							on:click={() => dispatch('editer', a)}
 						>
+							<IconeAction icone="pencil" />
+						</button>
 						{#if estAdmin}
 							<button
 								class="btn-icon btn-icon-danger"
 								type="button"
 								title="Supprimer définitivement"
 								aria-label="Supprimer définitivement"
-								on:click={() => dispatch('supprimer', a)}><IconeAction icone="trash-2" /></button
+								on:click={() => dispatch('supprimer', a)}
 							>
+								<IconeAction icone="trash-2" />
+							</button>
 						{/if}
 					</td>
 				</tr>

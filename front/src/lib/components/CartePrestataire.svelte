@@ -169,9 +169,9 @@
 				</div>{/if}
 			<div><span class="detail-label">Contrats</span>{cs.length}</div>
 			{#if p.prochaine_visite}<div>
-					<span class="detail-label">Prochaine visite</span><span class="prochaine-visite"
-						>🗓 {fmtDateShort(p.prochaine_visite)}</span
-					>
+					<span class="detail-label">Prochaine visite</span><span class="prochaine-visite">
+						🗓 {fmtDateShort(p.prochaine_visite)}
+					</span>
 				</div>{/if}
 		</div>
 		<!--  La description (#1327), assainie comme partout. -->
