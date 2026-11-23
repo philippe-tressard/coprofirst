@@ -457,8 +457,11 @@ routeur vit à côté de lui. `schemas_communs.py` n'importe RIEN du projet (cyc
   déclare les versions en circulation (`EN_CIRCULATION`), leur contrat est figé dans
   `app/contrat/circulation/<app>-<version>.json` (la référence à leur plancher), et chaque
   PR est jugée contre eux par `inventaire.comparer`. Une dérogation se déclare datée, avec
-  son échéance (`DEROGATIONS`). Une version publiée de plus : une entrée et son contrat figé.
-  🔒 `test_contrat_versions_en_circulation.py`.
+  son échéance (`DEROGATIONS`). Une version publiée de plus (piste de test comprise) : une
+  entrée, son étiquette et son contrat figé ; ce qui est « publié », quand une version sort
+  et ce que le juge ne voit pas (`inventaire.LIMITES`) : la docstring du module.
+  🔒 `test_contrat_versions_en_circulation.py`, `test_contrat_limites.py`, et en CI
+  `scripts/check_versions_en_circulation.py` (étiquettes des apps, planchers).
 - **Tables du site que l'app iOS lit** (#2634) : `front/tables-clients.json`, GÉNÉRÉE par
   `node front/scripts/tables-clients.mjs --ecrire` depuis `tables-clients.registre.mjs`
   (constantes LITTÉRALES de `#lib`, lues dans l'arbre syntaxique), jointe à la release. Une

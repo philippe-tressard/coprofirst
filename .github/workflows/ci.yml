@@ -354,6 +354,15 @@ jobs:
         # tests changeaient de moteur d'un run à l'autre sans que le dépôt bouge.
         run: pip install -r requirements-dev.txt
 
+      # Les versions DISTRIBUÉES des apps (#2919) : chaque étiquette `vX.Y.Z` de
+      # coprofirst-ios et coprofirst-android a son entrée dans
+      # `app/contrat/circulation.py`, et chaque contrat figé est la référence de
+      # son plancher. Réseau (dépôts publics, étiquette du plancher) : sans lui,
+      # INCONNU (2), jamais vert. Ici parce que l'app s'importe dans ce job.
+      - name: Versions publiées des apps déclarées (contrat figé)
+        working-directory: api
+        run: python scripts/check_versions_en_circulation.py
+
       # Licences des dépendances tierces (#1542, 02/10/2026) — front, bridge et
       # API. Ici parce que c'est le seul job où les distributions de l'API sont
       # installées. Le détail (liste blanche, exceptions, document comparé) :

@@ -29,22 +29,67 @@ def test_aucune_version_publiee_n_est_cassee(courant):
     assert circ.ruptures(courant) == []
 
 
-def test_retirer_une_route_de_l_ios_1_0_fait_passer_le_controle_au_rouge(courant):
-    """Faute injectée sur le VRAI contrat : une route que la 1.0 a compilée disparaît."""
-    ios = next(v for v in circ.EN_CIRCULATION if v.nom == "coprofirst-ios 1.0")
-    retiree = sorted(circ.contrat_fige(ios)["operations"])[0]
+@pytest.mark.parametrize("version", circ.EN_CIRCULATION, ids=lambda v: v.nom)
+def test_retirer_une_route_d_une_version_publiee_fait_passer_le_controle_au_rouge(courant, version):
+    """Faute injectée sur le VRAI contrat : une route que cette version a compilée disparaît."""
+    retiree = sorted(circ.contrat_fige(version)["operations"])[0]
     ampute = {k: op for k, op in courant.items() if k != retiree}
-    assert any(retiree in m for m in circ.ruptures(ampute, (ios,)))
+    assert any(retiree in m for m in circ.ruptures(ampute, (version,)))
 
 
-def test_chaque_contrat_fige_est_celui_de_son_plancher():
-    """Un contrat figé se relit : sa forme et son empreinte sont celles d'une référence."""
+def test_chaque_contrat_fige_est_une_reference_bien_formee():
+    """Forme et empreinte d'une référence. Qu'il soit CELLE de son plancher se vérifie
+    contre l'étiquette du serveur : `scripts/check_versions_en_circulation.py` (CI)."""
     assert circ.EN_CIRCULATION, "cas zéro : aucune version déclarée ne protège rien"
     for v in circ.EN_CIRCULATION:
         fige = circ.contrat_fige(v)
         assert set(fige) == {"version", "empreinte", "operations"}, v.nom
         assert fige["empreinte"] == inv.empreinte(fige["operations"]), v.nom
         assert len(fige["operations"]) > 100, v.nom
+        assert v.app in circ.APPS and circ.ETIQUETTE_VERSION.match(v.etiquette), v.nom
+
+
+def test_aucun_contrat_fige_orphelin():
+    """Un fichier figé sans entrée ne protège rien, et laisse croire le contraire."""
+    attendus = {v.fichier.name for v in circ.EN_CIRCULATION}
+    assert {f.name for f in circ.DOSSIER.glob("*.json")} == attendus
+
+
+# ── Les étiquettes des apps : une version distribuée est déclarée (#2919) ─────
+
+
+def _lues(**par_app):
+    return {app.replace("_", "-"): etiquettes for app, etiquettes in par_app.items()}
+
+
+def test_les_etiquettes_reelles_concordent_avec_les_declarations():
+    lues = {app: [v.etiquette for v in circ.EN_CIRCULATION if v.app == app] for app in circ.APPS}
+    assert circ.etiquettes_non_declarees(lues) == []
+
+
+def test_une_etiquette_non_declaree_est_refusee():
+    lues = _lues(coprofirst_ios=["v1.0.0", "v1.1.0", "v1.2.0"], coprofirst_android=["v0.8.173"])
+    assert circ.etiquettes_non_declarees(lues) == [
+        "coprofirst-ios v1.2.0 : étiquette d'une version distribuée, sans entrée dans "
+        "EN_CIRCULATION ni SORTIES (app/contrat/circulation.py)"
+    ]
+
+
+def test_une_declaration_sans_etiquette_et_un_doublon_sont_refuses():
+    v = circ.EN_CIRCULATION[0]
+    lues = _lues(coprofirst_ios=["v1.1.0"], coprofirst_android=["v0.8.173", "archive/x"])
+    messages = circ.etiquettes_non_declarees(lues, circ.EN_CIRCULATION + (v,))
+    assert f"{v.app} {v.etiquette} : déclarée deux fois" in messages
+    assert f"{v.app} {v.etiquette} : déclarée, mais aucune étiquette ne la porte" in messages
+
+
+def test_une_version_sortie_n_est_plus_reclamee():
+    v = circ.EN_CIRCULATION[0]
+    sortie = circ.VersionSortie(v.app, v.etiquette, "23/11/2026", "essai")
+    reste = tuple(x for x in circ.EN_CIRCULATION if x is not v)
+    lues = {app: [x.etiquette for x in circ.EN_CIRCULATION if x.app == app] for app in circ.APPS}
+    assert circ.etiquettes_non_declarees(lues, reste, (sortie,)) == []
+    assert circ.etiquettes_non_declarees(lues, reste, ()) != []
 
 
 # ── Le contrôle lui-même, sur une faute injectée ───────────────────────────────
@@ -54,7 +99,7 @@ def test_chaque_contrat_fige_est_celui_de_son_plancher():
 def version_essai(tmp_path, monkeypatch):
     """Une version publiée dont on écrit le contrat figé."""
     monkeypatch.setattr(circ, "DOSSIER", tmp_path)
-    v = circ.VersionPubliee("app-essai", "9.9", "v0.0.0", "essai")
+    v = circ.VersionPubliee("app-essai", "9.9", "v0.0.0", "essai", "v9.9.0", "essai")
 
     def figer(operations):
         v.fichier.write_text(
