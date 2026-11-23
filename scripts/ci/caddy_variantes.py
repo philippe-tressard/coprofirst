@@ -70,6 +70,17 @@ def route_attrape_tout(routes: list[dict]) -> dict | None:
     return next((r for r in reversed(routes) if not r.get("match")), None)
 
 
+def resume(routes: list[dict]) -> str:
+    """Les routes dans l'ordre : chemins et gestionnaires — de quoi lire une faute."""
+    lignes = []
+    for r in routes:
+        gestes = re.findall(r'"handler": "(\w+)"', json.dumps(r))
+        lignes.append(
+            f"  {_chemins(r) or '(sans chemin)'} → {', '.join(dict.fromkeys(gestes))}"
+        )
+    return "\n".join(lignes)
+
+
 def verdicts(config: dict, variante: str) -> list[str]:
     """Les fautes de la configuration traduite (liste vide : conforme)."""
     routes = routes_du_site(config)
@@ -146,8 +157,12 @@ def principal() -> int:
                 for nom in FRAGMENTS:
                     shutil.copy(COMMUNE / nom, dossier / "commune" / nom)
             dossier.chmod(0o755)
-            fautes += verdicts(adapter(dossier, image), variante)
+            config = adapter(dossier, image)
+            fautes_variante = verdicts(config, variante)
+            fautes += fautes_variante
         print(f"{variante} : chargée par {image}")
+        if fautes_variante:
+            print(resume(routes_du_site(config)))
     for faute in fautes:
         print(f"FAUTE  {faute}")
     print("OK — deux variantes conformes" if not fautes else "ÉCHEC")
