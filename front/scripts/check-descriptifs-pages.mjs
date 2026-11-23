@@ -43,6 +43,7 @@
  * Usage : node scripts/check-descriptifs-pages.mjs [--selftest]
  * (lancé par `npm run lint:pages`)
  */
+import { neutraliserCommentaires } from './lib-commentaires.mjs';
 import { readFileSync, existsSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { lecteur, Refus } from './tables-clients.lecture.mjs';
@@ -91,12 +92,11 @@ const ECRANS = [
 	},
 ];
 
-const sansCommentairesHtml = (t) => t.replace(/<!--[\s\S]*?-->/g, '');
 const texteSeul = (html) => html.replace(/<[^>]+>/g, ' ');
 
 /** Les titres des `SectionRepliee` d'un composant, dans l'ordre. PURE. */
 function titresSections(source) {
-	const texte = sansCommentairesHtml(source);
+	const texte = neutraliserCommentaires(source);
 	const titres = [];
 	for (const m of texte.matchAll(/<SectionRepliee\b/g)) {
 		const balise = texte.slice(m.index, texte.indexOf('>', texte.indexOf('titre', m.index)));
