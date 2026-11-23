@@ -130,8 +130,9 @@
 				type="button"
 				class="ec-titre clamp-2 ec-titre-btn"
 				on:click|stopPropagation={() => dispatch('toggle')}
-				>{titre}<slot name="titre-suffixe" /></button
 			>
+				{titre}<slot name="titre-suffixe" />
+			</button>
 		{:else}
 			<div class="ec-titre clamp-2">{titre}<slot name="titre-suffixe" /></div>
 		{/if}

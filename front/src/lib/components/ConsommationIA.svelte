@@ -78,12 +78,12 @@
 					{#each limitees as l (l.usage)}
 						<li>
 							<span>{l.libelle}</span>
-							<span class="muted"
-								>{fmtNombre(l.appels)} / {fmtNombre(l.appels_mois)} appels ({part(
+							<span class="muted">
+								{fmtNombre(l.appels)} / {fmtNombre(l.appels_mois)} appels ({part(
 									l.appels,
 									l.appels_mois,
-								)}&nbsp;%)</span
-							>
+								)}&nbsp;%)
+							</span>
 							<span
 								class="jauge"
 								role="progressbar"
@@ -108,9 +108,9 @@
 				<div class="mois">
 					<h4 class="sous-titre">
 						<span class="mois-libelle">{fmtMonthYear(m.mois)}</span>
-						<span class="muted total"
-							>{cout === null ? 'coût non renseigné' : `${dollars(cout)} estimés`}</span
-						>
+						<span class="muted total">
+							{cout === null ? 'coût non renseigné' : `${dollars(cout)} estimés`}
+						</span>
 					</h4>
 					<ul class="lignes">
 						{#each m.usages as l (l.usage + l.modele)}
@@ -121,18 +121,19 @@
 									{fmtNombre(l.appels)} appel{l.appels > 1 ? 's' : ''}{SEPARATEUR.point}{fmtNombre(
 										jetons(l),
 									)} jetons
-									<span class="muted"
-										>({fmtNombre(l.jetons_entree)} envoyés{l.jetons_cache
+									<span class="muted">
+										({fmtNombre(l.jetons_entree)} envoyés{l.jetons_cache
 											? ` dont ${fmtNombre(l.jetons_cache)} en cache`
-											: ''}, {fmtNombre(l.jetons_sortie)} produits)</span
-									>
+											: ''}, {fmtNombre(l.jetons_sortie)} produits)
+									</span>
 									{#if l.cout_usd !== null}{SEPARATEUR.point}{dollars(Number(l.cout_usd))}{/if}
 								</span>
-								{#if l.erreurs}<span class="badge badge-red">{fmtNombre(l.erreurs)} en échec</span
-									>{/if}
-								{#if l.refus}<span class="badge badge-orange"
-										>{fmtNombre(l.refus)} refusé{l.refus > 1 ? 's' : ''} à la limite</span
-									>{/if}
+								{#if l.erreurs}<span class="badge badge-red">
+										{fmtNombre(l.erreurs)} en échec
+									</span>{/if}
+								{#if l.refus}<span class="badge badge-orange">
+										{fmtNombre(l.refus)} refusé{l.refus > 1 ? 's' : ''} à la limite
+									</span>{/if}
 							</li>
 						{/each}
 					</ul>

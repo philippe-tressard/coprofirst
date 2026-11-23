@@ -320,10 +320,10 @@
 	      manuel — et laissé la phrase qui décrivait la décision d'avant. -->
 	<p class="bc-aide">
 		Qui détient quoi, badges Vigik et télécommandes confondus. Le conseil syndical peut
-		<strong>enregistrer</strong> un accès pour un copropriétaire, le <strong>corriger</strong> et l'<strong
-			>exporter</strong
-		> ; un résident déclare les siens depuis son espace, et l'import Excel les enregistre en masse. Seul
-		un administrateur retire définitivement une ligne.
+		<strong>enregistrer</strong> un accès pour un copropriétaire, le <strong>corriger</strong> et l'<strong>
+			exporter
+		</strong> ; un résident déclare les siens depuis son espace, et l'import Excel les enregistre en masse.
+		Seul un administrateur retire définitivement une ligne.
 	</p>
 
 	<!--  Les RÉGLAGES de la liste, à la façon de la page Affaires — standard du

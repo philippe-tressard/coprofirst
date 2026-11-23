@@ -61,10 +61,9 @@
 		{#each [{ cle: canal.mon, libelle: 'De mon ou mes bâtiments' }, { cle: canal.autres, libelle: 'Des autres bâtiments' }] as c, i (c.cle)}
 			<label class="checkbox-field" style:margin-top={i ? '.5rem' : null}>
 				<input type="checkbox" bind:checked={valeurs[c.cle]} />
-				<span
-					>{c.libelle}{#if heritees.has(c.cle)}<span class="herite">réglage par défaut</span
-						>{/if}</span
-				>
+				<span>
+					{c.libelle}{#if heritees.has(c.cle)}<span class="herite">réglage par défaut</span>{/if}
+				</span>
 			</label>
 		{/each}
 	{/each}
@@ -78,9 +77,9 @@
 	</p>
 
 	<div class="form-actions">
-		<button type="button" class="btn btn-primary" on:click={() => onSave(valeurs, restreindre)}
-			>Enregistrer</button
-		>
+		<button type="button" class="btn btn-primary" on:click={() => onSave(valeurs, restreindre)}>
+			Enregistrer
+		</button>
 	</div>
 </section>
 

@@ -179,8 +179,10 @@
 										aria-label="Relire la transcription"
 										title="Relire la transcription"
 										aria-pressed={relue === t.id}
-										on:click={() => basculerRelecture(pv)}><IconeAction icone="pencil" /></button
+										on:click={() => basculerRelecture(pv)}
 									>
+										<IconeAction icone="pencil" />
+									</button>
 								{/if}
 								{#if t?.statut === 'a_relire' || t?.statut === 'echec'}
 									<button
@@ -188,8 +190,10 @@
 										type="button"
 										aria-label="Rejeter la transcription"
 										title="Rejeter la transcription"
-										on:click={() => rejeter(pv)}><IconeAction icone="x" /></button
+										on:click={() => rejeter(pv)}
 									>
+										<IconeAction icone="x" />
+									</button>
 								{/if}
 							</span>
 						</div>
@@ -201,9 +205,9 @@
 								<label class="field">
 									<span>Résolutions transcrites</span>
 									<textarea bind:value={contenu} rows="16" spellcheck="true"></textarea>
-									<span class="aide"
-										>Vérifiez chaque résolution contre le PV, et qu'aucun nom de personne ne reste.</span
-									>
+									<span class="aide">
+										Vérifiez chaque résolution contre le PV, et qu'aucun nom de personne ne reste.
+									</span>
 								</label>
 								<PiedFormulaire enCours={validation} on:annule={() => (relue = null)} />
 							</form>

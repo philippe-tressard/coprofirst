@@ -207,9 +207,9 @@
 	class:choix-libelle-devant={libelleDevant && !libelleVisible}
 >
 	{#if libelleVisible || libelleDevant}
-		<span class="libelle-groupe" class:libelle-devant={libelleDevant} id={idTitre}
-			>{libelle}{#if requis}<EtoileRequis vide={!valeur} />{/if}</span
-		>
+		<span class="libelle-groupe" class:libelle-devant={libelleDevant} id={idTitre}>
+			{libelle}{#if requis}<EtoileRequis vide={!valeur} />{/if}
+		</span>
 	{/if}
 	<div
 		class="filters"

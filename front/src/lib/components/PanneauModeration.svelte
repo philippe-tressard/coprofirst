@@ -42,8 +42,9 @@
 					<div class="moderation-meta">
 						<span class="badge badge-blue">{sig.cible_type_label}</span>
 						<strong>« {sig.apercu}</strong>
-						{#if sig.auteur_cible}<span class="muted">{SEPARATEUR.tiret}par {sig.auteur_cible}</span
-							>{/if}
+						{#if sig.auteur_cible}<span class="muted">
+								{SEPARATEUR.tiret}par {sig.auteur_cible}
+							</span>{/if}
 					</div>
 					<div class="moderation-motif">
 						Motif : {sig.motif}
@@ -58,13 +59,15 @@
 						<button
 							class="btn btn-sm btn-outline"
 							on:click={() => dispatch('resoudre', { id: sig.id, decision: 'traite' })}
-							>✓ Marquer traité</button
 						>
+							✓ Marquer traité
+						</button>
 						<button
 							class="btn btn-sm btn-outline"
 							on:click={() => dispatch('resoudre', { id: sig.id, decision: 'rejete' })}
-							>Ignorer</button
 						>
+							Ignorer
+						</button>
 					</div>
 				</div>
 			{/each}

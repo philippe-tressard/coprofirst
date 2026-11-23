@@ -241,9 +241,9 @@
 	      au standard à la demande de l'utilisateur (skill ux-patterns §9 quater). -->
 	<div class="perimetre-titre">
 		{titre}{#if requis}*{/if}
-		{#if estDefaut && noeudDefaut}<span class="badge badge-green perimetre-badge"
-				>{noeudDefaut.libelle}</span
-			>{/if}
+		{#if estDefaut && noeudDefaut}<span class="badge badge-green perimetre-badge">
+				{noeudDefaut.libelle}
+			</span>{/if}
 	</div>
 {/if}
 {#if restreint}
@@ -261,8 +261,10 @@
 				active={selection.has(n.code)}
 				icone={n.icone ?? ''}
 				privatif={n.privatif}
-				on:click={() => basculer(n.code)}>{n.libelle}</Pastille
+				on:click={() => basculer(n.code)}
 			>
+				{n.libelle}
+			</Pastille>
 		{/each}
 	</div>
 {:else}
@@ -328,10 +330,11 @@
 				chevron={ouvreUneRangee(n.code, arbre) && !contracte}
 				privatif={n.privatif && !contracte}
 				on:click={() => basculer(n.code)}
-				>{n.libelle}{#if contracte}<span class="perimetre-resume">
-						› {resumeSous(n.code, selection, arbre)}</span
-					>{/if}</Pastille
 			>
+				{n.libelle}{#if contracte}<span class="perimetre-resume">
+						› {resumeSous(n.code, selection, arbre)}
+					</span>{/if}
+			</Pastille>
 		{/each}
 	</div>
 {/if}
@@ -356,10 +359,11 @@
 						chevron={ouvreUneRangee(espace.code, arbre) && !contracte}
 						active={selection.has(espace.code) || contracte}
 						on:click={() => basculer(espace.code)}
-						>{espace.libelle}{#if contracte}<span class="perimetre-resume">
-								› {resumeSous(espace.code, selection, arbre)}</span
-							>{/if}</Pastille
 					>
+						{espace.libelle}{#if contracte}<span class="perimetre-resume">
+								› {resumeSous(espace.code, selection, arbre)}
+							</span>{/if}
+					</Pastille>
 				{/each}
 			</div>
 		</div>

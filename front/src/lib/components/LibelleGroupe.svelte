@@ -71,7 +71,7 @@
 	export let style = '';
 </script>
 
-<span class="libelle-groupe" id="{id}-titre"
-	>{titre}{#if requis}<EtoileRequis {vide} />{/if}</span
->
+<span class="libelle-groupe" id="{id}-titre">
+	{titre}{#if requis}<EtoileRequis {vide} />{/if}
+</span>
 <div class={classe} role="group" aria-labelledby="{id}-titre" {style}><slot /></div>

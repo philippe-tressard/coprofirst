@@ -43,17 +43,17 @@
 					<option value={String(u.id)}>{u.nom_affiche} — {u.email}</option>
 				{/each}
 			</select>
-			<span class="aide"
-				>Choisi parmi les administrateurs : il reçoit ce qui demande un geste dans l'administration{SEPARATEUR.tiret}comptes
-				à valider, alertes système, bogues signalés si l'option est activée.</span
-			>
+			<span class="aide">
+				Choisi parmi les administrateurs : il reçoit ce qui demande un geste dans l'administration{SEPARATEUR.tiret}comptes
+				à valider, alertes système, bogues signalés si l'option est activée.
+			</span>
 		</label>
 		<label class="field champ-double">
 			E-mail administrateur
 			<input type="email" bind:value={siteConfig.email_admin} placeholder="admin@example.com" />
-			<span class="aide"
-				>Adresse de secours utilisée si aucun utilisateur gestionnaire du site n'est sélectionné.</span
-			>
+			<span class="aide">
+				Adresse de secours utilisée si aucun utilisateur gestionnaire du site n'est sélectionné.
+			</span>
 		</label>
 		<!--  🔴 UN SEUL délai, pour tout le site (#515). Il y en avait TROIS : deux
           affichés ici — dont un qui ne concernait plus qu'un statut devenu
@@ -72,14 +72,14 @@
 				max="365"
 				placeholder="30"
 			/>
-			<span class="aide"
-				>Un contenu terminé quitte les listes actives et bascule dans les <strong>Archives</strong>
+			<span class="aide">
+				Un contenu terminé quitte les listes actives et bascule dans les <strong>Archives</strong>
 				après ce délai (défaut : 30 jours). Il s'applique à <strong>tout le site</strong> :
 				actualités, affaires résolues, petites annonces vendues ou données, idées décidées, sondages
 				clôturés, événements passés et affiches de hall envoyées. Un contenu <strong>annulé</strong>
 				est archivé immédiatement, sans attendre{SEPARATEUR.tiret}et le bouton 📦 archive à la main,
-				quel que soit ce réglage.</span
-			>
+				quel que soit ce réglage.
+			</span>
 		</label>
 		<label class="field champ-court champ-double">
 			Délai de relance syndic (jours)
@@ -90,32 +90,32 @@
 				max="365"
 				placeholder="30"
 			/>
-			<span class="aide"
-				>Nombre de jours sans mise à jour d'une affaire destinataire-syndic avant qu'elle apparaisse
-				dans la liste de relance de l'Espace CS (défaut : 30 jours).</span
-			>
+			<span class="aide">
+				Nombre de jours sans mise à jour d'une affaire destinataire-syndic avant qu'elle apparaisse
+				dans la liste de relance de l'Espace CS (défaut : 30 jours).
+			</span>
 		</label>
 		<label class="field champ-double">
 			<span class="case">
 				<input type="checkbox" bind:checked={siteConfig.notify_ticket_bug_email} />
 				Notifier si un bug (Affaires)
 			</span>
-			<span class="aide"
-				>Envoie un e-mail au gestionnaire du site sélectionné (ou à l'adresse administrateur de
+			<span class="aide">
+				Envoie un e-mail au gestionnaire du site sélectionné (ou à l'adresse administrateur de
 				secours) uniquement pour les affaires de catégorie « Bug ». Une affaire marquée {GLYPHE_URGENCE}
 				Urgent ne déclenche pas cette notification{SEPARATEUR.tiret}l'urgence est une case, pas une
-				catégorie.</span
-			>
+				catégorie.
+			</span>
 		</label>
 		<label class="field champ-double">
 			<span class="case">
 				<input type="checkbox" bind:checked={siteConfig.notify_new_user_created_email} />
 				Notifier si un nouvel utilisateur est créé
 			</span>
-			<span class="aide"
-				>Envoie un e-mail au gestionnaire du site sélectionné (ou à l'adresse administrateur de
-				secours) lorsqu'un nouveau compte est créé et mis en attente de validation.</span
-			>
+			<span class="aide">
+				Envoie un e-mail au gestionnaire du site sélectionné (ou à l'adresse administrateur de
+				secours) lorsqu'un nouveau compte est créé et mis en attente de validation.
+			</span>
 		</label>
 	</div>
 	<div class="form-actions largeur-saisie">

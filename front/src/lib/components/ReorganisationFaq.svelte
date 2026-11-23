@@ -116,9 +116,9 @@
 </script>
 
 <div class="reorder-bar">
-	<span class="reorder-aide"
-		>Glissez les questions pour les réorganiser, ou utilisez les flèches ↑↓</span
-	>
+	<span class="reorder-aide">
+		Glissez les questions pour les réorganiser, ou utilisez les flèches ↑↓
+	</span>
 	<PiedFormulaire
 		enCours={enregistrement}
 		soumission={false}
@@ -149,15 +149,19 @@
 					disabled={idx === 0}
 					on:click={() => moveItem(categorie, item, -1)}
 					title="Monter"
-					aria-label="Monter"><IconeAction icone="arrow-up" /></button
+					aria-label="Monter"
 				>
+					<IconeAction icone="arrow-up" />
+				</button>
 				<button
 					class="btn-icon-edit"
 					disabled={idx === catItems.length - 1}
 					on:click={() => moveItem(categorie, item, 1)}
 					title="Descendre"
-					aria-label="Descendre"><IconeAction icone="arrow-down" /></button
+					aria-label="Descendre"
 				>
+					<IconeAction icone="arrow-down" />
+				</button>
 			</div>
 		</div>
 	{/each}

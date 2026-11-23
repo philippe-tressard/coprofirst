@@ -77,8 +77,10 @@
 			aria-label={g.libelle}
 			title={g.libelle}
 			disabled={g.desactive}
-			on:click={g.onClic}><IconeAction icone={g.icone} /></button
+			on:click={g.onClic}
 		>
+			<IconeAction icone={g.icone} />
+		</button>
 	{/each}
 	{#if onEnregistrer && enEdition}
 		<button
@@ -97,8 +99,10 @@
 			class="btn-icon btn-icon-edit"
 			aria-label="Modifier"
 			title="Modifier"
-			on:click={onModifier}><IconeAction icone="pencil" /></button
+			on:click={onModifier}
 		>
+			<IconeAction icone="pencil" />
+		</button>
 	{/if}
 	{#if onSupprimer}
 		<button
@@ -106,8 +110,10 @@
 			class="btn-icon btn-icon-remove"
 			aria-label="Supprimer"
 			title="Supprimer"
-			on:click={onSupprimer}><IconeAction icone="trash-2" /></button
+			on:click={onSupprimer}
 		>
+			<IconeAction icone="trash-2" />
+		</button>
 	{/if}
 </div>
 

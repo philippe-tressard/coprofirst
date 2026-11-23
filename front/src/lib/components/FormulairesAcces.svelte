@@ -106,8 +106,8 @@
 						radio="declare-type"
 						defilante={false}
 					/>
-					<label class="field"
-						><span>Code / référence<EtoileRequis vide={!declareCode.trim()} /></span>
+					<label class="field">
+						<span>Code / référence<EtoileRequis vide={!declareCode.trim()} /></span>
 						<input
 							type="text"
 							bind:value={declareCode}

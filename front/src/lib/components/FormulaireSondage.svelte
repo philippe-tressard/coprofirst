@@ -265,16 +265,20 @@
 										title="Monter"
 										aria-label="Monter la réponse {i + 1}"
 										disabled={i === 0}
-										on:click={() => monter(i)}>↑</button
+										on:click={() => monter(i)}
 									>
+										↑
+									</button>
 									<button
 										type="button"
 										class="btn btn-sm btn-outline"
 										title="Descendre"
 										aria-label="Descendre la réponse {i + 1}"
 										disabled={i === options.length - 1}
-										on:click={() => descendre(i)}>↓</button
+										on:click={() => descendre(i)}
 									>
+										↓
+									</button>
 								{/if}
 								{#if !modeEdition && options.length > 2}
 									<button
@@ -282,8 +286,10 @@
 										class="btn btn-sm btn-outline option-supprimer"
 										title="Supprimer"
 										aria-label="Supprimer la réponse {i + 1}"
-										on:click={() => retirerOption(i)}>✕</button
+										on:click={() => retirerOption(i)}
 									>
+										✕
+									</button>
 								{/if}
 							</div>
 							{#if !modeEdition}

@@ -59,12 +59,12 @@
 		d'interphone (CS), avec copie des démarches au résident.
 	</p>
 	<div class="form-grid form-grid-2 grille-arrivant">
-		<label class="field"
-			>Bâtiment / logement
+		<label class="field">
+			Bâtiment / logement
 			<input bind:value={batiment} placeholder="Ex: Bât. A, Apt. 12…" />
 		</label>
-		<label class="field"
-			>Ancien résident
+		<label class="field">
+			Ancien résident
 			<input bind:value={ancienResident} placeholder="Nom de l'ancien occupant…" />
 		</label>
 	</div>

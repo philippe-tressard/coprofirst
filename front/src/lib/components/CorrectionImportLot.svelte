@@ -34,10 +34,10 @@
 
 <div class="imp-edit-form card correction">
 	<h3 class="titre-correction">
-		Lier : <em
-			>{imp.nom_coproprietaire ?? '—'}{SEPARATEUR.tiret}Bât. {imp.batiment_nom ?? imp.batiment_id} n°{imp.numero}
-			({imp.type_raw})</em
-		>
+		Lier : <em>
+			{imp.nom_coproprietaire ?? '—'}{SEPARATEUR.tiret}Bât. {imp.batiment_nom ?? imp.batiment_id} n°{imp.numero}
+			({imp.type_raw})
+		</em>
 	</h3>
 	<!-- Lot en base -->
 	<div class="field champ-lot">
@@ -45,9 +45,9 @@
 		<select id="imp-lot-{imp.id}" bind:value={lot}>
 			<option value="">— Non lié —</option>
 			{#each lots as l (l.id)}
-				<option value={String(l.id)}
-					>{l.batiment_nom ?? `Bât.${l.batiment_id}`} — {l.numero} ({l.libelle_type})</option
-				>
+				<option value={String(l.id)}>
+					{l.batiment_nom ?? `Bât.${l.batiment_id}`} — {l.numero} ({l.libelle_type})
+				</option>
 			{/each}
 		</select>
 	</div>
@@ -55,9 +55,9 @@
 	<div class="occupants-editor">
 		<div class="occupants-header">
 			<span class="titre-occupants">Occupants du lot</span>
-			<button type="button" class="btn btn-sm btn-outline" on:click={ajouterOccupant}
-				>+ Ajouter</button
-			>
+			<button type="button" class="btn btn-sm btn-outline" on:click={ajouterOccupant}>
+				+ Ajouter
+			</button>
 		</div>
 		{#each occupants as occ, i (occ)}
 			<div class="occupant-row">
@@ -77,8 +77,10 @@
 					class="btn-icon-danger"
 					aria-label="Retirer cet occupant"
 					title="Retirer"
-					on:click={() => supprimerOccupant(i)}><IconeAction icone="trash-2" /></button
+					on:click={() => supprimerOccupant(i)}
 				>
+					<IconeAction icone="trash-2" />
+				</button>
 			</div>
 		{/each}
 	</div>

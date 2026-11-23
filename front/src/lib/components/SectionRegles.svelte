@@ -255,15 +255,17 @@
 								aria-label="Modifier"
 								title="Modifier"
 								on:click|stopPropagation={() => openRegleForm(regle)}
-								><IconeAction icone="pencil" /></button
 							>
+								<IconeAction icone="pencil" />
+							</button>
 							<button
 								class="btn-icon-danger"
 								aria-label="Supprimer"
 								title="Supprimer"
 								on:click|stopPropagation={() => deleteRegle(regle.id)}
-								><IconeAction icone="trash-2" /></button
 							>
+								<IconeAction icone="trash-2" />
+							</button>
 						{/if}
 					</svelte:fragment>
 					<svelte:fragment slot="apercu">

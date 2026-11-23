@@ -57,8 +57,9 @@
 					aria-label="Afficher la synthèse"
 					aria-expanded={ouvert}
 					on:click={onBasculer}
-					><Icon name="lightbulb" size={14} /> Synthèse {ouvert ? '▲' : '▼'}</button
 				>
+					<Icon name="lightbulb" size={14} /> Synthèse {ouvert ? '▲' : '▼'}
+				</button>
 			{/if}
 		</div>
 		<div class="doc-actions">
@@ -72,15 +73,17 @@
 				telecharger
 			/>
 			{#if peutModifier}
-				<button class="btn-icon-edit" aria-label="Modifier" title="Modifier" on:click={onModifier}
-					><IconeAction icone="pencil" /></button
-				>
+				<button class="btn-icon-edit" aria-label="Modifier" title="Modifier" on:click={onModifier}>
+					<IconeAction icone="pencil" />
+				</button>
 				<button
 					class="btn-icon-danger"
 					aria-label="Supprimer"
 					title="Supprimer"
-					on:click={onSupprimer}><IconeAction icone="trash-2" /></button
+					on:click={onSupprimer}
 				>
+					<IconeAction icone="trash-2" />
+				</button>
 			{/if}
 		</div>
 	</div>

@@ -126,8 +126,9 @@
 					title={enEdition ? 'Annuler la correction' : 'Modifier'}
 					aria-pressed={enEdition}
 					on:click|stopPropagation={() => (enEdition ? onAnnuler() : onModifier())}
-					><IconeAction icone="pencil" /></button
 				>
+					<IconeAction icone="pencil" />
+				</button>
 			{/if}
 			{#if archivable && !archive}
 				<!--  📦 et non 🗑️ (#1538) : la corbeille disait « supprimer » pour un
@@ -136,8 +137,10 @@
 					class="btn-icon"
 					aria-label="Archiver"
 					title="Archiver — rejoint les Archives, en bas de la liste"
-					on:click|stopPropagation={() => onArchiver(true)}><IconeAction icone="archive" /></button
+					on:click|stopPropagation={() => onArchiver(true)}
 				>
+					<IconeAction icone="archive" />
+				</button>
 			{:else if archive}
 				{#if restaurable}
 					<button
@@ -145,8 +148,9 @@
 						aria-label="Restaurer"
 						title={titreRestaurer}
 						on:click|stopPropagation={() => onArchiver(false)}
-						><IconeAction icone="undo-2" /></button
 					>
+						<IconeAction icone="undo-2" />
+					</button>
 				{/if}
 				<!--  Aux Archives seulement : ce qui s'y fait de plus (🗑️ d'un avis). -->
 				<slot name="gestes-archive" />

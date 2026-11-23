@@ -112,8 +112,10 @@
 			type="button"
 			class="btn btn-sm btn-outline"
 			aria-pressed={ouvert}
-			on:click|stopPropagation={() => (ouvert ? (ouvert = false) : ouvrir())}>⭐ Noter</button
+			on:click|stopPropagation={() => (ouvert ? (ouvert = false) : ouvrir())}
 		>
+			⭐ Noter
+		</button>
 	{:else}
 		<button
 			type="button"
@@ -122,8 +124,9 @@
 			title="Modifier cet avis"
 			aria-pressed={ouvert}
 			on:click|stopPropagation={() => (ouvert ? (ouvert = false) : ouvrir())}
-			><IconeAction icone="pencil" /></button
 		>
+			<IconeAction icone="pencil" />
+		</button>
 	{/if}
 	{#if ouvert}
 		<div role="presentation" on:click|stopPropagation on:keydown|stopPropagation>
@@ -132,9 +135,9 @@
 				{#if ajoutRequis}
 					<label class="confirmer-ajout">
 						<input type="checkbox" bind:checked={confirmeAjout} />
-						<span
-							>Ajouter {prestataireNom} comme intervenant de « {choisie?.titre} » (son avis y sera rattaché)</span
-						>
+						<span>
+							Ajouter {prestataireNom} comme intervenant de « {choisie?.titre} » (son avis y sera rattaché)
+						</span>
 					</label>
 				{/if}
 				<FormulaireNotation

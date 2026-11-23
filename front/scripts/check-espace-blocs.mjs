@@ -107,7 +107,7 @@ const RECOPIE = new RegExp(String.raw`(?<!&nbsp;)${SEP}&nbsp;`, 'g');
 //  d'avant la balise est sécable, celle d'après le séparateur aussi : la ligne se
 //  coupe APRÈS lui. `<option>` n'en est pas : une liste ne coupe pas ses lignes.
 const TETE_D_ELEMENT = new RegExp(
-	String.raw`<(?:${EN_LIGNE})\b[^>]*>[ \t]*${SEP}${PUIS_UN_MOT}`,
+	String.raw`<(?:${EN_LIGNE})\b[^>]*>\s*${SEP}${PUIS_UN_MOT}`, // \s : déplié par prettier (#2900)
 	'g',
 );
 
@@ -189,6 +189,12 @@ const cas = [
 	['{date} <span class="lieu">{SEPARATEUR.point}{cr.ou}</span>', 0],
 	['<option value="a">— Aucun —</option>', 0],
 	['<Badge teinte="x">→ {etat}</Badge>', 0],
+	//  prettier-plugin-svelte 4.2 (#2900) ne colle plus `>` et `</` au contenu : Svelte 5
+	//  retire l'espace au début et à la fin d'un élément, la forme dépliée est la même.
+	['<Badge teinte="x">\n\t→ {etat}\n</Badge>', 0],
+	['<span title="t">\n\t—\n</span>', 0],
+	['{date} <span class="lieu">\n\t· {cr.ou}\n</span>', 1],
+	['<td>\n\t{a}\n\t·\n\t<Badge>b</Badge>\n</td>', 1],
 	//  Le texte courant (#2362, forme 1) : entre deux espaces sécables, il se coupe après.
 	['{a} · {b}', 1],
 	['<li>{e.qui} — {e.motif}</li>', 1],

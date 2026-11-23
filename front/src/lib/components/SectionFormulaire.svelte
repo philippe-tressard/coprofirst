@@ -200,8 +200,10 @@
 			<span class="section-titre section-titre-plie">
 				<span aria-hidden="true">&#x1F512;</span><span
 					class="section-titre-texte"
-					id={idTitre || undefined}>{titre}</span
+					id={idTitre || undefined}
 				>
+					{titre}
+				</span>
 			</span>
 			<!--  La pastille de résumé, en GRIS : même place et même forme que
 			      « sans date », pour dire qu'il n'y a rien à ouvrir ici. -->
@@ -226,16 +228,17 @@
 				{#if icone}<Icon name={icone} size={15} />{/if}<span
 					class="section-titre-texte"
 					id={idTitre || undefined}
-					>{titre}{#if requis}<EtoileRequis vide={!rempli} />{/if}</span
 				>
+					{titre}{#if requis}<EtoileRequis vide={!rempli} />{/if}
+				</span>
 			</span>
-			<span class="badge badge-green section-resume"
-				>{#if resume}{resume}{:else}<ContenuBadge
+			<span class="badge badge-green section-resume">
+				{#if resume}{resume}{:else}<ContenuBadge
 						icones={badgeIcones}
 						texte={badge}
 						icone={badgeIconeFin}
-					/>{/if}</span
-			>
+					/>{/if}
+			</span>
 			<svg
 				class="section-chev"
 				width="12"
@@ -244,63 +247,61 @@
 				fill="none"
 				stroke="currentColor"
 				stroke-width="1.6"
-				aria-hidden="true"><path d="M1 1l5 5 5-5" /></svg
+				aria-hidden="true"
 			>
+				<path d="M1 1l5 5 5-5" />
+			</svg>
 		</button>
 	{/if}
 	{#if titre && ouverte && !inactive}
-		{#if pour}
-			<label class="section-titre" for={pour} id={idTitre || undefined}>
-				{#if icone}<Icon name={icone} size={15} />{/if}<span class="section-titre-texte"
-					>{titre}{#if requis}<EtoileRequis vide={!rempli} />{/if}</span
+		<!--  Le titre est un `<label for>` quand la section porte un contrôle unique
+		      (`pour`), un `<h4>` sinon : un seul contenu pour les deux. -->
+		<svelte:element
+			this={pour ? 'label' : 'h4'}
+			class="section-titre"
+			for={pour || undefined}
+			id={idTitre || undefined}
+		>
+			{#if icone}<Icon name={icone} size={15} />{/if}<span class="section-titre-texte">
+				{titre}{#if requis}<EtoileRequis vide={!rempli} />{/if}
+			</span>
+			{#if badge}<span
+					class="badge section-badge"
+					class:badge-green={!valeurModifiee}
+					class:badge-bleu={valeurModifiee}
 				>
-				{#if badge}<span
-						class="badge section-badge"
-						class:badge-green={!valeurModifiee}
-						class:badge-bleu={valeurModifiee}
-						><ContenuBadge icones={badgeIcones} texte={badge} icone={badgeIconeFin} /></span
-					>{/if}
-			</label>
-		{:else}
-			<h4 class="section-titre" id={idTitre || undefined}>
-				{#if icone}<Icon name={icone} size={15} />{/if}<span class="section-titre-texte"
-					>{titre}{#if requis}<EtoileRequis vide={!rempli} />{/if}</span
-				>
-				{#if badge}<span
-						class="badge section-badge"
-						class:badge-green={!valeurModifiee}
-						class:badge-bleu={valeurModifiee}
-						><ContenuBadge icones={badgeIcones} texte={badge} icone={badgeIconeFin} /></span
-					>{/if}
-				<!--  🔴 Replier est un GESTE, donc un `<button>` — et il n'existe que
-				      quand il est permis. Une commande visible qui ne ferait rien dit
-				      au doigt que le geste a échoué, jamais qu'il était interdit.
+					<ContenuBadge icones={badgeIcones} texte={badge} icone={badgeIconeFin} />
+				</span>{/if}
+			<!--  🔴 Replier est un GESTE, donc un `<button>` — et il n'existe que
+			      quand il est permis. Une commande visible qui ne ferait rien dit
+			      au doigt que le geste a échoué, jamais qu'il était interdit.
 
-				      ⚠️ Il est absent d'un `<label for>` : un bouton à l'intérieur
-				      d'un label vole le clic destiné au champ. Ces sections-là se
-				      replient par leur résumé, comme avant. -->
-				{#if replialbe}
-					<button
-						type="button"
-						class="section-replier"
-						aria-expanded="true"
-						aria-controls={idContenu}
-						aria-label="Replier la section {titre}"
-						on:click={() => (ouverteParLUtilisateur = false)}
+			      ⚠️ Il est absent d'un `<label for>` : un bouton à l'intérieur
+			      d'un label vole le clic destiné au champ. Ces sections-là se
+			      replient par leur résumé, comme avant. -->
+			{#if replialbe && !pour}
+				<button
+					type="button"
+					class="section-replier"
+					aria-expanded="true"
+					aria-controls={idContenu}
+					aria-label="Replier la section {titre}"
+					on:click={() => (ouverteParLUtilisateur = false)}
+				>
+					<svg
+						width="12"
+						height="8"
+						viewBox="0 0 12 8"
+						fill="none"
+						stroke="currentColor"
+						stroke-width="1.6"
+						aria-hidden="true"
 					>
-						<svg
-							width="12"
-							height="8"
-							viewBox="0 0 12 8"
-							fill="none"
-							stroke="currentColor"
-							stroke-width="1.6"
-							aria-hidden="true"><path d="M11 7L6 2 1 7" /></svg
-						>
-					</button>
-				{/if}
-			</h4>
-		{/if}
+						<path d="M11 7L6 2 1 7" />
+					</svg>
+				</button>
+			{/if}
+		</svelte:element>
 	{/if}
 	{#if !inactive}
 		<div id={idContenu} hidden={!ouverte}>

@@ -97,20 +97,21 @@
 							<th scope="row">
 								<span class="cle">{l.libelle}</span>
 								{#if l.description}<span class="finance">{l.description}</span>{/if}
-								{#if l.libelle_syndic}<span class="finance"
-										>Sur l’appel de fonds : {l.libelle_syndic}</span
-									>{/if}
-								{#if l.nb_lots > 1}<span class="contributeurs"
-										>{fmtNombre(l.nb_lots)} lots y contribuent</span
-									>{/if}
+								{#if l.libelle_syndic}<span class="finance">
+										Sur l’appel de fonds : {l.libelle_syndic}
+									</span>{/if}
+								{#if l.nb_lots > 1}<span class="contributeurs">
+										{fmtNombre(l.nb_lots)} lots y contribuent
+									</span>{/if}
 							</th>
 							{#each tableau.colonnes as col (col.lot_id)}
 								<td
 									class="nombre"
 									class:absent={partDuLot(l, col.lot_id) === undefined}
 									class:surligne={$lotSurligne === col.lot_id}
-									>{part(partDuLot(l, col.lot_id), plusieurs ? null : l.denominateur)}</td
 								>
+									{part(partDuLot(l, col.lot_id), plusieurs ? null : l.denominateur)}
+								</td>
 							{/each}
 							{#if plusieurs}
 								<td class="nombre total">{fmtNombre(l.total)}/{fmtNombre(l.denominateur)}</td>
@@ -132,9 +133,9 @@
 
 		{#if tableau.non_appelees.length}
 			<details class="non-appelees">
-				<summary
-					>Prévues au règlement, non appelées actuellement ({tableau.non_appelees.length})</summary
-				>
+				<summary>
+					Prévues au règlement, non appelées actuellement ({tableau.non_appelees.length})
+				</summary>
 				<p class="aide">
 					Le syndic n’appelle pas ces clés en ce moment : elles ne figurent pas sur votre appel de
 					fonds. Votre part, celle de l’acte, reste la même le jour où il les appelle.

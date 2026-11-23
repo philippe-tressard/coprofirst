@@ -163,21 +163,26 @@
 							class="btn-order"
 							disabled={indicesMenu[0] === i}
 							on:click={() => movePage(i, -1)}
-							aria-label="Monter {pg.nom} dans le menu"><IconeAction icone="arrow-up" /></button
+							aria-label="Monter {pg.nom} dans le menu"
 						>
+							<IconeAction icone="arrow-up" />
+						</button>
 						<button
 							type="button"
 							class="btn-order"
 							disabled={indicesMenu[indicesMenu.length - 1] === i}
 							on:click={() => movePage(i, 1)}
 							aria-label="Descendre {pg.nom} dans le menu"
-							><IconeAction icone="arrow-down" /></button
 						>
+							<IconeAction icone="arrow-down" />
+						</button>
 					{:else}
 						<span
 							class="hors-menu"
-							title="Cette page n'a pas d'entrée de menu : son ordre n'a pas de sens.">—</span
+							title="Cette page n'a pas d'entrée de menu : son ordre n'a pas de sens."
 						>
+							—
+						</span>
 					{/if}
 				</div>
 				<button class="page-row-btn" on:click={() => togglePage(pg.id)} type="button">
@@ -204,17 +209,17 @@
 							<label class="field">
 								Titre de la page
 								<input type="text" bind:value={pg.titre} />
-								<span class="aide"
-									>Titre de Page avec reprise de l'icône (de navigation du menu associé).</span
-								>
+								<span class="aide">
+									Titre de Page avec reprise de l'icône (de navigation du menu associé).
+								</span>
 							</label>
 							<label class="field">
 								Description
 								<RichEditor bind:value={pg.descriptif} minHeight="80px" />
-								<span class="aide"
-									>Sous-titre affiché sous le titre de page. Mise en forme riche supportée (gras,
-									italique, listes, liens).</span
-								>
+								<span class="aide">
+									Sous-titre affiché sous le titre de page. Mise en forme riche supportée (gras,
+									italique, listes, liens).
+								</span>
 							</label>
 						</div>
 						{#if pg.onglets && pg.onglets.length > 0}
@@ -234,17 +239,17 @@
 										</div>
 									{/each}
 								</div>
-								<span class="aide"
-									>Labels et descriptifs de chaque onglet. Le descriptif apparaît sous les onglets
-									quand l'onglet est actif.</span
-								>
+								<span class="aide">
+									Labels et descriptifs de chaque onglet. Le descriptif apparaît sous les onglets
+									quand l'onglet est actif.
+								</span>
 							</div>
 						{/if}
 					</div>
 					<div class="form-actions">
-						<button class="btn btn-primary btn-sm" on:click={() => savePageConfig(pg)}
-							>Enregistrer</button
-						>
+						<button class="btn btn-primary btn-sm" on:click={() => savePageConfig(pg)}>
+							Enregistrer
+						</button>
 					</div>
 				</div>
 			{/if}

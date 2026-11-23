@@ -55,9 +55,9 @@
 		on:click={() => (disclaimerOpen = !disclaimerOpen)}
 		aria-expanded={disclaimerOpen}
 	>
-		<span class="urgence-disclaimer-title"
-			>{GLYPHE_URGENCE} Affaires urgentes{SEPARATEUR.tiret}Avertissement légal</span
-		>
+		<span class="urgence-disclaimer-title">
+			{GLYPHE_URGENCE} Affaires urgentes{SEPARATEUR.tiret}Avertissement légal
+		</span>
 		<span class="urgence-disclaimer-chevron">{disclaimerOpen ? '▲' : '▼'}</span>
 	</button>
 	{#if disclaimerOpen}
@@ -69,9 +69,9 @@
 			résultat de la part du conseil syndical ou du syndicat des copropriétaires.
 		</p>
 		<p class="urgence-disclaimer-steps">
-			<strong
-				>En cas de danger pour les personnes ou de sinistre, vous devez impérativement :</strong
-			>
+			<strong>
+				En cas de danger pour les personnes ou de sinistre, vous devez impérativement :
+			</strong>
 		</p>
 		<ul>
 			<li>

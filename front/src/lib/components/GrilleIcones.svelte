@@ -32,8 +32,10 @@
 			aria-pressed={!valeur}
 			title="Aucune icône"
 			aria-label="Aucune icône"
-			on:click={() => (valeur = '')}>—</button
+			on:click={() => (valeur = '')}
 		>
+			—
+		</button>
 	{/if}
 	{#each icones as ic (ic.nom)}
 		<button

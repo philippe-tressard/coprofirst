@@ -30,8 +30,9 @@
 		{/if}
 	</span>
 	<span aria-hidden="true">{libelle}</span>
-	{#if nombre}<span class="dates" aria-hidden="true">{relances.map(fmtDayMonth).join(' · ')}</span
-		>{/if}
+	{#if nombre}<span class="dates" aria-hidden="true">
+			{relances.map(fmtDayMonth).join(' · ')}
+		</span>{/if}
 </span>
 
 <style>

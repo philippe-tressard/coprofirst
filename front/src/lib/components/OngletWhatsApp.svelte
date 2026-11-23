@@ -274,10 +274,10 @@
 					rows="2"
 					placeholder="— Le Conseil Syndical"
 					class="saisie-gabarit"></textarea>
-				<span class="aide"
-					>Texte qui finalise chaque message (markdown WhatsApp autorisé : *gras*, _italique_,
-					~barré~).</span
-				>
+				<span class="aide">
+					Texte qui finalise chaque message (markdown WhatsApp autorisé : *gras*, _italique_,
+					~barré~).
+				</span>
 			</label>
 		</div>
 

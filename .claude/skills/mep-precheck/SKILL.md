@@ -205,6 +205,10 @@ de travail :**
    paternité de vrais changements. **Un reformatage part donc dans une MEP
    dédiée**, et c'est le SHA de son squash sur `main` qui entre dans le fichier.
    `test_documentation.py` refuse un SHA absent de l'historique.
+   Et il se **prouve** sans effet : `node scripts/comparer-rendu.mjs <réf. d'avant>`
+   (depuis `front/`) compile chaque composant avant et après et liste ceux dont le
+   rendu change — la PR explique chacun. Une coupure `{a}`/`{b}` sur deux lignes
+   garde l'écran, pas le texte du DOM (#2900).
 
 🔴 **Après la MEP : `bash scripts/poste/precheck-mep.sh --post-mep`** (#1282,
 25/09/2026). Il ne lance pas les points du LOT (0a à 0h, 15, 16), qui échouent

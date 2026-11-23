@@ -46,8 +46,9 @@
 	title={titre || libelle}
 	aria-label={libelle}
 	on:click|stopPropagation
-	><IconeAction {icone} />{#if mot}<span class="mot">{mot}</span>{/if}</a
 >
+	<IconeAction {icone} />{#if mot}<span class="mot">{mot}</span>{/if}
+</a>
 
 <style>
 	/*  La hauteur des actions d'une carte (26 px, 32 au doigt — `EnteteCarte`) :

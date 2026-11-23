@@ -92,8 +92,9 @@
 					</tr>
 					<tr class="taux">
 						<td>Taux de retour</td>
-						<td class="nombre">{arrivants.taux == null ? '—' : `${fmtNombre(arrivants.taux)} %`}</td
-						>
+						<td class="nombre">
+							{arrivants.taux == null ? '—' : `${fmtNombre(arrivants.taux)} %`}
+						</td>
 					</tr>
 				</tbody>
 			</table>

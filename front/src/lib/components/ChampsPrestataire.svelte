@@ -112,14 +112,14 @@
 			? `${prestContacts.filter(contactRenseigne).length} contact(s)`
 			: 'aucun'}
 	>
-		<label class="field"
-			>E-mail de l’entreprise<input type="email" bind:value={prestForm.email} /></label
-		>
+		<label class="field">
+			E-mail de l’entreprise<input type="email" bind:value={prestForm.email} />
+		</label>
 		<!--  L'adresse de l'entreprise, facultative (#1327) : plusieurs lignes, comme
 		      on l'écrit sur une enveloppe. -->
-		<label class="field"
-			>Adresse de l’entreprise<textarea rows="2" bind:value={prestForm.adresse}></textarea></label
-		>
+		<label class="field">
+			Adresse de l’entreprise<textarea rows="2" bind:value={prestForm.adresse}></textarea>
+		</label>
 		{#each prestContacts as _contact, i (_contact)}
 			<div class="contact">
 				<!--  Deux lignes, demandées à l'écran (#1229) : QUI, puis COMMENT le
@@ -131,9 +131,9 @@
 				</div>
 				<div class="form-grid">
 					<label class="field">Téléphone<input bind:value={prestContacts[i].telephone} /></label>
-					<label class="field"
-						>E-mail<input type="email" bind:value={prestContacts[i].email} /></label
-					>
+					<label class="field">
+						E-mail<input type="email" bind:value={prestContacts[i].email} />
+					</label>
 				</div>
 				{#if prestContacts.length > 1}
 					<button
@@ -141,16 +141,19 @@
 						class="btn btn-sm btn-outline btn-retirer"
 						aria-label="Retirer ce contact"
 						on:click={() => (prestContacts = prestContacts.filter((_, j) => j !== i))}
-						>− Retirer</button
 					>
+						− Retirer
+					</button>
 				{/if}
 			</div>
 		{/each}
 		<button
 			type="button"
 			class="btn btn-sm btn-outline"
-			on:click={() => (prestContacts = [...prestContacts, contactVide()])}>+ Nouveau contact</button
+			on:click={() => (prestContacts = [...prestContacts, contactVide()])}
 		>
+			+ Nouveau contact
+		</button>
 	</SectionFormulaire>
 {/if}
 

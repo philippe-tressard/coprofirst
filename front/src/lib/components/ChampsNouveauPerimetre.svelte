@@ -18,19 +18,19 @@
 	export let codePropose = '';
 </script>
 
-<label class="field"
-	><span>Libellé<EtoileRequis vide={!nouveau.libelle.trim()} /></span>
+<label class="field">
+	<span>Libellé<EtoileRequis vide={!nouveau.libelle.trim()} /></span>
 	<input bind:value={nouveau.libelle} required />
 </label>
-<label class="field"
-	><span>Code<EtoileRequis vide={!nouveau.code.trim() && !codePropose} /></span>
+<label class="field">
+	<span>Code<EtoileRequis vide={!nouveau.code.trim() && !codePropose} /></span>
 	<input bind:value={nouveau.code} placeholder={codePropose} />
 	<span class="aide">
 		Laissé vide, il vaudra <code>{codePropose || '…'}</code>. Il ne pourra plus être modifié : c’est
 		lui qui sera enregistré dans les contenus.
 	</span>
 </label>
-<label class="field"
-	>Description
+<label class="field">
+	Description
 	<textarea bind:value={nouveau.description} rows="3"></textarea>
 </label>

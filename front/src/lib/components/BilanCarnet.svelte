@@ -111,9 +111,9 @@
 						{#if c.prestataires.length}
 							<div class="table-wrap">
 								<table class="table">
-									<caption class="table-legende"
-										>Intervenants les plus lents{SEPARATEUR.tiret}étape « Chez le prestataire »</caption
-									>
+									<caption class="table-legende">
+										Intervenants les plus lents{SEPARATEUR.tiret}étape « Chez le prestataire »
+									</caption>
 									<thead>
 										<tr>
 											<th scope="col">Intervenant</th>

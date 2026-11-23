@@ -26,11 +26,11 @@
 
 {#if recidive}
 	<p class="constat">
-		<strong
-			>{$libelleEquipement(recidive.equipement)} : {total}ᵉ affaire résolue en {fmtNombre(
+		<strong>
+			{$libelleEquipement(recidive.equipement)} : {total}ᵉ affaire résolue en {fmtNombre(
 				recidive.mois,
-			)} mois</strong
-		>
+			)} mois
+		</strong>
 		sur le même périmètre. La question du remplacement se pose, plutôt qu’une réparation de plus.
 	</p>
 	<ul class="autres">

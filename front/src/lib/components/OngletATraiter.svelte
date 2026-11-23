@@ -208,17 +208,17 @@
 			<table class="table">
 				<thead>
 					<tr>
-						<th>Nom</th><th>Statut</th><th>Rôle(s)</th><th>Bât.</th><th>Lots import</th><th
-							>Inscription</th
-						><th>Actions</th>
+						<th>Nom</th><th>Statut</th><th>Rôle(s)</th><th>Bât.</th><th>Lots import</th><th>
+							Inscription
+						</th><th>Actions</th>
 					</tr>
 				</thead>
 				<tbody>
 					{#each comptes as item (item.user.id)}
 						{@const u = item.user}
 						<tr>
-							<td class="nom-compte"
-								>{u.nom_affiche}
+							<td class="nom-compte">
+								{u.nom_affiche}
 								{#if u.statut === 'locataire' && u.nom_proprietaire}
 									<div class="precision">
 										&#x1F464; Prop. : {u.nom_proprietaire}
@@ -231,11 +231,11 @@
 									</div>
 								{/if}
 							</td>
-							<td
-								><Badge teinte={badgeStatut(u.statut)}
-									>{LIBELLES_STATUT_ABREGE[u.statut] ?? u.statut}</Badge
-								></td
-							>
+							<td>
+								<Badge teinte={badgeStatut(u.statut)}>
+									{LIBELLES_STATUT_ABREGE[u.statut] ?? u.statut}
+								</Badge>
+							</td>
 							<td>
 								<div class="liste-roles">
 									{#each u.roles?.length ? u.roles : [u.role] as r (r)}
@@ -243,16 +243,17 @@
 									{/each}
 								</div>
 							</td>
-							<td class="muted"
-								>{u.batiment_id ? (batimentsMap[u.batiment_id] ?? `#${u.batiment_id}`) : '—'}</td
-							>
+							<td class="muted">
+								{u.batiment_id ? (batimentsMap[u.batiment_id] ?? `#${u.batiment_id}`) : '—'}
+							</td>
 							<td>
 								{#if item.lots_prevus > 0}
 									<span
 										class="badge badge-green"
 										title="{fmtNombre(item.lots_prevus)} lot(s) trouvé(s) dans l'import"
-										>✓ {fmtNombre(item.lots_prevus)}</span
 									>
+										✓ {fmtNombre(item.lots_prevus)}
+									</span>
 								{:else if u.statut?.startsWith('copropriétaire')}
 									<span class="badge badge-orange" title="Pas trouvé dans l'import Lots">⚠ 0</span>
 								{:else}
@@ -374,11 +375,11 @@
 		<div class="card">
 			<table class="table">
 				<thead>
-					<tr
-						><th>Résident</th><th>Statut actuel</th><th>Bâtiment actuel</th><th
-							>Changement souhaité</th
-						><th>Motif</th><th>Date</th><th>Actions</th></tr
-					>
+					<tr>
+						<th>Résident</th><th>Statut actuel</th><th>Bâtiment actuel</th><th>
+							Changement souhaité
+						</th><th>Motif</th><th>Date</th><th>Actions</th>
+					</tr>
 				</thead>
 				<tbody>
 					{#each demandesProfil as d (d.id)}
@@ -389,20 +390,20 @@
 									{d.utilisateur_email}
 								</div>
 							</td>
-							<td
-								><span class="valeur"
-									>{(d.statut_actuel && LIBELLES_STATUT_ABREGE[d.statut_actuel]) ??
+							<td>
+								<span class="valeur">
+									{(d.statut_actuel && LIBELLES_STATUT_ABREGE[d.statut_actuel]) ??
 										d.statut_actuel ??
-										'—'}</span
-								></td
-							>
+										'—'}
+								</span>
+							</td>
 							<td><span class="valeur">{d.batiment_actuel ?? '—'}</span></td>
 							<td>
 								{#if d.statut_souhaite}
 									<div class="valeur">
-										Type : <strong
-											>{LIBELLES_STATUT_ABREGE[d.statut_souhaite] ?? d.statut_souhaite}</strong
-										>
+										Type : <strong>
+											{LIBELLES_STATUT_ABREGE[d.statut_souhaite] ?? d.statut_souhaite}
+										</strong>
 									</div>
 								{/if}
 								{#if d.batiment_nom_souhaite}

@@ -52,11 +52,11 @@
 								{/if}
 								{#if d.batiment_nom_souhaite}{d.batiment_nom_souhaite}{/if}
 							</td>
-							<td
-								><Badge teinte={STATUT_DEMANDE_BADGE[d.statut_demande] ?? 'badge-gray'}
-									>{STATUT_DEMANDE_LABEL[d.statut_demande] ?? d.statut_demande}</Badge
-								></td
-							>
+							<td>
+								<Badge teinte={STATUT_DEMANDE_BADGE[d.statut_demande] ?? 'badge-gray'}>
+									{STATUT_DEMANDE_LABEL[d.statut_demande] ?? d.statut_demande}
+								</Badge>
+							</td>
 							<td class="hd-motif">{d.motif_refus ?? '—'}</td>
 						</tr>
 					{/each}

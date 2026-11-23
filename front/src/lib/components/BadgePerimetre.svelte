@@ -39,8 +39,10 @@
 		class="badge badge-perimetre"
 		class:badge-gray={ton === 'gray'}
 		class:badge-blue={ton === 'blue'}
-		class:badge-purple={ton === 'purple'}>&#x1F539; {texte}</span
+		class:badge-purple={ton === 'purple'}
 	>
+		&#x1F539; {texte}
+	</span>
 {:else}
 	<!--  Ce qu'un écran veut montrer À LA PLACE quand il n'y a pas de périmètre à
 	      nommer. La plupart ne montrent rien — c'est le cas par défaut, un slot

@@ -22,9 +22,9 @@
 
 {#if lot.quotes_parts?.length}
 	<p class="vers-charges">
-		<a href="#mes-charges" on:click={() => lotSurligne.set(lot.id)}
-			>Voir sa colonne dans le tableau des charges ↑</a
-		>
+		<a href="#mes-charges" on:click={() => lotSurligne.set(lot.id)}>
+			Voir sa colonne dans le tableau des charges ↑
+		</a>
 	</p>
 {/if}
 {#if lot.alertes?.length}

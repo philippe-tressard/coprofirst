@@ -225,12 +225,16 @@
 								<button
 									class="btn btn-sm btn-success"
 									aria-pressed="false"
-									on:click={() => openCSValidation(user)}>✓ Approuver</button
+									on:click={() => openCSValidation(user)}
 								>
+									✓ Approuver
+								</button>
 								<button
 									class="btn btn-sm btn-danger"
-									on:click={() => traiterCompte(user.id, 'rejeter')}>✗ Rejeter</button
+									on:click={() => traiterCompte(user.id, 'rejeter')}
 								>
+									✗ Rejeter
+								</button>
 							</div>
 						{/if}
 					</div>
@@ -282,12 +286,16 @@
 						<div class="pending-actions">
 							<button
 								class="btn btn-sm btn-success"
-								on:click={() => traiterCommande(cmd.id, 'approuver')}>✓ Approuver</button
+								on:click={() => traiterCommande(cmd.id, 'approuver')}
 							>
+								✓ Approuver
+							</button>
 							<button
 								class="btn btn-sm btn-danger"
-								on:click={() => traiterCommande(cmd.id, 'rejeter')}>✗ Rejeter</button
+								on:click={() => traiterCommande(cmd.id, 'rejeter')}
 							>
+								✗ Rejeter
+							</button>
 						</div>
 					</div>
 				{/each}

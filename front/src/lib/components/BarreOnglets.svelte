@@ -130,8 +130,10 @@
 			<a
 				href={g.onglets[0].route}
 				class="groupe"
-				aria-current={g === groupeActif ? 'true' : undefined}>{g.nom}<SignalATraiter {n} /></a
+				aria-current={g === groupeActif ? 'true' : undefined}
 			>
+				{g.nom}<SignalATraiter {n} />
+			</a>
 		{/each}
 	</nav>
 {/if}

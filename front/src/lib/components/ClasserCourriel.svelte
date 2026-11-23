@@ -101,10 +101,13 @@
 				aria-pressed={!tape && retenue === s.id}
 				disabled={enCours}
 				on:click={() => retenir(s.id)}
-				><span class="coche" aria-hidden="true"><Icon name="check" size={16} /></span><span
-					class="numero">#{s.numero}</span
-				><span class="titre-suggestion">{s.titre}</span></button
 			>
+				<span class="coche" aria-hidden="true"><Icon name="check" size={16} /></span><span
+					class="numero"
+				>
+					#{s.numero}
+				</span><span class="titre-suggestion">{s.titre}</span>
+			</button>
 		{/each}
 		<div class="field champ-en-ligne champ-numero">
 			<label for="classer-{message.id}-numero" class="libelle-numero">
@@ -127,11 +130,13 @@
 			on:click={rattacher}
 		>
 			{#if cible}
-				<span
-					>Rattacher à <span class="numero">#{cible.numero}</span
-					>{#if cible.titre}{SEPARATEUR.point}<span class="titre-suggestion">{cible.titre}</span
-						>{/if}</span
-				>
+				<span>
+					Rattacher à <span class="numero">
+						#{cible.numero}
+					</span>{#if cible.titre}{SEPARATEUR.point}<span class="titre-suggestion">
+							{cible.titre}
+						</span>{/if}
+				</span>
 			{:else}
 				Rattacher à l’affaire choisie
 			{/if}
@@ -139,12 +144,12 @@
 	</LibelleGroupe>
 	<!--  Les autres issues, secondaires et confirmées : elles ne rattachent rien. -->
 	<div class="autres-issues">
-		<button class="btn btn-outline" type="button" disabled={enCours} on:click={creer}
-			>Créer une affaire</button
-		>
-		<button class="btn btn-outline" type="button" disabled={enCours} on:click={ecarter}
-			>Écarter</button
-		>
+		<button class="btn btn-outline" type="button" disabled={enCours} on:click={creer}>
+			Créer une affaire
+		</button>
+		<button class="btn btn-outline" type="button" disabled={enCours} on:click={ecarter}>
+			Écarter
+		</button>
 	</div>
 </div>
 

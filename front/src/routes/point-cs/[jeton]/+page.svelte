@@ -99,10 +99,12 @@
 				<section class="abordee">
 					<h2>{a.numero}{SEPARATEUR.point}{a.titre}</h2>
 					<p class="marques">
-						{#if a.lecture}<Badge teinte="badge-blue" compact title="Qui la lit">{a.lecture}</Badge
-							>{/if}
-						{#if a.conseil_seul}<Badge teinte="badge-purple" compact>{LIBELLE_CS_ET_PRESENTS}</Badge
-							>{/if}
+						{#if a.lecture}<Badge teinte="badge-blue" compact title="Qui la lit">
+								{a.lecture}
+							</Badge>{/if}
+						{#if a.conseil_seul}<Badge teinte="badge-purple" compact>
+								{LIBELLE_CS_ET_PRESENTS}
+							</Badge>{/if}
 						{#if a.marque}<Badge teinte="badge-orange" compact>{a.marque}</Badge>{/if}
 					</p>
 					<div class="contenu">{@html safeHtml(a.contenu)}</div>
@@ -137,9 +139,9 @@
 					{#if commentaireOuvert}
 						<form on:submit|preventDefault={envoyerCommentaire}>
 							<div class="field">
-								<label for="commentaire-cr"
-									>Votre commentaire<EtoileRequis vide={!commentaire.trim()} /></label
-								>
+								<label for="commentaire-cr">
+									Votre commentaire<EtoileRequis vide={!commentaire.trim()} />
+								</label>
 								<textarea
 									id="commentaire-cr"
 									rows="5"
@@ -159,16 +161,19 @@
 								type="button"
 								class="btn btn-outline"
 								disabled={enCours}
-								on:click={() => (commentaireOuvert = true)}>Envoyer un commentaire</button
+								on:click={() => (commentaireOuvert = true)}
 							>
+								Envoyer un commentaire
+							</button>
 							<button
 								type="button"
 								class="btn btn-primary"
 								disabled={enCours}
 								on:click={() =>
 									geste(() => pointsConseil.validerParLien(jeton), 'Validation enregistrée')}
-								>Je valide</button
 							>
+								Je valide
+							</button>
 						</div>
 					{/if}
 				{/if}

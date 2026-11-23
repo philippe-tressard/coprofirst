@@ -158,15 +158,17 @@
 								aria-label="Modifier"
 								title="Modifier"
 								on:click|stopPropagation={() => onModifier(doc)}
-								><IconeAction icone="pencil" /></button
 							>
+								<IconeAction icone="pencil" />
+							</button>
 							<button
 								class="btn-icon-danger"
 								aria-label="Supprimer"
 								title="Supprimer"
 								on:click|stopPropagation={() => onSupprimer(doc.id)}
-								><IconeAction icone="trash-2" /></button
 							>
+								<IconeAction icone="trash-2" />
+							</button>
 						{/if}
 					</svelte:fragment>
 					<!--  La DESCRIPTION (#852) : le titre NOMME le document, elle dit ce

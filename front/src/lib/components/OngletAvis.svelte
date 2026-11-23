@@ -119,9 +119,9 @@
 
 {#if gestionnaire}
 	<p class="avis-export">
-		<a class="btn btn-outline btn-sm" href={avisApi.exportUrl()} download
-			>Exporter les avis retenus pour {VITRINE}</a
-		>
+		<a class="btn btn-outline btn-sm" href={avisApi.exportUrl()} download>
+			Exporter les avis retenus pour {VITRINE}
+		</a>
 		<span class="aide">{retenus} avis retenu{retenus > 1 ? 's' : ''}</span>
 	</p>
 {/if}

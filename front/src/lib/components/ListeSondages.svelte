@@ -81,9 +81,9 @@
 				<BadgeNouveau si={s.nouveau} />
 			</svelte:fragment>
 			<svelte:fragment slot="tags">
-				<span class="badge" class:badge-gray={s.cloture} class:badge-green={!s.cloture}
-					>{s.cloture ? '🔒 Clôturé' : 'Ouvert'}</span
-				>
+				<span class="badge" class:badge-gray={s.cloture} class:badge-green={!s.cloture}>
+					{s.cloture ? '🔒 Clôturé' : 'Ouvert'}
+				</span>
 				<!--  État · 🔹 · qui le lit — l'ordre de la carte d'affaire (#1373) : le 🔹
 				      n'est plus teinté en bleu, et la pastille de lecture a remplacé le
 				      badge orange des destinataires. 🔴 PAS D'AUTEUR : un sondage reste
@@ -93,9 +93,9 @@
 				{#if s.cloture_le && !s.cloture}
 					<span class="badge badge-gray">Clôture le {fmtDateShort(s.cloture_le)}</span>
 				{/if}
-				<span class="badge badge-gray"
-					>{fmtNombre(s.nb_votants ?? 0)} votant{(s.nb_votants ?? 0) !== 1 ? 's' : ''}</span
-				>
+				<span class="badge badge-gray">
+					{fmtNombre(s.nb_votants ?? 0)} votant{(s.nb_votants ?? 0) !== 1 ? 's' : ''}
+				</span>
 				<MarqueIA assiste={s.assiste_ia} />
 			</svelte:fragment>
 			<svelte:fragment slot="actions">
@@ -109,22 +109,28 @@
 						aria-label="Modifier ce sondage"
 						title="Modifier"
 						aria-pressed={editId === s.id}
-						on:click={(e) => modifierSondage(s, e)}><IconeAction icone="pencil" /></button
+						on:click={(e) => modifierSondage(s, e)}
 					>
+						<IconeAction icone="pencil" />
+					</button>
 					<button
 						class="btn-icon-warn"
 						aria-label="Stopper ce sondage"
 						title="Stopper"
-						on:click={(e) => arreterSondage(s, e)}><IconeAction icone="square" /></button
+						on:click={(e) => arreterSondage(s, e)}
 					>
+						<IconeAction icone="square" />
+					</button>
 				{/if}
 				{#if $currentUser?.id === s.auteur_id || $isAdmin}
 					<button
 						class="btn-icon-danger"
 						aria-label="Supprimer"
 						title="Supprimer"
-						on:click={(e) => supprimerSondage(s, e)}><IconeAction icone="trash-2" /></button
+						on:click={(e) => supprimerSondage(s, e)}
 					>
+						<IconeAction icone="trash-2" />
+					</button>
 				{/if}
 			</svelte:fragment>
 			<!--  L'aperçu passe par l'EN-TÊTE (18/09/2026) : c'est ce qui fait

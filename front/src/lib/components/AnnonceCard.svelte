@@ -124,8 +124,9 @@
 		</svelte:fragment>
 
 		<svelte:fragment slot="tags">
-			<Badge teinte={statutAnnonceClass(annonce.statut)}>{statutAnnonceLabel(annonce.statut)}</Badge
-			>
+			<Badge teinte={statutAnnonceClass(annonce.statut)}>
+				{statutAnnonceLabel(annonce.statut)}
+			</Badge>
 			<span class="badge badge-gray">{categorieAnnonceLabel(annonce.categorie)}</span>
 			<!--  🔹 puis QUI LA LIT — l'ordre de la carte d'affaire (#1373). La
 			      pastille bleue a remplacé le badge orange des destinataires, arbitré
@@ -133,11 +134,13 @@
 			<BadgePerimetre libelle={annonce.perimetre_libelle} />
 			<PastilleLecture lecture={annonce.lecture} />
 			{#if annonce.prix !== null && annonce.prix !== undefined}
-				<span class="annonce-prix"
-					>{fmtMontant(annonce.prix)}{#if annonce.negotiable}&nbsp;<span
-							class="badge badge-gray annonce-nego">Négociable</span
-						>{/if}</span
-				>
+				<span class="annonce-prix">
+					{fmtMontant(annonce.prix)}{#if annonce.negotiable}&nbsp;<span
+							class="badge badge-gray annonce-nego"
+						>
+							Négociable
+						</span>{/if}
+				</span>
 			{:else if annonce.gratuit}
 				<span class="annonce-prix annonce-gratuit">Gratuit</span>
 			{/if}
@@ -165,16 +168,20 @@
 					title="Modifier"
 					aria-label="Modifier l'annonce"
 					aria-pressed={formulaireOuvert}
-					on:click|stopPropagation={onModifier}><IconeAction icone="pencil" /></button
+					on:click|stopPropagation={onModifier}
 				>
+					<IconeAction icone="pencil" />
+				</button>
 			{/if}
 			{#if peutSupprimer}
 				<button
 					class="btn-icon-danger"
 					title="Supprimer"
 					aria-label="Supprimer l'annonce"
-					on:click|stopPropagation={onSupprimer}><IconeAction icone="trash-2" /></button
+					on:click|stopPropagation={onSupprimer}
 				>
+					<IconeAction icone="trash-2" />
+				</button>
 			{/if}
 		</svelte:fragment>
 
@@ -234,8 +241,10 @@
 						<span
 							class="chevron annonce-gerer-chevron"
 							class:open={gestionOuverte}
-							aria-hidden="true">›</span
+							aria-hidden="true"
 						>
+							›
+						</span>
 						Gérer les photos{annonce.photos?.length ? ` (${annonce.photos.length})` : ''}
 					</button>
 					{#if gestionOuverte}
@@ -251,9 +260,9 @@
 
 				<div class="annonce-contact">
 					{#if annonce.auteur_email}
-						<small
-							>&#x1F4EC; <a href="mailto:{annonce.auteur_email}">{annonce.auteur_affiche}</a></small
-						>
+						<small>
+							&#x1F4EC; <a href="mailto:{annonce.auteur_email}">{annonce.auteur_affiche}</a>
+						</small>
 					{:else}
 						<small>&#x1F464; {annonce.auteur_affiche}</small>
 					{/if}
@@ -267,9 +276,9 @@
 				      le MÊME fait, et le serveur l'horodate d'une seule façon. -->
 				{#if annonce.est_auteur}
 					<div class="annonce-workflow">
-						<span class="annonce-workflow-titre" id="wf-annonce-{annonce.id}"
-							>Où en est cette annonce ?</span
-						>
+						<span class="annonce-workflow-titre" id="wf-annonce-{annonce.id}">
+							Où en est cette annonce ?
+						</span>
 						<WorkflowPastilles
 							options={OPTIONS_STATUT_ANNONCE}
 							valeur={annonce.statut}
@@ -285,15 +294,18 @@
 							class="signaler-inline"
 							title="Signaler cette annonce au conseil syndical"
 							aria-label="Signaler cette annonce"
-							on:click={onSignalerAnnonce}>&#x1F6A9; Signaler l'annonce</button
+							on:click={onSignalerAnnonce}
 						>
+							&#x1F6A9; Signaler l'annonce
+						</button>
 						{#if onMasquerAuteur}
 							<button
 								class="signaler-inline"
 								title="Ne plus voir ce que publie {annonce.auteur_affiche}"
 								on:click={() => onMasquerAuteur?.(annonce.auteur_id, annonce.auteur_affiche)}
-								>🙈 Masquer ce que publie {annonce.auteur_affiche}</button
 							>
+								🙈 Masquer ce que publie {annonce.auteur_affiche}
+							</button>
 						{/if}
 					</div>
 				{/if}

@@ -218,21 +218,21 @@
 		<form on:submit|preventDefault={saveReleve}>
 			<div>
 				<div class="form-grid">
-					<label class="field"
-						><span>Date du relevé<EtoileRequis vide={!releveForm.date_releve} /></span><input
+					<label class="field">
+						<span>Date du relevé<EtoileRequis vide={!releveForm.date_releve} /></span><input
 							type="date"
 							bind:value={releveForm.date_releve}
 							required
-						/></label
-					>
-					<label class="field"
-						>Index (m³)<input
+						/>
+					</label>
+					<label class="field">
+						Index (m³)<input
 							type="number"
 							min="0"
 							bind:value={releveForm.index}
 							placeholder="Ex. 47047"
-						/></label
-					>
+						/>
+					</label>
 				</div>
 				<div class="field champ-suivant">
 					<label for="releve-note">Note</label>
@@ -282,14 +282,18 @@
 								class="btn-icon-edit"
 								aria-label="Modifier"
 								title="Modifier"
-								on:click={() => startEditReleve(r)}><IconeAction icone="pencil" /></button
+								on:click={() => startEditReleve(r)}
 							>
+								<IconeAction icone="pencil" />
+							</button>
 							<button
 								class="btn-icon-danger"
 								aria-label="Supprimer"
 								title="Supprimer"
-								on:click={() => deleteReleve(r.id)}><IconeAction icone="trash-2" /></button
+								on:click={() => deleteReleve(r.id)}
 							>
+								<IconeAction icone="trash-2" />
+							</button>
 						{/if}
 					</svelte:fragment>
 					<svelte:fragment slot="apercu">

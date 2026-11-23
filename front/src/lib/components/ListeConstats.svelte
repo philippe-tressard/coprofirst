@@ -30,8 +30,9 @@
 					class="badge"
 					class:badge-red={c.niveau === 'fail'}
 					class:badge-orange={c.niveau === 'warn'}
-					>{c.niveau === 'fail' ? 'Échec' : 'Vigilance'}</span
 				>
+					{c.niveau === 'fail' ? 'Échec' : 'Vigilance'}
+				</span>
 				<span>{c.texte}</span>
 			</li>
 		{/each}

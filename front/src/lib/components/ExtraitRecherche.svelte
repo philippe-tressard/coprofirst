@@ -39,8 +39,9 @@
 	{#if correspondance.extrait.length}
 		<p class="passage">
 			{#if origine}<span class="origine">{origine}</span>{/if}
-			{#each morceaux as segment (segment.debut)}{#if segment.surligne}<mark>{segment.texte}</mark
-					>{:else}{segment.texte}{/if}{/each}
+			{#each morceaux as segment (segment.debut)}{#if segment.surligne}<mark>
+						{segment.texte}
+					</mark>{:else}{segment.texte}{/if}{/each}
 		</p>
 	{/if}
 </div>

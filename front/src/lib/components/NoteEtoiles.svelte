@@ -98,16 +98,18 @@
 	      le contraste de 3:1 —, le CHIFFRE reste dans la couleur du texte. Teinter
 	      le tout mettait l'orange en texte (3,62, sous 4,5) ; l'or de la charte
 	      (2,61) ne tenait même pas le 3:1 d'un graphisme. -->
-	<span class="note-etoiles" title={nbAvis != null ? `${note}/5 (${nbAvis} avis)` : undefined}
-		><span
+	<span class="note-etoiles" title={nbAvis != null ? `${note}/5 (${nbAvis} avis)` : undefined}>
+		<span
 			class="note-glyphes"
 			class:note-bad={teinte === 'bad'}
 			class:note-ok={teinte === 'ok'}
 			class:note-good={teinte === 'good'}
-			aria-hidden="true">{starsDisplay(note)}</span
+			aria-hidden="true"
 		>
-		<span class="note-chiffre">{note}{surCinq ? '/5' : ''}</span></span
-	>
+			{starsDisplay(note)}
+		</span>
+		<span class="note-chiffre">{note}{surCinq ? '/5' : ''}</span>
+	</span>
 {/if}
 
 <style>

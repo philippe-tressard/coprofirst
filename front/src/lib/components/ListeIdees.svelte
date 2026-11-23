@@ -107,9 +107,9 @@
 				<BadgeNouveau si={idee.nouveau} />
 			</svelte:fragment>
 			<svelte:fragment slot="tags">
-				<Badge teinte={statutClass(idee.statut)}
-					>{STATUT_IDEE_LABELS[idee.statut] ?? idee.statut}</Badge
-				>
+				<Badge teinte={statutClass(idee.statut)}>
+					{STATUT_IDEE_LABELS[idee.statut] ?? idee.statut}
+				</Badge>
 				<!--  État · 🔹 · qui la lit · ✨ — l'ordre de la carte d'affaire (#1373).
 				      🔴 PAS D'AUTEUR : arbitré le 27/09/2026, une idée reste anonyme
 				      pour ses lecteurs — aucune API ne l'expose, et l'exposer serait
@@ -137,8 +137,10 @@
 						title="Modifier"
 						aria-label="Modifier l'idée"
 						aria-pressed={editId === idee.id}
-						on:click|stopPropagation={() => onModifier(idee)}><IconeAction icone="pencil" /></button
+						on:click|stopPropagation={() => onModifier(idee)}
 					>
+						<IconeAction icone="pencil" />
+					</button>
 				{/if}
 				{#if idee.auteur_id !== currentUserId}
 					<button
@@ -146,8 +148,9 @@
 						title="Signaler cette idée au conseil syndical"
 						aria-label="Signaler cette idée"
 						on:click|stopPropagation={() => onSignaler('idee', idee.id)}
-						><IconeAction icone="flag" /></button
 					>
+						<IconeAction icone="flag" />
+					</button>
 				{/if}
 				<!--  Réservée à l'administrateur (`peut_supprimer`, servi). -->
 				{#if idee.peut_supprimer}
@@ -156,8 +159,9 @@
 						aria-label="Supprimer cette idée"
 						title="Supprimer cette idée"
 						on:click|stopPropagation={() => onSupprimer(idee.id)}
-						><IconeAction icone="trash-2" /></button
 					>
+						<IconeAction icone="trash-2" />
+					</button>
 				{/if}
 			</svelte:fragment>
 			<!--  L'aperçu passe par l'EN-TÊTE (18/09/2026) : c'est ce qui fait

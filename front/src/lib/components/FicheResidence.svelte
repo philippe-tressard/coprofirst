@@ -110,12 +110,12 @@
 			{#if copropriete.assurance_compagnie}
 				<div class="info-item">
 					<span class="info-label">🛡️ Assurance</span>
-					<span class="info-value"
-						>{copropriete.assurance_compagnie}{echeance(
+					<span class="info-value">
+						{copropriete.assurance_compagnie}{echeance(
 							copropriete.assurance_echeance,
 							copropriete.assurance_reconduit,
-						)}</span
-					>
+						)}
+					</span>
 				</div>
 			{/if}
 			{#if copropriete.syndic_cabinet}
@@ -127,8 +127,9 @@
 					<span class="info-value">
 						<a href="/annuaire#syndic">{copropriete.syndic_cabinet}</a><span
 							class:mandat-echu={copropriete.syndic_echu}
-							>{mandat(copropriete.syndic_echeance, copropriete.syndic_echu)}</span
 						>
+							{mandat(copropriete.syndic_echeance, copropriete.syndic_echu)}
+						</span>
 					</span>
 				</div>
 			{/if}
@@ -156,11 +157,9 @@
 								<td>{(b.nb_parkings ?? 0) > 0 ? fmtNombre(b.nb_parkings) : '—'}</td>
 								<td>{(b.nb_caves ?? 0) > 0 ? fmtNombre(b.nb_caves) : '—'}</td>
 								<td>{(b.nb_appartements ?? 0) > 0 ? fmtNombre(b.nb_appartements) : '—'}</td>
-								<td
-									>{(b.nb_locaux_commerciaux ?? 0) > 0
-										? fmtNombre(b.nb_locaux_commerciaux)
-										: '—'}</td
-								>
+								<td>
+									{(b.nb_locaux_commerciaux ?? 0) > 0 ? fmtNombre(b.nb_locaux_commerciaux) : '—'}
+								</td>
 							</tr>
 						{/each}
 						{#if hasOrphanLots}

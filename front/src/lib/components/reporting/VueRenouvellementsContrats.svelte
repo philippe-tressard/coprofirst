@@ -82,12 +82,12 @@
 						<div class="frise-row-title">
 							<strong>{c.libelle}</strong>
 							<span class="text-muted-sm">{c.prestataire_nom}</span>
-							<span class="text-muted-sm"
-								>{SEPARATEUR.point}{$libelleEquipement(c.type_equipement)}</span
-							>
-							{#if c.numero_contrat}<span class="text-muted-sm"
-									>{SEPARATEUR.point}N° {c.numero_contrat}</span
-								>{/if}
+							<span class="text-muted-sm">
+								{SEPARATEUR.point}{$libelleEquipement(c.type_equipement)}
+							</span>
+							{#if c.numero_contrat}<span class="text-muted-sm">
+									{SEPARATEUR.point}N° {c.numero_contrat}
+								</span>{/if}
 							<NoteEtoiles note={c.note_moyenne} nbAvis={c.nb_notations} />
 						</div>
 						<div class="frise-row-badges">
@@ -126,9 +126,9 @@
 								style="left:{finPos}%"
 								title="Fin : {fmtDate(c.dateFin.toISOString())}"
 							>
-								<span class="frise-marker-label"
-									>{c.dateFin.getDate()}/{c.dateFin.getMonth() + 1}</span
-								>
+								<span class="frise-marker-label">
+									{c.dateFin.getDate()}/{c.dateFin.getMonth() + 1}
+								</span>
 							</div>
 						{:else}
 							<div
@@ -167,9 +167,9 @@
 					<div class="frise-compact-item">
 						<div class="frise-compact-info">
 							<strong>{c.libelle}</strong>
-							<span class="text-muted-sm"
-								>{c.prestataire_nom}{SEPARATEUR.point}{$libelleEquipement(c.type_equipement)}</span
-							>
+							<span class="text-muted-sm">
+								{c.prestataire_nom}{SEPARATEUR.point}{$libelleEquipement(c.type_equipement)}
+							</span>
 						</div>
 						<div class="frise-compact-meta">
 							<NoteEtoiles note={c.note_moyenne} />
@@ -194,11 +194,11 @@
 					<div class="frise-compact-item">
 						<div class="frise-compact-info">
 							<strong>{c.libelle}</strong>
-							<span class="text-muted-sm"
-								>{c.prestataire_nom}{SEPARATEUR.point}{$libelleEquipement(
+							<span class="text-muted-sm">
+								{c.prestataire_nom}{SEPARATEUR.point}{$libelleEquipement(
 									c.type_equipement,
-								)}{#if c.numero_contrat}{SEPARATEUR.point}N° {c.numero_contrat}{/if}</span
-							>
+								)}{#if c.numero_contrat}{SEPARATEUR.point}N° {c.numero_contrat}{/if}
+							</span>
 						</div>
 						<div class="frise-compact-meta">
 							<NoteEtoiles note={c.note_moyenne} />

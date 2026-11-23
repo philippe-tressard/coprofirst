@@ -96,9 +96,9 @@
 		<div class="retenue">
 			<span class="cav-numero">{choisie.numero}</span>
 			<span class="cav-titre">{choisie.titre}</span>
-			<button type="button" class="btn btn-sm btn-outline" on:click={() => (affaireId = '')}
-				>Changer</button
-			>
+			<button type="button" class="btn btn-sm btn-outline" on:click={() => (affaireId = '')}>
+				Changer
+			</button>
 		</div>
 	{:else}
 		<ChampRecherche

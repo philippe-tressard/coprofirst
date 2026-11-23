@@ -134,9 +134,9 @@
 	<div class="tl-barre">
 		<div class="tl-scope-switch">
 			{#each VUES as v (v.code)}
-				<Pastille active={tlScope === v.code} on:click={() => switchTlScope(v.code)}
-					>{v.libelle}</Pastille
-				>
+				<Pastille active={tlScope === v.code} on:click={() => switchTlScope(v.code)}>
+					{v.libelle}
+				</Pastille>
 			{/each}
 		</div>
 		{#if filtrePropose}

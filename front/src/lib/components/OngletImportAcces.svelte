@@ -302,17 +302,17 @@
 							<td><code class="texte-sm">{champDe(imp, modele.colonneCle.cle) ?? '—'}</code></td>
 							<td>
 								{#if imp.lot_label}
-									<span class="badge badge-green"
-										>{imp.lot_label}{SEPARATEUR.point}{porteurs(imp.lot_porteurs)}</span
-									>
+									<span class="badge badge-green">
+										{imp.lot_label}{SEPARATEUR.point}{porteurs(imp.lot_porteurs)}
+									</span>
 								{:else if imp.statut !== 'ignore'}
 									<span class="badge badge-orange">à préciser</span>
 								{:else}—{/if}
 							</td>
 							<td>
-								<Badge teinte={STATUT_BADGE[imp.statut] ?? 'badge-gray'}
-									>{STATUT_LABEL[imp.statut] ?? imp.statut}</Badge
-								>
+								<Badge teinte={STATUT_BADGE[imp.statut] ?? 'badge-gray'}>
+									{STATUT_LABEL[imp.statut] ?? imp.statut}
+								</Badge>
 								{#each modele.decorationsStatut(imp) as d (d.titre)}
 									<span title={d.titre} class="icone-diff">{d.icone}</span>
 								{/each}
@@ -325,34 +325,41 @@
 											aria-label="Remettre en attente"
 											title="Remettre en attente"
 											on:click={() => remettreEnAttente(imp.id)}
-											><IconeAction icone="undo-2" /></button
 										>
+											<IconeAction icone="undo-2" />
+										</button>
 									{:else}
 										{#if imp.rattachable}
 											<button
 												class="btn btn-sm btn-primary"
 												disabled={enCours}
-												on:click={() => rattacher(imp.id)}>Rattacher</button
+												on:click={() => rattacher(imp.id)}
 											>
+												Rattacher
+											</button>
 										{:else if imp.statut !== 'resolu' && !imp.lot_id}
-											<button class="btn btn-sm btn-outline" on:click={() => ouvrirEdition(imp)}
-												>Choisir le lot</button
-											>
+											<button class="btn btn-sm btn-outline" on:click={() => ouvrirEdition(imp)}>
+												Choisir le lot
+											</button>
 										{/if}
 										<button
 											class="btn-icon-edit"
 											aria-label="Préciser la ligne"
 											title="Préciser la ligne"
 											aria-pressed={editId === imp.id}
-											on:click={() => ouvrirEdition(imp)}><IconeAction icone="pencil" /></button
+											on:click={() => ouvrirEdition(imp)}
 										>
+											<IconeAction icone="pencil" />
+										</button>
 										{#if imp.statut !== 'resolu'}
 											<button
 												class="btn-icon-warn"
 												aria-label="Ignorer cette ligne"
 												title="Ignorer"
-												on:click={() => ignorer(imp.id)}><IconeAction icone="ban" /></button
+												on:click={() => ignorer(imp.id)}
 											>
+												<IconeAction icone="ban" />
+											</button>
 										{/if}
 									{/if}
 									<!--  🔒 Supprimer : l'administrateur seul, comme toute suppression
@@ -362,8 +369,10 @@
 											class="btn-icon-danger"
 											aria-label="Supprimer cette ligne"
 											title="Supprimer la ligne"
-											on:click={() => supprimer(imp.id)}><IconeAction icone="trash-2" /></button
+											on:click={() => supprimer(imp.id)}
 										>
+											<IconeAction icone="trash-2" />
+										</button>
 									{/if}
 								</div>
 							</td>

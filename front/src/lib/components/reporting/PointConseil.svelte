@@ -192,8 +192,9 @@
 						aria-pressed={formulaire === 'corriger'}
 						aria-label="Corriger le quand, le où et le qui"
 						on:click={() => (formulaire = formulaire === 'corriger' ? null : 'corriger')}
-						><IconeAction icone="pencil" /></button
 					>
+						<IconeAction icone="pencil" />
+					</button>
 				{/if}
 			</span>
 		</div>

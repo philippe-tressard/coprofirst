@@ -211,8 +211,9 @@
 									aria-label="Périmètres du lot {l.numero}"
 									title="Périmètres du lot"
 									on:click={() => (deplie = basculer(deplie, l.id))}
-									><IconeAction icone="chevron-down" /></button
 								>
+									<IconeAction icone="chevron-down" />
+								</button>
 							</td>
 						</tr>
 						{#if deplie === l.id}
@@ -224,17 +225,18 @@
 												<li>
 													<span class="relation">{RELATIONS[p.relation] ?? p.relation}</span>
 													<span>{p.libelle}</span>
-													<Badge teinte={p.derive ? 'badge-gray' : 'badge-blue'} compact
-														>{p.derive ? 'dérivé' : 'posé à la main'}</Badge
-													>
+													<Badge teinte={p.derive ? 'badge-gray' : 'badge-blue'} compact>
+														{p.derive ? 'dérivé' : 'posé à la main'}
+													</Badge>
 													{#if !p.derive}
 														<button
 															class="btn-icon-danger"
 															aria-label="Retirer {p.libelle}"
 															title="Retirer"
 															on:click={() => retirer(l, p.code, p.relation)}
-															><IconeAction icone="x" /></button
 														>
+															<IconeAction icone="x" />
+														</button>
 													{/if}
 												</li>
 											{:else}

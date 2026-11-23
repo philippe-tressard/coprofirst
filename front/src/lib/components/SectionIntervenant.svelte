@@ -139,29 +139,35 @@
 						class="btn-icon retenu-geste"
 						disabled={i === 0}
 						aria-label="Monter {p.nom}"
-						on:click={() => deplacer(i, -1)}><IconeAction icone="arrow-up" /></button
+						on:click={() => deplacer(i, -1)}
 					>
+						<IconeAction icone="arrow-up" />
+					</button>
 					<button
 						type="button"
 						class="btn-icon retenu-geste"
 						disabled={i === retenus.length - 1}
 						aria-label="Descendre {p.nom}"
-						on:click={() => deplacer(i, 1)}><IconeAction icone="arrow-down" /></button
+						on:click={() => deplacer(i, 1)}
 					>
+						<IconeAction icone="arrow-down" />
+					</button>
 					<button
 						type="button"
 						class="btn-icon retenu-geste"
 						aria-label="Retirer {p.nom}"
-						on:click={() => retirer(p.id)}><IconeAction icone="x" /></button
+						on:click={() => retirer(p.id)}
 					>
+						<IconeAction icone="x" />
+					</button>
 				</li>
 			{/each}
 		</ol>
 	{/if}
 	<div class="field">
-		<label for="{idPrefixe}-prestataire"
-			>{retenus.length ? 'Ajouter un prestataire' : 'Prestataire'}</label
-		>
+		<label for="{idPrefixe}-prestataire">
+			{retenus.length ? 'Ajouter un prestataire' : 'Prestataire'}
+		</label>
 		<select id="{idPrefixe}-prestataire" bind:value={ajout} on:change={ajouter}>
 			<option value="">{retenus.length ? '— Ajouter —' : '— Aucun —'}</option>
 			{#each proposables as p (p.id)}
@@ -185,13 +191,15 @@
 		      imbriqué soumettrait l'affaire. Les boutons sont `type="button"`. -->
 		<div class="creation-prestataire">
 			<label class="field">Nom du prestataire<input bind:value={nouveauNom} /></label>
-			<label class="field"
-				>Équipement
+			<label class="field">
+				Équipement
 				<select bind:value={nouvelEquipement}>
 					<option value="">— Sélectionner —</option>
 					{#each optionsEquipements('contrat', null, $equipementsStore) as e (e.val)}<option
-							value={e.val}>{e.label}</option
-						>{/each}
+							value={e.val}
+						>
+							{e.label}
+						</option>{/each}
 				</select>
 			</label>
 			<label class="field">Nom du contact<input bind:value={contact.nom} /></label>
@@ -200,21 +208,27 @@
 				<label class="field">E-mail<input type="email" bind:value={contact.email} /></label>
 			</div>
 			<div class="actions-creation">
-				<button type="button" class="btn btn-sm btn-outline" on:click={() => (creation = false)}
-					>Annuler</button
-				>
+				<button type="button" class="btn btn-sm btn-outline" on:click={() => (creation = false)}>
+					Annuler
+				</button>
 				<button
 					type="button"
 					class="btn btn-sm btn-primary"
 					disabled={!nouveauNom.trim() || !nouvelEquipement}
-					on:click={creer}>Créer</button
+					on:click={creer}
 				>
+					Créer
+				</button>
 			</div>
 		</div>
 	{:else}
-		<button type="button" class="btn btn-sm btn-outline ajout-prestataire" on:click={ouvrirCreation}
-			>＋ Nouveau prestataire</button
+		<button
+			type="button"
+			class="btn btn-sm btn-outline ajout-prestataire"
+			on:click={ouvrirCreation}
 		>
+			＋ Nouveau prestataire
+		</button>
 	{/if}
 </SectionFormulaire>
 

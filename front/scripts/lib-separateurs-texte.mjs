@@ -37,6 +37,11 @@ export const NOM_DU_SEPARATEUR = { '·': 'point', '—': 'tiret', '→': 'fleche
 const MOT = 'x';
 const FRONTIERE = '\ue002';
 const OUVRANT = '\ue001'; // `{#if}`, `{:else}`, `{/if}`, `{@…}` (zone privée : jamais dans un source)
+//  Une balise en ligne ou un composant : son OUVERTURE n'est pas le mot d'avant, sa
+//  FERMETURE n'est pas le mot d'après — Svelte 5 retire l'espace au début et à la fin
+//  d'un élément, et prettier-plugin-svelte 4.2 y passe à la ligne (#2900).
+const BALISE_OUVRANTE = '\ue003';
+const BALISE_FERMANTE = '\ue004';
 
 /** Remplace un fragment par `marque`, sauts de ligne gardés. PURE. */
 const masquer = (bloc, marque) => bloc.replace(/[^\n]/g, marque);
@@ -74,15 +79,17 @@ export function texteAffiche(source) {
 	t = t.replace(/<(option|textarea|pre|code|title)\b[\s\S]*?<\/\1>/g, (m, nom) =>
 		masquer(m, nom === 'code' ? MOT : FRONTIERE),
 	);
-	return t.replace(/<\/?([A-Za-z][\w.:-]*)\b[^>]*>/g, (m, nom) =>
-		masquer(m, EST_EN_LIGNE.test(nom) || /^[A-Z]/.test(nom) ? MOT : FRONTIERE),
-	);
+	return t.replace(/<\/?([A-Za-z][\w.:-]*)\b[^>]*>/g, (m, nom) => {
+		if (!(EST_EN_LIGNE.test(nom) || /^[A-Z]/.test(nom))) return masquer(m, FRONTIERE);
+		if (m.startsWith('</')) return masquer(m, BALISE_FERMANTE);
+		return masquer(m, m.endsWith('/>') ? MOT : BALISE_OUVRANTE);
+	});
 }
 
-//  Un mot ou une balise fermée avant (jamais l'ouverture d'une branche : la règle
-//  de tête de branche la tient), des espaces sécables, le séparateur, des espaces,
-//  puis un mot.
-const MOTIF = /(?<=[^\s\ue001])\s+([·—→])\s+(?=[^\s\ue001\ue002])/g;
+//  Un mot ou une balise fermée avant (jamais l'ouverture d'une branche ni d'un
+//  élément : les règles de tête de branche et de tête d'élément les tiennent), des
+//  espaces sécables, le séparateur, des espaces, puis un mot (jamais une fermeture).
+const MOTIF = /(?<=[^\s\ue001\ue003])\s+([·—→])\s+(?=[^\s\ue001\ue002\ue004])/g;
 
 /**
  *  Les séparateurs du texte courant : `{ debut, fin, separateur }`, où

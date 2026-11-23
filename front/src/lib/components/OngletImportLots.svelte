@@ -307,8 +307,10 @@
 											<span
 												class="occ-role"
 												style="color:{COULEUR_TYPE_LIEN[occ.type_lien] ??
-													'var(--color-text-muted)'}">{typeLienAbrege(occ.type_lien)}</span
+													'var(--color-text-muted)'}"
 											>
+												{typeLienAbrege(occ.type_lien)}
+											</span>
 											{#if occ.utilisateur}
 												<span class="occupant-lie">{occ.utilisateur.nom_affiche}</span>
 											{:else}
@@ -321,11 +323,11 @@
 								<span class="non-lie">Non lié</span>
 							{:else}—{/if}
 						</td>
-						<td
-							><Badge teinte={statutBadge[imp.statut] ?? 'badge-gray'}
-								>{statutLabel[imp.statut] ?? imp.statut}</Badge
-							></td
-						>
+						<td>
+							<Badge teinte={statutBadge[imp.statut] ?? 'badge-gray'}>
+								{statutLabel[imp.statut] ?? imp.statut}
+							</Badge>
+						</td>
 						<td>
 							{#if imp.statut !== 'resolu' && imp.statut !== 'ignore'}
 								<div class="action-row">
@@ -333,19 +335,23 @@
 										class="btn-icon-edit"
 										aria-label="Modifier"
 										title="Modifier"
-										on:click={() => openEdit(imp)}><IconeAction icone="pencil" /></button
+										on:click={() => openEdit(imp)}
 									>
+										<IconeAction icone="pencil" />
+									</button>
 									{#if imp.utilisateurs?.length > 0}
-										<button class="btn btn-sm btn-primary" on:click={() => resoudre(imp.id)}
-											>✓ Valider</button
-										>
+										<button class="btn btn-sm btn-primary" on:click={() => resoudre(imp.id)}>
+											✓ Valider
+										</button>
 									{/if}
 									<button
 										class="btn-icon-warn"
 										aria-label="Ignorer cet import"
 										title="Ignorer"
-										on:click={() => ignorer(imp.id)}><IconeAction icone="ban" /></button
+										on:click={() => ignorer(imp.id)}
 									>
+										<IconeAction icone="ban" />
+									</button>
 								</div>
 							{:else if imp.statut === 'resolu'}
 								<div class="action-row">
@@ -354,8 +360,10 @@
 										class="btn-icon-edit"
 										aria-label="Lier un occupant"
 										title="Lier un occupant"
-										on:click={() => openEdit(imp)}><IconeAction icone="pencil" /></button
+										on:click={() => openEdit(imp)}
 									>
+										<IconeAction icone="pencil" />
+									</button>
 								</div>
 							{/if}
 						</td>

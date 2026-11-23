@@ -120,10 +120,10 @@
 				<li>
 					<strong>Groupe WhatsApp</strong>{SEPARATEUR.tiret}le <strong>titre</strong> et le
 					périmètre partent, avec un lien vers l'application. Le contenu, lui, ne sort pas.
-					<span class="avert-consigne"
-						>Le groupe est commun à toute la copropriété : n'écrivez rien de confidentiel dans le
-						titre.</span
-					>
+					<span class="avert-consigne">
+						Le groupe est commun à toute la copropriété : n'écrivez rien de confidentiel dans le
+						titre.
+					</span>
 				</li>
 				<li>
 					<strong>Syndic et conseil syndical</strong>{SEPARATEUR.tiret}l'e-mail part

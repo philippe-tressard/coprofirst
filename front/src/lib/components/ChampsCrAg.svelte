@@ -24,9 +24,9 @@
 
 <div class="form-grid-2">
 	<label class="field" for="{idPrefixe}-annee">
-		<span
-			>Année{#if requis}<EtoileRequis vide={!annee} />{/if}</span
-		>
+		<span>
+			Année{#if requis}<EtoileRequis vide={!annee} />{/if}
+		</span>
 		<input
 			id="{idPrefixe}-annee"
 			type="number"
@@ -37,9 +37,9 @@
 		/>
 	</label>
 	<label class="field" for="{idPrefixe}-date">
-		<span
-			>Date de l'AG{#if requis}<EtoileRequis vide={!dateAg} />{/if}</span
-		>
+		<span>
+			Date de l'AG{#if requis}<EtoileRequis vide={!dateAg} />{/if}
+		</span>
 		<input id="{idPrefixe}-date" type="date" bind:value={dateAg} />
 	</label>
 </div>
