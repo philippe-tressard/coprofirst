@@ -3,9 +3,9 @@
 `DocumentRead`, `NotificationRead`, `CommandeAccesCreate` et `CommandeAccesRead` ont
 quitté `app/schemas.py` pour `routers/documents_schemas.py`,
 `routers/notifications_schemas.py` et `routers/acces/resident_schemas.py`. Le
-déplacement ne devait changer ni un champ ni une règle : ce fichier le dit, et il
-nomme les trois modules — un module de `routers/` qu'aucun test ne nomme est refusé
-(`test_routeurs_nommes_par_un_test`).
+déplacement ne devait changer ni un champ ni une règle : ce fichier le dit. Il
+nommait les trois modules pour `test_routeurs_nommes_par_un_test`, qui ne juge plus,
+depuis #2914, que les modules portant une route : un module de schémas en est hors.
 """
 
 from __future__ import annotations
