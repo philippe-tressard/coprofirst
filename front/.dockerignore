@@ -1,0 +1,12 @@
+# Le contexte de construction de l'image du front (#2963). `COPY . .` le recopie
+# APRÈS `npm ci` : des `node_modules` du dossier de travail (d'un autre système)
+# remplaceraient ceux de l'image — l'échec du secours sur un nœud le 23/11/2026
+# (#3032). Ni sortie de construction, ni secret, ni tests.
+# 🔒 api/tests/test_front_dockerignore.py, workflow « Contexte du front ».
+node_modules
+build
+.svelte-kit
+.env
+.env.*
+test-results
+playwright-report
