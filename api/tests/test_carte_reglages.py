@@ -192,6 +192,122 @@ def test_le_controle_d_ecran_voit_un_onglet_qui_n_existe_pas():
         assert ecrans_d_admin_inconnus((replace(sauvegarde, ecran=faux),), ranges)
 
 
+# ── Les textes qui renvoient vers un onglet d'Admin le nomment comme le front (#2927) ──
+#
+#  Le contrôle ci-dessus ne lisait que la carte. Les courriels d'alerte, le gabarit
+#  `.env.example`, les guides d'installation, le manuel et le README écrivaient
+#  « Admin → Sauvegardes », « Admin › Configuration › SMTP », « Paramétrage ›
+#  SMTP »… — des onglets qui n'existent plus sous ce nom, lus au moment d'un
+#  incident. Ce contrôle lit chaque chemin « Admin › … » (ou « Administration »,
+#  « Paramétrage », flèche ou chevron) de ces textes, et exige que son premier
+#  segment soit un GROUPE ou un ONGLET que `pages-roles.ts` range — et, après un
+#  groupe, un onglet de ce groupe. Les segments suivants (une carte, un bouton)
+#  ne se vérifient pas : ce qui est dans un onglet n'est écrit dans aucune table.
+
+_RACINE = pathlib.Path(__file__).resolve().parents[2]
+#: Où se lisent les renvois. Chaque entrée : (dossier ou fichier, suffixes lus).
+_TEXTES_QUI_RENVOIENT = (
+    ("api/app", (".py",)),
+    (".env.example", ()),
+    ("deploiement", (".md", ".sh", ".yml", ".service", ".caddy", ".example")),
+    ("docs", (".md", ".html")),
+    ("README.md", ()),
+)
+_CHEMIN_ADMIN = re.compile(r"\b(?:Admin|Administration|Paramétrage) ?(?:›|→|&rarr;) ?([^\n]*)")
+_SEPARATEUR = re.compile(r" ?(?:›|→|&rarr;) ?")
+#  Ce qui précède le nom dans un segment : balise, accent grave, guillemet,
+#  astérisque, l'icône d'un groupe (« 🏢 Copropriété »).
+_HABILLAGE = re.compile(r"^(?:<[a-z/][^>]*>|&nbsp;|[^\w{<])+")
+
+
+def _sans_emoji(groupe: str) -> str:
+    """« 🏢 Copropriété » → « Copropriété » : un texte nomme le groupe sans son icône."""
+    return groupe.split(" ", 1)[1] if " " in groupe else groupe
+
+
+def chemins_d_admin_inconnus(texte: str, ranges: set[tuple[str, str]]) -> list[str]:
+    """PURE. Les chemins « Admin › … » de ce texte dont le début n'est pas rangé."""
+    groupes: dict[str, set[str]] = {}
+    for groupe, onglet in ranges:
+        groupes.setdefault(_sans_emoji(groupe), set()).add(onglet)
+    onglets = {onglet for _g, onglet in ranges}
+
+    def nomme(segment: str, noms) -> str | None:
+        propre = _HABILLAGE.sub("", segment)
+        return max((n for n in noms if propre.startswith(n)), key=len, default=None)
+
+    inconnus = []
+    for m in _CHEMIN_ADMIN.finditer(texte):
+        segments = _SEPARATEUR.split(m.group(1))
+        premier = _HABILLAGE.sub("", segments[0])
+        #  Rien à lire : le chemin passe à la ligne, ou c'est un gabarit
+        #  (`Admin › {G_SERVICES} › …`, « Admin › <groupe> › <onglet> »).
+        if not premier or premier[0] in "{<":
+            continue
+        groupe = nomme(segments[0], groupes)
+        if groupe is not None:
+            #  Un groupe peut porter le nom d'un de ses onglets (Imports, Services) :
+            #  sans second segment, le chemin est entier.
+            second = _HABILLAGE.sub("", segments[1]) if len(segments) > 1 else ""
+            #  Sans second segment — ou le chemin passe à la ligne —, il s'arrête au groupe.
+            if second and nomme(second, groupes[groupe]) is None:
+                if premier.startswith(tuple(onglets)):
+                    continue  # « Admin › Services › … » : l'onglet, puis un bloc
+                inconnus.append(m.group(0)[:90])
+            continue
+        if nomme(segments[0], onglets) is None:
+            inconnus.append(m.group(0)[:90])
+    return inconnus
+
+
+def _textes_qui_renvoient():
+    for chemin, suffixes in _TEXTES_QUI_RENVOIENT:
+        racine = _RACINE / chemin
+        fichiers = [racine] if racine.is_file() else sorted(racine.rglob("*"))
+        for f in fichiers:
+            if f.is_file() and (not suffixes or f.suffix in suffixes):
+                yield f
+
+
+def test_chaque_chemin_d_admin_ecrit_nomme_un_onglet_que_le_front_range():
+    ranges = _onglets_ranges()
+    lus, fautes = 0, []
+    for f in _textes_qui_renvoient():
+        texte = f.read_text(encoding="utf-8")
+        lus += len(_CHEMIN_ADMIN.findall(texte))
+        fautes += [
+            f"{f.relative_to(_RACINE)} : {c}" for c in chemins_d_admin_inconnus(texte, ranges)
+        ]
+    assert lus >= 50  # cas zéro : le relevé lit bien les renvois (une centaine)
+    assert not fautes, (
+        "Ces textes renvoient vers un onglet d'Admin que `pages-roles.ts` ne range pas "
+        "sous ce nom — écrire « Admin › Groupe › Onglet » tel que l'écran le montre :\n  "
+        + "\n  ".join(fautes)
+    )
+
+
+def test_le_controle_des_chemins_voit_un_onglet_disparu():
+    """Témoin : les formes relevées par #2927 sont refusées, les formes justes passent."""
+    ranges = _onglets_ranges()
+    for faux in (
+        "Vérifier Admin → Sauvegardes.",
+        "seul l'écran Admin › Configuration › SMTP décide",
+        "se règle dans <em>Paramétrage › SMTP</em>",
+        "dans *Administration › Copropriété › SMTP*",
+        "Admin › Copropriété › Courriel",  # un onglet, mais d'un autre groupe
+    ):
+        assert chemins_d_admin_inconnus(faux, ranges), faux
+    for juste in (
+        "<em>Admin › Services › Courriel</em>, champ Signataires",
+        "Admin › Assistant IA",
+        "*Administration › Exploitation › Installation*",
+        "Admin › Imports › État descriptif",
+        "Admin › Maintenance › Export vérifié",
+        "dans *Administration › Exploitation ›\n   Installation*, carte",
+    ):
+        assert chemins_d_admin_inconnus(juste, ranges) == [], juste
+
+
 # ── Rien n'échappe à la carte ───────────────────────────────────────────────────
 
 
