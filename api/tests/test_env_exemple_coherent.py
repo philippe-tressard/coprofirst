@@ -37,7 +37,10 @@ compare.
    l'étaient quatre fois dans trois scripts (#1077) ;
 7. ce module porte son `--selftest`, et la CI le lance : sans lui, le point 6
    serait creux — on peut appeler la bonne fonction et qu'elle écrive n'importe
-   quoi.
+   quoi ;
+8. toute clé qu'un script lit dans `.env` (`lire_env`) figure au gabarit, ou se
+   déclare dans `HORS_GABARIT` — `COPROFIRST_SAUVEGARDES`, obligatoire à la mise à
+   jour d'une réplique, n'y était pas (#2960).
 
 ⚠️ Le point 3 porte une liste d'exceptions **déclarée** : trois champs de
 `Settings` n'ont volontairement pas leur place dans le gabarit. Le test échoue
@@ -135,6 +138,21 @@ def _cles_du_gabarit() -> list[str]:
     ]
 
 
+def _lues_par_les_scripts() -> set[str]:
+    """Les clés que les scripts lisent dans `.env` par `lire_env` (#2960).
+
+    `deploiement/standard/mise-a-jour.sh` lisait `COPROFIRST_SAUVEGARDES` —
+    obligatoire — et deux autres clés absentes du gabarit : le test ne confrontait
+    le gabarit qu'à `Settings`, à compose et aux `os.getenv`.
+    """
+    motif = re.compile(r"\blire_env\s+([A-Z][A-Z0-9_]*)")
+    return {
+        cle
+        for script in scripts_shell_versionnes()
+        for cle in motif.findall(script.read_text(encoding="utf-8", errors="replace"))
+    }
+
+
 def _champs_de_settings() -> set[str]:
     """Les champs déclarés par `Settings` — l'indentation de 4 les distingue."""
     return {m.group(1) for m in re.finditer(r"(?m)^\s{4}([a-z][a-z0-9_]*)\s*:", CONFIG_TXT)}
@@ -177,14 +195,12 @@ def test_aucune_variable_du_gabarit_n_est_morte():
     #  première, et ce motif ne voyait que la seconde (#1050).
     motif_getenv = r"(?:getenv|environ\.get)\(\s*[\"']([A-Z0-9_]+)"
     lues_par_getenv = set(re.findall(motif_getenv, _sources_python()))
-    mortes = [
-        c
-        for c in _cles_du_gabarit()
-        if c not in champs and c not in lues_par_compose and c not in lues_par_getenv
-    ]
+    lues = champs | lues_par_compose | lues_par_getenv | _lues_par_les_scripts()
+    mortes = [c for c in _cles_du_gabarit() if c not in lues]
     assert not mortes, (
         f".env.example déclare {mortes} que personne ne lit — ni `Settings` "
-        f"(api/app/config.py), ni docker-compose.yml, ni un `os.getenv`. Soit le "
+        f"(api/app/config.py), ni docker-compose.yml, ni un `os.getenv`, ni un "
+        f"`lire_env` de script. Soit le "
         f"code a perdu la variable, soit le gabarit promet ce qui n'existe pas"
     )
 
@@ -201,6 +217,24 @@ def test_tout_champ_de_settings_est_dans_le_gabarit_ou_declare_hors():
     assert not absents, (
         f"`Settings` déclare {absents}, que .env.example ne montre pas : ajoutez-les "
         f"au gabarit, ou inscrivez-les dans HORS_GABARIT avec la raison qui les en exclut"
+    )
+
+
+def test_toute_cle_lue_par_un_script_est_dans_le_gabarit_ou_declaree_hors():
+    """Une clé que la mise à jour lit dans `.env` est visible de l'exploitant (#2960).
+
+    Même règle que pour `Settings` : au gabarit, ou dans `HORS_GABARIT` avec sa raison.
+    """
+    lues = _lues_par_les_scripts()
+    assert {"COPROFIRST_SAUVEGARDES", "MAINTENANCE_KEY"} <= lues, (
+        f"relevé des `lire_env` incomplet ({sorted(lues)}) : contrôle impossible"
+    )
+    cles = set(_cles_du_gabarit())
+    absentes = sorted(c for c in lues if c not in cles and c.lower() not in HORS_GABARIT)
+    assert not absentes, (
+        f"{absentes} lue(s) dans .env par un script, absente(s) de .env.example : "
+        f"l'exploitant ne les voit pas. Les ajouter au gabarit, commentées, ou les "
+        f"inscrire dans HORS_GABARIT avec la raison qui les en exclut"
     )
 
 
