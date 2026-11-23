@@ -112,7 +112,7 @@ qu'au démarrage : c'est ce que fait `creer-copropriete.sh`, dans le bon ordre.
 | **Commandes** | `python -m app.seed`, `app.demo.charger`, `export_copropriete verifier` exigent `--copropriete <identifiant>` et refusent sans lui ; aucune ne se replie sur la copropriété de la configuration |
 | **Fichiers** (`/uploads/*`) | servis par l'API depuis la racine de la copropriété que l'hôte désigne, à une session de celle-ci ; `prive/` et `annonces-hall/` jamais en direct, comme sur une installation propre |
 | **Adresse publique** | celle de la copropriété — son domaine, ou son adresse dérivée — pour les liens de ses courriels et ses pages légales ; elle ne se saisit pas (#2058) |
-| **Courriels** | chaque copropriété règle son SMTP dans **Admin › Configuration** ; seule son adresse d'expédition déclarée amorce sa base. Les `MAIL_*` du `.env` sont le SMTP de l'**installation** (alertes à l'opérateur), jamais recopiés chez une copropriété (#2058) |
+| **Courriels** | chaque copropriété règle son SMTP dans **Admin › Services › Courriel** ; seule son adresse d'expédition déclarée amorce sa base. Les `MAIL_*` du `.env` sont le SMTP de l'**installation** (alertes à l'opérateur), jamais recopiés chez une copropriété (#2058) |
 | **Sauvegardes** | archives et exports sous `BACKUP_DIR/coproprietes/<identifiant>/` : une copropriété ne voit ni ne fait tourner celles d'une autre ; heure et nombre de versions se règlent dans sa **Maintenance**, effet dès l'heure suivante |
 | **Mise à jour nocturne** | `mise-a-jour.sh` exporte et vérifie **chaque** base avant de rien changer, et les restaure toutes si la santé reste KO ; une déclaration invalide la refuse. Son rapport reste au journal : il n'appartient à aucune copropriété |
 

@@ -6,7 +6,7 @@ Un modèle d'e-mail vit **en base**. `_poser_les_absents` ne pose que ce qui
 manque : une ligne existante n'est **jamais** reprise par le seed. Enrichir un
 modèle demande donc une migration, et cette migration porte une clause `WHERE`
 sur le texte attendu — pour ne pas écraser une installation qui l'aurait retouché
-depuis Admin → Emails.
+depuis Admin › Présentation › Modèles e-mail.
 
 🔴 **Si ce `WHERE` ne correspond à rien, il ne se passe RIEN.** Pas d'erreur, pas
 de trace, aucune ligne de journal : la migration réussit en ayant modifié zéro
@@ -26,7 +26,7 @@ endroit d'où l'écart se voit est un contrôle qui regarde **la base réelle**.
 ## Trois axes, et pourquoi pas le texte
 
 Comparer le **texte** alerterait à chaque reformulation faite depuis
-Admin → Emails — un droit que le conseil a, et que les migrations protègent
+Admin › Présentation › Modèles e-mail — un droit que le conseil a, et que les migrations protègent
 exprès. L'alerte deviendrait du bruit, puis serait ignorée : un contrôle qu'on
 ignore est un contrôle absent (`standards/04`).
 
@@ -144,9 +144,9 @@ def controler(session: Session) -> list[str]:
                 "ce message ne part plus du tout.\n"
                 f"Champ « {illisible.champ} » : {illisible.cause}\n"
                 "L'échec est silencieux : il n'apparaît que dans "
-                "Admin → Emails → Historique, en « erreur ».\n"
-                "À corriger dans Admin → Emails, ou à remettre par défaut avec "
-                "« Réinitialiser les modèles »."
+                "Admin › Présentation › Modèles e-mail, section « Historique des envois », en « erreur ».\n"
+                "À corriger dans Admin › Présentation › Modèles e-mail, ou à remettre par défaut avec "
+                "« ↩️ Par défaut », dans le formulaire du modèle."
             )
             continue
 
@@ -193,7 +193,7 @@ def controler(session: Session) -> list[str]:
                 )
                 detail.append(_extrait(modele))
                 detail.append(
-                    "À remettre par « ↩️ Par défaut » dans Admin → Emails : le "
+                    "À remettre par « ↩️ Par défaut » dans Admin › Présentation › Modèles e-mail : le "
                     "modèle reprend le texte du code, sans toucher aux autres."
                 )
             elif manquantes:
@@ -216,7 +216,7 @@ def controler(session: Session) -> list[str]:
             #  mauvaise cause.
             if servies:
                 detail.append(
-                    "À comparer dans Admin → Emails, puis réappliquer la migration "
+                    "À comparer dans Admin › Présentation › Modèles e-mail, puis réappliquer la migration "
                     "concernée ou corriger le texte à la main."
                 )
             ecarts.append(
@@ -229,7 +229,7 @@ def controler(session: Session) -> list[str]:
                 f"Modèle d'e-mail « {modele.code} » : aucune intention en base.\n"
                 "Le bandeau du message est vide, et l'adresse d'expédition retombe "
                 f"sur le choix du code (« {INTENTIONS_PAR_MODELE[modele.code]} »).\n"
-                "À choisir dans Admin → Emails → Intention."
+                "À choisir dans Admin › Présentation › Modèles e-mail, champ « Intention » du modèle."
             )
 
     return ecarts

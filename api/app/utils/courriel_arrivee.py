@@ -53,7 +53,7 @@ from app.models.core import Utilisateur
 #: ⚠️ Elle est lue à DEUX endroits — la notification in-app (`routers/admin/
 #: arrivants.py`) et le modèle d'e-mail, qui la reçoit en **variable** et la
 #: préfixe de `{{ app.url }}`. Un modèle vit en base et se réécrit depuis
-#: Admin → Emails : l'y coder en dur en ferait une copie que personne ne
+#: Admin › Présentation › Modèles e-mail : l'y coder en dur en ferait une copie que personne ne
 #: reverrait le jour où la route change.
 FICHE_CONSIGNES = "/api/admin/fiche-arrivant"
 

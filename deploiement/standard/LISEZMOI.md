@@ -84,12 +84,13 @@ dépôt), l'archive `coprofirst-deploiement-X.Y.Z.tar.gz`. Elle contient,
    contrat : `docs/contrat-sous-traitance-modele.md`). Vides, ces pages disent
    « À RENSEIGNER », et l'onglet *Pages légales* de chaque copropriété le signale.
    Une fois l'installation démarrée, l'**opérateur** l'inscrit au registre de la
-   référence dans *Administration › Maintenance › Inscription au registre*
+   référence dans *Administration › Exploitation › Installation*, carte
+   *Inscription au registre*
    (contact de l'administrateur, conditions à accepter) ; la clé et l'état
    d'inscription vivent dans le volume `app_data`. L'état affiché — limitée,
    active, suspendue — n'est encore que **constaté**, sauf pour les **services** :
    une réplique n'allume que ceux que la référence lui accorde dans son bail
-   (Administration › Services les grise sinon, avec la raison).
+   (Administration › Services › Services les grise sinon, avec la raison).
 3. Ajouter **la version à installer** dans `.env` :
    ```
    COPROFIRST_VERSION=2.119.1
@@ -246,7 +247,8 @@ ne repart pas, la restaure.
 Les données vivent dans des volumes Docker : `pg_data` (la base), `app_data`
 (l'identité de l'installation), `uploads` (les fichiers), `whatsapp_auth`, et
 `backups`, où l'application range ses sauvegardes
-planifiées (Administration › Sauvegarde). Copier ces archives **hors de la
+planifiées (Administration › Exploitation › Maintenance, tâche « Sauvegarde
+quotidienne »). Copier ces archives **hors de la
 machine** : une sauvegarde qui vit à côté de ce qu'elle protège disparaît avec.
 
 Caddy, lui, ne garde rien qui se sauvegarde : son journal d'accès (7 jours) et sa
