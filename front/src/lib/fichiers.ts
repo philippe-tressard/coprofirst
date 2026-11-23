@@ -307,3 +307,32 @@ export function enregistrerFichier(contenu: Blob, nom: string): void {
 	a.click();
 	URL.revokeObjectURL(url);
 }
+
+/**  Le fichier sous le nom que l'auteur lui a donné, extension préservée
+ *  (`FichiersUpload`, option `avecLibelle`).
+ *
+ *  🔴 Pourquoi renommer plutôt que stocker un libellé à part (11/09/2026) :
+ *  un document de TICKET n'est pas une entité `Document`, c'est une URL dans
+ *  une liste. Il n'existe aucun champ où ranger un libellé — en ajouter un
+ *  demanderait une migration et une structure `{url, libelle}` partout où ces
+ *  listes sont lues.
+ *
+ *  Le nom du fichier, lui, est déjà ce que TOUS les rendus affichent. Le
+ *  libellé le devient donc, et il est persisté sans que rien d'autre bouge.
+ *
+ *  ⚠️ Sans effet en mode différé : là (contrats, actualités), le libellé
+ *  devient le `titre` d'un vrai `Document`, et c'est l'appelant qui l'envoie.
+ *  Renommer en plus donnerait deux noms pour un fichier.
+ *
+ *  ⚠️ L'assainissement reste côté serveur (`utils/fichiers`, préfixe UUID et
+ *  caractères filtrés) : le refaire ici serait une seconde règle de nommage,
+ *  et c'est la sienne qui fait foi. */
+export function renommerFichier(file: File, libelle: string): File {
+	const voulu = libelle.trim();
+	if (!voulu) return file;
+	const point = file.name.lastIndexOf('.');
+	const extension = point > 0 ? file.name.slice(point) : '';
+	//  Si l'auteur a écrit l'extension lui-même, ne pas la doubler.
+	const nom = voulu.toLowerCase().endsWith(extension.toLowerCase()) ? voulu : voulu + extension;
+	return new File([file], nom, { type: file.type, lastModified: file.lastModified });
+}

@@ -68,6 +68,7 @@
 		LIBELLE_TYPES,
 		MAX_FICHIERS,
 		nomFichier,
+		renommerFichier,
 		separerFichiers,
 	} from '#lib/fichiers.ts';
 
@@ -235,34 +236,6 @@
 	$: nombre = differe ? fichiers.length : urls.length;
 	$: complet = nombre >= max;
 
-	/**  Le fichier sous le nom que l'auteur lui a donné, extension préservée.
-	 *
-	 *  🔴 Pourquoi renommer plutôt que stocker un libellé à part (11/09/2026) :
-	 *  un document de TICKET n'est pas une entité `Document`, c'est une URL dans
-	 *  une liste. Il n'existe aucun champ où ranger un libellé — en ajouter un
-	 *  demanderait une migration et une structure `{url, libelle}` partout où ces
-	 *  listes sont lues.
-	 *
-	 *  Le nom du fichier, lui, est déjà ce que TOUS les rendus affichent. Le
-	 *  libellé le devient donc, et il est persisté sans que rien d'autre bouge.
-	 *
-	 *  ⚠️ Sans effet en mode différé : là (contrats, actualités), le libellé
-	 *  devient le `titre` d'un vrai `Document`, et c'est l'appelant qui l'envoie.
-	 *  Renommer en plus donnerait deux noms pour un fichier.
-	 *
-	 *  ⚠️ L'assainissement reste côté serveur (`utils/fichiers`, préfixe UUID et
-	 *  caractères filtrés) : le refaire ici serait une seconde règle de nommage,
-	 *  et c'est la sienne qui fait foi. */
-	function renommer(file: File): File {
-		const voulu = libelleFichier.trim();
-		if (!avecLibelle || !voulu) return file;
-		const point = file.name.lastIndexOf('.');
-		const extension = point > 0 ? file.name.slice(point) : '';
-		//  Si l'auteur a écrit l'extension lui-même, ne pas la doubler.
-		const nom = voulu.toLowerCase().endsWith(extension.toLowerCase()) ? voulu : voulu + extension;
-		return new File([file], nom, { type: file.type, lastModified: file.lastModified });
-	}
-
 	async function ajouter(e: Event) {
 		const input = e.target as HTMLInputElement;
 		const choisis = Array.from(input.files ?? []);
@@ -280,7 +253,7 @@
 			// fichier, et un RPi qui reçoit cinq images de 4 Mo en même temps sature
 			// sa mémoire.
 			for (const file of retenus) {
-				const envoye = renommer(file);
+				const envoye = avecLibelle ? renommerFichier(file, libelleFichier) : file;
 				urls = [...urls, upload ? await upload(envoye) : (await fichiersApi.upload(envoye)).url];
 			}
 			//  Le libellé a servi : le vider évite qu'il s'applique en silence au
