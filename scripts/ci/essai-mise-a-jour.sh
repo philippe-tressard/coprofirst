@@ -92,6 +92,7 @@ poser POSTGRES_PASSWORD "$MDP"
 poser DATABASE_URL "postgresql+psycopg://coprofirst:$MDP@postgres:5432/coprofirst"
 #  La pile, par la seule écriture de la commande (`definir_compose`), celle du dépôt :
 #  sourcée dans un sous-interpréteur, ses autres fonctions ne remplacent rien ici.
+COMPOSE=()
 mapfile -t COMPOSE < <(. "$RACINE/deploiement/standard/lib-installation.sh"; definir_compose; printf '%s\n' "${COMPOSE[@]}")
 "${COMPOSE[@]}" up -d --quiet-pull
 attendre_sante() {
