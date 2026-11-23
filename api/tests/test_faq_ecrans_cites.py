@@ -176,7 +176,7 @@ def test_le_lien_badge_prix_est_encore_appele():
 #: local qu'il a attrapé : la FAQ d'origine avait été écrite pour la première
 #: copropriété servie.
 FAITS_LOCAUX = {
-    #  « Urgences EDF/ENEDIS : 09 72 67 50 00 » : le dépannage d'un seul département.
+    #  « urgences électricité : 09 72 67 50 00 » : le dépannage d'un seul département.
     r"\b0\d(?:[ .]?\d{2}){4}\b": "un numéro de téléphone — il ne vaut que pour une région",
     #  « de 8h à 12h et de 14h à 19h » : les horaires d'un règlement intérieur.
     r"\b\d{1,2}\s?h(?:\s?\d{2})?\b": "un horaire — il se lit dans le règlement de la résidence",
@@ -215,7 +215,7 @@ def test_les_motifs_de_fait_local_attrapent_la_faq_d_origine():
         "Les conteneurs à verre (vert) sont situés à l'entrée du parking, côté est. "
         "Une étude de faisabilité est en cours pour l'installation de bornes IRVE. "
         "Les travaux bruyants sont autorisés du lundi au vendredi de 8h à 12h. "
-        "Urgences EDF/ENEDIS : 09 72 67 50 00"
+        "urgences électricité : 09 72 67 50 00"
     )
     for motif in FAITS_LOCAUX:
         assert re.search(motif, origine, re.I), f"le motif {motif!r} ne refuse plus son témoin"
