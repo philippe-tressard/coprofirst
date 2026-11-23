@@ -32,6 +32,7 @@ from app.utils.telemetry_aggregation import (
     RETENTION_EVENEMENTS_JOURS,
     RETENTION_MONTHLY_JOURS,
 )
+from tests.aides_sources import modules_app, sources_api
 
 _API = pathlib.Path(__file__).resolve().parents[1]
 _SEED = _API / "app" / "seed"
@@ -199,11 +200,9 @@ def _constantes(fichier: pathlib.Path) -> list[str]:
 
 def test_chaque_constante_des_seeds_legaux_a_un_lecteur():
     """Six constantes ne servaient plus, dont une seconde rédaction de la section 4."""
-    sources = {
-        f: f.read_text(encoding="utf-8")
-        for dossier in ("app", "alembic", "tests")
-        for f in (_API / dossier).rglob("*.py")
-    }
+    sources = {m.chemin: m.source for m in modules_app(minimum=100)}
+    sources.update(sources_api("alembic", minimum=50))
+    sources.update(sources_api("tests", minimum=500))
     seeds = sorted(_SEED.glob("contenus_legaux*.py"))
     assert len(seeds) >= 10, f"{len(seeds)} modules légaux lus : INCONNU"
     orphelines = []
