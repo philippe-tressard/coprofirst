@@ -64,6 +64,12 @@ INTENTIONS = {
 ROUTES_LIMITEES_HORS_AUTH = {
     ("routers/masquages.py", "masquer"): "elle répond sur un compte désigné par le client "
     "(23/11/2026)",
+    #  Le bailleur y désigne le compte de son locataire : la même intention que la
+    #  recherche qui le trouve, et sa limite (claude-config#656).
+    ("routers/bailleur/baux.py", "creer_bail_multi"): "elle répond sur un compte désigné "
+    "par le client (23/11/2026)",
+    ("routers/bailleur/baux.py", "update_bail"): "elle répond sur un compte désigné par le "
+    "client (23/11/2026)",
 }
 
 #: Planchers du relevé (cas zéro) : le 23/11/2026, quatre routes éprouvaient un mot de
@@ -210,7 +216,10 @@ def test_temoin_une_route_hors_d_auth_qui_eprouve_un_secret_est_relevee():
         chemin=pathlib.Path("forge.py"),
         rel="routers/forge.py",
         source=(
-            "@router.patch('/x')\n@limiter.limit(LIMITE_PREFERENCE)\n"
+            #  Une ligne par décorateur : collé au saut de ligne qui le précède, le
+            #  second se lirait comme une adresse (`test_hotes_fictifs.py`).
+            "@router.patch('/x')\n"
+            "@limiter.limit(LIMITE_PREFERENCE)\n"
             "def modifier(request, body):\n    pass\n"
         ),
     )
