@@ -24,19 +24,18 @@ La conduite à tenir est ci-dessous.
 ## Serveurs
 - **RPi 1** `192.168.1.222` (PhT-RB5) · **RPi 2** `192.168.1.223` (PhT-RB5i2)
 - RPi actif : `cat /opt/5hostachy/.active` — ⚠️ ce fichier peut disparaître, le recréer si absent
-- Conteneurs uniquement sur le RPi actif — vérifier les 2 en cas de doute (`docker ps`)
-- En cas de split-brain (conteneurs sur les 2) : stopper le standby + recréer `.active`
+- Conteneurs **applicatifs** uniquement sur le RPi actif ; le standby porte toujours `hostachy_postgres`, sa réplique (`docker ps` la montre : ce n'est pas un split-brain)
+- En cas de split-brain (conteneurs **applicatifs** sur les 2) : arrêter l'application du nœud qui ne doit pas servir par `docker compose stop $SERVICES_APPLICATIFS` (`lib-applicatifs.sh`) — jamais un `stop` sans liste, qui arrêterait sa réplique — puis recréer `.active`
 - `MaJ-Hostachy.sh` refuse de tourner sur le standby ; en root (`sudo bash`), il pose le verrou de bascule sur les DEUX nœuds et prend celui du déploiement (#1999)
-- En cas de site HS : SSH sur le RPi actif, relire `.active` (il doit nommer ce nœud) et vérifier que sa base est là. Rôle douteux ou base absente → ne rien démarrer : `lib-promotion.sh` (`decider_prise_de_main`) décide, ou `sudo bash scripts/exploitation/MaJ-Hostachy.sh` reprend en main avec sa garde. Sinon → `cd /opt/5hostachy && . scripts/lib/lib-env-role.sh && . scripts/lib/lib-applicatifs.sh && env_role_appliquer .env actif && docker compose up -d --no-recreate $SERVICE_BASE && docker compose up -d $SERVICES_APPLICATIFS` (l'ordre et le `--no-recreate` de `servir_images` : la base n'est que démarrée, jamais recréée ; #2706)
+- En cas de site HS : la procédure et sa commande sont au paragraphe « Site HS » de `CLAUDE.md`, seule écriture (lisible seule en urgence). L'ordre et le `--no-recreate` y sont ceux de `servir_images` : la base n'est que démarrée, jamais recréée (#2706)
   — le `env_role_appliquer` pose `ORIGIN` public et retire `COOKIE_SECURE` ; démarrer la stack sur un nœud resté en rôle standby sert le public avec une origine locale et un cookie sans drapeau `Secure` (« gap .env du 15/07/2026 », #1077). La règle vit dans `scripts/lib/lib-env-role.sh`, jamais recopiée. Depuis #1751, `ORIGIN` dit aussi quel nom l'API sert : un actif resté sur son IP répondrait **421** au public. Les quatre chemins de prise de main (bascule, failover, garde au démarrage, reprise en main) passent par `env_role_appliquer`.
 
 ## ⚠️ Règle d'or des données — PostgreSQL : primaire, réplique, promotion (DI-7b, #1781)
 
 La base est un PostgreSQL par nœud, dans le conteneur `hostachy_postgres` : un
 **primaire** sur l'actif, une **réplique** en flux sur le standby. Les interdits
-— deux primaires, une base absente démarrée sur un nœud qui prend la main,
-`docker compose stop` sans liste sur le standby, `docker volume rm` du volume de la
-base — sont écrits dans `CLAUDE.md` ; voici la conduite à tenir.
+sont écrits dans `CLAUDE.md` (« Règle d'or des données »), seule liste ; voici la
+conduite à tenir.
 
 | Question | Où, comment |
 |---|---|
@@ -190,7 +189,8 @@ cloudflared` tel quel dans une réponse, un ticket ou un journal : masquer d'abo
 - **Build OOM** : `npm run build` peut saturer la RAM du RPi → préférer `--nocache` en cas de build lourd
 - **health-watch failover** → peut créer un split-brain ; toujours vérifier `docker ps` sur les 2 RPi
 - **Sauvegardes** : le volume `backups` n'est **pas** répliqué par `bascule.sh` (qui ne
-  synchronise que `uploads`, `whatsapp_auth` et `app_data`). Le rôle alternant chaque
+  transfère que les volumes `uploads` et `whatsapp_auth` ; `app_data` n'est transféré par
+  aucun script). Le rôle alternant chaque
   nuit, chaque nœud n'accumule qu'un jour sur deux, et `_rotate_backups()` ne voit que
   ses fichiers locaux → 7 versions ≈ 14 jours **à trous**, aucun nœud n'ayant celle de
   la veille. Copie hors site : `scripts/poste/export-hors-site.cmd` (voir ci-dessous)
@@ -466,9 +466,8 @@ Dockerfile cassé. C13 fait l'inverse pour le **log**, et c'est cohérent : là-
 la cause est unique et connue (la rotation re-chown).
 
 🔴 **C'est la troisième divergence rpi1/rpi2** du dépôt, après les sudoers
-(09/08) et un cron en trop sur rpi2 (06/08). Le point 8 compare les crons, le 17
-les points d'entrée — **aucun ne compare les droits des fichiers dont les
-scripts dépendent**, et c'est par là que l'écart est passé.
+(09/08) et un cron en trop sur rpi2 (06/08). Le point 17 compare les points d'entrée, crons compris —
+**il ne compare pas les droits des fichiers dont les scripts dépendent**, et c'est par là que l'écart est passé.
 
 ⚠️ Le correctif demande `sudo`, refusé en `-n` sur les **deux** nœuds depuis le
 durcissement : il n'est pas automatisable depuis une session.
@@ -671,7 +670,7 @@ sont décalées exprès (#1562). Ce que chacun fait :
   vit chacun, `grep -rn "── C[0-9]" scripts/`.
 
 « Identique sur les 2 nœuds » est un invariant, pas un constat (faux jusqu'au 06/08/2026) : le
-vérifier fait partie du point 8 du pré-check. `auto-deploy.sh` (cron `ptressard`) relève du
+vérifier fait partie du point 17 du pré-check (points d'entrée). `auto-deploy.sh` (cron `ptressard`) relève du
 point 11. 🔒 `npm run lint:consignes` refuse qu'une consigne en énumère une partie.
 
 ## Le standby s'aligne tout seul (#448 — 19/08/2026)
@@ -1080,8 +1079,9 @@ sécurité nocturne » (`securite`) : ouverte au premier rouge, fermée au retou
 
 ## Monitoring APScheduler (tourne dans le conteneur API)
 
-🔴 **La liste des jobs se lit dans `api/app/main.py`** (`scheduler.add_job`), pas
-ici. Le tableau qui occupait cette place en citait **quatre sur six** : le
+🔴 **La liste des jobs se lit dans `api/app/utils/taches.py`** (`TACHES_PERMANENTES`, et
+`TACHES_DE_LA_PLATEFORME` pour ceux qui n'appartiennent à aucune copropriété), pas ici —
+ni dans `main.py`, qui n'en enregistre qu'une partie (#2931). Le tableau qui occupait cette place en citait **quatre sur six** : le
 préchauffage du manuel PDF (au démarrage puis chaque nuit) et la relève des
 courriels (toutes les 10 min) n'y figuraient pas — et il donnait `backup` à 03:00
 alors que l'heure est **configurable** (`cfg.heure_execution`). Trois erreurs dans
