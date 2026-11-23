@@ -8,9 +8,9 @@
 #    · openapi.json       — le schéma de l'API, exporté DE L'IMAGE PUBLIÉE de la
 #                           version, sans réseau (`docker run --network none`) :
 #                           c'est le contrat de ce qui est servi ;
-#    · pages.ts           — les onglets du site, encore joint ; ni l'iOS (qui lit la
-#                           table `pages` de tables-clients.json) ni l'Android ne le
-#                           lisent plus, son retrait de la release est suivi par #2686 ;
+#    · pages.ts           — les onglets du site, encore joint ; l'iOS ne le lit plus
+#                           (il lit la table `pages` de tables-clients.json), l'Android
+#                           ne le lit pas ; son retrait de la release : #2686 ;
 #    · socle.css et palette-sombre.css ne partent PLUS (17/11/2026, #2686) : leurs
 #                           jetons sont publiés par tables-clients.json (`jetonsCharte`,
 #                           `jetonsCharteSombre`, `palettesResolues`), et ni l'iOS (main
