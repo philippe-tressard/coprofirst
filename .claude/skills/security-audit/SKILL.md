@@ -401,6 +401,11 @@ refuse la copie.
   par tous : liste blanche, ni auteur ni destinataires). Ouvrir une route à un appareil = une
   ligne de la table. 🔒 `test_jetons_appareil.py` (toutes les routes × chaque portée, les deux
   sens du câblage, la porte relue), `test_ecrans.py` (ce qui est reçu), `test_jetons_montre.py`.
+- **La signature d'une INSTALLATION** (registre, #2953) : ni session ni jeton d'appareil — les
+  envois qu'une installation signe (inscription, bail, rapport, notification relayée) passent
+  par `registre/gardes` : `lire_contrat` (taille, contrat, version) puis `exiger_signature`, dans
+  l'ordre que chaque point spécifie. 🔒 `test_signature_registre_source_unique.py` (appelants de
+  `signature.verifier` déclarés, chaque route de `app/registre/` atteint la porte).
 - **Leurres** (#2365) : registre `utils/leurres` (`ROUTES_LEURRES`, `EVENEMENTS_LEURRES`) ;
   leurs VALEURS (`LEURRE_ADRESSE`, `LEURRE_CLE_MAINTENANCE`) ne vivent que dans le `.env` du
   nœud, jamais dans le dépôt. Une connexion leurre rend le refus ordinaire et journalise
