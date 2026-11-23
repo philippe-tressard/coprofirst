@@ -31,9 +31,9 @@ raison le dit. La liste est vérifiée dans les deux sens.
 from __future__ import annotations
 
 import ast
-import pathlib
 
-_ROUTEURS = pathlib.Path(__file__).resolve().parents[1] / "app" / "routers"
+from tests.aides_sources import modules_app
+
 _METHODES = {"get", "post", "put", "patch", "delete"}
 _MODERATION = {"require_cs_or_admin", "require_admin", "require_operateur"}
 _CHARGEURS = {"ou_404", "ou_rien", "get"}
@@ -120,8 +120,8 @@ def _est_route(fonction) -> bool:
 
 def _routes_qui_lisent_un_compte_designe(exclues=_MODERATION) -> dict[str, ast.AST]:
     trouvees = {}
-    for chemin in sorted(_ROUTEURS.rglob("*.py")):
-        arbre = ast.parse(chemin.read_text(encoding="utf-8"))
+    for module in modules_app("routers", minimum=25):
+        arbre = module.arbre
         fonctions = [
             n for n in ast.walk(arbre) if isinstance(n, (ast.FunctionDef, ast.AsyncFunctionDef))
         ]
@@ -153,7 +153,7 @@ def _routes_qui_lisent_un_compte_designe(exclues=_MODERATION) -> dict[str, ast.A
                 )
                 lit = any(_noms(i) & relayes for i in _ids_charges(aide))
             if lit:
-                trouvees[f"{chemin.relative_to(_ROUTEURS).as_posix()}::{route.name}"] = route
+                trouvees[f"{module.rel.removeprefix('routers/')}::{route.name}"] = route
     return trouvees
 
 

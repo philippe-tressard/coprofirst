@@ -14,7 +14,6 @@ ne nomme personne. Une idée ne sert son auteur qu'à lui-même et à qui modèr
 from __future__ import annotations
 
 import ast
-import pathlib
 
 import pytest
 from sqlmodel import Session
@@ -31,6 +30,7 @@ from app.models.tickets import MessageTicket, TicketEvolution
 from app.utils import masquage
 from app.utils.limiter import LIMITE_PREFERENCE
 from tests.aides_base import compte
+from tests.aides_sources import modules_app
 from tests.aides_http import base_http, client_http
 from tests.aides_suivi import affaire_ouverte
 
@@ -243,13 +243,11 @@ def test_les_publications_signees_sont_celles_que_le_masque_retire():
     """Le registre de la question et les listes filtrées par `garder` se confrontent
     dans les deux sens : une liste neuve qui masque, ou un type retiré du registre,
     fait échouer ici."""
-    routeurs = pathlib.Path(__file__).resolve().parents[1] / "app" / "routers"
     filtrent = {
-        p.relative_to(routeurs).as_posix()
-        for p in routeurs.rglob("*.py")
+        m.rel.removeprefix("routers/")
+        for m in modules_app("routers", minimum=25)
         if any(
-            isinstance(n, ast.Call) and ast.unparse(n.func) == "garder"
-            for n in ast.walk(ast.parse(p.read_text(encoding="utf-8")))
+            isinstance(n, ast.Call) and ast.unparse(n.func) == "garder" for n in ast.walk(m.arbre)
         )
     }
     #  Fichier qui filtre → ce qu'il filtre ; le fil ne fait que réunir les autres.
