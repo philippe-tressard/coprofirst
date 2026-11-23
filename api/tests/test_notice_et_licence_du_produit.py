@@ -28,13 +28,13 @@ _RACINE = pathlib.Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(_RACINE / "scripts" / "ci"))
 
 from licences_politique import BIBLIOTHEQUES_SYSTEME, EXCEPTIONS  # noqa: E402
-from tests.test_gouvernance_depot import LICENCES_NON_ACCORDEES  # noqa: E402
+from tests.aides_licences import LICENCES_NON_ACCORDEES  # noqa: E402
 
 NOTICE = _RACINE / "NOTICE.md"
 SECTION_NON_PERMISSIVE = "### Composants sous licence non permissive"
 INVENTAIRE = "docs/licences-tierces.md"
 
-#: Ce qui désigne le PRODUIT dans une phrase. Suivi, à moins de quarante
+#: Ce qui désigne le produit dans une phrase. Suivi, à moins de quarante
 #: caractères, de « licence » et d'une licence que le dépôt n'accorde pas, c'est
 #: le défaut de la docstring du 19/09/2026.
 _PRODUIT = r"\b(?:produit|projet|d[ée]p[ôo]t|logiciel|CoproFirst)\b"
@@ -127,7 +127,7 @@ def _fichiers_portee():
 
 
 def test_le_code_ne_prete_au_produit_aucune_autre_licence():
-    """« Le PRODUIT, réutilisable sous licence MIT » : une docstring publique, et fausse."""
+    """« Le produit, réutilisable sous licence MIT » : une docstring publique, et fausse."""
     lus, fautes = 0, []
     for relatif, chemin in _fichiers_portee():
         lus += 1
@@ -145,8 +145,29 @@ def test_le_code_ne_prete_au_produit_aucune_autre_licence():
 def test_le_motif_refuse_la_docstring_d_avant():
     """Cas témoin, et son contraire : une dépendance sous MIT reste permise."""
     assert re.search(
-        _LICENCE_ETRANGERE, "le seed porte le PRODUIT, réutilisable sous licence MIT", re.I
+        _LICENCE_ETRANGERE, "le seed porte le produit, réutilisable sous licence MIT", re.I
     )
     assert not re.search(
         _LICENCE_ETRANGERE, "HTTP/2 : APNs n'accepte que lui (h2 sous licence MIT).", re.I
     )
+
+
+def _annees_du_projet() -> str:
+    """Les années que `REUSE.toml` déclare pour TOUT le dépôt (`path = "**"`) : ce que
+    lisent les outils."""
+    reuse = (_RACINE / "REUSE.toml").read_text(encoding="utf-8")
+    bloc = re.search(r'path = "\*\*"\n(?:[^\[]*?)SPDX-FileCopyrightText = "([\d-]+) ', reuse)
+    assert bloc, "REUSE.toml ne déclare plus le copyright de `**` : INCONNU"
+    return bloc.group(1)
+
+
+def test_notice_et_readme_disent_les_annees_que_reuse_declare():
+    """#2958 : « 2024-2026 » dans NOTICE et README, « 2026 » dans REUSE.toml."""
+    annees = _annees_du_projet()
+    for nom in ("NOTICE.md", "README.md"):
+        texte = (_RACINE / nom).read_text(encoding="utf-8")
+        copyright_ = re.findall(r"(?:©|Copyright\*\*)[^\n]*?(20\d{2}(?:-20\d{2})?)", texte)
+        assert copyright_, f"{nom} ne porte plus de mention de copyright : INCONNU"
+        assert set(copyright_) == {annees}, (
+            f"{nom} dit {sorted(set(copyright_))}, REUSE.toml déclare « {annees} » pour le dépôt"
+        )

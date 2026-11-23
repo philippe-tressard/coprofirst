@@ -60,6 +60,7 @@ _RACINE = pathlib.Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(_RACINE / "scripts" / "ci"))
 
 from licences_spdx import licence_du_projet  # noqa: E402
+from tests.aides_licences import LICENCES_NON_ACCORDEES  # noqa: E402
 
 #: Le descriptif « About » du dépôt sur GitHub, versionné (#1771). C'est le
 #: premier texte public qu'on lit du projet, et il disait encore « Licence
@@ -77,27 +78,6 @@ DESCRIPTIF = ".github/descriptif-depot.txt"
 #: `test_les_copies_de_la_licence_sont_identiques`, et sa nature par
 #: `test_le_texte_de_licence_est_celui_de_l_identifiant`.
 GOUVERNANCE = ("README.md", "CONTRIBUTING.md", "SECURITY.md", "NOTICE.md", DESCRIPTIF)
-
-#: Les licences qu'un fichier de gouvernance ne peut pas promettre, puisque le
-#: dépôt ne les accorde pas.
-#:
-#: `AGPL` n'y est pas : c'est la licence accordée depuis le 08/10/2026 (#1726).
-#:
-#: ⚠️ Le jour où `NOTICE.md` devrait nommer la licence d'une dépendance tierce,
-#: ce test échouerait — et l'exception s'écrirait alors, avec sa raison et sa
-#: date (`standards/05` §2). Ce jour est venu : voir `SECTIONS_TIERS`.
-LICENCES_NON_ACCORDEES = (
-    "MIT",
-    "Apache",
-    "BSD",
-    "ISC",
-    "LGPL",
-    "MPL",
-    "Unlicense",
-    "WTFPL",
-    "CC0",
-    "Creative Commons",
-)
 
 #: L'exception, et la seule (#1542, #1543 — 02/10/2026) : la section de
 #: `NOTICE.md` qui NOMME les composants tiers. Elle cite des licences que le
