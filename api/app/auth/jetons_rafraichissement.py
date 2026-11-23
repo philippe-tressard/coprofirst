@@ -45,6 +45,20 @@ navigateur garde l'ancien jeton : passé le délai de grâce, il est lu comme un
 et toutes les sessions ferment. C'est un faux positif rare, et son coût est une
 reconnexion.
 
+## La déconnexion ferme la session présentée, jetons d'accès compris (23/11/2026)
+
+Une SESSION, c'est une connexion et ses rotations : `session_id`, tiré à la
+connexion, recopié par `remplacer` dans le jeton suivant, et porté par les jetons
+d'accès (`sid`, `jwt.creer_jeton_acces`). `fermer_session` révoque les jetons de
+la session présentée ; `_get_current_user` (`auth/deps.py`) n'accepte un jeton
+d'accès qui porte une session que si `session_encore_ouverte` le dit. Les autres
+sessions du compte restent ouvertes, montres et appareils push compris : c'est
+l'arbitrage du 23/11/2026 (« cette session »). Un jeton émis avant n'a pas de
+session : la déconnexion ne révoque que lui, et son jeton d'accès expire seul.
+
+🔒 `test_deconnexion_session.py` (le parcours), `test_jeton_rejoue.py` (aucune
+révocation écrite hors de ce module).
+
 ## La purge garde les jetons échangés jusqu'à leur expiration
 
 Sans eux, rien ne reconnaît le jeton rejoué : il devient « inconnu », donc un
@@ -54,6 +68,7 @@ Le coût est d'environ un jeton toutes les deux heures par session active,
 supprimé au plus sept jours après.
 """
 
+import secrets
 from datetime import datetime, timedelta
 from typing import Optional
 
@@ -64,6 +79,7 @@ from app.auth.jetons_montre import retirer_montres
 from app.utils.push.appareils import retirer_appareils
 from app.models.core import Utilisateur
 from app.models.jetons import RefreshToken
+from app.utils import horloge
 
 #: Au-delà, un jeton échangé qui revient est un jeton rejoué, pas un appel
 #: concurrent. Les appels concurrents d'une page qui charge arrivent en quelques
@@ -71,11 +87,74 @@ from app.models.jetons import RefreshToken
 DELAI_GRACE_ROTATION = timedelta(minutes=2)
 
 
-def remplacer(session: Session, jeton: RefreshToken, maintenant: datetime) -> None:
-    """Révoque `jeton` parce qu'il vient d'être échangé contre un neuf."""
+def nouvelle_session() -> str:
+    """L'identifiant d'une session neuve : 128 bits de `secrets`, jamais `random`."""
+    return secrets.token_urlsafe(16)
+
+
+def remplacer(session: Session, jeton: RefreshToken, maintenant: datetime) -> str:
+    """Révoque `jeton` parce qu'il vient d'être échangé contre un neuf.
+
+    Rend la session que le jeton neuf REPREND : la sienne, ou une neuve pour un
+    jeton émis avant qu'elles existent. Sans elle, une rotation ouvrirait une
+    autre session, et la déconnexion laisserait vivre les jetons d'accès d'avant.
+    """
     jeton.revoked = True
     jeton.remplace_le = maintenant
     session.add(jeton)
+    return jeton.session_id or nouvelle_session()
+
+
+def session_encore_ouverte(session: Session, session_id: str) -> bool:
+    """Au moins un jeton de rafraîchissement de cette session vaut encore.
+
+    Lue à chaque requête qui présente un jeton d'accès porteur d'une session :
+    une lecture, sur l'index de `session_id`.
+    """
+    return (
+        session.exec(
+            select(RefreshToken.id)
+            .where(
+                RefreshToken.session_id == session_id,
+                RefreshToken.revoked == False,  # noqa: E712
+                RefreshToken.expires_at > horloge.maintenant(),
+            )
+            .limit(1)
+        ).first()
+        is not None
+    )
+
+
+def fermer_session(session: Session, jeton_brut: str) -> Optional[tuple[int, int]]:
+    """La déconnexion : révoque les jetons de la session dont `jeton_brut` est le cookie.
+
+    Rend `(compte, nombre révoqué)`, ou `None` si le jeton est inconnu. Les autres
+    sessions du compte, ses montres et ses appareils push ne sont pas touchés.
+    Un jeton SANS session (émis avant le 23/11/2026) ne révoque que lui : chercher
+    `session_id IS NULL` fermerait les sessions anciennes de tous les comptes.
+    `remplace_le` n'est jamais écrit — une session fermée n'est pas un échange.
+
+    Ne valide pas la transaction, pour la même raison que `revoquer_sessions`.
+    """
+    presente = session.exec(
+        select(RefreshToken).where(RefreshToken.token == empreinte(jeton_brut))
+    ).first()
+    if presente is None:
+        return None
+    if presente.session_id is None:
+        jetons = [presente] if not presente.revoked else []
+    else:
+        jetons = session.exec(
+            select(RefreshToken).where(
+                RefreshToken.user_id == presente.user_id,
+                RefreshToken.session_id == presente.session_id,
+                RefreshToken.revoked == False,  # noqa: E712
+            )
+        ).all()
+    for jeton in jetons:
+        jeton.revoked = True
+        session.add(jeton)
+    return presente.user_id, len(jetons)
 
 
 def est_rejoue(jeton: RefreshToken, maintenant: datetime) -> bool:

@@ -59,6 +59,9 @@ _NIVEAUX: dict[str, int] = {
     #  Un jeton de rafraîchissement déjà échangé qui revient : un vol probable,
     #  toutes les sessions du compte ont été fermées (27/09/2026).
     "jeton_rejoue": logging.WARNING,
+    #  Une déconnexion : la session présentée ferme, jetons d'accès compris ; les
+    #  autres sessions du compte restent ouvertes (23/11/2026). Un geste ordinaire.
+    "session_fermee": logging.INFO,
     #  Un locataire lié à un lot par le seul nom (#1136) : il en porte les badges.
     "rattachement_auto": logging.WARNING,
     #  Un locataire qui se déclare lui-même sur les lots de son propriétaire,

@@ -79,7 +79,9 @@ def create_access_token(
     return jwt.encode(to_encode, contexte.courante().secret, algorithm=settings.algorithm)
 
 
-def creer_jeton_acces(user_id: int, hashed_password: str, generation: int = 0) -> str:
+def creer_jeton_acces(
+    user_id: int, hashed_password: str, generation: int = 0, session_id: str | None = None
+) -> str:
     """LA porte d'émission d'un jeton d'accès (#1063, 22/09/2026).
 
     ## Pourquoi une porte, et pas deux appels qui composent leur charge
@@ -98,10 +100,20 @@ def creer_jeton_acces(user_id: int, hashed_password: str, generation: int = 0) -
     `_get_current_user` compare à celle du compte qu'il charge **déjà**. Coût :
     nul. Effet : un mot de passe changé — ou un jeton de rafraîchissement rejoué,
     qui incrémente `generation` (#2481) — invalide d'un coup tous les jetons.
+
+    ## La session (`sid`, 23/11/2026)
+
+    `session_id` est la session des jetons de rafraîchissement émis avec lui
+    (`auth/jetons_rafraichissement.py`). Le jeton qui la porte n'est accepté que
+    tant qu'elle est ouverte : la déconnexion ferme ainsi la session présentée,
+    jetons d'accès compris, sans toucher aux autres. Ce n'est plus gratuit — une
+    lecture indexée par requête —, et c'est le prix de l'arbitrage. Sans
+    `session_id` (un jeton d'avant), le jeton est jugé sur l'empreinte seule.
     """
-    return create_access_token(
-        {"sub": str(user_id)}, empreinte=empreinte_du_compte(hashed_password, generation)
-    )
+    charge = {"sub": str(user_id)}
+    if session_id is not None:
+        charge["sid"] = session_id
+    return create_access_token(charge, empreinte=empreinte_du_compte(hashed_password, generation))
 
 
 def create_refresh_token(data: dict) -> str:

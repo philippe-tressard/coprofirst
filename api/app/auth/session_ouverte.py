@@ -21,6 +21,7 @@ from fastapi import Response
 from sqlmodel import Session
 
 from app.auth.empreinte_jeton import empreinte
+from app.auth.jetons_rafraichissement import nouvelle_session
 from app.auth.jwt import creer_jeton_acces, create_refresh_token
 from app.config import get_settings
 from app.models.core import RefreshToken, Utilisateur
@@ -38,14 +39,20 @@ def ouvrir_session(
     user: Utilisateur,
     response: Response,
     maintenant: Optional[datetime] = None,
+    session_id: Optional[str] = None,
 ) -> None:
     """Émet les jetons de `user`, garde l'EMPREINTE du rafraîchissement, pose les cookies.
+
+    `session_id` : la session que reprend une rotation (`remplacer` la rend) ;
+    absente, c'est une connexion, et une session neuve est tirée. Les deux jetons
+    la portent : la déconnexion la ferme en entier (`fermer_session`).
 
     Marque aussi l'activité du compte : une session ouverte ou renouvelée dit que
     le résident est là, et remet à zéro un avertissement de purge (#1580).
     Committe la session.
     """
     maintenant = maintenant or horloge.maintenant()
+    session_id = session_id or nouvelle_session()
     marquer_activite(user, maintenant)
     session.add(user)
 
@@ -55,13 +62,14 @@ def ouvrir_session(
             user_id=user.id,
             token=empreinte(refresh),
             expires_at=maintenant + timedelta(days=settings.refresh_token_expire_days),
+            session_id=session_id,
         )
     )
     session.commit()
 
     response.set_cookie(
         "access_token",
-        creer_jeton_acces(user.id, user.hashed_password, user.generation_sessions),
+        creer_jeton_acces(user.id, user.hashed_password, user.generation_sessions, session_id),
         max_age=settings.access_token_expire_minutes * 60,
         **COOKIE_OPTS,
     )

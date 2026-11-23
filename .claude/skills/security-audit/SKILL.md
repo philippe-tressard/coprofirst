@@ -229,12 +229,21 @@ prudent.
    Un jeton fermé par une déconnexion ou un mot de passe posé ne déclenche rien.
    La règle, la purge qui garde les jetons échangés et le délai vivent dans
    `app/auth/jetons_rafraichissement.py` — 🔒 `test_jeton_rejoue.py` éprouve les
-   trois révocations et refuse une purge ou un échange écrits ailleurs.
+   trois révocations et refuse une purge, un échange ou une révocation (`.revoked`)
+   écrits ailleurs.
 
 5. **Le jeton en base est une EMPREINTE** (`auth/empreinte_jeton`, #1389) : le
    cookie porte le brut, `refresh_token.token` son HMAC. Vaut aussi pour les
    jetons de mot de passe oublié et de vérification d'adresse. 🔒
    `test_jetons_empreinte.py` refuse une écriture ou une recherche en clair.
+
+6. **La déconnexion ferme la session présentée, jetons d'accès compris** (arbitré le
+   23/11/2026) — et rien d'autre : ni les autres sessions du compte, ni ses montres,
+   ni ses appareils push. Une session est `refresh_token.session_id`, tirée à la
+   connexion et recopiée par chaque rotation ; le jeton d'accès la porte (`sid`) et
+   `_get_current_user` le refuse dès qu'elle n'a plus de jeton valable
+   (`fermer_session`, `session_encore_ouverte`). Un jeton d'accès sans `sid` (émis
+   avant) expire seul. Journal : `session_fermee`. 🔒 `test_deconnexion_session.py`.
 
 Une **clé partagée** (`MAINTENANCE_KEY`) se compare par `hmac.compare_digest`, en
 octets — jamais `==` : 🔒 `test_cle_maintenance.py` refuse un réglage secret
