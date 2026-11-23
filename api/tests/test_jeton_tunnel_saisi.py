@@ -26,7 +26,9 @@ JETON_EN_ARGUMENT = re.compile(r"\b\w*(TOKEN|JETON)\w*=[\"']?\$\{?[1-9@*]", re.I
 #: Une lecture de l'entrée qui n'est pas la porte unique.
 LECTURE_DIRECTE = re.compile(r"^\s*(IFS=\S*\s+)?read\b[^#\n]*\b\w*(TOKEN|JETON)\w*", re.I | re.M)
 #: L'installateur appelé avec une valeur après lui (`<JETON>`, `eyJ…`, `$VAR`).
-INSTALLEUR_AVEC_JETON = re.compile(r"install-cloudflared\.sh[ \t]+[<$'\"]|install-cloudflared\.sh[ \t]+eyJ")
+INSTALLEUR_AVEC_JETON = re.compile(
+    r"install-cloudflared\.sh[ \t]+[<$'\"]|install-cloudflared\.sh[ \t]+eyJ"
+)
 
 
 def _scripts_du_module() -> list:
@@ -62,7 +64,9 @@ def test_aucun_jeton_pris_d_un_argument():
         for n, ligne in enumerate(s.read_text(encoding="utf-8").splitlines(), 1)
         if JETON_EN_ARGUMENT.search(ligne)
     ]
-    assert not fautes, "jeton reçu en argument — passer par lire_jeton_saisi :\n" + "\n".join(fautes)
+    assert not fautes, "jeton reçu en argument — passer par lire_jeton_saisi :\n" + "\n".join(
+        fautes
+    )
 
 
 def test_le_jeton_ne_se_lit_que_par_la_porte_unique():
