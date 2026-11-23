@@ -7,8 +7,10 @@ name: Caddyfile
 #  Pourquoi un vrai binaire : le `Caddyfile` importe les fragments communs par un
 #  MOTIF, qui ne doit rien importer — et ne rien casser — là où rien n'est monté ;
 #  et Caddy range les `handle` par précision de chemin avant l'ordre d'écriture.
-#  Aucun test qui lit le texte ne prouve l'un ni l'autre : `caddy adapt` rend
-#  l'ordre réel des routes, que `scripts/ci/caddy_variantes.py` lit.
+#  Aucun test qui lit le texte ne prouve l'un ni l'autre, ni même `caddy adapt` :
+#  deux `handle` de même matcher y sont FUSIONNÉS en une route. Le script lance donc
+#  Caddy entre deux amonts factices (la même image) et le juge à ses réponses :
+#  propre, le témoin servi après `forward_auth` ; commune, relayé à l'API.
 #
 #  Hors de `ci.yml` : le rejeu du poste n'a pas docker. L'autotest de la lecture,
 #  lui, est joué par `ci.yml` (`caddy_variantes.py --selftest`).
@@ -42,5 +44,5 @@ jobs:
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
 
-      - name: Les deux variantes chargées, routes dans l'ordre attendu
+      - name: Les deux variantes chargées, et jugées à leurs réponses
         run: python3 scripts/ci/caddy_variantes.py

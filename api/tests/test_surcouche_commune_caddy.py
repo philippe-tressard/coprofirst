@@ -8,11 +8,13 @@ le `Caddyfile` par celui de l'archive, et la retouche disparaissait. Désormais 
   n'importe rien sur une installation propre, où rien n'est monté ;
 - la surcouche `compose.commune.yml` monte chaque fragment au chemin importé ;
 - le relais des fichiers est importé AVANT le `handle /uploads/*` qui sert la
-  racine unique (même précision de chemin : l'ordre d'écriture décide) ;
+  racine unique : Caddy réunit les deux blocs (même matcher) en une route, où le
+  relais, écrit le premier, répond ;
 - la procédure ne demande plus de retoucher le `Caddyfile`.
 
-Que Caddy charge les deux variantes, et dans cet ordre, se prouve sur un vrai
-binaire : workflow `.github/workflows/caddyfile.yml` (`scripts/ci/caddy_variantes.py`).
+Que Caddy charge les deux variantes, et que le relais réponde, se prouve sur un vrai
+binaire, par de vraies requêtes : workflow `.github/workflows/caddyfile.yml`
+(`scripts/ci/caddy_variantes.py`).
 """
 
 import re

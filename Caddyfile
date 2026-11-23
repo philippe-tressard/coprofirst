@@ -186,8 +186,9 @@
 
 	# Installation COMMUNE à plusieurs copropriétés (claude-config#604) : la surcouche
 	# `deploiement/standard/commune/compose.commune.yml` monte ce fragment, qui RELAIE
-	# `/uploads/*` à l'API. Placé avant le `handle /uploads/*` ci-dessous, il l'emporte
-	# (même précision : l'ordre d'écriture décide). Un motif sans fichier n'importe
+	# `/uploads/*` à l'API. Caddy réunit les deux `handle /uploads/*` (même matcher) en
+	# une route : le relais, écrit avant, répond, et le service de la racine n'est
+	# jamais atteint — constaté par une vraie requête. Un motif sans fichier n'importe
 	# rien : sur une installation propre (5Hostachy), rien n'est monté, rien ne change.
 	# 🔒 api/tests/test_surcouche_commune_caddy.py, workflow « Caddyfile ».
 	import commune/fichiers*.caddy
