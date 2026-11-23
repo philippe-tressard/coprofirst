@@ -261,6 +261,34 @@ etape_reprise() {
   esac
 }
 
+# declarations — lit des commits `\x1e<sujet>\x1f<corps>` sur stdin (`git log
+#  --format='%x1e%s%x1f%b'`) et imprime ce qu'ils DÉCLARENT de leur rang, pour
+#  `rang_attendu` : chaque sujet, et les lignes `BREAKING CHANGE` du DERNIER paragraphe
+#  du corps (le pied) — jamais le reste du corps (#2896). Un corps CITE : le squash
+#  d'une PR Dependabot recopie le changelog amont, dont les `feat:` ont monté le
+#  train v3.122.0 en mineure ; un `BREAKING CHANGE` amont y aurait fait une majeure.
+declarations() {
+  local r
+  while IFS= read -r -d $'\x1e' r || [ -n "$r" ]; do
+    [ -z "$r" ] && continue
+    printf '%s\n' "${r%%$'\x1f'*}"
+    printf '%s\n' "${r#*$'\x1f'}" | awk '
+      /^[[:space:]]*$/ { vide = 1; next }
+      { if (vide) { n = 0; vide = 0 }; p[++n] = $0 }
+      END { for (i = 1; i <= n; i++) if (p[i] ~ /^BREAKING[ -]CHANGE/) print p[i] }'
+  done
+}
+
+# declarations_train <plage> [titre corps] — les déclarations des commits d'une plage,
+#  sans le bump du train ; à blanc, le lot non fusionné s'y ajoute par le titre et le
+#  corps de sa PR, qui deviendront ceux de son squash (`squash_merge_commit_title` =
+#  PR_TITLE, `…_message` = PR_BODY) : à blanc et réel lisent le même texte (#2896).
+declarations_train() {
+  { git log "$1" --format='%x1e%s%x1f%b' 2>/dev/null
+    [ -n "${2:-}" ] && printf '\x1e%s\x1f%s' "$2" "${3:-}"
+  } | declarations | { grep -v '^chore(version)' || true; }
+}
+
 if [ "${BASH_SOURCE[0]}" = "$0" ] && [ "${1:-}" = "--selftest" ]; then
   echecs=0
   t() {
@@ -377,6 +405,12 @@ if [ "${BASH_SOURCE[0]}" = "$0" ] && [ "${1:-}" = "--selftest" ]; then
   t "PR main mémorisée fusionnée : la suite"   SUITE   etape_reprise MERGED
   t "PR main ouverte : le train"               TRAIN   etape_reprise OPEN
   t "rien de mémorisé : le train"              TRAIN   etape_reprise ""
+  #  #2896 : le corps d'un commit Dependabot recopie le changelog amont.
+  CHANGELOG=$'Bumps svelte from 5.57.3 to 5.58.0.\n\nfeat: include the component instance\nBREAKING CHANGE: amont\n\nSigned-off-by: dependabot[bot] <x@example.com>'
+  t "corps Dependabot citant feat: → patch"    patch   rang_attendu "$(printf '\x1e%s\x1f%s' 'chore(deps): Bump svelte (#2893)' "${CHANGELOG/BREAKING CHANGE: amont/}" | declarations)"
+  t "BREAKING CHANGE cité au milieu → patch"   patch   rang_attendu "$(printf '\x1e%s\x1f%s' 'chore(deps): Bump x' "${CHANGELOG/feat: include the component instance/}" | declarations)"
+  t "BREAKING CHANGE en pied → major"          major   rang_attendu "$(printf '\x1e%s\x1f%s' 'fix(api) : les jetons' $'détail\n\nBREAKING CHANGE: les jetons changent' | declarations)"
+  t "feat dans un sujet parmi d'autres → minor" minor   rang_attendu "$(printf '\x1e%s\x1f\x1e%s\x1f%s\n' 'fix: a' 'feat(mep) : b' 'corps' | declarations)"
   t "rang du train lu aux préfixes (feat)"     minor   rang_attendu "$(printf 'fix: a\nfeat(mep) : b')"
   if [ "$echecs" -eq 0 ]; then
     echo "✓ conducteur de MEP : fusion sur CLEAN seulement, fenêtre de bascule, version du train, reprise, PR fermée à la main jamais rouverte."
