@@ -1,8 +1,8 @@
 """Ce que la politique de confidentialité dit des NOTIFICATIONS (#2495, #2535).
 
-Deux paragraphes, écrits UNE fois : le gabarit (`contenus_legaux.CONTENUS`), ses
-ajouts (`AJOUTS_1034`) et la migration 0329, qui les insère dans le texte servi, les
-lisent ici.
+Deux paragraphes, écrits UNE fois : le gabarit (`contenus_legaux.DEFAULT_LEGAL`) et
+les migrations qui les ont portés dans le texte servi (0329, 0330, 0342) les lisent
+ici.
 
 - `NOTIFICATIONS_PUSH` — ce qui part chez Apple ou Google (#2789) quand le service de notifications sur
   téléphone est actif (spécification `specs/architecture/notifications-push.md` §5 :

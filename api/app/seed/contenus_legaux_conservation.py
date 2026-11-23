@@ -15,7 +15,9 @@ dans `DUREES`, jamais recopiés ici — la phrase ne peut pas diverger de la rè
 pas un avis juridique ; les fondements des durées sont à valider avec le syndic.
 """
 
+from app.config import Settings
 from app.utils.conservation_affaires import TYPES
+from app.utils.dates_fr import duree_conservation
 
 
 #: Comment la phrase nomme chaque type — le nombre d'années, lui, vient de `TYPES`.
@@ -43,5 +45,14 @@ CONSERVATION_AFFAIRES = (
     "de contact du site.</li>"
 )
 
+#: La durée des jetons de rafraîchissement, composée du réglage qui l'applique (#2959).
+#: ⚠️ Son DÉFAUT : une installation peut la changer (`REFRESH_TOKEN_EXPIRE_DAYS`), et le
+#: gabarit, commun à toutes, ne lit pas la valeur servie — il ne recopie plus de chiffre.
+JETONS_RAFRAICHISSEMENT = (
+    "<li>Tokens de rafraîchissement\xa0: "
+    + duree_conservation(Settings.model_fields["refresh_token_expire_days"].default)
+    + " glissants.</li>"
+)
+
 #: L'entrée devant laquelle elle s'insère — telle que le gabarit la porte.
-AVANT_CONSERVATION = "<li>Tokens de rafraîchissement\xa0: 7 jours glissants.</li>"
+AVANT_CONSERVATION = JETONS_RAFRAICHISSEMENT
