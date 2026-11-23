@@ -56,8 +56,8 @@ def _creer(url, nom: str) -> None:
     moteur = create_engine(url, isolation_level="AUTOCOMMIT", poolclass=NullPool)
     try:
         with moteur.connect() as c:
-            c.execute(text(f'CREATE SCHEMA "{nom}"'))  # noqa: S608 — nom écrit par le test
-            c.execute(text(f'CREATE TABLE "{nom}".t (id int)'))  # noqa: S608
+            c.execute(text(f'CREATE SCHEMA "{nom}"'))  # nom écrit par le test
+            c.execute(text(f'CREATE TABLE "{nom}".t (id int)'))
     finally:
         moteur.dispose()
 
@@ -204,7 +204,7 @@ def test_la_purge_retire_le_schema_d_un_createur_mort():
                 text=True,
                 check=True,
             ).stdout.strip()
-            c.execute(text(f"COMMENT ON SCHEMA \"{nom}\" IS 'createur={mort}@{dialecte._hote()}'"))  # noqa: S608
+            c.execute(text(f"COMMENT ON SCHEMA \"{nom}\" IS 'createur={mort}@{dialecte._hote()}'"))
         assert (
             dialecte.retirer_schemas_jetables_perimes(url, plus_vieux_que=timedelta(hours=1)) >= 1
         )

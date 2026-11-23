@@ -11,7 +11,7 @@ from app.utils.perimetres import perimetre_defaut_liste
 #  `liste_depuis_json` et `ListeJson` vivent dans `schemas_communs.py` depuis le
 #  19/08/2026 : `schemas_tickets` en a besoin et ne peut pas importer ce
 #  fichier-ci, qui l’importe. Ré-exportés, donc rien à changer ailleurs.
-from app.schemas_communs import (  # noqa: F401
+from app.schemas_communs import (
     AffaireLieeLue,
     ChampsIntervenant,
     ChampsIntervenantEntree,
@@ -389,7 +389,7 @@ class TicketUpdate(SaisiPourEntree, AssisteIACorrection, ChampsIntervenantEntree
 #  Les schémas du fil d’un ticket vivent dans `schemas_tickets.py` depuis le
 #  19/08/2026 (modularité, rang 1). Ré-exportés : les routeurs appelants ne
 #  changent pas d’import.
-from app.schemas_tickets import (  # noqa: E402,F401
+from app.schemas_tickets import (  # noqa: E402
     TicketEvolutionCreate as TicketEvolutionCreate,
     TicketEvolutionRead as TicketEvolutionRead,
     TicketEvolutionUpdate as TicketEvolutionUpdate,
@@ -401,11 +401,11 @@ from app.schemas_tickets import (  # noqa: E402,F401
 #  « Actualité » (#1091, lot 4), elle se lit et s'écrit par `schemas_tickets`.
 
 #  La synthèse d'une affaire close (#1643) — fiche de l'affaire et carnet.
-from app.schemas_synthese import SyntheseLue as SyntheseLue  # noqa: E402,F401
-from app.schemas_synthese import EtapeMoyenne as EtapeMoyenne  # noqa: E402,F401
-from app.schemas_synthese import ExerciceLu as ExerciceLu  # noqa: E402,F401
-from app.schemas_synthese import ResumeAffaires as ResumeAffaires  # noqa: E402,F401
+from app.schemas_synthese import SyntheseLue as SyntheseLue  # noqa: E402
+from app.schemas_synthese import EtapeMoyenne as EtapeMoyenne  # noqa: E402
+from app.schemas_synthese import ExerciceLu as ExerciceLu  # noqa: E402
+from app.schemas_synthese import ResumeAffaires as ResumeAffaires  # noqa: E402
 
 #  Les réponses de la Communauté (#2506) — idées, annonces, sondages.
-from app.schemas_communaute import MessageRead as MessageRead  # noqa: E402,F401
-from app.schemas_communaute import ReponseCommunauteRead as ReponseCommunauteRead  # noqa: E402,F401
+from app.schemas_communaute import MessageRead as MessageRead  # noqa: E402
+from app.schemas_communaute import ReponseCommunauteRead as ReponseCommunauteRead  # noqa: E402

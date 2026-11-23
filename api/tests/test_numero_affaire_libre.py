@@ -24,7 +24,7 @@ def _tirages(monkeypatch, *suites: str) -> None:
     monkeypatch.setattr(commun.random, "choices", lambda *a, **k: list(next(restantes)))
 
 
-def test_un_numero_deja_pris_est_ecarte(session, monkeypatch):  # noqa: F811
+def test_un_numero_deja_pris_est_ecarte(session, monkeypatch):
     _tirages(monkeypatch, "424242")
     existante = _creer(session, _compte(session), categorie="panne")
     assert existante.numero == "TK-424242"
@@ -33,7 +33,7 @@ def test_un_numero_deja_pris_est_ecarte(session, monkeypatch):  # noqa: F811
     assert commun.generer_numero(session) == "TK-123456"
 
 
-def test_la_creation_d_une_affaire_ne_tombe_plus_sur_un_numero_pris(session, monkeypatch):  # noqa: F811
+def test_la_creation_d_une_affaire_ne_tombe_plus_sur_un_numero_pris(session, monkeypatch):
     """Par la vraie création : le défaut exact de la CI de #1801."""
     auteur = _compte(session)
     _tirages(monkeypatch, "777777")
@@ -45,7 +45,7 @@ def test_la_creation_d_une_affaire_ne_tombe_plus_sur_un_numero_pris(session, mon
     assert seconde.numero == "TK-888888"
 
 
-def test_l_epuisement_des_essais_le_dit(session, monkeypatch):  # noqa: F811
+def test_l_epuisement_des_essais_le_dit(session, monkeypatch):
     """Jamais une boucle sans fin, ni un numéro pris rendu en silence."""
     _tirages(monkeypatch, "555555")
     _creer(session, _compte(session), categorie="panne")
