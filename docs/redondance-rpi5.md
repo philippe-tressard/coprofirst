@@ -188,6 +188,43 @@ Fichier `/opt/5hostachy/.active` présent sur les deux RPi. Contient `rpi1` ou `
 
 ---
 
+## L'onglet Maintenance sur la référence (sorti du manuel, #2924)
+
+Le manuel est servi par toute installation : il ne décrit plus ce qui n'existe que
+sur la référence. Voici comment l'onglet *Admin › Exploitation › Maintenance* se
+lit sur ses deux Raspberry Pi.
+
+- **Tâches planifiées** — une ligne par tâche, détaillée nœud par nœud (`RPI1`,
+  `RPI2`, d'après `INSTANCE_ID`). La **copie hors site** fait exception : lancée
+  depuis le poste et non par un nœud, elle n'a qu'une ligne, qui nomme le nœud
+  d'où vient l'archive du jour. La bascule, la sauvegarde et l'agrégation de
+  télémétrie ne tournent que sur le nœud **actif** : après un basculement
+  automatique, un nœud peut ne pas avoir été actif deux nuits de suite, et sa
+  ligne dit alors *Pas actif à l'heure*, en gris — la tâche a tourné sur l'autre.
+  Elle ne passe au rouge que si la tâche elle-même ne tourne plus, ou si le nœud
+  se tait plus de trois nuits.
+- **Contrôles de fiabilité** — `check-reliability`, toutes les 15 minutes sur
+  chaque nœud (site public, split-brain, tunnel, parité du code, disque, mises à
+  jour système…). Les constats qui portent sur les deux nœuds s'affichent une
+  fois, sous **Les deux nœuds**, rapportés par le nœud actif.
+- **Audit de sécurité nocturne** — `audit-securite`, chaque nuit sur chaque nœud ;
+  les sondes de scanners et les forçages de comptes ne se lisent que sur l'actif.
+- **Version au pied de page** — courte, suivie du nœud qui sert : « v3.122.5 · RPi1 ».
+- **Archives de conservation des affaires** — la sauvegarde hors site les copie
+  sur le poste, sous `archives-affaires/` de sa destination
+  (`scripts/poste/export-hors-site.sh` : `/Volumes/Data/Backup` sur le Mac,
+  `C:\Backup` sous Windows) ; le serveur retire sa copie 30 jours après.
+- **Bâtiments** — la légende du kanban de l'accueil et les périmètres disent
+  « Bât. 1 (D) » à « Bât. 4 (A) » : la lettre de l'acte, saisie dans *Imports ›
+  État descriptif*.
+
+Sur une installation à **un seul serveur** sans `INSTANCE_ID`, ce que le code
+affiche (lu dans le code, non observé) : les tâches enregistrent un nœud vide —
+la colonne *Nœud* dit « non enregistré », sans sous-ligne par nœud ; les cartes
+*Contrôles de fiabilité* et *Audit de sécurité nocturne* disent *Aucun rapport
+reçu* (leurs scripts sont des crons de la référence, `infra/points-entree/`, que
+l'installation standard ne pose pas) ; le bloc **Les deux nœuds** n'apparaît pas.
+
 ## Adresses réseau
 
 | Machine | Hostname | IP locale | Rôle |
