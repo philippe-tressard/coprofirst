@@ -419,7 +419,7 @@ def modifier_perimetre(
     admin: Utilisateur = Depends(require_admin),
 ):
     noeud = _noeud(session, perimetre_id)
-    donnees = body.dict(exclude_unset=True)
+    donnees = body.model_dump(exclude_unset=True)
     #  Le parent et `selectionnable` (un regroupement qui devient une cible fait
     #  descendre toute sa branche d'un niveau) changent des niveaux : on compare
     #  l'arbre avant et après, sans rien écrire tant que l'écart n'est pas jugé.
