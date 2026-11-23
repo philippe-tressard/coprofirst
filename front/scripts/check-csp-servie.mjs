@@ -35,6 +35,7 @@ import { spawn } from 'node:child_process';
 import { existsSync, readFileSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { buildDeCetteSource, CODE_INCONNU } from './lib-build-a-jour.mjs';
 
 const ICI = dirname(fileURLToPath(import.meta.url));
 const FRONT = resolve(ICI, '..');
@@ -124,6 +125,7 @@ async function mesurer() {
 		console.error('INCONNU : `front/build/index.js` absent — lancer `npm run build` d’abord.');
 		return 2;
 	}
+	if (!buildDeCetteSource(entree, 'lint:csp')) return CODE_INCONNU; // #2976
 	const serveur = spawn(process.execPath, [entree], {
 		env: { ...process.env, PORT: String(PORT), HOST: '127.0.0.1' },
 		stdio: 'ignore',
