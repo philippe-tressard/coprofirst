@@ -60,12 +60,16 @@ sont interdits :
 C37 (`lib-replication.sh`) et le point 22 du pré-check disent deux primaires, une réplique
 absente, déconnectée ou en retard. Conduite à tenir : `infra-rpi`.
 
-**Exporter la base** (#1749) : par l'administration — `POST /admin/export-copropriete`
-(archive complète) et `…/verifier` (réimport dans une base jetable), dans le processus de
-l'API, en une transaction. `python -m app.utils.export_copropriete` dans le conteneur ne
-sert qu'à **importer** une archive dans une base CIBLE neuve. Un état multi-fichiers
-qu'un processus tient ouvert ne se copie pas à chaud (`standards/06` §1 ; l'état
-d'authentification WhatsApp, `infra-rpi`).
+**Exporter la base** (#1749) : sur la production à deux nœuds, par l'administration —
+`POST /admin/export-copropriete` (archive complète) et `…/verifier` (réimport dans une base
+jetable), dans le processus de l'API, en une transaction. La commande
+`python -m app.utils.export_copropriete` a trois gestes : `importer` une archive dans une
+base CIBLE neuve (la restauration des nœuds, `lib-restauration.sh`) ; `exporter` et
+`verifier`, que seule la mise à jour d'une installation standard emploie
+(`deploiement/standard/mise-a-jour.sh`), **l'API arrêtée** — jamais sur une base qui sert.
+Un état multi-fichiers qu'un processus tient ouvert ne se copie pas à chaud (`standards/06`
+§1 ; l'état d'authentification WhatsApp, `infra-rpi`). 🔒 `lint:consignes` lit les gestes
+dans `_ARITE`.
 
 ---
 
