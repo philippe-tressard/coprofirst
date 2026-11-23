@@ -296,33 +296,49 @@ def construire_matiere(
         )
         return Matiere("\n\n".join(blocs), (), (), (), ())
 
-    #  Chaque document est ANNONCÉ par son titre et sa date : sans eux, le
-    #  modèle lit une seule masse de texte et ne peut pas savoir qu'un avenant
-    #  remplace une clause du contrat initial.
-    lus, fichiers = [], []
-    en_texte, en_fichier, ecartes = [], [], []
+    #  🔴 Les budgets se dépensent du plus RÉCENT au plus ancien (#2890) : un
+    #  avenant l'emporte sur le contrat initial, c'est donc l'initial qu'on
+    #  tronque ou qu'on écarte quand le contrat déborde — dans l'ordre
+    #  chronologique, l'avenant était sacrifié au document qu'il remplace.
+    sorts = []
     budget = MAX_CARACTERES_DOCUMENT
     budget_octets = MAX_OCTETS_JOINTS
-    for doc in documents_du_contrat(session, contrat):
-        #  `publie_le` est un instant de la base (UTC) : son jour se lit à Paris.
-        quand = horloge.jour_civil(doc.publie_le).isoformat() if doc.publie_le else "date inconnue"
+    for doc in reversed(documents_du_contrat(session, contrat)):
         texte_doc = texte_du_document(doc)
         if texte_doc and budget > 0:
             extrait = texte_doc[:budget]
             budget -= len(extrait)
-            tronque = " — TRONQUÉ" if len(extrait) < len(texte_doc) else ""
-            lus.append(f"--- Document « {doc.titre} » (déposé le {quand}){tronque} ---\n{extrait}")
-            en_texte.append(doc.titre)
+            sorts.append((doc, "texte", extrait, len(extrait) < len(texte_doc)))
             continue
         #  Pas de texte : le fichier part tel quel. C'est le cas NORMAL d'un
         #  contrat signé, donc numérisé.
         piece = piece_jointe(doc, budget_octets)
         if isinstance(piece, str):
-            ecartes.append((doc.titre, piece))
+            sorts.append((doc, "ecarte", piece, False))
             continue
         budget_octets -= len(piece.donnees_b64)
-        fichiers.append(piece)
-        en_fichier.append(doc.titre)
+        sorts.append((doc, "fichier", piece, False))
+
+    #  Le modèle reçoit ensuite le tout dans l'ordre CHRONOLOGIQUE, qui porte le
+    #  sens. Chaque document est ANNONCÉ par son titre et sa date : sans eux, il
+    #  lit une seule masse de texte et ne sait pas qu'un avenant remplace une
+    #  clause du contrat initial.
+    lus, fichiers = [], []
+    en_texte, en_fichier, ecartes = [], [], []
+    for doc, sort, contenu, tronque in reversed(sorts):
+        if sort == "ecarte":
+            ecartes.append((doc.titre, contenu))
+        elif sort == "fichier":
+            fichiers.append(contenu)
+            en_fichier.append(doc.titre)
+        else:
+            #  `publie_le` est un instant de la base (UTC) : son jour se lit à Paris.
+            quand = (
+                horloge.jour_civil(doc.publie_le).isoformat() if doc.publie_le else "date inconnue"
+            )
+            marque = " — TRONQUÉ" if tronque else ""
+            lus.append(f"--- Document « {doc.titre} » (déposé le {quand}){marque} ---\n{contenu}")
+            en_texte.append(doc.titre)
 
     texte = "\n\n".join(lus)
     if texte:
