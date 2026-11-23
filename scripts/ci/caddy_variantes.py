@@ -289,19 +289,42 @@ def eprouver(dossier: Path, image: str, variante: str) -> list[str]:
     return fautes
 
 
+IMPORT_RELAIS = "\timport commune/fichiers*.caddy\n"
+
+
+def relais_deplace(caddyfile: str) -> str:
+    """Le témoin fautif (PURE) : l'import du relais placé APRÈS le service de la racine."""
+    sans = caddyfile.replace(IMPORT_RELAIS, "", 1)
+    debut = sans.index("\thandle /uploads/* {")
+    fin = sans.index("\n\t}\n", debut) + len("\n\t}\n")
+    return sans[:fin] + IMPORT_RELAIS + sans[fin:]
+
+
 def principal() -> int:
     image = image_caddy()
     fautes = []
-    for variante in ("propre", "commune"):
+    #  Le troisième passage est le contrôle qui s'éprouve : relais placé après la
+    #  racine, la variante commune DOIT échouer — sinon les requêtes ne jugent rien.
+    for variante in ("propre", "commune", "temoin-fautif"):
         with tempfile.TemporaryDirectory() as tmp:
             dossier = Path(tmp)
-            shutil.copy(RACINE / "Caddyfile", dossier / "Caddyfile")
-            if variante == "commune":
+            texte = (RACINE / "Caddyfile").read_text(encoding="utf-8")
+            if variante == "temoin-fautif":
+                texte = relais_deplace(texte)
+            (dossier / "Caddyfile").write_text(texte, encoding="utf-8")
+            if variante != "propre":
                 (dossier / "commune").mkdir()
                 for nom in FRAGMENTS:
                     shutil.copy(COMMUNE / nom, dossier / "commune" / nom)
             dossier.chmod(0o755)
             config = adapter(dossier, image)
+            if variante == "temoin-fautif":
+                if not eprouver(dossier, image, "commune"):
+                    fautes.append(
+                        "le relais placé après la racine passe : le contrôle ne juge rien"
+                    )
+                print("témoin fautif : refusé, le contrôle discrimine")
+                continue
             fautes_variante = verdicts(config, variante) + eprouver(
                 dossier, image, variante
             )
@@ -409,6 +432,16 @@ def _autotest() -> int:
         ),
         ("propre : garde chargée", verdicts(site(racine, garde), "propre"), 1),
         ("route absente → INCONNU, pas OK", verdicts(site(front), "propre"), 1),
+        (
+            "témoin fautif : le relais suit la racine",
+            []
+            if relais_deplace(
+                "a\n\timport commune/fichiers*.caddy\n\thandle /uploads/* {\n\t\tx\n\t}\nz"
+            )
+            == "a\n\thandle /uploads/* {\n\t\tx\n\t}\n\timport commune/fichiers*.caddy\nz"
+            else ["x"],
+            0,
+        ),
         (
             "image lue dans Dockerfile.caddy",
             [] if image_caddy().startswith("caddy:") else ["x"],
