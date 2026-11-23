@@ -321,13 +321,9 @@ s'écrit dans les scripts d'exploitation, pas dans l'application.
 
 ### 9. Dépendances vulnérables (A06:2021)
 
-```powershell
-# Python
-pip audit --requirement api/requirements.txt
-
-# Node.js
-cd front; npm audit
-```
+Les deux portes que la CI joue, chacune avec ses exceptions déclarées (`audit-exceptions.json`, qui
+échouent si l'une cesse de servir) : `cd api && python scripts/check_audit_python.py` et
+`cd front && npm run lint:audit` (#2933 — `pip audit` n'existe pas, et un audit nu ignore les exceptions).
 
 ### 10. Headers de sécurité (A05:2021)
 
