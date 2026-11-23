@@ -29,6 +29,10 @@
 #         --corps <fichier> [--a-blanc]
 #    bash scripts/poste/conduire-mep.sh --selftest
 #
+#  Le pré-check (`precheck-mep.sh`) se passe AVANT, dans la copie d'où l'on conduit :
+#  sa trace doit couvrir la tête du lot (ou `dev` pour `--lot -`), depuis moins de
+#  2 h — sinon le conducteur s'arrête (#2908).
+#
 #  `--lot -` : rien à fusionner dans `dev` (le train y est déjà). `{version}` est
 #  remplacé par la version calculée. `--a-blanc` : tout est mesuré et décidé, la
 #  version est même posée dans une copie jetable, mais rien n'est fusionné, poussé,
@@ -128,6 +132,24 @@ fusionner() {
     sleep 15
   done
   stop "PR #$n : MERGED non constaté après la fusion"
+}
+
+# exiger_precheck sha — la trace du pré-check de CETTE copie couvre-t-elle ce qui part ?
+#  (#2908) Le conducteur fusionnait sans la lire : le pré-check ne tenait que par la
+#  consigne. Un autre commit au même ARBRE est couvert (`update-branch` sans effet) ;
+#  à blanc, le refus se dit sans arrêter.
+exiger_precheck() {
+  local sha=$1 trace couvert arbres="" v
+  trace=$(cat "$(dossier_git)/precheck-mep.ok" 2>/dev/null)
+  couvert=${trace%% *}
+  if [ -n "$couvert" ] && [ -n "$sha" ] && git cat-file -e "$couvert^{commit}" 2>/dev/null \
+     && git cat-file -e "$sha^{commit}" 2>/dev/null; then
+    [ "$(git rev-parse "$couvert^{tree}")" = "$(git rev-parse "$sha^{tree}")" ] && arbres=oui || arbres=non
+  fi
+  v=$(verdict_trace_precheck "$trace" "$sha" "$(date +%s)" "$arbres")
+  [ "$v" = OK ] && { dire "pré-check : il couvre ${sha:0:8}"; return 0; }
+  [ -n "$A_BLANC" ] && { dire "À BLANC — le conducteur s'arrêterait : ${v#REFUS: }"; return 0; }
+  stop "${v#REFUS: } — passer \`bash scripts/poste/precheck-mep.sh\` sur ce qui part, dans cette copie"
 }
 
 # lire_dev — le sha de `dev` sur GitHub, `absent` si la lecture réussit sans la trouver,
@@ -250,9 +272,13 @@ if [ "$ETAPE" = TRAIN ]; then
       MERGED) dire "lot #$LOT déjà fusionné dans dev" ;;
       OPEN)   TITRE_LOT=$(g pr view "$LOT" --json title --jq .title)
               CORPS_LOT=$(g pr view "$LOT" --json body --jq .body)
+              exiger_precheck "$(g pr view "$LOT" --json headRefOid --jq .headRefOid)"
               attendre_fusionnable "$LOT"; fusionner "$LOT"; sleep 15; synchroniser ;;
       *)      stop "lot #$LOT dans l'état « ${ST:-illisible} »" ;;
     esac
+  else
+    #  `--lot -` : le train est déjà dans `dev` — c'est lui qui part.
+    exiger_precheck "$(git rev-parse origin/dev 2>/dev/null)"
   fi
   # ── 2. La version du train ──
   V_MAIN=$(lire_version origin/main); V_DEV=$(lire_version origin/dev)

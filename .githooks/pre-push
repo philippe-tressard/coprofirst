@@ -27,7 +27,6 @@
 #  Répertoire git DU clone : `.git` est un fichier dans un worktree (#1226).
 . "$(git rev-parse --show-toplevel)/scripts/lib/lib-depot.sh"
 MARQUEUR="$(dossier_git)/precheck-mep.ok"
-AGE_MAX_S=7200          # 2 h : au-delà, l'état des RPi a pu changer
 
 # stdin : <ref locale> <sha local> <ref distante> <sha distant>
 protege=""
@@ -54,22 +53,11 @@ refuser() {
     exit 1
 }
 
-[ -f "$MARQUEUR" ] || refuser "aucun pré-check enregistré."
-
-# Le marqueur contient : <sha couvert> <horodatage epoch>
-sha_couvert=$(cut -d' ' -f1 "$MARQUEUR")
-quand=$(cut -d' ' -f2 "$MARQUEUR")
-
-case "$quand" in
-    ''|*[!0-9]*) refuser "marqueur de pré-check illisible ($MARQUEUR)." ;;
-esac
-
-age=$(( $(date +%s) - quand ))
-[ "$age" -gt "$AGE_MAX_S" ] && \
-    refuser "pré-check trop ancien ($(( age / 60 )) min) — l'état des RPi a pu changer."
-
-[ "$sha_couvert" = "$protege" ] || \
-    refuser "pré-check passé sur ${sha_couvert%"${sha_couvert#???????}"}…, or c'est ${protege%"${protege#???????}"}… qui part."
+#  La règle est celle du conducteur de MEP : une écriture (`lib-depot.sh`, #2908).
+#  Pas d'arbre mesuré ici : le hook exige le commit exact.
+verdict=$(verdict_trace_precheck "$(cat "$MARQUEUR" 2>/dev/null)" "$protege" "$(date +%s)" "")
+[ "$verdict" = OK ] || refuser "${verdict#REFUS: }."
+age=$(( $(date +%s) - $(cut -d' ' -f2 "$MARQUEUR") ))
 
 echo "✓ pre-push : pré-check MEP validé pour ${protege%"${protege#???????}"} (il y a $(( age / 60 )) min)."
 exit 0

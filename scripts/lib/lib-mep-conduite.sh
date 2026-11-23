@@ -26,6 +26,11 @@ if ! declare -F rang_attendu >/dev/null 2>&1; then
   # shellcheck source=lib-verdicts-mep.sh
   . "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/lib-verdicts-mep.sh"
 fi
+#  `verdict_trace_precheck` (#2908) : la règle du pré-check, partagée avec le hook.
+if ! declare -F verdict_trace_precheck >/dev/null 2>&1; then
+  # shellcheck source=lib-depot.sh
+  . "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/lib-depot.sh"
+fi
 
 #: La fenêtre de nuit où l'on ne fusionne pas dans `main` : la bascule de 02:00
 #: (`infra/points-entree/cron-root.crontab`), puis le nouveau standby qui pose ses
@@ -291,6 +296,7 @@ declarations_train() {
 
 if [ "${BASH_SOURCE[0]}" = "$0" ] && [ "${1:-}" = "--selftest" ]; then
   echecs=0
+  premier_mot() { printf '%s' "${1%%:*}"; }
   t() {
     local libelle="$1" att="$2" obtenu; shift 2
     obtenu=$("$@")
@@ -412,6 +418,17 @@ if [ "${BASH_SOURCE[0]}" = "$0" ] && [ "${1:-}" = "--selftest" ]; then
   t "BREAKING CHANGE en pied → major"          major   rang_attendu "$(printf '\x1e%s\x1f%s' 'fix(api) : les jetons' $'détail\n\nBREAKING CHANGE: les jetons changent' | declarations)"
   t "feat dans un sujet parmi d'autres → minor" minor   rang_attendu "$(printf '\x1e%s\x1f\x1e%s\x1f%s\n' 'fix: a' 'feat(mep) : b' 'corps' | declarations)"
   t "rang du train lu aux préfixes (feat)"     minor   rang_attendu "$(printf 'fix: a\nfeat(mep) : b')"
+  #  #2908 : le conducteur refuse un lot dont le pré-check n'a pas été passé sur sa tête.
+  H=aaaaaaa1111111111111111111111111111111111; AUTRE=bbbbbbb2222222222222222222222222222222222
+  t "pré-check du lot, récent"                OK      verdict_trace_precheck "$H 1000" "$H" 1600 ""
+  t "aucun pré-check"                         REFUS   premier_mot "$(verdict_trace_precheck "" "$H" 1600 "")"
+  t "trace illisible"                         REFUS   premier_mot "$(verdict_trace_precheck "$H" "$H" 1600 "")"
+  t "pré-check trop ancien"                   REFUS   premier_mot "$(verdict_trace_precheck "$H 1000" "$H" 9000 "")"
+  t "pré-check d'un autre commit"             REFUS   premier_mot "$(verdict_trace_precheck "$AUTRE 1000" "$H" 1600 non)"
+  t "autre commit, même arbre : couvert"      OK      verdict_trace_precheck "$AUTRE 1000" "$H" 1600 oui
+  t "arbres non mesurés : on ne conclut pas"  REFUS   premier_mot "$(verdict_trace_precheck "$AUTRE 1000" "$H" 1600 "")"
+  t "tête du lot illisible"                   REFUS   premier_mot "$(verdict_trace_precheck "$H 1000" "" 1600 "")"
+  t "la raison nomme les deux commits"        "REFUS: pré-check passé sur bbbbbbb…, or c'est aaaaaaa… qui part" verdict_trace_precheck "$AUTRE 1000" "$H" 1600 non
   if [ "$echecs" -eq 0 ]; then
     echo "✓ conducteur de MEP : fusion sur CLEAN seulement, fenêtre de bascule, version du train, reprise, PR fermée à la main jamais rouverte."
     exit 0
