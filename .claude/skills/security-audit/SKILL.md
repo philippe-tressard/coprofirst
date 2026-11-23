@@ -47,8 +47,8 @@ avec les blocs dépliables (#992 ; `open` est volontairement hors `ALLOWED_ATTR`
 🔴 **Le geste ne se réécrit pas, il s'appelle.** Un fichier reçu s'écrit sur
 disque par `utils/fichiers.enregistrer_fichier_recu`, et nulle part ailleurs.
 Les règles vivent dans `FAMILLES` du même module — liste blanche de types,
-plafond de taille, extensions autorisées —, une entrée par famille :
-`image`, `document`, `document_prive`, `tableur`.
+plafond de taille, extensions autorisées —, une entrée par famille (lire
+`FAMILLES`, jamais une liste recopiée ici).
 
 **Un routeur nomme une famille**, il ne redéfinit pas ce qu'il accepte.
 
@@ -77,7 +77,7 @@ cette question se mesure par des contrôles, et non en relisant les routeurs.
 | Contrôle | Ce qu'il refuse |
 |---|---|
 | `test_televersement_source_unique.py` | une écriture de fichier reçu hors du module ; une liste MIME ou un plafond redéclaré dans un routeur ; une famille qui oublie l'une des trois règles |
-| `test_signature_fichiers.py` | un point de réception qui n'appelle pas la règle — **les sept**, imports de tableur compris |
+| `test_signature_fichiers.py` | un point de réception — toute route déclarée dont un paramètre est un `UploadFile`, relevée sur les routes, jamais une liste — qui n'APPELLE pas la règle, directement ou par une aide résolue par ses imports (`aides_sources.atteint`) ; un nom en commentaire ou un import non appelé ne suffit pas (#2912) |
 | `test_pieces_jointes.py` | une divergence entre ce que le front propose et ce que le serveur accepte |
 
 Le PDF d'affiche de hall est la **seule** écriture déclarée hors du module :
@@ -186,8 +186,7 @@ Get-ChildItem -Recurse -Filter "*.py" | Select-String -Pattern "slowapi|RateLimi
 ```
 
 **Les limites vivent dans `api/app/utils/limiter.py`**, une constante par
-**intention** (secret éprouvé, courriel déclenché, session, contrôle de fichier,
-lecture authentifiée, collecte d'audience, données personnelles, lecture publique). Chaque constante dit pourquoi
+**intention** — lire le module, jamais une liste recopiée ici. Chaque constante dit pourquoi
 elle vaut ce qu'elle vaut — et c'est là qu'on lit la valeur, pas ici.
 
 🔴 Ce tableau les recopiait, et il a été **faux** : `/auth/change-password` et
@@ -196,7 +195,12 @@ secret, et les quatre routes de `auth_profil.py` non plus. Une liste recopiée n
 dit rien des routes qu'elle omet — c'est précisément ce qui manquait (#1027).
 
 🔒 **Le contrôle qui remplace ce tableau** : `api/tests/test_limites_debit_auth.py`
-exige que **toute** route d'un module `auth*.py` porte un `@limiter.limit`, que sa
+relève les routes par ce qu'elles ATTEIGNENT (`aides_sources.routes_qui_atteignent`) :
+`verify_password` → `LIMITE_SECRET_EPROUVE`, `exiger_cle_maintenance` → `LIMITE_CLE_PARTAGEE`,
+plus toute route d'un module `auth*.py` (audit du 23/11/2026 : la portée était un nom de
+fichier). Une route qui n'éprouve le secret que dans un cas compte la TENTATIVE
+(`utils/limiter.compter_tentative_secret`), jamais l'enregistrement (🔒 `test_tentative_secret.py`).
+Il exige que sa
 valeur vienne d'une constante de `utils.limiter`, que le décorateur soit **sous**
 celui de la route (au-dessus, il n'a aucun effet, en silence) et que la fonction
 reçoive une `request` (sans elle, slowapi lève au premier visiteur, pas au
