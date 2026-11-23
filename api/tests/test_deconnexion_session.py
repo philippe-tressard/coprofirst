@@ -133,8 +133,12 @@ def test_un_jeton_d_acces_sans_session_reste_juge_comme_avant(moteur):
 def test_la_deconnexion_laisse_une_ligne_au_journal(moteur, caplog):
     ident, email = _compte(moteur)
     http = _connecter(email)
+    rafraichissement = http.cookies["refresh_token"]
     caplog.set_level(logging.INFO, logger="securite")
 
+    assert http.post("/auth/logout").status_code == 200
+    #  Une seconde déconnexion de la même session ne ferme rien : pas de seconde ligne.
+    http.cookies.set("refresh_token", rafraichissement)
     assert http.post("/auth/logout").status_code == 200
 
     lignes = [r.getMessage() for r in caplog.records if r.name == "securite"]

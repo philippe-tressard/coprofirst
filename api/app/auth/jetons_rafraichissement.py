@@ -128,8 +128,9 @@ def session_encore_ouverte(session: Session, session_id: str) -> bool:
 def fermer_session(session: Session, jeton_brut: str) -> Optional[tuple[int, int]]:
     """La déconnexion : révoque les jetons de la session dont `jeton_brut` est le cookie.
 
-    Rend `(compte, nombre révoqué)`, ou `None` si le jeton est inconnu. Les autres
-    sessions du compte, ses montres et ses appareils push ne sont pas touchés.
+    Rend `(compte, nombre révoqué)`, ou `None` s'il n'y avait rien à fermer — jeton
+    inconnu, ou session déjà fermée par une première déconnexion : rien à journaliser.
+    Les autres sessions du compte, ses montres et ses appareils push ne sont pas touchés.
     Un jeton SANS session (émis avant le 23/11/2026) ne révoque que lui : chercher
     `session_id IS NULL` fermerait les sessions anciennes de tous les comptes.
     `remplace_le` n'est jamais écrit — une session fermée n'est pas un échange.
@@ -154,7 +155,7 @@ def fermer_session(session: Session, jeton_brut: str) -> Optional[tuple[int, int
     for jeton in jetons:
         jeton.revoked = True
         session.add(jeton)
-    return presente.user_id, len(jetons)
+    return (presente.user_id, len(jetons)) if jetons else None
 
 
 def est_rejoue(jeton: RefreshToken, maintenant: datetime) -> bool:

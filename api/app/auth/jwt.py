@@ -96,7 +96,9 @@ def creer_jeton_acces(
 
     Le jeton d'accès est autoporteur : rien, côté serveur, ne pouvait
     l'invalider avant ses 120 minutes — ni un changement de mot de passe, ni une
-    déconnexion. Il porte désormais l'empreinte du condensé du mot de passe, que
+    déconnexion. L'empreinte répond au premier, pas à la seconde : une
+    déconnexion ne la change pas, elle ferme la SESSION (ci-dessous).
+    Il porte désormais l'empreinte du condensé du mot de passe, que
     `_get_current_user` compare à celle du compte qu'il charge **déjà**. Coût :
     nul. Effet : un mot de passe changé — ou un jeton de rafraîchissement rejoué,
     qui incrémente `generation` (#2481) — invalide d'un coup tous les jetons.
