@@ -112,6 +112,12 @@
 	 *   (`equipement_effectif`, #2507). La fréquence est un rythme, pas un
 	 *   classement : elle reste une capsule de la dernière ligne. */
 	$: classe = $classeDEquipement(contrat.equipement_effectif);
+
+	/**  « Résilié le 12/03/2026 », en UNE valeur : prettier couperait `{a} {b}` en deux
+	 *   lignes, et le texte du DOM garderait le saut et les tabulations (#2900). */
+	$: resiliation = contrat.resilie_le
+		? `${contrat.resilie ? 'Résilié le' : 'Résilié au'} ${fmtDateShort(contrat.resilie_le)}`
+		: '';
 </script>
 
 <!--  L'ancre `contrat-{id}` : le carnet d'entretien y renvoie (#870 → carnet,
@@ -174,7 +180,7 @@
 			</span>
 		{:else if contrat.resilie_le}
 			<span class="badge badge-gray">
-				{`${contrat.resilie ? 'Résilié le' : 'Résilié au'} ${fmtDateShort(contrat.resilie_le)}`}
+				{resiliation}
 			</span>
 		{/if}
 		{#each contrat.remplace as ancien (ancien.id)}
