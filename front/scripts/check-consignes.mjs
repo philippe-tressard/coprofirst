@@ -114,6 +114,15 @@ const tableauxEtBlocs = (texte) =>
  */
 const paragraphes = (texte) => texte.split(/\r?\n[ \t]*\r?\n/);
 
+/** Un mot-clé par interdit de la règle d'or, dans l'ordre de `CLAUDE.md` (#2932). */
+const REGLE_D_OR_CLES = [
+	'deux primaires',
+	'base absente',
+	'sans liste de services',
+	'rôle relu',
+	'docker volume rm',
+];
+
 const NOTIONS = [
 	{
 		nom: 'assainisseurs HTML',
@@ -180,13 +189,33 @@ const NOTIONS = [
 	},
 	{
 		nom: 'tâches planifiées de l’API',
+		//  #2931 : la source était les `id="…"` de `main.py` — dix tâches, quand
+		//  `utils/taches` en déclare vingt et une (dont `backup`) et que `add_job(`
+		//  s'écrit dans douze fichiers. Une table de consigne qui alignait les dix
+		//  de `main.py` aurait été déclarée complète. La vérité est la table que
+		//  `test_taches_planifiees_declarees.py` confronte aux `add_job`.
 		source: () => {
-			const src = readFileSync(join(RACINE_DEPOT, 'api', 'app', 'main.py'), 'utf8');
-			return [...src.matchAll(/id="([a-z_]+)"/g)]
-				.map((m) => m[1])
-				.filter((v, i, t) => t.indexOf(v) === i);
+			const src = readFileSync(join(RACINE_DEPOT, 'api', 'app', 'utils', 'taches.py'), 'utf8');
+			const cles = [];
+			for (const table of ['TACHES_PERMANENTES', 'TACHES_DE_LA_PLATEFORME']) {
+				const bloc = src.match(
+					new RegExp(`^${table}: dict\\[str, str\\] = \\{([\\s\\S]*?)^\\}`, 'm'),
+				);
+				if (!bloc) throw new Error(`${table} introuvable`);
+				cles.push(...[...bloc[1].matchAll(/^ {4}"([a-z_]+)":/gm)].map((m) => m[1]));
+			}
+			//  Témoin : la table ne peut pas compter moins de tâches que le seul
+			//  `main.py` n'en enregistre — sinon le motif de lecture a dérivé.
+			const main = readFileSync(join(RACINE_DEPOT, 'api', 'app', 'main.py'), 'utf8');
+			const deMain = new Set([...main.matchAll(/id="([a-z_]+)"/g)].map((m) => m[1]));
+			if (new Set(cles).size < deMain.size) {
+				throw new Error(
+					`${new Set(cles).size} tâche(s) lue(s), moins que les ${deMain.size} de main.py`,
+				);
+			}
+			return [...new Set(cles)];
 		},
-		ou: 'api/app/main.py (scheduler.add_job)',
+		ou: 'api/app/utils/taches.py (TACHES_PERMANENTES, TACHES_DE_LA_PLATEFORME)',
 		//  Même critère que les crons : une TABLE, pas une mention. « C'est
 		//  `health_check` qui alerte, et `whatsapp_scheduled` quand sa fenêtre
 		//  s'épuise » est une information qui ne se lit PAS dans le code ; aligner
@@ -196,6 +225,61 @@ const NOTIONS = [
 		pourquoi:
 			'un tableau en listait quatre sur six : le préchauffage du manuel et la ' +
 			"relève des courriels n'y figuraient pas",
+	},
+	{
+		//  #2915 : CLAUDE.md, dans la règle d'or, disait que la commande « ne sert
+		//  qu'à importer » — alors que la mise à jour d'une installation standard
+		//  s'en sert pour exporter et vérifier sa base. Lue comme un interdit, la
+		//  phrase faisait tenir deux gestes pour du code mort. Un paragraphe qui dit
+		//  à quoi sert la commande les nomme tous, tels que `_ARITE` les déclare.
+		nom: 'gestes de la commande export_copropriete',
+		source: () => {
+			const src = readFileSync(
+				join(RACINE_DEPOT, 'api', 'app', 'utils', 'export_copropriete.py'),
+				'utf8',
+			);
+			const bloc = src.match(/_ARITE = \{([^}]*)\}/);
+			return bloc ? [...bloc[1].matchAll(/"(\w+)"\s*:/g)].map((m) => `\`${m[1]}\``) : [];
+		},
+		ou: 'api/app/utils/export_copropriete.py (_ARITE)',
+		portions: paragraphes,
+		declencheur: (texte) =>
+			texte.includes('export_copropriete') && /import|export|v[ée]rifi/i.test(texte),
+		pourquoi:
+			'« ne sert qu’à importer », chargé à chaque session dans la règle d’or, niait ' +
+			'la sauvegarde d’une installation standard avant sa mise à jour (#2915)',
+	},
+	{
+		//  #2932 : la règle d'or des données s'écrit UNE fois, dans `CLAUDE.md`. Le
+		//  pré-flight en citait trois interdits sur cinq — « le seul » irréversible —
+		//  et `infra-rpi` quatre, le compose sans liste réduit au `stop` sur le
+		//  standby : deux résumés, deux listes, aucune complète. Un paragraphe qui en
+		//  aligne deux les aligne tous ; mieux, il renvoie à `CLAUDE.md`.
+		//
+		//  ⚠️ Les mots-clés ne se déduisent pas de la prose : ils sont tenus ici, et
+		//  la source vérifie que CLAUDE.md porte autant d'interdits que de mots-clés,
+		//  chacun dans le sien — un interdit ajouté sans mot-clé rend INCONNU.
+		nom: 'interdits de la règle d’or des données',
+		source: () => {
+			const src = readFileSync(join(RACINE_DEPOT, 'CLAUDE.md'), 'utf8');
+			const section = src.split(/^## /m).find((s) => s.startsWith("Règle d'or des données"));
+			if (!section) return [];
+			const puces = section.split(/\r?\n/).filter((l) => /^- \*\*/.test(l));
+			const cles = REGLE_D_OR_CLES.filter((c) => puces.some((l) => l.includes(c)));
+			if (puces.length !== REGLE_D_OR_CLES.length || cles.length !== puces.length) {
+				throw new Error(
+					`${puces.length} interdit(s) dans CLAUDE.md pour ${REGLE_D_OR_CLES.length} ` +
+						`mot(s)-clé(s), dont ${cles.length} retrouvé(s) en tête de puce`,
+				);
+			}
+			return cles;
+		},
+		ou: 'CLAUDE.md (« Règle d’or des données », une puce par interdit)',
+		portions: paragraphes,
+		declencheur: enumere,
+		pourquoi:
+			'le pré-flight affiché à chaque session en taisait deux, dont le compose sans ' +
+			'liste qui a relancé un primaire sur un nœud rétrogradé (#1997, #2932)',
 	},
 ];
 
@@ -213,6 +297,8 @@ function markdown(dir) {
 
 const candidats = [
 	join(RACINE_DEPOT, 'CLAUDE.md'),
+	//  Affiché à chaque session par le hook : il compte double (#2932).
+	join(RACINE_DEPOT, '.claude', '5hostachy-preflight.md'),
 	...markdown(join(RACINE_DEPOT, '.claude', 'skills')),
 ].filter(existsSync);
 
@@ -239,8 +325,10 @@ for (const notion of NOTIONS) {
 	let attendus;
 	try {
 		attendus = notion.source();
-	} catch {
-		console.error(`✗ INCONNU : ${notion.ou} est illisible — ce contrôle ne conclut pas.`);
+	} catch (e) {
+		console.error(
+			`✗ INCONNU : ${notion.ou} est illisible (${e.message}) — ce contrôle ne conclut pas.`,
+		);
 		process.exit(1);
 	}
 	//  Cas zéro : une source vide rendrait la notion toujours verte, sans rien
