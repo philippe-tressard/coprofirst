@@ -450,6 +450,7 @@ refuse la copie.
   appelée que par `enregistrer_fichier_recu` et les fichiers produits déclarés
   (`ECRIVAINS_DU_STOCKAGE`). Le service reste à Caddy. 🔒 `test_cle_des_fichiers.py`,
   `test_stockage_source_unique.py`, `test_televersement_source_unique.py`.
+- **Un compte que le client désigne** (#2861) : une route ouverte aux résidents qui le lit pose une question de visibilité (`masquage.auteur_lu_par`) ou se déclare ; sinon, la réponse d'un compte absent. 🔒 `test_compte_designe_par_le_client.py`.
 
 #### Les dépendances d'auth : ce qui n'est pas fondu, et pourquoi
 Les règles d'appartenance d'`auth/appartenance.py` ne sont pas réunies en une fonction : le

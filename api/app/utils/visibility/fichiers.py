@@ -75,7 +75,9 @@ def _suite(session: Session, user: Utilisateur, evol: TicketEvolution) -> bool:
     )
 
 
-def _message(session: Session, user: Utilisateur, message: MessageTicket) -> bool:
+def message_lisible(session: Session, user: Utilisateur, message: MessageTicket) -> bool:
+    """Ce message d'affaire se lit-il de ce lecteur ? Son affaire, et une note interne
+    au conseil seul — la question du fichier joint et du masquage (`utils/masquage`)."""
     if message.interne and not lit_les_notes_internes(user):
         return False
     ticket = session.get(Ticket, message.ticket_id)
@@ -117,7 +119,7 @@ PORTEURS = (
     Porteur(Ticket, "photos_urls", _ticket),
     Porteur(Ticket, "fichiers_urls", _ticket),
     Porteur(TicketEvolution, "fichiers_urls", _suite),
-    Porteur(MessageTicket, "fichiers_urls", _message),
+    Porteur(MessageTicket, "fichiers_urls", message_lisible),
     Porteur(AnnonceHall, "images_json", _affiche),
     Porteur(PetiteAnnonce, "photos_json", _petite_annonce),
     Porteur(Evenement, "photos_urls", _evenement),
