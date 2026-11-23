@@ -1,0 +1,46 @@
+name: Caddyfile
+
+#  claude-config#604 (23/11/2026) — le `Caddyfile` chargé par un vrai Caddy, dans ses
+#  deux variantes : installation propre (rien de monté) et installation commune (les
+#  fragments que monte `deploiement/standard/commune/compose.commune.yml`).
+#
+#  Pourquoi un vrai binaire : le `Caddyfile` importe les fragments communs par un
+#  MOTIF, qui ne doit rien importer — et ne rien casser — là où rien n'est monté ;
+#  et Caddy range les `handle` par précision de chemin avant l'ordre d'écriture.
+#  Aucun test qui lit le texte ne prouve l'un ni l'autre : `caddy adapt` rend
+#  l'ordre réel des routes, que `scripts/ci/caddy_variantes.py` lit.
+#
+#  Hors de `ci.yml` : le rejeu du poste n'a pas docker. L'autotest de la lecture,
+#  lui, est joué par `ci.yml` (`caddy_variantes.py --selftest`).
+on:
+  pull_request:
+    branches: [dev, main]
+    paths:
+      - "Caddyfile"
+      - "Dockerfile.caddy"
+      - "deploiement/standard/commune/**"
+      - "scripts/ci/caddy_variantes.py"
+      - ".github/workflows/caddyfile.yml"
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
+
+permissions: {}
+
+jobs:
+  variantes:
+    name: Caddyfile (installation propre et commune)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+
+      - name: Les deux variantes chargées, routes dans l'ordre attendu
+        run: python3 scripts/ci/caddy_variantes.py
