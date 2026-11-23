@@ -249,7 +249,7 @@ export const PAGES: PageDef[] = [
 		//  trois fois sur le même écran, dont deux sur des onglets — « Mes lots »,
 		//  « Gestion locative » — où il ne répond à aucune question.
 		descriptif:
-			'Vos lots (appartement, cave & parkings), vos badges Vigik et télécommandes de parking, et la gestion locative pour les copropriétaires mandataires.',
+			'Vos lots (appartement, cave & parkings), vos badges Vigik et télécommandes de parking, et la gestion locative des lots que vous donnez en location.',
 		onglets: [
 			{
 				id: 'lots',
