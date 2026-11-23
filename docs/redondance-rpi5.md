@@ -46,15 +46,15 @@ le point 17 du pré-check. Ce tableau en recopiait une partie, et elle avait dé
 
 ## Bascule quotidienne (`bascule.sh`)
 
-Tourne à 02h00 sur chaque RPi. Le RPi qui n'est **pas** actif (flag `.active`) sort immédiatement. Le RPi actif exécute la séquence complète :
+Tourne chaque nuit sur chaque RPi (heure : `infra/points-entree/`). Le RPi qui n'est **pas** actif (flag `.active`) sort immédiatement. Le RPi actif exécute la séquence complète :
 
 ### Séquence (7 phases)
 
 | Phase | Action |
 |---|---|
 | 0 | Pre-flight : peer joignable, espace disque, lock bascule posé |
-| 1 | Sync uploads + WhatsApp auth à chaud (prod reste UP) |
-| 2 | Arrêt cloudflared local + conteneurs locaux |
+| 1 | Sync uploads à chaud (prod reste UP) — ni la base, ni l'état WhatsApp |
+| 2 | Arrêt cloudflared local + conteneurs locaux, puis copie de l'état WhatsApp **à froid** (à chaud, il arrivait déchiré : panne du 24/07/2026) |
 | 3 | La réplique du pair rattrape le primaire local, qui s'arrête |
 | 4 | La réplique du pair est **promue** primaire |
 | 5 | Démarrage conteneurs peer + health check API (60s max) |
@@ -73,7 +73,7 @@ Envoyé via **Python3 standalone** (lit la config SMTP depuis `.env`) — foncti
 
 ## Surveillance et failover automatique (`health-watch.sh`)
 
-Tourne toutes les **5 minutes** sur les deux RPi. Chaque RPi détermine son rôle au runtime via `.active`.
+Tourne sur les deux RPi, à la cadence de `infra/points-entree/`. Chaque RPi détermine son rôle au runtime via `.active`.
 
 ### Comportement
 
@@ -83,17 +83,20 @@ Tourne toutes les **5 minutes** sur les deux RPi. Chaque RPi détermine son rôl
 
 1. Si HTTP 200 → rien à faire, reset cooldown email
 2. Si pas 200 → attend 30s, re-vérifie (évite les faux positifs sur micro-coupure réseau)
-3. Si toujours HS, et si les sondes LAN + edge désignent bien le nœud actif → **failover automatique** :
+3. Si toujours HS, et si les sondes LAN + edge désignent bien le nœud actif → **failover automatique**
+   (l'ordre vit dans `scripts/lib/lib-failover.sh`, `prendre_la_main` ; il ne se recopie pas ici) :
    - Pose `.bascule-lock` (bloque la bascule cron en parallèle)
    - `systemctl start cloudflared` **en premier** — s'il ne démarre pas, le failover est
      **abandonné** : aucun conteneur démarré, l'actif n'est pas démoté, alerte avec la
      cause relevée dans le journal (#1318 : un jeton invalide sur les deux nœuds avait
      produit deux bascules inutiles et une API servie sur une base périmée)
-   - Met `.env` en mode production (`ORIGIN=https://5hostachy.fr`)
-   - `docker compose up -d`
-   - Démote l'ancien actif, met à jour `.active`
-   - Re-vérifie l'URL publique après 20s
-   - Envoie un email d'alerte (cooldown 30 min)
+   - **Décide** d'après le rôle de la base locale (`decider_prise_de_main`) : une base
+     qu'on ne peut pas prendre ne démarre jamais, et rien ne démarre
+   - **Isole** l'ancien actif, sous son verrou de déploiement : `.active` réécrit
+     d'abord, puis l'application et la base arrêtées par leurs listes de services
+   - **Promeut** la réplique locale, puis démarre l'application, `.env` mis au rôle
+     actif (`env_role_appliquer`)
+   - Re-vérifie l'URL publique, et envoie un email d'alerte (cooldown 30 min)
 
 ### Garanties
 
@@ -130,51 +133,31 @@ n'en porte aucun » ne comptent que ceux de l'application (`lib-applicatifs.sh`)
 | Scénario | Délai |
 |---|---|
 | Bascule quotidienne réussie | ~40s (fenêtre sans trafic public) |
-| Panne RPi actif → failover automatique | < 5 min (health-watch détecte en ≤ 5 min + 50s de vérification/démarrage) |
+| Panne RPi actif → failover automatique | une période de `health-watch.sh`, plus ~50s de vérification et de démarrage |
 | Panne RPi actif → intervention manuelle | voir ci-dessous |
 
 ---
 
 ## Intervention manuelle (site HS)
 
-### 1. Identifier le RPi actif
+La procédure ne s'écrit pas ici : elle vit dans `CLAUDE.md` (« Infrastructure —
+l'essentiel », **Site HS**) et dans la skill `infra-rpi`, tenues à jour avec les
+scripts, comme `docs/deploy-rpi5-auto.md` le fait depuis #1049. Une copie de cette
+procédure a dérivé ici (#2918) : elle démarrait l'application sans promotion.
 
-```bash
-cat /opt/5hostachy/.active          # sur rpi1 ou rpi2
-```
+Ce qu'elle garantit, et pourquoi on ne l'improvise pas :
 
-### 2. Si le RPi actif est injoignable → basculer sur le standby
-
-⚠️ La base du standby est une **réplique** : elle ne sert qu'une fois **promue**
-(`lib-promotion.sh`, comme le failover de `health-watch.sh`), et ne se démarre jamais
-vide à la place — règle d'or des données, `CLAUDE.md`. Vérifier son rôle avant tout
-geste (`.claude/skills/infra-rpi`, « Le rôle de la base d'un nœud »).
-
-```bash
-ssh ptressard@192.168.1.222         # ou .223 selon lequel répond
-cd /opt/5hostachy
-
-# Passer en mode prod
-sed -i "s|^ORIGIN=.*|ORIGIN=https://5hostachy.fr|" .env
-sed -i "/^COOKIE_SECURE=/d" .env
-
-# Démarrer
-docker compose up -d
-sudo systemctl start cloudflared
-
-# Mettre à jour le flag
-echo "rpi1" > .active               # adapter selon le RPi
-```
-
-### 3. Vérifier
-
-```bash
-curl -s https://5hostachy.fr/api/health
-```
-
-### 4. Après retour du RPi défaillant
-
-La bascule automatique reprendra le soir à 02h00 si les deux RPi sont joignables. Le nœud revenu ne se relance jamais en primaire : sa base est isolée puis reconstruite en réplique (`boot-role-guard.sh`, `reconstruire-replique.sh`) ; **C37** signale deux primaires.
+- **Avant de suspecter un nœud** : deux sondes indépendantes (`curl
+  http://<actif>/api/health` depuis l'autre RPi) — une panne du chemin public ne se
+  répare pas par une bascule ;
+- la base du standby est une **réplique** : elle ne sert qu'une fois **promue**,
+  par `lib-promotion.sh` (`decider_prise_de_main`), jamais démarrée vide ;
+- les services se démarrent **par leurs listes** (`$SERVICE_BASE`, puis
+  `$SERVICES_APPLICATIFS`, `lib-applicatifs.sh`), après `env_role_appliquer .env
+  actif` ; jamais une commande compose sans liste de services ;
+- un nœud revenu ne se relance jamais en primaire : sa base est isolée puis
+  reconstruite en réplique (`boot-role-guard.sh`, `reconstruire-replique.sh`) ;
+  **C37** et le point 22 du pré-check disent deux primaires.
 
 ---
 
@@ -192,8 +175,8 @@ Fichier `/opt/5hostachy/.active` présent sur les deux RPi. Contient `rpi1` ou `
 
 | Machine | Hostname | IP locale | Rôle |
 |---|---|---|---|
-| RPi5 #1 | PhT-RB5 | 192.168.1.222 | Actif les jours pairs |
-| RPi5 #2 | PhT-RB5i2 | 192.168.1.223 | Actif les jours impairs |
+| RPi5 #1 | PhT-RB5 | 192.168.1.222 | actif ou standby : `.active` le dit |
+| RPi5 #2 | PhT-RB5i2 | 192.168.1.223 | actif ou standby : `.active` le dit |
 
 Accès SSH : `ssh ptressard@192.168.1.222` (ou `.223`)
 Projet : `/opt/5hostachy/`
