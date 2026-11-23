@@ -11,8 +11,9 @@ name: CI
 #
 #  La protection de branche exige les checks de l'événement `pull_request` : c'est
 #  donc celui-là qu'il faut garder. Le run `push` sur `dev` ne servait à rien que
-#  personne d'autre ne fasse déjà — `scripts/poste/rejouer-ci.sh` rejoue les mêmes
-#  commandes AVANT le push (point 16 du pré-check, obligatoire).
+#  personne d'autre ne fasse déjà — `scripts/poste/rejouer-ci.sh` rejoue les étapes
+#  rapides AVANT le push, et le point 16 du pré-check exige la CI de la PR verte sur
+#  le même arbre pour les lentes (pytest, navigateur : #2571).
 #
 #  Le point 0c du pré-check continue de fonctionner : `gh run list --branch dev`
 #  remonte aussi les exécutions `pull_request`, dont la branche de tête est `dev`.

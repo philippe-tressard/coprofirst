@@ -101,7 +101,10 @@ comportement observé en production. Jamais sur « ça devrait aller ».
 
    Ce script **extrait** ses commandes de `.github/workflows/ci.yml` : une liste
    tenue à la main divergerait au premier travail ajouté, et c'est justement
-   celui qu'on n'a pas pensé à lancer qui échoue.
+   celui qu'on n'a pas pensé à lancer qui échoue. Par défaut, il joue les étapes
+   **rapides** de tous les travaux ; les lentes (pytest, tests de navigateur) sont
+   confiées à la CI de la demande de fusion. Ce qu'il joue, et ce que `--complet`
+   ajoute, se lit dans son usage : `sed -n '/^#  Usage/,/^$/p' scripts/poste/rejouer-ci.sh`.
 
 4. Ouvrir la demande de fusion **vers `dev`**. Une demande visant `main`
    directement est refusée.
