@@ -23,10 +23,10 @@ une action concrète, et non à une intention.
 │ avant tout commit                    skill globale `avant-commit`          │
 └───────────────────────────────────────────────────────────────────────────┘
 
-UN SEUL INTERDIT RAPPELÉ ICI — le seul dont la violation est IRRÉVERSIBLE :
-  • Jamais deux primaires PostgreSQL, ni une base absente démarrée sur un nœud
-    qui prend la main (elle naîtrait primaire VIDE) : passer par lib-promotion.sh
-    et reconstruire-replique.sh. Jamais `docker volume rm 5hostachy_pg_data`.
+UNE SEULE RÈGLE RAPPELÉE ICI — la seule dont la violation est IRRÉVERSIBLE :
+  • la « Règle d'or des données » de CLAUDE.md, en tête (déjà en contexte). Ses
+    interdits — tous, y compris `docker compose` sans liste de services — y sont
+    écrits une fois ; les relire avant tout geste sur un nœud ou sur la base.
 
 Les autres règles (INCONNU jamais OK, français exclusif, bump de version, PR
 dev→main) sont dans CLAUDE.md, déjà en contexte. Les recopier ici ne les a pas
