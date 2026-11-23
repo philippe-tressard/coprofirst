@@ -124,11 +124,16 @@ L'application est accessible sur `http://localhost`.
 > `-caddy` et `-whatsapp-bridge`, étiquetées par version (et chaque commit de `main`
 > par `sha-<commit>`). Vérifier une image :
 > `gh attestation verify oci://ghcr.io/philippe-tressard/coprofirst-api:<version> --owner philippe-tressard`.
-> Les versions choisies pour les autres installations sont **promues** sur la branche
-> `replica`, avec leurs notes de version (onglet *Releases*) : après 7 jours sur la
-> référence, ou sans attendre pour un correctif urgent.
+> **Ce que reçoit une installation** se décide à la référence, dans son **bail**
+> d'inscription au registre : son **canal** — *Urgence*, la dernière version publiée,
+> ou une version choisie — et sa **vague** — *Urgence* (aussitôt), *Standard* (le
+> défaut : le dernier correctif de plus de 7 jours de la mineure qui précède la
+> dernière) ou *Fixe* (la version choisie, 7 jours après sa publication). La mise à
+> jour nocturne installe la version que le bail porte, et rien sans bail valide
+> (`api/app/registre/canaux.py`). La branche `replica` n'en décide plus depuis #2210.
 > **Installer sans construire** : [`deploiement/standard/LISEZMOI.md`](deploiement/standard/LISEZMOI.md)
-> — chaque version promue joint son archive de déploiement à ses notes de version.
+> — chaque version taguée joint son archive de déploiement à ses notes de version
+> (onglet *Releases*).
 > Le serveur d'une installation y reçoit seul ses **correctifs de sécurité** — système,
 > Docker, `cloudflared` — chaque nuit à 03:00, contrôlés chaque matin
 > (`deploiement/standard/correctifs-systeme.sh`).

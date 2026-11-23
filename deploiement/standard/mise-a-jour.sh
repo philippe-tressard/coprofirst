@@ -155,7 +155,7 @@ if [ "${1:-}" = "--selftest" ]; then
     attendu "suspendue → reçoit ses correctifs"         mettre-a-jour decider_cible 2.120.0 2.121.0 suspendue non
     attendu "première installation sans version"       mettre-a-jour decider_cible "" 2.121.0 active non
     echo "== self-test : lire la réponse du bail =="
-    BAIL_LU='{"etat":"active","raison":"bail valide","canal":"replica","version_cible":"2.121.0"}'
+    BAIL_LU='{"etat":"active","raison":"bail valide","canal":"urgence","version_cible":"2.121.0"}'
     attendu "état lu"                                   active        champ_json "$BAIL_LU" etat
     attendu "version cible lue"                         2.121.0       champ_json "$BAIL_LU" version_cible
     attendu "version cible null → vide"                 ""            champ_json '{"etat":"limitee","version_cible":null}' version_cible
