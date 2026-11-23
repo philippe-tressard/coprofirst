@@ -626,7 +626,7 @@ vers un numéro absent, et un `lint:*` ou un fichier de test de « Tenu par » q
 - **Tenu par** : `front/e2e/repondre-sous-le-fil.spec.ts`, `front/e2e/message-corriger-supprimer.spec.ts`.
 
 ### n° 84 · en vigueur — Le pliage, sans exception sur l'affaire
-22/09/2026 · #1143 · l'utilisateur, à l'écran · §0 « Le PLIAGE »
+22/09/2026 · #1143 · l'utilisateur, à l'écran · §0 « Le pliage »
 - **Décidé** : la règle du n° 46 reste (obligatoire → déplié, facultatif → plié, un écart exige `exceptionPliage`, une valeur autre que le défaut rouvre), mais l'affaire n'a plus aucune exception : Pièces jointes est PLIÉE comme toute section facultative (21/09), Au nom de DÉPLIÉE comme toute section obligatoire (22/09). Les exceptions d'autres entités se lisent dans leur déclaration (`exceptionPliage`, avec sa raison), jamais recopiées ici ni dans `SKILL.md`.
 - **Pourquoi** : « pour éviter toute exception » ; une section marquée d'un astérisque qui arrive fermée demande de l'ouvrir pour voir qu'il n'y a rien à y faire, et un formulaire aux sections toutes ouvertes n'est pas lisible au pouce.
 - **Écarté** : les deux exceptions du n° 46 (Au nom de pliée, Pièces jointes dépliée).
