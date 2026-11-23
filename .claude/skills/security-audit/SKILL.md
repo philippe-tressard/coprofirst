@@ -113,7 +113,7 @@ l'usage — la divergence n'arrive que le jour où la source apprend quelque cho
 
 | Contenu qui trahit une copie | Source | Contrôle |
 |---|---|---|
-| `….roles_autorises` lu | `visibility.profil_admet` | `test_autorisation.py` |
+| `….roles_autorises` lu | `visibility.profil_admet` | `test_profil_acces_source_unique.py` |
 | un élément de `….user_lots` jugé sur `actif` | `deps.est_rattache_au_lot` | `test_appartenance_lot_source_unique.py` |
 | un champ comparé à `user.id` par `auth/appartenance.py`, recomparé ailleurs | le prédicat du module (`peut_defaire_le_versement`…) | `test_appartenance_source_unique.py` |
 
@@ -464,6 +464,18 @@ trois règles ; ce qu'elles gagnent est un lieu. 🔒 `test_appartenance_source_
 délégation est en lecture seule depuis #1534 (`utils/delegations_actives`) ; `get_acting_user`
 n'avait jamais été prise par une route. 🔒 `test_autorisation.py` refuse une dépendance qu'aucune
 route ne prend ; `npm run lint:en-tetes-lus`, un en-tête posé par le front qu'aucune route ne lit.
+
+#### La portée : les routes MONTÉES, trois dispenses (#2911, #2942)
+`test_autorisation.py` lit les routes que l'application MONTE et les dépendances que FastAPI
+leur résout, reconnues par l'objet de `deps.py` — pas le texte d'`app/routers/` : douze routes
+(registre, installation commune, sonde, deux `__init__.py`) lui échappaient. Une route sans
+dépendance est publique (`_PUBLICS_ASSUMES`), à clé partagée (`_AUTHENTIFIES_PAR_CLE`) ou signée
+par une installation (`_AUTHENTIFIES_PAR_SIGNATURE`), chaque dispense justifiée et vérifiée
+dans les deux sens. Le REFUS « réservé au conseil » s'écrit `deps.exiger_moderateur(user, motif)`
+ou la dépendance `require_cs_or_admin` ; toute autre fonction qui lève 401/403 hors d'`auth/` et
+d'`utils/visibility/` se déclare dans `REFUS_DECLARES` avec la règle centrale qu'elle appelle
+(🔒 `test_autorisation_regles_locales.py`). Les renvois des modules d'`auth/` et de ces tests
+mènent à du code qui existe (🔒 `test_renvois_securite.py`).
 
 ## Rapport d'audit
 
