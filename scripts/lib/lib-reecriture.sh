@@ -140,23 +140,33 @@ verdict_reecriture() {
   { [ -z "${1:-}" ] || [ -z "${3:-}" ] || [ -z "${2:-}" ]; } && { echo inconnu; return; }
   #  Datée par le commit, comme le brief de PR : une déclaration laissée par le
   #  lot précédent décrirait une réécriture qui n'est plus le sujet.
-  [ "$1" != "$2" ] && { echo non; return; }
+  [ "$(memes_hachages "$1" "$2")" = oui ] || { echo non; return; }
   case "${4:-}" in '') echo inconnu; return ;; esac
+  #  Les règles du refus vivent dans `raison_refus_reecriture` : une écriture,
+  #  et le message de 0a dit celle qui a mordu (#2967).
+  [ -z "$(raison_refus_reecriture "$@")" ] && echo oui || echo non
+}
+
+#  PURE — pourquoi la déclaration est refusée, en une phrase ; vide si elle tient.
+#  Mêmes arguments que `verdict_reecriture`. Un sha se compare par PRÉFIXE
+#  (`lib-parite.memes_hachages`, 7 caractères au moins) : `--short` rend 7, puis 8
+#  quand le dépôt grandit, et 0a refusait le bon lot sans dire pourquoi (#2967).
+raison_refus_reecriture() {
+  local c m vu n3 n4
+  [ "$(memes_hachages "${1:-}" "${2:-}")" = oui ] || {
+    echo "écrite pour ${1:-?}, or HEAD est ${2:0:8}"; return; }
   #  🔴 La dérogation ne survit pas à son objet : les commits déclarés doivent
   #  être EXACTEMENT ceux qui manquent. Trop peu, et un commit d'ailleurs passerait
   #  dans l'ombre ; trop, et la déclaration décrit autre chose que ce qui se passe.
-  [ "$(printf '%s
-' "$3" | tr ' ' '
-' | grep -c .)"       != "$(printf '%s
-' "$4" | tr ' ' '
-' | grep -c .)" ] && { echo non; return; }
-  local _l4; _l4=$(printf '%s\n' $4)
-  for c in $3; do
-    grep -qF -- "$c" <<<"$_l4" || { echo non; return; }
+  n3=$(printf '%s\n' ${3:-} | grep -c .); n4=$(printf '%s\n' ${4:-} | grep -c .)
+  [ "$n3" != "$n4" ] && { echo "déclare $n3 commit(s) retiré(s), il en manque $n4"; return; }
+  #  Chaque sha déclaré est le PRÉFIXE d'un manquant — jamais une sous-chaîne.
+  for c in ${3:-}; do
+    vu=non; for m in ${4:-}; do [ "$(memes_hachages "$c" "$m")" = oui ] && vu=oui; done
+    [ "$vu" = oui ] || { echo "$c ne désigne aucun commit manquant"; return; }
   done
   #  Et surtout : rien de perdu. Un seul fichier non recouvert suffit à refuser.
-  [ -n "${5:-}" ] && { echo non; return; }
-  echo oui
+  [ -n "${5:-}" ] && echo "perdrait :${5}"
 }
 
 # ── PURE : l'ascendance d'un run en échec, vue par 0c (#2337) ─────────────────
@@ -170,8 +180,7 @@ ascendance_0c() {
   local d
   if [ "${3:-}" = oui ]; then
     for d in ${4:-}; do
-      case "$1" in "$d"*) echo retire; return ;; esac
-      case "$d" in "$1"*) echo retire; return ;; esac
+      [ "$(memes_hachages "$1" "$d")" = oui ] && { echo retire; return; }
     done
   fi
   echo "${2:-?}"
