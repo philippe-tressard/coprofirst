@@ -53,7 +53,7 @@ ACCES_SEUIL_REFUS="${ACCES_SEUIL_REFUS:-100}"
 #: foi dans `api/app/utils/journal_securite.py` (`_NIVEAUX`) ; l'autotest du
 #: dépôt vérifie que chaque code cité ici y existe.
 ACCES_EVENEMENTS_A_RELIRE="jeton_rejoue role_ajoute compte_supprime adresse_changee rattachement_hors_proposition bail_hors_de_ses_lots compte_purge_epargne"
-ACCES_EVENEMENTS_COMPTES="connexion_refusee mot_de_passe_reinitialise adresse_changement_demande role_retire compte_desactive"
+ACCES_EVENEMENTS_COMPTES="connexion_refusee cle_maintenance_refusee mot_de_passe_reinitialise adresse_changement_demande role_retire compte_desactive"
 #: L'EMPLOI d'un leurre (#2365) : personne de légitime ne le fait, c'est un FAIL.
 #: La même liste dans `api/app/utils/leurres.py` (EVENEMENTS_LEURRES).
 ACCES_EVENEMENTS_LEURRES="connexion_leurre cle_maintenance_leurre"
@@ -201,6 +201,8 @@ X
     t "à relire : jeton rejoué et rôle ajouté" "jeton_rejoue=1 role_ajoute=1" "$(acces_a_relire "$C")"
     t "comptés : les refus" "connexion_refusee=2" "$(acces_comptes "$C")"
     t "rien à relire sur une nuit calme" "" "$(acces_a_relire "connexion_refusee 3")"
+    t "comptés : une clé partagée refusée" "cle_maintenance_refusee=3" \
+      "$(acces_comptes $'cle_maintenance_refusee 3\nrole_ajoute 1')"
     t "journal vide → rien" "||" "$(acces_a_relire "")|$(acces_comptes "")|$(acces_leurres_employes "")"
     t "un leurre EMPLOYÉ se nomme" "connexion_leurre=1 cle_maintenance_leurre=2" \
       "$(acces_leurres_employes $'connexion_leurre 1\nconnexion_refusee 4\ncle_maintenance_leurre 2')"

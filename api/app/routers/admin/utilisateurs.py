@@ -8,9 +8,10 @@ route l'appelle dans `utils/suppression_compte`, que la purge des comptes inacti
 appelle aussi — une seule façon de supprimer un compte.
 """
 
-from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException
+from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Request
 from pydantic import BaseModel
 from sqlmodel import Session, select
+from app.utils.limiter import LIMITE_SECRET_EPROUVE, limiter
 from app.auth.deps import require_admin, require_cs_or_admin
 from app.database import get_session
 from app.utils.journal_securite import journaliser_securite
@@ -305,7 +306,9 @@ _HORS_FICHE = {"email", "mot_de_passe_actuel", "statut"}
 
 
 @router.patch("/utilisateurs/{user_id}", response_model=UserRead)
+@limiter.limit(LIMITE_SECRET_EPROUVE)  # le mot de passe de qui agit, à un changement d'adresse
 def modifier_utilisateur(
+    request: Request,
     user_id: int,
     body: AdminUserUpdate,
     background_tasks: BackgroundTasks,

@@ -70,4 +70,7 @@ def exiger_cle_maintenance(cle_recue: Optional[str]) -> None:
     if not hmac.compare_digest(
         (cle_recue or "").encode("utf-8"), settings.maintenance_key.encode("utf-8")
     ):
+        #  Un refus se TRACE : sans ligne, une série d'essais ne se voit nulle part —
+        #  l'audit de la nuit (S6) compte cet événement. Ni la clé reçue ni sa longueur.
+        journaliser_securite("cle_maintenance_refusee")
         raise HTTPException(status_code=403, detail="Clé maintenance invalide")

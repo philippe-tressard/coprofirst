@@ -40,6 +40,7 @@ from app.utils.alerte_etage import alerter_divergence_etage
 from app.utils.limiter import (
     LIMITE_LECTURE_AUTHENTIFIEE,
     LIMITE_PREFERENCE,
+    LIMITE_SECRET_EPROUVE,
     limiter,
 )
 from app.utils.etages import ETAGE_HORS_BORNES, etage_hors_bornes
@@ -95,7 +96,8 @@ class MeUpdate(BaseModel):
 
 
 @router.patch("/me", response_model=UserRead)
-@limiter.limit(LIMITE_PREFERENCE)
+#  Le mot de passe s'y éprouve à un changement d'adresse : la limite des secrets.
+@limiter.limit(LIMITE_SECRET_EPROUVE)
 def update_me(
     request: Request,
     body: MeUpdate,

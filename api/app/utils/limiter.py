@@ -40,6 +40,13 @@ limiter = Limiter(key_func=get_remote_address)
 #: seule dont l'absence est un défaut de sécurité, et non une imprudence.
 LIMITE_SECRET_EPROUVE = "5/minute"
 
+#: Une requête qui présente la **clé partagée** des tâches planifiées des nœuds
+#: (`auth/cle_maintenance`). La clé n'est pas devinable comme un mot de passe : ce
+#: plafond borne une rafale et la rend visible (429), sans gêner les scripts — un nœud
+#: en envoie quelques-unes par passage (rapport, battement, purges), chacun sous sa
+#: propre adresse. Réglé sur cette cadence, pas sur celle d'un humain.
+LIMITE_CLE_PARTAGEE = "30/minute"
+
 #: Une requête qui **fait partir un courriel** vers une adresse que l'appelant
 #: choisit. Sans limite, la route sert de relais d'expédition gratuit — et c'est
 #: la réputation du domaine qui paie.
