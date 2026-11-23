@@ -123,8 +123,8 @@ cp .env.example .env
 #                            docker compose refuse de démarrer sans elle
 #   POSTGRES_PASSWORD        openssl rand -hex 32 : sans lui, la base refuse de s'initialiser
 #   DATABASE_URL             y recopier POSTGRES_PASSWORD à la place de <POSTGRES_PASSWORD>
-#   PG_REPLICATION_PASSWORD  openssl rand -hex 32 : sans lui, l'initialisation de la base
-#                            s'arrête (infra/postgresql/initdb/10-replication.sh)
+#   PG_REPLICATION_PASSWORD  à décommenter, openssl rand -hex 32 : sans lui, l'initialisation
+#                            de la base s'arrête (infra/postgresql/initdb/10-replication.sh)
 # et ORIGIN, l'adresse du site (http://localhost en local, avec COOKIE_SECURE=false).
 
 # Lancer
