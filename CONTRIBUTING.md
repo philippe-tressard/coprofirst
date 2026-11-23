@@ -25,14 +25,11 @@ derrière elle.
 
 ## 2. Démarrer en local
 
-```bash
-git clone https://github.com/philippe-tressard/coprofirst.git
-cd coprofirst
-cp .env.example .env          # puis renseigner SECRET_KEY (32 caractères au moins)
-docker compose up --build -d
-```
-
-Le site répond alors sur `http://localhost`.
+L'installation locale — les variables sans lesquelles rien ne démarre, le
+développement sans Docker et les navigateurs des tests — s'écrit **une fois**,
+dans le [Démarrage rapide du README](README.md#démarrage-rapide) : la suivre.
+`api/tests/test_env_exemple_coherent.py` vérifie qu'elle nomme ce que le code
+exige.
 
 **Armer les hooks git — une fois par clone**, sinon ils sont inertes :
 
@@ -47,19 +44,6 @@ La dernière ligne fait sauter à `git blame` les commits purement mécaniques
 Le hook de pré-commit refuse un commit dont la branche est en retard sur son
 distant ; celui de pré-poussée refuse un envoi sans trace de pré-contrôle. Un
 hook versionné n'est **pas** un hook actif.
-
-### Sans Docker
-
-```bash
-cd api && python -m venv .venv && .venv/Scripts/activate  # ou source .venv/bin/activate
-pip install -r requirements.txt && uvicorn app.main:app --reload
-```
-
-`DATABASE_URL` désigne alors un PostgreSQL joignable depuis le poste.
-
-```bash
-cd front && npm install && npm run dev
-```
 
 ## 3. Signaler une anomalie ou proposer une évolution
 

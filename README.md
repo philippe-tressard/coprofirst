@@ -110,8 +110,15 @@ cd coprofirst
 
 # Configurer l'environnement
 cp .env.example .env
-# Éditer .env : SECRET_KEY (min 32 chars), WHATSAPP_API_KEY (min 16 chars) et ORIGIN.
-# WHATSAPP_API_KEY est OBLIGATOIRE — sans elle, docker compose refuse de démarrer.
+# Éditer .env — sans ces valeurs, rien ne démarre :
+#   SECRET_KEY               32 caractères au moins ; l'API refuse la valeur d'exemple
+#   WHATSAPP_API_KEY         16 caractères au moins, même sans WhatsApp :
+#                            docker compose refuse de démarrer sans elle
+#   POSTGRES_PASSWORD        openssl rand -hex 32 : sans lui, la base refuse de s'initialiser
+#   DATABASE_URL             y recopier POSTGRES_PASSWORD à la place de <POSTGRES_PASSWORD>
+#   PG_REPLICATION_PASSWORD  openssl rand -hex 32 : sans lui, l'initialisation de la base
+#                            s'arrête (infra/postgresql/initdb/10-replication.sh)
+# et ORIGIN, l'adresse du site (http://localhost en local, avec COOKIE_SECURE=false).
 
 # Lancer
 docker compose up --build -d
@@ -160,7 +167,7 @@ docker compose logs api | grep -A5 "ADMIN INITIAL"
 ### Développement local (sans Docker)
 
 ```bash
-# Backend
+# Backend — DATABASE_URL désigne alors un PostgreSQL 17 joignable depuis le poste
 cd api && python -m venv .venv && source .venv/bin/activate
 pip install -r requirements.txt
 uvicorn app.main:app --reload
@@ -169,7 +176,8 @@ uvicorn app.main:app --reload
 cd front && npm install && npm run dev
 
 # Tests de navigateur (le serveur de dev démarre tout seul)
-cd front && npx playwright install chromium && npm run e2e
+#   (npm run e2e joue Chromium ET WebKit, bureau et mobile)
+cd front && npx playwright install chromium webkit && npm run e2e
 ```
 
 > Les tests Playwright rendent les écrans **publics en vrai** et les écrans
