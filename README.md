@@ -23,7 +23,7 @@
 
 ## Fonctionnalités
 
-> 🌐 **Le détail de chaque fonctionnalité, et une démonstration à essayer en ligne : [coprofirst.fr](https://coprofirst.fr)** — la [page Démo](https://coprofirst.fr/demo.html) donne les comptes publics (données fictives). Le [manuel utilisateur](docs/manuel-utilisateur.html) décrit chaque écran.
+> 🌐 **Une présentation du produit, et une démonstration à essayer en ligne : [coprofirst.fr](https://coprofirst.fr)** — la [page Démo](https://coprofirst.fr/demo.html) donne les comptes publics (données fictives). Le détail de chaque écran est dans le [manuel utilisateur](docs/manuel-utilisateur.html).
 
 - **Tableau de bord** — la page d'accueil : consignes du conseil syndical, éléments épinglés, kanban des dossiers en cours et fil de l'actualité. L'API sert aussi le fil d'une **période** (`GET /flux?du=&au=`, 31 jours au plus) pour le carnet des applications : chaque carte y est rangée à son jour — l'échéance de son affaire, sinon sa publication —, et une carte de plusieurs jours revient chaque jour couvert.
 - **Affaires / Demandes** — signalements, actualités et événements datés suivis par le conseil syndical, avec périmètre, destinataires, recherche libre et la pastille « Ce qui me concerne » (aussi sur le fil d'accueil) ; une affaire close reçoit une synthèse chiffrée, rédigée par l'assistant IA puis relue par le conseil. Une actualité marquée ⚡ urgente par le conseil fait sonner la cloche de ses lecteurs : c'est la seule notification qui sonne aussi sur un téléphone (relais de la plateforme, sans aucune donnée personnelle dans le message).
@@ -32,19 +32,22 @@
 - **Carnet d'entretien** — l'histoire du bâti exigée par le décret n° 2001-477, constituée par équipement à partir des contrats et des affaires résolues, avec un bilan d'exercice pour le conseil.
 - **Mes lots & accès** — lots, badges Vigik, télécommandes de parking et gestion locative (baux, locataires, inventaire de remise). Le conseil voit les portes que les lots d'un badge justifient — proposées, jamais posées seules — et les badges qui s'en écartent.
 - **FAQ** — questions fréquentes filtrées par profil.
-- **Communauté** — idées, sondages, petites annonces et avis sur l'application, réservés aux résidents. Tout contenu se **signale** au conseil syndical, une affaire, ses suites et la réponse de l'assistant IA comprises ; chacun peut **masquer**, pour lui seul, ce que signe un autre résident (annonces, réponses, messages), et revenir sur ce choix dans son profil.
-- **Prestataires & Contrats** — annuaire, contrats d'entretien, échéances de visite, résiliation d'un contrat et prestataire qui le remplace, notation, synthèse de contrat par l'assistant IA ; une affaire peut désigner plusieurs prestataires, dans l'ordre.
-- **Annonces de hall** — affiche PDF aux couleurs de la résidence, diffusable au conseil, au syndic et au groupe WhatsApp.
-- **Écrans du hall** — une Apple TV appairée par le conseil (code court saisi dans l'Espace CS) fait défiler les affiches en cours de son périmètre, sans auteur ni destinataires ; son jeton n'ouvre que cette lecture, comme celui d'une montre n'ouvre que la cloche (un seul mécanisme de jeton d'appareil, à portée unique).
+- **Communauté** — idées, sondages, petites annonces et avis sur l'application, réservés aux résidents ; seul l'onglet Avis s'ouvre aussi au syndic et au mandataire. Tout contenu se **signale** au conseil syndical, une affaire, ses suites et la réponse de l'assistant IA comprises ; chacun peut **masquer**, pour lui seul, ce que signe un autre résident (annonces, réponses, messages), et revenir sur ce choix dans son profil.
+- **Prestataires & Contrats** — annuaire, contrats d'entretien, échéances de visite, résiliation d'un contrat et prestataire qui le remplace, notation, synthèse de contrat par l'assistant IA ; une affaire peut désigner plusieurs prestataires, dans l'ordre. L'onglet **Consommations** tient les compteurs de la résidence et leurs relevés (date, index, note, photo).
+- **Annuaire** — qui contacter, et pour quoi : les membres du conseil syndical et le syndic.
+- **Délégations** — un proche aidant lit le site à la place d'une personne aidée, en lecture seule ; le conseil syndical (ou l'administrateur) crée la délégation, l'aidant l'accepte. Ce n'est pas une procuration d'assemblée générale.
+- **Annonces Hall** — une annonce du hall, imprimée en affiche PDF aux couleurs de la résidence, diffusable au conseil, au syndic et au groupe WhatsApp.
+- **Écrans du hall** — une Apple TV appairée par le conseil (code court saisi dans l'Espace CS) fait défiler les annonces du hall en cours de son périmètre, sans auteur ni destinataires ; son jeton n'ouvre que cette lecture, comme celui d'une montre n'ouvre que la cloche (un seul mécanisme de jeton d'appareil, à portée unique).
 - **Reporting CS** — suivi des affaires en cours, relance groupée du syndic et comptes rendus de réunion CS / Syndic validés par les présents, exportables en PDF.
 - **Courriels affaires** — les messages reçus à l'adresse des affaires alimentent les fils, avec leurs pièces jointes (documents et photos, dix au plus, hors signature) ; seuls l'auteur, le conseil et le syndic y écrivent ; le journal garde le verdict de chacun, jamais son texte.
 - **Questions au règlement** — l'assistant IA répond en juriste d'après le règlement de copropriété **et les décisions d'assemblée générale**, en synthèse courte dont chaque affirmation renvoie à un extrait (acte, rubrique, page), détaillée en sections pliées (règlement, AG, réserves), extraits cités et vérifiés ; les PV d'AG se transcrivent par l'assistant — résolutions seules, sans nom — et n'entrent qu'après relecture de l'administration.
-- **Administration** — comptes, pages légales, services (IA, WhatsApp, courriel, décor des jours de fête), télémétrie (chaque accès — web, app Apple, app Android — éclaté par type d'appareil, jamais son modèle), nom, logo et palette de couleurs de la résidence (site, courriels, affiches, documents PDF).
+- **Admin** (la page *Paramétrage*) — comptes, pages légales, services (IA, WhatsApp, courriel, décor des jours de fête), télémétrie (chaque accès — web, app Apple, app Android — éclaté par type d'appareil, jamais son modèle), nom, logo et palette de couleurs de la résidence (site, courriels, annonces du hall, documents PDF).
 - **Périmètres** — arborescence de la copropriété (bâtiments, parking, espaces), sur trois niveaux au plus, pour localiser affaires, actualités, sondages et annonces.
 - **Équipements** — ce sur quoi l'on intervient (ascenseur, chauffage, plomberie…, et l'assurance ou le syndic pour les contrats), administrés dans Admin › Copropriété › Équipements : libellé, icône, abréviation, périmètres concernés. Ils rangent les contrats, le carnet d'entretien et les prestataires ; dans une affaire, l'équipement et le périmètre se proposent l'un l'autre.
-- **Lots et règlement** — la désignation de chaque lot selon l'état descriptif du règlement de copropriété : nature, porte ou place, niveau, circulation qui le dessert et tantièmes par clé de charges — et ce que finance chaque clé —, importés et contrôlés par l'atelier d'import — ou lus dans le règlement par l'assistant IA, qui remplit le même atelier sans rien appliquer ; une cave ou une place est rattachée à sa circulation, pas au bâtiment de son propriétaire, et ce qui vise cette circulation (ascenseur, escalier, caves) concerne qui la paie, même sans habiter le bâtiment. Le conseil les relit dans Copropriété › Lots — constats du patrimoine, périmètres posés à la main, recalcul. La règle : [`specs/architecture/lots-et-perimetres.md`](specs/architecture/lots-et-perimetres.md).
+- **Lots et règlement** — la désignation de chaque lot selon l'état descriptif du règlement de copropriété : nature, porte ou place, niveau, circulation qui le dessert et tantièmes par clé de charges — et ce que finance chaque clé —, importés et contrôlés par l'atelier d'import — ou lus dans le règlement par l'assistant IA, qui remplit le même atelier sans rien appliquer ; une cave ou une place est rattachée à sa circulation, pas au bâtiment de son propriétaire, et ce qui vise cette circulation (ascenseur, escalier, caves) concerne qui la paie, même sans habiter le bâtiment. Le conseil les relit dans Admin › Copropriété › Lots — constats du patrimoine, périmètres posés à la main, recalcul. La règle : [`specs/architecture/lots-et-perimetres.md`](specs/architecture/lots-et-perimetres.md).
 - **WhatsApp** — notifications programmées vers le groupe de la résidence. ⚠️ Le pont passe par un client non officiel (Baileys) : le numéro peut être bloqué, le courriel reste le canal de repli.
-- **Maintenance** — rôle et version de l'installation, export vérifié de la base, tâches automatiques, contrôles de santé, audit de sécurité nocturne de chaque nœud et suivi de la consommation de l'IA.
+- **Installation** — rôle, version, inscription au registre et bail de l'installation, pour l'opérateur.
+- **Maintenance** — export vérifié de la base, tâches automatiques, contrôles de santé, audit de sécurité nocturne de chaque nœud et suivi de la consommation de l'IA.
 - **Installations** — registre des installations CoproFirst inscrites, pour l'opérateur de la référence seulement.
 - **Liens partageables** — chaque onglet et chaque publication a son adresse propre ; le lien n'ouvre aucun droit.
 - **Thème clair ou sombre** — Automatique (suit le réglage de l'appareil), Clair ou Sombre, choisi dans le profil et retenu par appareil ; la page arrive déjà dans son thème, sans éclair, et l'impression reste claire. Le décor des jours de fête, allumé par l'administration, s'éteint pour soi au même endroit (retenu par le compte).
@@ -75,7 +78,8 @@ L'application le sert aussi elle-même, à l'adresse `/manuel-utilisateur.html`.
 coprofirst/
 ├── api/               # Backend FastAPI
 │   ├── app/           # Code applicatif (routers, models, utils)
-│   └── alembic/       # Migrations de base de données
+│   ├── alembic/       # Migrations de la base d'une copropriété
+│   └── alembic_plateforme/ # Migrations de la base du registre des installations
 ├── front/             # Frontend SvelteKit
 │   ├── src/routes/    # Pages de l'application
 │   └── e2e/           # Tests de navigateur (Playwright)
@@ -84,9 +88,12 @@ coprofirst/
 │   ├── exploitation/  # Lancés par cron/systemd sur les RPi (bascule, failover…)
 │   ├── lib/           # Modules sourcés par les précédents
 │   ├── poste/         # Développeur et CI (pré-check, rejeu CI, export hors site)
+│   ├── ci/            # Lancés par la CI (publication, tags, purge des images, essais)
 │   └── installation/  # Durcissement système et sudo, tunnel — la réinstallation
 │                      # d'un nœud se suit pas à pas (docs/restauration-complete.md)
-├── infra/             # Code déployé ailleurs (worker Cloudflare)
+├── infra/             # Worker Cloudflare, points d'entrée de la référence (crons,
+│                      #   systemd — infra/points-entree/), PostgreSQL (initdb, pg_hba)
+├── deploiement/       # Installation standard depuis les images publiées, démo publique
 ├── specs/             # Spécification d'origine — historique, le manuel fait foi
 ├── docs/              # Documentation déploiement & ops
 ├── boot-role-guard.sh # RELAIS PERMANENT vers scripts/exploitation/ : l'unité
@@ -221,7 +228,7 @@ Toute la configuration se fait via le fichier `.env` (voir [.env.example](.env.e
 
 - JWT avec cookies HttpOnly / Secure / SameSite=strict
 - Hachage bcrypt des mots de passe
-- **Autorisation centralisée** — toutes les règles dans `api/app/auth/deps.py`, chaque endpoint en dépend, les rares exceptions publiques sont énumérées et justifiées (vérifié en CI)
+- **Autorisation centralisée** — dans `api/app/auth/` : les dépendances d'accès (`deps.py`), les règles d'appartenance — « cet objet est-il le mien ? » (`appartenance.py`), l'opérateur de la plateforme (`operateur.py`) et les jetons d'appareil (`jetons_appareil.py`) ; chaque endpoint en dépend, les rares exceptions publiques sont énumérées et justifiées (vérifié en CI)
 - **Exposition publique en liste blanche** — ce qui est lisible sans authentification est énuméré, jamais déduit par exclusion
 - Rate limiting sur les endpoints d'authentification (slowapi)
 - Validation Pydantic / SQLModel sur toutes les entrées
