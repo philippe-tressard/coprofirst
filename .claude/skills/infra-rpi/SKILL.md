@@ -1,6 +1,6 @@
 ---
 name: infra-rpi
-description: "Infrastructure HA 5Hostachy sur 2 Raspberry Pi : serveurs et rôle actif, règle d'or des données (PostgreSQL : primaire, réplique, promotion, reconstruction), distinction panne de chemin public / panne de nœud, crontabs, monitoring APScheduler, bridge WhatsApp. Use when: intervenir sur un RPi, basculer, diagnostiquer un site HS, deux primaires ou une réplique en retard, reconnecter WhatsApp, analyser un incident ou une coupure de courant."
+description: "Infrastructure HA 5Hostachy sur 2 Raspberry Pi : serveurs et rôle actif, bascule, règle d'or de la base (PostgreSQL : primaire, réplique, promotion, reconstruction), distinction panne de chemin public / panne de nœud, crons et points d'entrée, monitoring APScheduler, bridge WhatsApp, audit de sécurité nocturne (S1–S6) et durcissement, scripts d'infra en CI (self-tests). À charger : intervenir sur un RPi, basculer, diagnostiquer un site HS ou un incident, deux primaires ou une réplique en retard, reconnecter WhatsApp, analyser une coupure de courant, écrire un script d'infra."
 argument-hint: "Décrire l'intervention ou le symptôme (ex. « site HS depuis 20 min », « reconnecter le bridge WhatsApp », « C37 en FAIL : deux primaires »)"
 ---
 
@@ -22,7 +22,7 @@ La conduite à tenir est ci-dessous.
 > maintenance sur tous les nœuds, hygiène).
 
 ## Serveurs
-- **RPi 1** `192.168.1.222` (PhT-RB5) · **RPi 2** `192.168.1.223` (PhT-RB5i2)
+- **RPi 1** `192.168.1.222` (PhT-RB5) · **RPi 2** `192.168.1.223` (PhT-RB5i2) — dans un script, la table hôte ⇄ rôle ⇄ adresse est `scripts/lib/lib-role.sh` (`noeud_ssh`, `role_of`, `role_ip`, `role_peer`), jamais recopiée — elle l'était dans sept scripts
 - RPi actif : `cat /opt/5hostachy/.active` — ⚠️ ce fichier peut disparaître, le recréer si absent
 - Conteneurs uniquement sur le RPi actif — vérifier les 2 en cas de doute (`docker ps`)
 - En cas de split-brain (conteneurs sur les 2) : stopper le standby + recréer `.active`

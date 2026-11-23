@@ -106,8 +106,17 @@ def _lignes_vivantes(texte: str):
 
 
 def _documents_front() -> list[tuple[str, pathlib.Path]]:
-    """Les skills lues avant d'écrire dans `front/src/`."""
-    return [(skill, _SKILLS / skill / "SKILL.md") for skill in SKILLS_FRONT]
+    """Les skills lues avant d'écrire dans `front/src/` — `SKILL.md` ET ses annexes.
+
+    🔴 #2910 : `ux-patterns` est découpée en annexes chargées à la demande. Un
+    contrôle qui ne lirait que `SKILL.md` perdrait, au jour de la découpe, tout ce
+    qu'il gardait : la portée suit le dossier, pas un nom de fichier.
+    """
+    return [
+        (f"{skill}/{p.name}" if p.name != "SKILL.md" else skill, p)
+        for skill in SKILLS_FRONT
+        for p in sorted((_SKILLS / skill).glob("*.md"))
+    ]
 
 
 def _documents_consignes() -> list[tuple[str, pathlib.Path]]:

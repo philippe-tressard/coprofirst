@@ -206,7 +206,7 @@ vers un numéro absent, et un `lint:*` ou un fichier de test de « Tenu par » q
 ### n° 23 · en vigueur — Le cadre : une entité, quatre rendus
 17/08/2026 · #430 (lots #431, #433, #432) · l'utilisateur · §0
 - **Décidé** : Affichage · Création · Édition · Évolution ; sections dans l'ordre de `SECTIONS_ORDRE` ; toute divergence entre rendus se déclare avec son motif (R4) ; un enrichissement se propose sur UN écran, se constate, puis se généralise (R5).
-- **Pourquoi** : relevé de 42 couples menu/entité — mémoire `project_cadre_quatre_rendus`.
+- **Pourquoi** : relevé de 42 couples menu/entité — l'artefact lié en tête du §0 (`CADRE.md`).
 - **Écarté** : « Commentaire » comme nom du quatrième état (trop étroit).
 - **Tenu par** : `npm run lint:etats`, `lint:ordre-sections`.
 

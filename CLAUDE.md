@@ -22,7 +22,7 @@ demander confirmation.
 
 | Tâche | Skill |
 |---|---|
-| MEP, rejeu de la CI, pré-check, post-check, rollback, version et images | `mep-precheck` |
+| MEP, rejeu, pré-check, post-check, retour arrière, version et images | `mep-precheck` |
 | Infra, bascule, RPi, base, crons, WhatsApp, incident, scripts d'infra en CI | `infra-rpi` |
 | Écran, composant, libellé, checklist front avant commit | `ux-patterns` |
 | Page ou composant SvelteKit, store, appel API côté front, tests Playwright | `svelte-patterns` |
