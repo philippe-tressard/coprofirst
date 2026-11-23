@@ -37,7 +37,9 @@
 	export let ton: 'neutre' | 'info' | 'succes' = 'neutre';
 	/** Ce que dit la rubrique PLIÉE, sur une ligne — l'état, jamais l'invitation. */
 	export let resume = '';
-	/** « 5 entrées » à côté du titre — absent si rien ne se compte. */
+	/** « 5 entrées » à côté du titre — absent si rien ne se compte. Rendu en UNE
+	    expression : prettier couperait `{a} {b}` en deux lignes, et le texte lu
+	    (`textContent`) garderait le saut et les tabulations (#2900). */
 	export let compte: number | null = null;
 	export let ouverte = false;
 	export let onBasculer: () => void;
@@ -73,8 +75,7 @@
 			>
 				<span class="encart-titre">
 					{titre}{#if compte !== null}<span class="encart-compte">
-							{compte}
-							{compte > 1 ? 'entrées' : 'entrée'}
+							{`${compte} ${compte > 1 ? 'entrées' : 'entrée'}`}
 						</span>{/if}
 				</span>
 				{#if !ouverte && resume}<span class="encart-resume">{resume}</span>{/if}

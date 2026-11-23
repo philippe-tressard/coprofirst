@@ -174,8 +174,7 @@
 			</span>
 		{:else if contrat.resilie_le}
 			<span class="badge badge-gray">
-				{contrat.resilie ? 'Résilié le' : 'Résilié au'}
-				{fmtDateShort(contrat.resilie_le)}
+				{`${contrat.resilie ? 'Résilié le' : 'Résilié au'} ${fmtDateShort(contrat.resilie_le)}`}
 			</span>
 		{/if}
 		{#each contrat.remplace as ancien (ancien.id)}
