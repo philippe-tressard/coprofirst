@@ -32,9 +32,16 @@ from datetime import date
 
 import pytest
 from fastapi import HTTPException
-from sqlmodel import select
+from sqlmodel import Session, select
 
-from app.models.core import LocationBail, Lot, StatutUtilisateur, TypeLien, UserLot
+from app.models.core import (
+    LocationBail,
+    Lot,
+    RoleUtilisateur,
+    StatutUtilisateur,
+    TypeLien,
+    UserLot,
+)
 from app.routers.bailleur.baux import (
     creer_bail_multi,
     locataires_suggeres,
@@ -43,6 +50,7 @@ from app.routers.bailleur.baux import (
 )
 from app.routers.bailleur.commun import BailCreateMulti, BailUpdate
 from tests.aides_base import compte
+from tests.aides_http import base_http, client_http
 from tests.conftest import requete_de_test
 
 
@@ -282,3 +290,23 @@ def test_corriger_un_bail_garde_le_locataire_qui_y_est_deja(session):
 
     corrige = _corriger(session, u, bail, locataire_id=ancien.id, notes="Préavis reçu")
     assert (corrige.locataire_id, corrige.notes) == (ancien.id, "Préavis reçu")
+
+
+def test_vingt_corrections_d_affilee_passent_la_limite_freine_au_dela():
+    """Par la porte réelle (la limite ne s'applique qu'à travers l'application) : un
+    bailleur qui corrige son bail vingt fois dans la minute passe ; la vingt-et-unième
+    est freinée (`LIMITE_RECHERCHE_DE_PERSONNES`). L'usage normal tient dessous."""
+    with base_http() as moteur:
+        http, ident = client_http(
+            moteur, RoleUtilisateur.propriétaire, statut=StatutUtilisateur.copropriétaire_bailleur
+        )
+        with Session(moteur) as s:
+            lot = _lot(s, "L-limite")
+            s.add(UserLot(user_id=ident, lot_id=lot.id, type_lien=TypeLien.bailleur, actif=True))
+            bail = LocationBail(lot_id=lot.id, bailleur_id=ident, date_entree=date(2026, 10, 2))
+            s.add(bail)
+            s.commit()
+            s.refresh(bail)
+            chemin = f"/bailleur/baux/{bail.id}"
+        codes = [http.patch(chemin, json={"notes": f"note {i}"}).status_code for i in range(21)]
+    assert codes[:20] == [200] * 20 and codes[20] == 429, codes
