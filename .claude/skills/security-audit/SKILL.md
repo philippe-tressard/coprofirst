@@ -367,15 +367,16 @@ refuse la copie.
   l'inscription, avec `nouvelle_adresse`), avis à l'ancienne, qui reste celle du compte
   jusqu'au clic, journal. 🔒 `test_changement_adresse.py` (refuse aussi `x.email = …` hors de
   la confirmation du lien).
-- **Journal de sécurité** (#1040, #1548) : tout geste de `GESTES_SENSIBLES` (connexion refusée,
-  mot de passe changé ou réinitialisé, rôle ajouté ou retiré, bannissement, jeton rejoué,
-  changement d'adresse, cycle de vie d'un compte, délégation) appelle
-  `utils/journal_securite.journaliser_securite`, jamais un `logger` local. **Jamais de donnée
-  personnelle dans une ligne de journal** — un identifiant, jamais une adresse, un mot de
-  passe ou un jeton, même tronqué (#777). Niveau `WARNING`, jamais `ERROR` : le point 6 du
-  pré-check compte les `ERROR`/`CRITICAL` (`MOTIF_ERREURS_API`). 🔒 `test_journal_securite.py`
-  (confronte `GESTES_SENSIBLES` à ce que les routeurs écrivent, refuse un code absent de
-  `_NIVEAUX`, et la donnée personnelle chez la fonction et ses appelants).
+- **Journal de sécurité** (#1040, #1548, #2941) : tout geste de `GESTES_SENSIBLES` (la table,
+  avec la raison de chacun, `api/tests/aides_gestes_sensibles.py`) appelle
+  `utils/journal_securite.journaliser_securite`, jamais un `logger` local ; l'export complet de
+  la copropriété laisse sa ligne. **Jamais de donnée personnelle dans une ligne de journal** — un
+  identifiant, jamais une adresse, un mot de passe ou un jeton, même tronqué (#777). Niveau
+  `WARNING`, jamais `ERROR` : le point 6 du pré-check compte les `ERROR`/`CRITICAL`
+  (`MOTIF_ERREURS_API`). 🔒 `test_journal_securite.py` (la table se vérifie contre ce que le CODE
+  émet : toute fonction de `app/` qui appelle `journaliser_securite` y est déclarée, et l'inverse ;
+  le relevé des écritures sur un compte lit tout `app/`, portes d'écriture et écritures sans ligne
+  déclarées ; refuse un code absent de `_NIVEAUX`, et la donnée personnelle chez les appelants).
 - **HTML d'un utilisateur côté serveur** (#2150) : `utils/html_sur` (`nh3`, liste blanche de
   `#lib/sanitize.ts`). Le corps d'un courriel s'échappe ; un champ riche y entre par
   `html_riche(…)` ou `| safe`, redéfini pour assainir. 🔒 `test_html_sur.py` (charge hostile
