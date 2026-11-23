@@ -1,0 +1,22 @@
+# Le contexte de construction de l'image de l'API (#2963) : ce qui ne sert pas
+# l'exécution n'y entre pas — ni un secret du dossier de travail (une construction
+# de SECOURS sur un nœud, ou un poste, part du dossier, pas d'un clone propre), ni
+# les caches, ni la suite de tests.
+# 🔒 api/tests/test_contexte_images.py : la photo témoin y reste, `.env` jamais.
+.env
+.env.*
+**/__pycache__
+**/*.pyc
+.pytest_cache
+.ruff_cache
+.mypy_cache
+.coverage
+htmlcov
+.venv
+venv
+# Les tests, sauf la photo témoin : `scripts/verifier_heif.py` la décode PENDANT la
+# construction (api/Dockerfile), aucune image HEIC n'est distribuée sans ce contrôle.
+tests/*
+!tests/donnees
+tests/donnees/*
+!tests/donnees/photo.heic
