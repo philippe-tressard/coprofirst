@@ -166,7 +166,8 @@ en la nommant si elle n'est pas sur `dev` (#2676, vécu à la v3.86.0).
 
 🔴 **La version se pose À LA MEP, plus dans le lot** (#2631) : `conduire-mep.sh` la
 calcule de `main` et des préfixes des commits du train (`feat` → mineure, `!` →
-majeure, sinon correctif — `rang_attendu`, la lecture de 0g) et la commit sur `dev`
+majeure, sinon correctif — `rang_attendu`, la lecture de 0g ; sujets et pied
+`BREAKING CHANGE` seulement, jamais un corps cité : `declarations`, #2896) et la commit sur `dev`
 par `npm version`, dans une copie jetable. Un lot n'emporte plus de
 `chore(version)` : 0d le refuse sur la branche d'un lot ; sur `dev`, 0d et 0g
 jugent le train. Le titre porte la marque `{version}`, et son préfixe doit annoncer

@@ -416,7 +416,7 @@ verdict_erreurs_api() {    # $1 = lignes ERROR/CRITICAL observées
   [ "$(( $1 - $2 ))" -eq 0 ] && echo OK || echo FAIL
 }
 
-rang_attendu() {           # $1 = les sujets ET corps des commits du lot
+rang_attendu() {           # $1 = ce que le lot déclare : `declarations` (lib-mep-conduite.sh)
   #  Le rang que le lot ANNONCE, lu dans ses préfixes conventionnels.
   #
   #  ⚠️ C'est ce que le lot dit de lui-même, et non le jugement de qui bumpe.
