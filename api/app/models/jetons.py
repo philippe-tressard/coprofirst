@@ -35,6 +35,10 @@ class RefreshToken(SQLModel, table=True):
     #: distingue un jeton volé rejoué d'une session fermée : voir
     #: `auth/jetons_rafraichissement.py`.
     remplace_le: Optional[NaiveDatetime] = None
+    #: La SESSION de ce jeton : tirée à la connexion, recopiée par chaque rotation,
+    #: portée aussi par les jetons d'accès (`sid`). La déconnexion ferme tous les
+    #: jetons de la session présentée (migration 0347) ; `None` pour un jeton d'avant.
+    session_id: Optional[str] = Field(default=None, index=True)
 
 
 class PasswordResetToken(SQLModel, table=True):
