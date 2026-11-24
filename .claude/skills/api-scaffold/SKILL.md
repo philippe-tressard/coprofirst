@@ -1,6 +1,6 @@
 ---
 name: api-scaffold
-description: "Scaffold a complete FastAPI endpoint for 5Hostachy: SQLModel model + Alembic migration + router CRUD + Pydantic schemas + frontend API client module. Use when: creating a new feature, adding a new entity, adding a new API resource, or writing any code under api/app (model, schema, router, utils, migration) or api/tests — §8 holds the backend conventions (the single entry points), §9 what the pytest suite enforces."
+description: "Code de l'API de 5Hostachy (FastAPI + SQLModel + Alembic) : modèle, schéma, routeur, migration, utilitaire, client API du front, et les tests pytest — un point d'entrée complet, ou toute écriture sous api/app ou api/tests. §8 porte les conventions du backend (les portes uniques), §9 ce que la suite pytest impose. À charger : avant de créer une entité, une ressource ou une route, d'écrire une migration ou un utilitaire, ou un test pytest."
 argument-hint: "Describe the entity to create (e.g. 'Fournisseur with nom, siret, email')"
 ---
 
@@ -314,6 +314,9 @@ Chacun porte, en tête de fichier, le pourquoi et la règle arbitrée :
 
 | Ce qu'on veut faire | Le module |
 |---|---|
+| dire si une affaire est close (`close`, servie aux deux clients) | `utils/etat_affaire` |
+| lire ou refuser un équipement (la liste vit en base) | `utils/equipements` |
+| fermer un geste en mode démo (`MODE_DEMO`) | `utils/demo` |
 | prévenir quelqu'un **dans l'application** (la cloche) | `utils/cloche` (`sonner`, `sonner_systeme`) — la porte unique, qui obéit au profil ; jamais une ligne écrite dans la table à la main |
 | savoir **ce qu'est** une affaire (actualité, affaire suivie, catégorie réservée, statut de départ) | `utils/nature_affaire` — dérivé, jamais saisi ; `utils/categories_ticket.libelle_categorie` pour le libellé français d'une catégorie |
 | marquer un texte « Rédigé avec l'assistant IA » | `utils/assiste_ia` (`marquer`) ; les usages de l'assistant (modèle, prompt, plafond) se déclarent dans `utils/llm_usages` |
