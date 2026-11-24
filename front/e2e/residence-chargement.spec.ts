@@ -48,7 +48,10 @@ test('Carnet : la Fiche n’est lue qu’au passage sur son onglet', async ({ pa
 	expect(
 		demandes.filter((d) => d === '/api/copropriete' || d.startsWith('/api/documents')),
 	).toEqual([]);
-	await page.getByRole('tablist').getByRole('link', { name: /Fiche/ }).click();
+	await page
+		.getByRole('navigation', { name: 'Onglets' })
+		.getByRole('link', { name: /Fiche/ })
+		.click();
 	await expect(page.getByRole('heading', { name: /Résidence témoin/ })).toBeVisible();
 	expect(demandes).toContain('/api/regles-residence');
 });

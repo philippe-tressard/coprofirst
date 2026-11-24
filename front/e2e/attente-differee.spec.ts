@@ -14,7 +14,7 @@ test('l’attente d’un onglet chargé au geste ne clignote pas', async ({ page
 	await page.goto('/prestataires');
 	await attendreHydratation(page);
 	await page
-		.getByRole('tablist')
+		.getByRole('navigation', { name: 'Onglets' })
 		.getByRole('link', { name: /Contrats/ })
 		.click();
 
