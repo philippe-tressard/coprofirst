@@ -111,7 +111,7 @@ class _ClientQuiEchoue:
 
 
 def test_en_demo_la_version_n_est_pas_verifiee(en_demo):
-    rendu = installation.verifier("7bec36e", "replica", client=_ClientQuiEchoue())
+    rendu = installation.verifier("7bec36e", "v3.124.1", client=_ClientQuiEchoue())
     assert rendu.etat == "non_verifie"
 
 

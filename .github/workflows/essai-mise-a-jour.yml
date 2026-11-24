@@ -6,8 +6,8 @@ name: Essai de mise à jour
 #  Éprouve la mise à jour nocturne d'une réplique DE BOUT EN BOUT, sur une
 #  machine jetable (ce runner), sous PostgreSQL : installation de
 #  <de> selon le mode d'emploi, mise à jour vers <vers> par `mise-a-jour.sh`,
-#  puis verdict (`scripts/ci/essai-mise-a-jour.sh`). Rien n'est promu :
-#  `replica` n'est pas lue, la cible est imposée.
+#  puis verdict (`scripts/ci/essai-mise-a-jour.sh`). La cible est imposée,
+#  aucun bail n'est lu.
 #
 #  Se lance à la main, quand deux versions étiquetées le permettent :
 #      gh workflow run essai-mise-a-jour.yml -f de=X.Y.Z -f vers=X.Y.Z

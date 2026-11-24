@@ -757,10 +757,7 @@ jobs:
           # La mesure sur PostgreSQL (#1747) : une mesure qui n'a pas pu se faire
           # échoue, des tests rouges sont une MESURE.
           bash scripts/ci/mesure-postgresql.sh      --selftest
-          # La promotion sur `replica` (#1754) : refus sans tag, hors de main, en
-          # arrière de replica, pas rodée ou retenue, la majeure de la nuit (#1934) ;
-          # les notes de version des exploitants ; le rappel de retard.
-          bash scripts/ci/promotion.sh              --selftest
+          # Les notes de version des exploitants, et l'archive de déploiement jointe.
           bash scripts/ci/notes-de-version.sh       --selftest
           # Chaque version taguée publiée — release et archive (#2210) ; la purge
           # des paquets que plus aucune vague ne peut servir.
