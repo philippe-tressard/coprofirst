@@ -367,13 +367,15 @@ def test_les_routes(monkeypatch, tmp_path):
         assert lu["delai_retrait_jours"] == 30
 
         accuse = "/admin/maintenance/archives-affaires/copiees"
-        monkeypatch.setattr(get_settings(), "maintenance_key", "cle-de-test-assez-longue")
+        monkeypatch.setattr(
+            get_settings(), "maintenance_key", "cle-de-test-assez-longue-de-trente-deux-caracteres"
+        )
         #  Une session d'administrateur ne suffit pas : c'est le canal des scripts.
         assert admin.post(accuse, json={"copies": {nom: BONNE}}).status_code in (401, 403)
         reponse = admin.post(
             accuse,
             json={"copies": {nom: BONNE}},
-            headers={"x-maintenance-key": "cle-de-test-assez-longue"},
+            headers={"x-maintenance-key": "cle-de-test-assez-longue-de-trente-deux-caracteres"},
         )
         assert reponse.json()["accusees"] == [nom]
 

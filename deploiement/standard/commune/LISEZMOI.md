@@ -92,11 +92,26 @@ silence : un rôle, une base ou une variable déjà là arrêtent tout.
    Il liste chaque copropriété, son alias et son adresse — ou les règles violées.
    Une déclaration invalide **ne sert rien** (503) : l'API ne se replie jamais sur
    la copropriété de sa configuration, qu'elle servirait alors à tous les hôtes.
-4. Importer la garde des pages dans le `Caddyfile`, en tête du dernier `handle`
-   (le mode d'emploi est en tête de `garde-des-pages.caddy`), et **les fichiers**
-   (`import commune/fichiers.caddy`) dans le bloc de site, AVANT les blocs
-   `handle /uploads/…` : sur une installation commune, c'est l'API qui sert les
-   fichiers de chaque copropriété, à une session de cette copropriété.
+4. Démarrer avec la surcouche commune — `creer-copropriete.sh` et la mise à jour
+   nocturne la posent d'eux-mêmes dès que `COPROPRIETES_FICHIER` est dans `.env`
+   (`definir_compose`, `lib-installation.sh`). Elle monte dans Caddy la garde des
+   pages (`garde-des-pages.caddy`) et le relais des fichiers vers l'API
+   (`fichiers.caddy`), que le `Caddyfile` du dépôt importe : **rien n'est à
+   retoucher dans le `Caddyfile`**, qu'une mise à jour remplace (claude-config#604).
+   Sur une installation commune, c'est l'API qui sert les fichiers de chaque
+   copropriété, à une session de cette copropriété ; si Caddy servait encore sa
+   racine unique, l'API le lui refuse (`/auth/verifier-acces` rend 404).
+
+   ⚠️ **Une installation commune posée AVANT cette version** : la mise à jour qui
+   l'apporte est conduite par l'ancien script, qui recrée la pile sans la
+   surcouche. Une fois, après elle, recréer la pile avec la surcouche, depuis le
+   dossier de l'installation :
+
+   ```bash
+   docker compose -f docker-compose.yml -f deploiement/standard/compose.images.yml -f deploiement/standard/commune/compose.commune.yml up -d caddy front
+   ```
+
+   Les mises à jour suivantes la gardent d'elles-mêmes.
 
 Le fichier est relu quand il change. Une copropriété **neuve** demande pourtant de
 recréer l'API, qui ne lit son environnement — l'URL de la base, le secret —

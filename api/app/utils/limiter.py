@@ -24,6 +24,8 @@ bougeront ensemble.
 exactement le plafond qu'elle avait. Renommer et rerégler sont deux gestes.
 """
 
+from fastapi import HTTPException, Request
+from limits import parse
 from slowapi import Limiter
 from slowapi.util import get_remote_address
 
@@ -39,6 +41,30 @@ limiter = Limiter(key_func=get_remote_address)
 #: transforme une attaque par force brute en attaque impraticable : c'est donc la
 #: seule dont l'absence est un défaut de sécurité, et non une imprudence.
 LIMITE_SECRET_EPROUVE = "5/minute"
+
+
+def compter_tentative_secret(request: Request) -> None:
+    """La limite des secrets, comptée sur la TENTATIVE qui éprouve un secret — 429 au-delà.
+
+    Pour une route qui n'éprouve un secret que dans UN cas : le profil et la fiche d'un
+    compte ne présentent le mot de passe de qui agit qu'à un changement d'adresse. Limiter
+    la route entière bloquerait un administrateur qui corrige plusieurs fiches d'affilée,
+    sans rien éprouver (décision du 23/11/2026, aucune régression) ; la tentative, elle,
+    se compte par visiteur, comme le ferait `@limiter.limit(LIMITE_SECRET_EPROUVE)`.
+    🔒 `test_limites_debit_auth.py` exige l'une ou l'autre forme.
+    """
+    if limiter.enabled and not limiter.limiter.hit(
+        parse(LIMITE_SECRET_EPROUVE), "tentative_secret", get_remote_address(request)
+    ):
+        raise HTTPException(429, "Trop de tentatives : réessayez dans une minute.")
+
+
+#: Une requête qui présente la **clé partagée** des tâches planifiées des nœuds
+#: (`auth/cle_maintenance`). La clé n'est pas devinable comme un mot de passe : ce
+#: plafond borne une rafale et la rend visible (429), sans gêner les scripts — un nœud
+#: en envoie quelques-unes par passage (rapport, battement, purges), chacun sous sa
+#: propre adresse. Réglé sur cette cadence, pas sur celle d'un humain.
+LIMITE_CLE_PARTAGEE = "30/minute"
 
 #: Une requête qui **fait partir un courriel** vers une adresse que l'appelant
 #: choisit. Sans limite, la route sert de relais d'expédition gratuit — et c'est
@@ -79,6 +105,9 @@ LIMITE_DONNEES_PERSONNELLES = "5/minute"
 #: La **recherche d'une personne** parmi les comptes — un bailleur qui cherche son
 #: locataire (#2153). Elle se lance au clic, jamais à la frappe : vingt par
 #: minute ne gênent personne, et bornent un balayage alphabétique de l'annuaire.
+#: La DÉSIGNATION du compte trouvé — créer ou corriger un bail — porte la même
+#: intention (claude-config#656) : vingt baux posés ou corrigés par minute restent
+#: hors d'atteinte d'un bailleur.
 LIMITE_RECHERCHE_DE_PERSONNES = "20/minute"
 
 #: Le **dépôt d'un fichier** par un compte connecté — photo, pièce jointe, avatar

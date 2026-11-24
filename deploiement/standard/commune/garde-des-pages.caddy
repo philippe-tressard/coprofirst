@@ -1,12 +1,8 @@
 # ── La garde des pages d'une INSTALLATION COMMUNE (#1894) ─────────────────────
 #
-# À importer en tête du DERNIER `handle` du Caddyfile — celui qui sert le front —,
-# sur une installation commune à plusieurs copropriétés SEULEMENT :
-#
-#     handle {
-#         import commune/garde-des-pages.caddy
-#         reverse_proxy front:3000
-#     }
+# Importé en tête du DERNIER `handle` du `Caddyfile` — celui qui sert le front —
+# (`import commune/garde-des-pages*.caddy`), MONTÉ par la surcouche
+# `compose.commune.yml`, sur une installation commune SEULEMENT (claude-config#604).
 #
 # Chaque page demandée passe d'abord par l'API (`GET /plateforme/aiguillage/hote`,
 # `api/app/installation_commune/routeur.py`), qui lit l'hôte :
@@ -23,8 +19,9 @@
 # (`security.txt`, fichiers d'association des apps) ne posent pas la question : ils ne dépendent d'aucun hôte, et
 # une page en charge des dizaines.
 #
-# ⚠️ Sur une installation propre à une copropriété (5Hostachy), NE PAS l'importer :
-# la route y répond 404, et `forward_auth` rendrait ce 404 à chaque page.
+# ⚠️ Sur une installation propre à une copropriété (5Hostachy), la surcouche n'est
+# pas posée, rien n'est monté : la route y répond 404, et `forward_auth` rendrait
+# ce 404 à chaque page.
 
 @pages_commune not path /_app/* /sw.js /manifest.webmanifest /favicon* /icons/* /robots.txt /.well-known/*
 forward_auth @pages_commune api:8000 {

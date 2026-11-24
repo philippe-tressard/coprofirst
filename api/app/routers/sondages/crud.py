@@ -5,7 +5,7 @@ lui-même — `participation`, dont les chemins sont nus, le reçoit du paquet.
 """
 
 import json
-from app.utils.masquage import auteurs_masques, garder
+from app.utils.masquage import auteur_servi, auteurs_masques, garder
 from app.utils import horloge
 
 from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException
@@ -76,6 +76,7 @@ def list_sondages(
     result = []
     for s in accessible:
         d = SondageRead.model_validate(s)
+        d.auteur_id = auteur_servi(s, user)
         d.nb_votants = count_map.get(s.id, 0)
         #  La liste ne laisse plus l'écran conclure : c'est la MÊME fonction que
         #  la fiche, le vote, la modification et le fil (#468).
@@ -177,7 +178,9 @@ def get_sondage(
         "description": s.description,
         "cloture_le": s.cloture_le,
         "resultats_publics": s.resultats_publics,
-        "auteur_id": s.auteur_id,
+        #  Clé PRÉSENTE, à `None` hors de l'auteur et de qui modère : la fiche est
+        #  rendue sans les champs non posés, et l'app publiée attend celui-ci.
+        "auteur_id": auteur_servi(s, user),
         "cree_le": s.cree_le,
         #  Cette réponse est construite à la main (pas de `response_model`) : la
         #  conversion JSON → liste ne se fait donc pas toute seule. Même règle
