@@ -43,6 +43,7 @@
 <script lang="ts" generics="T">
 	import SectionRepliee from '#lib/components/SectionRepliee.svelte';
 	import Compte from '#lib/components/Compte.svelte';
+	import { anneeDe } from '#lib/date.ts';
 	import { TITRE_ARCHIVES } from '#lib/archives.ts';
 	import { basculer } from '#lib/accordeon.ts';
 
@@ -76,7 +77,7 @@
 		for (const it of items ?? []) {
 			const d = dateDe(it);
 			if (!d) continue;
-			const annee = new Date(d).getFullYear();
+			const annee = anneeDe(d);
 			if (!Number.isFinite(annee)) continue;
 			if (!groupes.has(annee)) groupes.set(annee, []);
 			groupes.get(annee)!.push(it);

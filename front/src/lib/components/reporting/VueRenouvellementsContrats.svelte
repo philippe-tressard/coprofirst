@@ -17,7 +17,7 @@
 	//  la table des libellés vivait dans `prestataires/+page.svelte` et qu'il n'y
 	//  avait pas accès. Une table qui vit dans UN écran, les autres s'en passent.
 	import { libelleEquipement } from '#lib/stores/equipements.ts';
-	import { fmtDate, fmtJourMoisChiffres } from '#lib/date.ts';
+	import { anneeDe, fmtDate, fmtJourMoisChiffres, moisDe } from '#lib/date.ts';
 	import NoteEtoiles from '#lib/components/NoteEtoiles.svelte';
 	import type { ReleveRenouvellements } from '#lib/api/index.ts';
 	import { MOIS_LABELS, contratsDuReleve } from '#lib/reporting.ts';
@@ -56,12 +56,10 @@
 				{#each MOIS_LABELS as m (m)}<div class="frise-month-label">{m}</div>{/each}
 			</div>
 			{#each contratsAnneeCourante.filter((x): x is typeof x & { dateFin: Date } => !!x.dateFin) as c (c.id)}
-				{@const finDansAnnee = c.dateFin.getFullYear() === ANNEE_COURANTE}
-				{@const moisFin = finDansAnnee ? c.dateFin.getMonth() : 11.9}
+				{@const finDansAnnee = anneeDe(c.dateFin) === ANNEE_COURANTE}
+				{@const moisFin = finDansAnnee ? moisDe(c.dateFin) : 11.9}
 				{@const moisPreavis =
-					c.datePreavis && c.datePreavis.getFullYear() < ANNEE_COURANTE
-						? 0
-						: (c.datePreavis?.getMonth() ?? 0)}
+					c.datePreavis && anneeDe(c.datePreavis) >= ANNEE_COURANTE ? moisDe(c.datePreavis) : 0}
 				{@const barStart = Math.max(0, moisPreavis)}
 				{@const barEnd = moisFin}
 				{@const preavisWidth = ((barEnd - barStart) / 12) * 100}
@@ -138,9 +136,9 @@
 								class:frise-marker-annee={friseStyle === 'annee'}
 								class:frise-marker-futur={friseStyle === 'futur'}
 								class:frise-marker-reconduit={friseStyle === 'reconduit'}
-								title="Fin : {fmtDate(c.dateFin.toISOString())} ({c.dateFin.getFullYear()})"
+								title="Fin : {fmtDate(c.dateFin.toISOString())} ({anneeDe(c.dateFin)})"
 							>
-								<span class="frise-marker-label">{SEPARATEUR.fleche}{c.dateFin.getFullYear()}</span>
+								<span class="frise-marker-label">{SEPARATEUR.fleche}{anneeDe(c.dateFin)}</span>
 							</div>
 						{/if}
 					</div>

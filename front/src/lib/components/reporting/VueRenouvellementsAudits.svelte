@@ -8,7 +8,7 @@
   variante d'impression comprise.
 -->
 <script lang="ts">
-	import { fmtDate } from '#lib/date.ts';
+	import { anneeDe, fmtDate } from '#lib/date.ts';
 	import type { ReleveRenouvellements } from '#lib/api/index.ts';
 	import { diagnosticsDuReleve } from '#lib/reporting.ts';
 	import { SEPARATEUR } from '#lib/separateurs.ts';
@@ -27,7 +27,7 @@
 	$: diagsParAnnee = (() => {
 		const map = new Map<number, typeof diagsAvecEcheance>();
 		for (const d of diagsAvecEcheance) {
-			const y = d.nextDate!.getFullYear();
+			const y = anneeDe(d.nextDate!);
 			if (y < ANNEE_COURANTE || y > ANNEE_COURANTE + 10) continue;
 			if (!map.has(y)) map.set(y, []);
 			map.get(y)!.push(d);
