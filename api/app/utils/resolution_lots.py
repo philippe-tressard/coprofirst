@@ -5,10 +5,10 @@
 Ce geste était écrit **deux fois**, et les deux chemins sont atteignables depuis
 l'interface :
 
-===========================  ===============================================
-Administration → Auto-match  ``routers/lots.py::_auto_resoudre_…_batch``
-Validation d'un compte       ``auto_match_service::_auto_resoudre_…_utilisateur``
-===========================  ===============================================
+============================  ===============================================
+Admin › Imports, auto-match   ``routers/lots.py::_auto_resoudre_…_batch``
+Validation d'un compte        ``auto_match_service::_auto_resoudre_…_utilisateur``
+============================  ===============================================
 
 Le bloc « trouver ou créer le lot » y était identique au caractère près. **Trois
 règles, non** — et le résultat dépendait donc du bouton employé, sans que rien à

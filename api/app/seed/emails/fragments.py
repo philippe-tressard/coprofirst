@@ -179,7 +179,7 @@ def contenu_riche(variable: str) -> str:
     n'assainissait rien, et n'importe quel compte peut l'appeler sans l'écran.
     Dans un courriel, `| safe` ASSAINIT désormais (`utils/html_sur.filtre_safe`,
     branché par `utils/email/rendu`) — y compris dans un modèle réécrit depuis
-    Admin → Emails.
+    Admin › Présentation › Modèles e-mail.
     """
     return f'<div style="font-size:14px;color:{TEXTE}">{{{{ {variable} | safe }}}}</div>'
 
