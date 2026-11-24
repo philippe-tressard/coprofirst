@@ -85,6 +85,22 @@ def notification_de_ban(definitif: bool) -> tuple[str, str]:
     return NOTIFICATION_BAN[bool(definitif)]
 
 
+#: Les profils à qui la rubrique n'ouvre que l'onglet Avis (#2075, arbitrage du
+#: 18/10/2026) : un espace entre résidents, dont ils ne sont pas.
+STATUTS_AVIS_SEUL = frozenset({StatutUtilisateur.syndic, StatutUtilisateur.mandataire})
+
+
+def refus_de_profil(user: Utilisateur, *, profil: bool = True) -> bool:
+    """Le PROFIL seul ferme-t-il la rubrique — le bannissement mis à part ?
+
+    La part « profil » de `motif_de_refus`, nommée pour que le menu la LISE au lieu
+    de la recopier (`utils/acces_menu`, public `resident`, #2993) : le menu tenait sa
+    propre liste, qui excluait l'aidant que cette règle admet. `profil=False` : la
+    question pour l'onglet Avis, que le profil ne ferme à personne.
+    """
+    return profil and user.statut in STATUTS_AVIS_SEUL
+
+
 def motif_de_refus(
     user: Utilisateur, maintenant: Optional[datetime] = None, *, profil: bool = True
 ) -> Optional[str]:
@@ -98,7 +114,7 @@ def motif_de_refus(
     s'applique toujours.
     """
     maintenant = maintenant or horloge.maintenant()
-    if profil and user.statut in (StatutUtilisateur.syndic, StatutUtilisateur.mandataire):
+    if refus_de_profil(user, profil=profil):
         return MOTIF_PROFIL
     ban = ban_en_cours(user, maintenant)
     if ban == "definitif":

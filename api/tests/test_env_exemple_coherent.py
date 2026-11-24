@@ -37,7 +37,10 @@ compare.
    l'étaient quatre fois dans trois scripts (#1077) ;
 7. ce module porte son `--selftest`, et la CI le lance : sans lui, le point 6
    serait creux — on peut appeler la bonne fonction et qu'elle écrive n'importe
-   quoi.
+   quoi ;
+8. toute clé qu'un script lit dans `.env` (`lire_env`) figure au gabarit, ou se
+   déclare dans `HORS_GABARIT` — `COPROFIRST_SAUVEGARDES`, obligatoire à la mise à
+   jour d'une réplique, n'y était pas (#2960).
 
 ⚠️ Le point 3 porte une liste d'exceptions **déclarée** : trois champs de
 `Settings` n'ont volontairement pas leur place dans le gabarit. Le test échoue
@@ -135,6 +138,21 @@ def _cles_du_gabarit() -> list[str]:
     ]
 
 
+def _lues_par_les_scripts() -> set[str]:
+    """Les clés que les scripts lisent dans `.env` par `lire_env` (#2960).
+
+    `deploiement/standard/mise-a-jour.sh` lisait `COPROFIRST_SAUVEGARDES` —
+    obligatoire — et deux autres clés absentes du gabarit : le test ne confrontait
+    le gabarit qu'à `Settings`, à compose et aux `os.getenv`.
+    """
+    motif = re.compile(r"\blire_env\s+([A-Z][A-Z0-9_]*)")
+    return {
+        cle
+        for script in scripts_shell_versionnes()
+        for cle in motif.findall(script.read_text(encoding="utf-8", errors="replace"))
+    }
+
+
 def _champs_de_settings() -> set[str]:
     """Les champs déclarés par `Settings` — l'indentation de 4 les distingue."""
     return {m.group(1) for m in re.finditer(r"(?m)^\s{4}([a-z][a-z0-9_]*)\s*:", CONFIG_TXT)}
@@ -177,14 +195,12 @@ def test_aucune_variable_du_gabarit_n_est_morte():
     #  première, et ce motif ne voyait que la seconde (#1050).
     motif_getenv = r"(?:getenv|environ\.get)\(\s*[\"']([A-Z0-9_]+)"
     lues_par_getenv = set(re.findall(motif_getenv, _sources_python()))
-    mortes = [
-        c
-        for c in _cles_du_gabarit()
-        if c not in champs and c not in lues_par_compose and c not in lues_par_getenv
-    ]
+    lues = champs | lues_par_compose | lues_par_getenv | _lues_par_les_scripts()
+    mortes = [c for c in _cles_du_gabarit() if c not in lues]
     assert not mortes, (
         f".env.example déclare {mortes} que personne ne lit — ni `Settings` "
-        f"(api/app/config.py), ni docker-compose.yml, ni un `os.getenv`. Soit le "
+        f"(api/app/config.py), ni docker-compose.yml, ni un `os.getenv`, ni un "
+        f"`lire_env` de script. Soit le "
         f"code a perdu la variable, soit le gabarit promet ce qui n'existe pas"
     )
 
@@ -201,6 +217,24 @@ def test_tout_champ_de_settings_est_dans_le_gabarit_ou_declare_hors():
     assert not absents, (
         f"`Settings` déclare {absents}, que .env.example ne montre pas : ajoutez-les "
         f"au gabarit, ou inscrivez-les dans HORS_GABARIT avec la raison qui les en exclut"
+    )
+
+
+def test_toute_cle_lue_par_un_script_est_dans_le_gabarit_ou_declaree_hors():
+    """Une clé que la mise à jour lit dans `.env` est visible de l'exploitant (#2960).
+
+    Même règle que pour `Settings` : au gabarit, ou dans `HORS_GABARIT` avec sa raison.
+    """
+    lues = _lues_par_les_scripts()
+    assert {"COPROFIRST_SAUVEGARDES", "MAINTENANCE_KEY"} <= lues, (
+        f"relevé des `lire_env` incomplet ({sorted(lues)}) : contrôle impossible"
+    )
+    cles = set(_cles_du_gabarit())
+    absentes = sorted(c for c in lues if c not in cles and c.lower() not in HORS_GABARIT)
+    assert not absentes, (
+        f"{absentes} lue(s) dans .env par un script, absente(s) de .env.example : "
+        f"l'exploitant ne les voit pas. Les ajouter au gabarit, commentées, ou les "
+        f"inscrire dans HORS_GABARIT avec la raison qui les en exclut"
     )
 
 
@@ -373,4 +407,79 @@ def test_aucun_script_ne_regenere_env_ni_caddyfile():
     assert not restants, (
         f"AJUSTEMENTS_DECLARES retient {sorted(restants)}, qu'aucun script n'écrit "
         f"plus : une exception qui ne sert plus finit par couvrir autre chose"
+    )
+
+
+# ── L'installation locale nomme ce sans quoi rien ne démarre (#2923) ─────────────
+#
+#  Le « Démarrage rapide » du README ne nommait que `SECRET_KEY`, `WHATSAPP_API_KEY`
+#  et `ORIGIN` : qui le suivait lançait `docker compose up` sans mot de passe de
+#  base — l'image PostgreSQL refuse de s'initialiser — ni mot de passe de
+#  réplication — `initdb/10-replication.sh` arrête l'initialisation. Et il
+#  n'installait que Chromium, quand `npm run e2e` joue aussi WebKit (#2640).
+#  `CONTRIBUTING.md` en portait une seconde écriture, plus courte encore : il
+#  renvoie désormais au README, seule écriture de l'installation locale.
+
+README = RACINE / "README.md"
+
+#: Ce que le compose de ce dépôt exige sans `:?` ni champ de `Settings` pour le
+#: dire, et le fichier qui le refuse. Une raison qui cesse d'être écrite dans son
+#: fichier fait échouer le test : l'entrée se corrige ou se retire alors.
+EXIGEES_PAR_UN_SCRIPT = {
+    "SECRET_KEY": ("api/app/config.py", "def secret_key_must_be_secure"),
+    "POSTGRES_PASSWORD": ("docker-compose.yml", "POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-}"),
+    "PG_REPLICATION_PASSWORD": (
+        "infra/postgresql/initdb/10-replication.sh",
+        "PG_REPLICATION_PASSWORD absent",
+    ),
+}
+
+
+def _bloc_installation_du_readme() -> str:
+    """Le texte de « ### Installation », jusqu'au titre suivant."""
+    texte = README.read_text(encoding="utf-8-sig")
+    debut = texte.index("### Installation")
+    suite = re.search(r"(?m)^#{2,3} ", texte[debut + 3 :])
+    return texte[debut : debut + 3 + suite.start()] if suite else texte[debut:]
+
+
+def test_l_installation_du_readme_nomme_ce_sans_quoi_rien_ne_demarre():
+    obligatoires_compose = set(re.findall(r"\$\{([A-Z0-9_]+):\?", COMPOSE_TXT))
+    #  Un champ de `Settings` sans valeur par défaut : `database_url: str`.
+    sans_defaut = {
+        m.group(1).upper()
+        for m in re.finditer(r"(?m)^\s{4}([a-z][a-z0-9_]*)\s*:\s*[^=\n]+$", CONFIG_TXT)
+    }
+    for nom, (fichier, preuve) in EXIGEES_PAR_UN_SCRIPT.items():
+        assert preuve in (RACINE / fichier).read_text(encoding="utf-8"), (
+            f"{nom} : « {preuve} » n'est plus dans {fichier} — l'exigence a changé, "
+            "corriger ou retirer l'entrée d'EXIGEES_PAR_UN_SCRIPT"
+        )
+    exigees = obligatoires_compose | sans_defaut | set(EXIGEES_PAR_UN_SCRIPT)
+    #  Cas zéro : WHATSAPP_API_KEY (compose) et DATABASE_URL (Settings) sont lues.
+    assert {"WHATSAPP_API_KEY", "DATABASE_URL"} <= exigees, sorted(exigees)
+    bloc = _bloc_installation_du_readme()
+    absentes = sorted(n for n in exigees if n not in bloc)
+    assert not absentes, (
+        f"Le « Démarrage rapide » du README ne nomme pas {absentes} : qui le suit "
+        "lance une stack qui ne démarre pas. Les nommer dans « ### Installation »."
+    )
+
+
+def test_le_readme_installe_les_navigateurs_que_la_ci_joue():
+    ci = (RACINE / ".github" / "workflows" / "ci.yml").read_text(encoding="utf-8")
+    defaut = re.search(r"npx playwright install \$\{E2E_NAVIGATEURS:-([a-z ]+)\}", ci)
+    assert defaut, "la CI n'installe plus ses navigateurs par `E2E_NAVIGATEURS` : motif à revoir"
+    navigateurs = defaut.group(1).split()
+    assert "webkit" in navigateurs  # cas zéro : `npm run e2e` joue WebKit (#2640)
+    lignes = [
+        ligne
+        for ligne in README.read_text(encoding="utf-8-sig").splitlines()
+        if "playwright install" in ligne
+    ]
+    assert lignes, "le README ne dit plus comment installer les navigateurs de `npm run e2e`"
+    manquants = [n for n in navigateurs if not any(n in ligne for ligne in lignes)]
+    assert not manquants, (
+        f"le README n'installe pas {manquants}, que `npm run e2e` joue (la CI installe "
+        f"« {' '.join(navigateurs)} ») : le premier essai local échoue"
     )
