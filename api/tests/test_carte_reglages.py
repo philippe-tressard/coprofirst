@@ -7,6 +7,8 @@
 - **l'accès déclaré est celui de la route** — lu sur la route MONTÉE (ses
   dépendances d'autorisation), pas sur sa déclaration : le réglage de la sauvegarde
   se montrait à l'opérateur seul et la route acceptait tout administrateur ;
+- **l'écran déclaré est un écran que le front range** — tous, pas seulement ceux
+  d'Admin (#2922) ;
 - **rien n'échappe à la carte** — chaque onglet de la liste blanche a sa notion,
   chaque variable de `Settings` son thème, et un écart déclaré qui cesse d'être
   vrai fait échouer (il se retire alors du registre).
@@ -28,6 +30,7 @@ from app.utils import reglages
 from app.utils.llm_usages import CHAMPS_USAGE
 from app.utils.reglages_carte import (
     NOTIONS,
+    SANS_ECRAN,
     SECRETS_ENV,
     THEMES_ENV,
     TYPES,
@@ -36,6 +39,7 @@ from app.utils.reglages_carte import (
     ecarts_d_acces,
 )
 from app.utils.reglages_carte_rendu import rendre_document
+from tests.aides_routes_front import ecrans_ranges
 from tests.aides_sources import operations_montees
 
 _DOCUMENT = pathlib.Path(__file__).resolve().parents[2] / "docs" / "carte-reglages.md"
@@ -151,45 +155,188 @@ def test_les_routes_citees_par_un_refus_existent():
 
 # ── L'écran déclaré est celui que le front range ───────────────────────────────
 
-_PAGES_ROLES = (
-    pathlib.Path(__file__).resolve().parents[2] / "front" / "src" / "lib" / "pages-roles.ts"
-)
-_ONGLET_RANGE = re.compile(r"label: '([^']+)',\s*groupe: '([^']+)'")
+#  Une précision finale entre parenthèses (« (consignes aux arrivants) ») dit où regarder
+#  dans l'écran ; elle ne se retire que si l'écran exact n'existe pas, car un vrai
+#  libellé en porte (« 🏷️ Mes badges d'accès (Vigik) »).
+_PRECISION = re.compile(r" \([^()]*\)$")
 
 
-def _onglets_ranges() -> set[tuple[str, str]]:
-    """(groupe, onglet) de chaque onglet d'Admin tel que `pages-roles.ts` le range."""
-    source = _PAGES_ROLES.read_text(encoding="utf-8")
-    return {(groupe, label) for label, groupe in _ONGLET_RANGE.findall(source)}
+def ecrans_inconnus(notions, ranges: set[str]) -> list[str]:
+    """PURE. Les écrans déclarés que la table des pages du front ne range pas.
 
-
-def ecrans_d_admin_inconnus(notions, ranges: set[tuple[str, str]]) -> list[str]:
-    """PURE. Les écrans « Admin › groupe › onglet » que le front ne range pas."""
+    TOUS les écrans, et chaque morceau d'un écran multiple (« … ; Ma résidence ›
+    🏢 Fiche ») : la confrontation ne lisait que les chemins « Admin › … », et
+    « Espace CS › Compteurs » — un onglet qui n'a jamais existé — passait (#2922).
+    `SANS_ECRAN` n'est admis que d'une constante du code : ailleurs, il tairait un écran.
+    """
     inconnus = []
     for n in notions:
-        premier = n.ecran.split(" ; ")[0]
-        if not premier.startswith("Admin › "):
+        if n.ecran == SANS_ECRAN:
+            if n.acces is not Acces.PERSONNE:
+                inconnus.append(f"{n.code} : « {SANS_ECRAN} » pour un réglage qu'une route écrit")
             continue
-        morceaux = premier.removeprefix("Admin › ").split(" › ")
-        if len(morceaux) != 2 or (morceaux[0], morceaux[1]) not in ranges:
-            inconnus.append(
-                f"{n.code} : « {premier} » n'est pas un onglet rangé par pages-roles.ts"
-            )
+        for morceau in n.ecran.split(" ; "):
+            if morceau not in ranges and _PRECISION.sub("", morceau) not in ranges:
+                inconnus.append(
+                    f"{n.code} : « {morceau} » n'est pas un écran que pages.ts "
+                    "ou pages-roles.ts range"
+                )
     return inconnus
 
 
-def test_chaque_ecran_d_admin_est_un_onglet_que_le_front_range():
-    ranges = _onglets_ranges()
-    assert len(ranges) >= 18  # cas zéro : le relevé lit bien les onglets d'Admin
-    assert ecrans_d_admin_inconnus(NOTIONS, ranges) == []
+def test_chaque_ecran_declare_est_un_ecran_que_le_front_range():
+    ranges = ecrans_ranges()
+    #  Cas zéro : le relevé lit les onglets d'Admin ET des autres pages, pictogrammes
+    #  décodés (`\u{1F4A7}`) — sans quoi aucun écran hors Admin ne correspondrait.
+    assert sum(e.startswith("Admin › ") for e in ranges) >= 18
+    assert sum(e.startswith("Espace CS › ") for e in ranges) >= 7
+    assert "Prestataires › 💧 Consommations" in ranges
+    inconnus = ecrans_inconnus(NOTIONS, ranges)
+    assert not inconnus, "\n".join(inconnus)
 
 
-def test_le_controle_d_ecran_voit_un_onglet_qui_n_existe_pas():
-    """Témoin : un écran inventé, et un ancien libellé (« Paramétrage site »), sont refusés."""
-    ranges = _onglets_ranges()
+def test_le_controle_d_ecran_voit_un_ecran_qui_n_existe_pas():
+    """Témoins : un onglet inventé, un ancien libellé, un onglet réel sous une autre
+    page, une page à onglets nommée seule, un second morceau faux, un « aucun écran »
+    sur une route — et l'écran des compteurs tel qu'il était déclaré avant #2922."""
+    ranges = ecrans_ranges()
     sauvegarde = next(n for n in NOTIONS if n.code == "sauvegarde")
-    for faux in ("Admin › 🛠 Exploitation › Inventé", "Admin › Paramétrage site"):
-        assert ecrans_d_admin_inconnus((replace(sauvegarde, ecran=faux),), ranges)
+    for faux in (
+        "Admin › 🛠 Exploitation › Inventé",
+        "Admin › Paramétrage site",
+        "Espace CS › Compteurs (configuration des catégories)",
+        "Espace CS › 💧 Consommations",
+        "Ma résidence",
+        "Admin › 🛠 Exploitation › Maintenance ; Espace CS › Inventé",
+        SANS_ECRAN,
+    ):
+        assert ecrans_inconnus((replace(sauvegarde, ecran=faux),), ranges), faux
+
+
+# ── Les textes qui renvoient vers un onglet d'Admin le nomment comme le front (#2927) ──
+#
+#  Le contrôle ci-dessus ne lisait que la carte. Les courriels d'alerte, le gabarit
+#  `.env.example`, les guides d'installation, le manuel et le README écrivaient
+#  « Admin → Sauvegardes », « Admin › Configuration › SMTP », « Paramétrage ›
+#  SMTP »… — des onglets qui n'existent plus sous ce nom, lus au moment d'un
+#  incident. Ce contrôle lit chaque chemin « Admin › … » (ou « Administration »,
+#  « Paramétrage », flèche ou chevron) de ces textes, et exige que son premier
+#  segment soit un GROUPE ou un ONGLET que `pages-roles.ts` range — et, après un
+#  groupe, un onglet de ce groupe. Les segments suivants (une carte, un bouton)
+#  ne se vérifient pas : ce qui est dans un onglet n'est écrit dans aucune table.
+
+_RACINE = pathlib.Path(__file__).resolve().parents[2]
+#: Où se lisent les renvois. Chaque entrée : (dossier ou fichier, suffixes lus).
+_TEXTES_QUI_RENVOIENT = (
+    ("api/app", (".py",)),
+    (".env.example", ()),
+    ("deploiement", (".md", ".sh", ".yml", ".service", ".caddy", ".example")),
+    ("docs", (".md", ".html")),
+    ("README.md", ()),
+)
+_CHEMIN_ADMIN = re.compile(r"\b(?:Admin|Administration|Paramétrage) ?(?:›|→|&rarr;) ?([^\n]*)")
+_SEPARATEUR = re.compile(r" ?(?:›|→|&rarr;) ?")
+#  Ce qui précède le nom dans un segment : balise, accent grave, guillemet,
+#  astérisque, l'icône d'un groupe (« 🏢 Copropriété »).
+_HABILLAGE = re.compile(r"^(?:<[a-z/][^>]*>|&nbsp;|[^\w{<])+")
+
+
+def _sans_emoji(groupe: str) -> str:
+    """« 🏢 Copropriété » → « Copropriété » : un texte nomme le groupe sans son icône."""
+    return groupe.split(" ", 1)[1] if " " in groupe else groupe
+
+
+def chemins_d_admin_inconnus(texte: str, ranges: set[tuple[str, str]]) -> list[str]:
+    """PURE. Les chemins « Admin › … » de ce texte dont le début n'est pas rangé."""
+    groupes: dict[str, set[str]] = {}
+    for groupe, onglet in ranges:
+        groupes.setdefault(_sans_emoji(groupe), set()).add(onglet)
+    onglets = {onglet for _g, onglet in ranges}
+
+    def nomme(segment: str, noms) -> str | None:
+        propre = _HABILLAGE.sub("", segment)
+        return max((n for n in noms if propre.startswith(n)), key=len, default=None)
+
+    inconnus = []
+    for m in _CHEMIN_ADMIN.finditer(texte):
+        segments = _SEPARATEUR.split(m.group(1))
+        premier = _HABILLAGE.sub("", segments[0])
+        #  Rien à lire : le chemin passe à la ligne, ou c'est un gabarit
+        #  (`Admin › {G_SERVICES} › …`, « Admin › <groupe> › <onglet> »).
+        if not premier or premier[0] in "{<":
+            continue
+        groupe = nomme(segments[0], groupes)
+        if groupe is not None:
+            #  Un groupe peut porter le nom d'un de ses onglets (Imports, Services) :
+            #  sans second segment, le chemin est entier.
+            second = _HABILLAGE.sub("", segments[1]) if len(segments) > 1 else ""
+            #  Sans second segment — ou le chemin passe à la ligne —, il s'arrête au groupe.
+            if second and nomme(second, groupes[groupe]) is None:
+                if premier.startswith(tuple(onglets)):
+                    continue  # « Admin › Services › … » : l'onglet, puis un bloc
+                inconnus.append(m.group(0)[:90])
+            continue
+        if nomme(segments[0], onglets) is None:
+            inconnus.append(m.group(0)[:90])
+    return inconnus
+
+
+def _onglets_ranges() -> set[tuple[str, str]]:
+    """(groupe, onglet) de chaque onglet d'Admin, lus par `ecrans_ranges` — une seule
+    lecture de la table des pages, jamais une seconde (#2927)."""
+    return {
+        (morceaux[1], morceaux[2])
+        for e in ecrans_ranges()
+        if e.startswith("Admin › ") and len(morceaux := e.split(" › ")) == 3
+    }
+
+
+def _textes_qui_renvoient():
+    for chemin, suffixes in _TEXTES_QUI_RENVOIENT:
+        racine = _RACINE / chemin
+        fichiers = [racine] if racine.is_file() else sorted(racine.rglob("*"))
+        for f in fichiers:
+            if f.is_file() and (not suffixes or f.suffix in suffixes):
+                yield f
+
+
+def test_chaque_chemin_d_admin_ecrit_nomme_un_onglet_que_le_front_range():
+    ranges = _onglets_ranges()
+    lus, fautes = 0, []
+    for f in _textes_qui_renvoient():
+        texte = f.read_text(encoding="utf-8")
+        lus += len(_CHEMIN_ADMIN.findall(texte))
+        fautes += [
+            f"{f.relative_to(_RACINE)} : {c}" for c in chemins_d_admin_inconnus(texte, ranges)
+        ]
+    assert lus >= 50  # cas zéro : le relevé lit bien les renvois (une centaine)
+    assert not fautes, (
+        "Ces textes renvoient vers un onglet d'Admin que `pages-roles.ts` ne range pas "
+        "sous ce nom — écrire « Admin › Groupe › Onglet » tel que l'écran le montre :\n  "
+        + "\n  ".join(fautes)
+    )
+
+
+def test_le_controle_des_chemins_voit_un_onglet_disparu():
+    """Témoin : les formes relevées par #2927 sont refusées, les formes justes passent."""
+    ranges = _onglets_ranges()
+    for faux in (
+        "Vérifier Admin → Sauvegardes.",
+        "seul l'écran Admin › Configuration › SMTP décide",
+        "se règle dans <em>Paramétrage › SMTP</em>",
+        "dans *Administration › Copropriété › SMTP*",
+        "Admin › Copropriété › Courriel",  # un onglet, mais d'un autre groupe
+    ):
+        assert chemins_d_admin_inconnus(faux, ranges), faux
+    for juste in (
+        "<em>Admin › Services › Courriel</em>, champ Signataires",
+        "Admin › Assistant IA",
+        "*Administration › Exploitation › Installation*",
+        "Admin › Imports › État descriptif",
+        "Admin › Maintenance › Export vérifié",
+        "dans *Administration › Exploitation ›\n   Installation*, carte",
+    ):
+        assert chemins_d_admin_inconnus(juste, ranges) == [], juste
 
 
 # ── Rien n'échappe à la carte ───────────────────────────────────────────────────

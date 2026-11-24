@@ -25,8 +25,8 @@ URL = "/manuel/pdf"
 @pytest.fixture
 def anonyme():
     with base_http() as moteur:
-        #  Un nom ASCII : un nom accentué part aujourd'hui en latin-1 dans l'en-tête
-        #  (#2985) — le cas « Ma Résidence » s'ajoutera ici avec son correctif.
+        #  Un nom ASCII : l'en-tête garde sa forme d'avant. Le nom accentué par
+        #  défaut (« Ma Résidence ») a son test plus bas (#2985).
         with Session(moteur) as s:
             s.add(ConfigSite(cle="site_nom", valeur="Les Tilleuls"))
             s.commit()
@@ -52,6 +52,23 @@ def test_un_anonyme_recoit_le_pdf(anonyme, monkeypatch):
     jour = f"{horloge.aujourd_hui():%Y-%m-%d}"
     assert disposition == f'inline; filename="manuel-utilisateur-les-tilleuls-{jour}.pdf"'
     assert recu["site_nom"] == "Les Tilleuls", "l'identité du manuel vient de la résidence"
+
+
+def test_le_nom_accentue_par_defaut_part_en_ascii_et_en_utf8(monkeypatch):
+    """Sans `site_nom`, la résidence s'appelle « Ma Résidence » : l'en-tête partait
+    en latin-1 et `TestClient` levait `UnicodeDecodeError` en le lisant (#2985)."""
+    with base_http() as moteur:
+        http, _ = client_http(moteur, None)
+        monkeypatch.setattr(route_manuel, "generer_manuel_pdf", lambda **_: b"%PDF-1.7 essai")
+
+        r = http.get(URL)
+
+    assert r.status_code == 200, r.text
+    jour = f"{horloge.aujourd_hui():%Y-%m-%d}"
+    assert r.headers["content-disposition"] == (
+        f'inline; filename="manuel-utilisateur-ma-residence-{jour}.pdf"; '
+        f"filename*=UTF-8''manuel-utilisateur-ma-r%C3%A9sidence-{jour}.pdf"
+    )
 
 
 def test_une_panne_du_rendu_repond_502(anonyme, monkeypatch):

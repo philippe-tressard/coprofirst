@@ -2,10 +2,15 @@
 # Refuse un push sur `dev` ou `main` sans pré-check MEP passé pour CE commit.
 #
 # POURQUOI. Sur ce projet, `auto-deploy.sh` déploie `origin/main` toutes les cinq
-# minutes : **fusionner la PR est la mise en production**. Le pré-check doit donc
-# être passé AVANT que la PR soit remise, c'est-à-dire avant le push sur `dev` —
-# c'est exactement l'ordre écrit dans `.claude/skills/mep-precheck` et dans la
-# banque de mémoire du projet.
+# minutes : **fusionner vers `main` est la mise en production**.
+#
+# CE QU'IL GARDE AUJOURD'HUI (#2908). L'ordre d'un lot (`CLAUDE.md`, « Ordre d'un
+# lot ») ne pousse plus sur `dev` ni sur `main` à la main : le lot part sur SA
+# branche, sa PR passe la CI, puis le pré-check, puis `conduire-mep.sh` — qui pousse
+# la version sur `dev` sous `SKIP_PRECHECK=1`. Ce hook ne juge donc plus que le push
+# À LA MAIN sur `dev` ou `main`, celui qui contournerait ce chemin : il le refuse
+# sans la trace d'un pré-check passé sur le commit qui part. La branche d'un lot
+# passe sans trace — son pré-check vient après sa CI.
 #
 # Cet ordre était juste, et il a quand même été enfreint sur trois lots d'affilée
 # les 07 et 08/08/2026, au motif que « s'arrêter au push dev » dispenserait du
@@ -13,7 +18,7 @@
 # socle vaut pour elle-même : une consigne ne se maintient pas seule, il lui faut
 # un contrôle qui échoue.
 #
-# Le hook ne rejoue pas les quinze points — il exige leur TRACE, produite par
+# Le hook ne rejoue pas les points du pré-check — il exige leur TRACE, produite par
 # `precheck-mep.sh`, et liée au commit exact qui part. Un pré-check passé sur un
 # autre commit ne vaut rien : c'est la version poussée qui sera déployée.
 #
@@ -44,7 +49,7 @@ refuser() {
     echo "✗ pre-push refusé — $1" >&2
     echo "" >&2
     echo "  Sur ce dépôt, un merge vers main déclenche un déploiement dans les 5" >&2
-    echo "  minutes. Le pré-check se passe AVANT le push, pas après :" >&2
+    echo "  minutes. Le pré-check se passe AVANT de pousser sur dev ou main :" >&2
     echo "" >&2
     echo "      bash scripts/poste/precheck-mep.sh" >&2
     echo "" >&2

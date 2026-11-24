@@ -48,14 +48,14 @@
 		reliability: {
 			script: 'check-reliability',
 			intro:
-				'toutes les 15 minutes sur chaque Raspberry Pi : site public, split-brain, tunnel, parité du code, disque, rotation des journaux, droits sudo, en-têtes de sécurité, mises à jour système…',
+				'toutes les 15 minutes sur chaque serveur de la référence : site public, split-brain, tunnel, parité du code, disque, rotation des journaux, droits sudo, en-têtes de sécurité, mises à jour système…',
 			vide: 'Les nœuds rendent compte au premier passage de check-reliability (15 min au plus) après leur mise à jour.',
 			passage: 'dernier contrôle',
 		},
 		audit_securite: {
 			script: 'audit-securite',
 			intro:
-				'chaque nuit sur chaque Raspberry Pi, en root : arbre déployé identique au dépôt, comptes et groupes qui valent root, points de persistance (cron, systemd, clés SSH, sudo, apt) comparés à une référence acceptée, conteneurs sans privilège et images de la CI, durcissement réellement servi (sshd, ufw, fail2ban), sondes de scanners et forçage de comptes dans les journaux de la nuit.',
+				'chaque nuit sur chaque serveur de la référence, en root : arbre déployé identique au dépôt, comptes et groupes qui valent root, points de persistance (cron, systemd, clés SSH, sudo, apt) comparés à une référence acceptée, conteneurs sans privilège et images de la CI, durcissement réellement servi (sshd, ufw, fail2ban), sondes de scanners et forçage de comptes dans les journaux de la nuit.',
 			vide: 'Chaque nœud rend compte à son premier audit, lancé par check-reliability après 4 h.',
 			passage: 'dernier audit',
 		},

@@ -10,72 +10,54 @@ fusionnée : `main` n'en portait aucune, sur aucun des trois points d'entrée.
 
 ## Ce que ce test mesure
 
-1. les fonctions de `app/` qui appellent `demander` — relevées dans le code,
-   jamais recopiées : un nouvel usage de l'IA y entre sans qu'on y pense ;
-2. toute ROUTE qui appelle l'une d'elles, ou `demander` directement, porte
-   `@limiter.limit(LIMITE_APPEL_FACTURE)`, sous son décorateur de route, et
-   reçoit une `request` (sans elle, slowapi lève au premier appel).
+1. toute ROUTE qui atteint `demander` — relevée dans le code par
+   `aides_sources.routes_qui_atteignent`, aides résolues par leurs imports, cinq niveaux ;
+2. elle porte `@limiter.limit(LIMITE_APPEL_FACTURE)` — ou la limite déclarée pour elle
+   dans `LIMITES_ADMISES`, avec sa raison —, sous son décorateur de route, et reçoit une
+   `request` (sans elle, slowapi lève au premier appel).
 
-⚠️ Deux niveaux d'appel, pas davantage : une route qui atteindrait `demander`
-par trois fonctions intermédiaires lui échapperait. Le cas zéro l'empêche de
-mesurer à vide — il exige de trouver au moins une route facturée.
+## La portée (#3005, 24/11/2026)
+
+Le relevé s'écrivait ici, à DEUX niveaux d'appel : le classement d'un courriel reçu, qui
+atteint le modèle par cinq (classement, versement au fil, mise en forme, porte de lecture
+du courriel, `demander`), n'avait aucune limite. Le relevé commun le voit.
 """
 
 from __future__ import annotations
 
 import ast
-import pathlib
 
-from tests.aides_sources import modules_app
+from tests.aides_sources import module_app, routes_qui_atteignent
 
-_APP = pathlib.Path(__file__).resolve().parents[1] / "app"
 _CIBLE = "demander"
 _LIMITE = "LIMITE_APPEL_FACTURE"
 
-
-def _arbres() -> dict[pathlib.Path, ast.Module]:
-    return {m.chemin: m.arbre for m in modules_app()}
-
-
-def _appels(fonction: ast.AST) -> set[str]:
-    noms = set()
-    for n in ast.walk(fonction):
-        if isinstance(n, ast.Call):
-            if isinstance(n.func, ast.Name):
-                noms.add(n.func.id)
-            elif isinstance(n.func, ast.Attribute):
-                noms.add(n.func.attr)
-    return noms
-
-
-def _fonctions(arbre: ast.Module):
-    return [n for n in ast.walk(arbre) if isinstance(n, (ast.FunctionDef, ast.AsyncFunctionDef))]
-
-
-def _est_route(f) -> bool:
-    return any(
-        isinstance(d, ast.Call)
-        and isinstance(d.func, ast.Attribute)
-        and d.func.attr in {"get", "post", "put", "patch", "delete"}
-        for d in f.decorator_list
-    )
+#: Les routes facturées qui portent une AUTRE limite, et pourquoi. Vérifié dans les deux
+#: sens : une entrée qui n'est plus une route facturée échoue.
+LIMITES_ADMISES = {
+    ("routers/courriels_affaires.py", "creer"): (
+        "LIMITE_CLASSEMENT_COURRIEL",
+        "le classement à la main d'un courriel reçu : une décision du conseil par message, "
+        "qui n'appelle le modèle que si l'usage est activé — la limite des appels facturés "
+        "freinerait un tri de plusieurs messages d'affilée (aucune régression, 24/11/2026)",
+    ),
+    ("routers/courriels_affaires.py", "rattacher"): (
+        "LIMITE_CLASSEMENT_COURRIEL",
+        "idem : verser un message reçu au fil d'une affaire ouverte",
+    ),
+}
 
 
 def routes_facturees() -> dict[str, ast.AST]:
-    arbres = _arbres()
-    facturantes = {_CIBLE} | {
-        f.name
-        for chemin, a in arbres.items()
-        if chemin.parent.name != "routers"
-        for f in _fonctions(a)
-        if f.name != _CIBLE and _CIBLE in _appels(f)
-    }
-    return {
-        f"{chemin.relative_to(_APP)}::{f.name}": f
-        for chemin, a in arbres.items()
-        for f in _fonctions(a)
-        if _est_route(f) and _appels(f) & facturantes
-    }
+    trouvees = {}
+    for rel, nom in routes_qui_atteignent({_CIBLE}):
+        fonction = next(
+            n
+            for n in module_app(rel).arbre.body
+            if isinstance(n, (ast.FunctionDef, ast.AsyncFunctionDef)) and n.name == nom
+        )
+        trouvees[f"{rel}::{nom}"] = fonction
+    return trouvees
 
 
 def test_toute_route_facturee_est_bornee():
@@ -83,10 +65,12 @@ def test_toute_route_facturee_est_bornee():
     assert routes, "aucune route n'appelle le fournisseur d'IA — le contrôle ne mesure rien"
     fautes = []
     for nom, f in routes.items():
+        rel, fonction = nom.split("::")
+        attendue = LIMITES_ADMISES.get((rel, fonction), (_LIMITE, ""))[0]
         decores = [ast.unparse(d) for d in f.decorator_list]
         limites = [i for i, d in enumerate(decores) if "limiter.limit" in d]
-        if not limites or _LIMITE not in decores[limites[0]]:
-            fautes.append(f"{nom} : pas de @limiter.limit({_LIMITE})")
+        if not limites or attendue not in decores[limites[0]]:
+            fautes.append(f"{nom} : pas de @limiter.limit({attendue})")
             continue
         if limites[0] < min(i for i, d in enumerate(decores) if "router." in d):
             fautes.append(f"{nom} : @limiter.limit posé AU-DESSUS de la route (sans effet)")
@@ -95,7 +79,14 @@ def test_toute_route_facturee_est_bornee():
     assert not fautes, "Appel facturé non borné :\n  " + "\n  ".join(fautes)
 
 
-def test_les_trois_routes_connues_sont_vues():
-    """Le relevé retrouve les trois points d'entrée facturés du 25/09/2026."""
+def test_les_limites_admises_servent_encore():
+    facturees = {tuple(n.split("::")) for n in routes_facturees()}
+    perimees = sorted(set(LIMITES_ADMISES) - facturees)
+    assert not perimees, f"limites admises pour des routes qui ne facturent plus : {perimees}"
+
+
+def test_les_routes_connues_sont_vues():
+    """Le relevé retrouve les trois points d'entrée facturés du 25/09/2026, et le
+    classement d'un courriel (#3005) — cinq niveaux d'appel sous la route."""
     noms = {n.split("::")[1] for n in routes_facturees()}
-    assert {"proposer_synthese", "proposer_description", "llm_test"} <= noms, noms
+    assert {"proposer_synthese", "proposer_description", "llm_test", "creer", "rattacher"} <= noms

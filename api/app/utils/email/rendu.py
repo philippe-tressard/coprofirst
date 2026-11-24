@@ -54,7 +54,7 @@ def _prefixe_copro(reference: str) -> str:
 
     La composer ici plutôt que dans les modèles a une seconde conséquence, plus
     importante que la forme : un modèle vit en base et se réécrit depuis
-    Admin → Emails. Le `{% if reference_copro %}` qui y était recopié pouvait
+    Admin › Présentation › Modèles e-mail. Le `{% if reference_copro %}` qui y était recopié pouvait
     être retiré d'un formulaire, et la règle avec lui.
     """
     ref = (reference or "").strip()
@@ -118,7 +118,7 @@ def _sujet_sur_une_ligne(sujet: str) -> str:
 
     Écrit ici et non dans les modèles pour la même raison que
     `_bandeau_pieces_jointes` : ceux-ci vivent en base et sont réécrivables
-    depuis Admin → Emails. Une règle qu'un formulaire peut retirer n'est pas une
+    depuis Admin › Présentation › Modèles e-mail. Une règle qu'un formulaire peut retirer n'est pas une
     règle. À cet endroit, elle couvre les vingt-quatre modèles et tous ceux à
     venir.
     """

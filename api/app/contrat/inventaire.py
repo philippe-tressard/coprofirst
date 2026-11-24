@@ -21,8 +21,9 @@ réponse libre) : libre.
 Exiger une entrée neuve d'une opération existante : refusé — elle est facultative,
 ou c'est une opération neuve.
 
-Ce que l'inventaire ne voit pas : les VALEURS d'une énumération (une valeur neuve
-peut faire échouer un décodage strict côté client), et les corps non JSON.
+Ce que l'inventaire ne voit pas : `LIMITES`, ci-dessous — chacune éprouvée aveugle par
+une faute injectée (`tests/test_contrat_limites.py`), qui échoue le jour où le juge
+la verrait : la limite se retire alors d'ici (#2970).
 """
 
 from __future__ import annotations
@@ -32,6 +33,20 @@ import json
 from dataclasses import dataclass, field
 
 _DEPRECIE = " déprécié"
+
+#: Les ruptures que `comparer` ne voit PAS (#2970) : qui retouche l'une de ces formes
+#: chez une opération qu'une app publiée emploie le vérifie à la main, et le dit.
+LIMITES: dict[str, str] = {
+    "entree-retypee": "le TYPE d'une entrée (paramètre ou champ du corps) : seul son nom est inventorié",
+    "entree-facultative-retiree": "une entrée FACULTATIVE retirée : elle ne casse que là où le modèle "
+    'refuse les champs en trop (`extra="forbid"`)',
+    "enumeration-requete-reduite": "les VALEURS d'une énumération en entrée : une valeur retirée "
+    "refuse ce qu'une app envoie encore",
+    "enumeration-reponse-elargie": "les VALEURS d'une énumération en réponse : une valeur neuve peut "
+    "faire échouer un décodage strict côté client",
+    "corps-type-de-contenu": "le TYPE DE CONTENU du corps (JSON, multipart, formulaire) : seuls ses "
+    "champs requis sont inventoriés",
+}
 _CORPS = ("application/json", "multipart/form-data", "application/x-www-form-urlencoded")
 
 

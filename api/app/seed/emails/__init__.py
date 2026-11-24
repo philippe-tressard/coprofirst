@@ -18,7 +18,7 @@ seconde n'est visible que d'ici :
 1. Le préambule était recopié dans **sept** objets, et deux formes coexistaient
    déjà — « 🏢 00213 — » d'un côté, « [🏢 00213] – » pour `relance_syndic`. Deux
    copies d'une même notion divergent ; celles-ci l'avaient fait.
-2. Un modèle vit **en base** et se réécrit depuis Admin → Emails. Le
+2. Un modèle vit **en base** et se réécrit depuis Admin › Présentation › Modèles e-mail. Le
    `{% if reference_copro %}` qui portait la règle pouvait être retiré d'un
    formulaire, et la règle avec lui. Dans le code, il ne peut pas l'être.
 
@@ -149,7 +149,7 @@ INTENTIONS_PAR_MODELE: dict[str, str] = {
 EXPEDITEUR_REPONSE = "reponse"  # contact@ — on peut nous répondre
 EXPEDITEUR_MUET = "muet"  # noreply@ — il n'y a rien à répondre
 #  Un courriel d'AFFAIRE (#1314, 25/09/2026) : il part de l'adresse des affaires
-#  (`affaire@`, réglée dans Paramétrage → SMTP) et la réponse y revient. Elle
+#  (`affaire@`, réglée dans Admin › Services › Courriel) et la réponse y revient. Elle
 #  remplace l'adresse à jeton `tickets+<jeton>@`, qu'OVH n'achemine pas ; la
 #  réponse se rattache par « Affaire #TK-… » dans le sujet.
 EXPEDITEUR_AFFAIRE = "affaire"
@@ -199,7 +199,7 @@ def expediteur_du_modele(
 
     Et **rien ne les resynchronise** : `_poser_les_absents` ne touche pas une
     ligne existante, donc changer une intention dans le code n'atteint jamais une
-    installation en service. Pire, l'écran Admin → Emails permet de la modifier —
+    installation en service. Pire, l'écran Admin › Présentation › Modèles e-mail permet de la modifier —
     c'est une capacité voulue — et cette modification ne changeait que le
     bandeau. Un message pouvait donc partir de `contact@` en affichant
     « Information : rien n'est attendu de vous », ou l'inverse.
