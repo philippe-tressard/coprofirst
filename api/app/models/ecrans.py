@@ -3,7 +3,7 @@
 Une Apple TV branchée sur un écran du hall fait défiler les affiches de la résidence.
 Elle ne fait que LIRE : aucune personne connectée derrière l'écran, aucun compte.
 
-- `Ecran` : l'objet que voit le conseil (Espace CS › Écrans) — un nom, un périmètre,
+- `Ecran` : l'objet que voit le conseil (Espace CS › Écrans du hall) — un nom, un périmètre,
   sa dernière lecture. Il porte l'EMPREINTE de son jeton (#1389), jamais le brut, qui ne
   vit que sur l'appareil. Retirer l'écran, c'est supprimer la ligne : le jeton tombe.
 - `AppairageEcran` : une demande d'appairage en cours (RFC 8628, *device authorization

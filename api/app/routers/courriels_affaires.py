@@ -1,6 +1,6 @@
 """Les courriels reçus à l'adresse des affaires — ce que la relève en a fait.
 
-Espace CS › Courriels. Une ligne par message traité (`utils/courriel_journal`),
+Espace CS › Courriels affaires. Une ligne par message traité (`utils/courriel_journal`),
 les plus récents d'abord, dans la limite du paramètre du site.
 
 ## Qui lit quoi (05/10/2026)
