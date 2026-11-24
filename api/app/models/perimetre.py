@@ -96,7 +96,7 @@ class Perimetre(SQLModel, table=True):
     #: — qui voit, qui est notifié — la donnée sera là, et la décision sera
     #: prise pour elle-même plutôt que découverte dans un effet de bord.
     #:
-    #: Administré depuis Admin → Patrimoine, comme `selectionnable`.
+    #: Administré depuis Admin › Copropriété › Périmètres, comme `selectionnable`.
     privatif: bool = Field(default=False)
 
     #: Ce nœud appartient-il à **quelqu'un d'autre** que la copropriété ?
@@ -118,7 +118,7 @@ class Perimetre(SQLModel, table=True):
     #: copropriété » (ce qui le COUVRE) sont deux questions. L'AFUL répond oui à
     #: la première et non à la seconde.
     #:
-    #: ⚠️ Administré depuis Admin → Patrimoine : une autre copropriété n'a pas
+    #: ⚠️ Administré depuis Admin › Copropriété › Périmètres : une autre copropriété n'a pas
     #: d'AFUL, et le code ne doit connaître aucun nœud par son nom.
     hors_copropriete: bool = Field(default=False)
 

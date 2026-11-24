@@ -191,7 +191,6 @@ MOTIF_DES_DOCUMENTS = "*.md"
 #: change fait échouer : la table ne fait que baisser.
 DOCUMENTS_SANS_LISTE = {
     "README.md": (1, "poste de développement : la pile locale, aucune base de production"),
-    "CONTRIBUTING.md": (1, "poste de développement : la pile locale, aucune base de production"),
 }
 
 
