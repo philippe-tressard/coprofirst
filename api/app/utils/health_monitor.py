@@ -259,7 +259,7 @@ def _check_export_hors_site(session: Session) -> list[str]:
         return [
             "Aucune copie hors site n'a jamais été enregistrée. Les sauvegardes "
             "n'existent que sur les deux RPi : un sinistre au domicile les perd "
-            "toutes. Lancer export-hors-site.cmd depuis le poste."
+            "toutes. Lancer export-hors-site depuis le poste (.command sur le Mac, .cmd sous Windows)."
         ]
 
     issues = []
@@ -273,7 +273,7 @@ def _check_export_hors_site(session: Session) -> list[str]:
         j = int(age_execution.total_seconds() / 86400)
         issues.append(
             f"Aucun export hors site depuis {j} jours (seuil : {jours} jours). "
-            f"Lancer export-hors-site.cmd depuis le poste."
+            f"Lancer export-hors-site depuis le poste (.command sur le Mac, .cmd sous Windows)."
         )
 
     #  Fraîcheur de l'archive RÉELLEMENT copiée — cf. docstring, question (2).

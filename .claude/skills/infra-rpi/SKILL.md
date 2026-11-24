@@ -192,7 +192,7 @@ cloudflared` tel quel dans une réponse, un ticket ou un journal : masquer d'abo
   aucun script). Le rôle alternant chaque
   nuit, chaque nœud n'accumule qu'un jour sur deux, et `_rotate_backups()` ne voit que
   ses fichiers locaux → 7 versions ≈ 14 jours **à trous**, aucun nœud n'ayant celle de
-  la veille. Copie hors site : `scripts/poste/export-hors-site.cmd` (voir ci-dessous)
+  la veille. Copie hors site : `scripts/poste/export-hors-site.sh` (voir ci-dessous)
 - **Le nom d'une archive dit l'heure de PARIS** (#1611, 05/10/2026) :
   `<préfixe>AAAAMMJJ_HHMMSS_paris.tar.gz`. Avant, l'horloge UTC y était écrite
   sans le dire (`…_020000` pour une sauvegarde prise à 04:00) ; les anciennes archives
@@ -238,9 +238,9 @@ nœud — jamais d'un `docker volume rm`, d'un rançongiciel ou d'un sinistre, q
 emportent base + uploads + toutes les sauvegardes d'un coup
 (`standards/06-donnees-et-integrite.md` §6).
 
-- **Lancement : MANUEL depuis le poste** — double-clic sur `scripts/poste/export-hors-site.cmd`, ou
-  `bash /c/Dev/5hostachy/scripts/poste/export-hors-site.sh`. Destination par défaut : `C:\Backup`
-  (`EXPORT_DEST`), **2 versions** (`EXPORT_KEEP`) — réduit de 14 à 2 le 12/09/2026 : on ne
+- **Lancement : MANUEL depuis le poste** — double-clic sur `scripts/poste/export-hors-site.command` (Mac ;
+  `.cmd` sous Windows), ou `bash scripts/poste/export-hors-site.sh`. Destination par défaut : celle du poste
+  (`/Volumes/Data/Backup` sur le Mac, `C:\Backup` sous Windows — `EXPORT_DEST`), **2 versions** (`EXPORT_KEEP`) — réduit de 14 à 2 le 12/09/2026 : on ne
   restaure que la dernière ou l'avant-dernière, et quatorze archives de ~100 Mo pesaient
   1,4 Go. La rotation efface donc les plus anciennes **à chaque export** ; le rattrapage
   sur l'autre nœud et le relevé des jours manquants suivent la même valeur. La valeur
