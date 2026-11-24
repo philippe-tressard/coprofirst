@@ -41,8 +41,8 @@ Venu de `CLAUDE.md` (#2709). Chaque règle nomme sa porte et le test qui la tien
   `ARCHIVAGES_HORS_REGLES` — l'avis s'y retire par un geste daté (#1568, #2954).
 - **Un montant en centimes entiers**, jamais en flottant (socle 06 §7) : `utils/montants.en_centimes`
   et `en_euros`. 🔒 `test_montants_en_centimes.py` (toute colonne flottante déclarée avec ce
-  qu'elle mesure ; `petite_annonce.prix` le temps de l'expansion de #3011, lue et écrite par
-  `utils/prix_annonce`).
+  qu'elle mesure). Un montant servi en euros à une app qui le lit encore se calcule depuis les
+  centimes (`utils/prix_annonce.prix_euros`, #3011).
 - Deux tables qui portent le même objet (Vigik/Télécommande et leurs stagings) : une classe de
   base non-table (`models/acces._ObjetAcces`). Un import xlsx déclare son `_traiter_rows` et
   nomme ses importeurs par `import_xlsx.importeurs`.

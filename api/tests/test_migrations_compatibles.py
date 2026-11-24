@@ -101,6 +101,12 @@ CONTRACTIONS: dict[str, tuple[str, str]] = {
         "3.13.8",
         "la sauvegarde ne se coupe plus depuis #2060, rien ne lit ni n'écrit l'interrupteur (#2182)",
     ),
+    #  Premier temps de la contraction de #3011 : le code ne lit et n'écrit plus que
+    #  `prix_centimes`, la 0353 vide `prix` ; le champ servi `prix` se calcule.
+    "petite_annonce.prix": (
+        "3.125.2",
+        "le prix se lit et s'écrit en centimes entiers ; la colonne en euros flottants est vide (#3011)",
+    ),
 }
 
 #: La preuve, lue SUR LA PRODUCTION, qu'un retrait ne perd rien (#2937) :
