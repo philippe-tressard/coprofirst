@@ -31,6 +31,56 @@ export function jetonsDe(socle) {
 	return { couleurs, tailles };
 }
 
+/** Le CSS d'un composant : ses blocs `<style>` et ses attributs `style="…"`. */
+export function stylesDe(source) {
+	const sans = source.replace(/<!--[\s\S]*?-->/g, '');
+	const blocs = [...sans.matchAll(/<style[^>]*>([\s\S]*?)<\/style>/g)].map((m) => m[1]);
+	const attributs = [...sans.matchAll(/\bstyle="([^"]*)"/g)].map((m) => m[1]);
+	return [...blocs, ...attributs].join('\n').replace(/\/\*[\s\S]*?\*\//g, '');
+}
+
+/** Le CSS d'une feuille : tout le fichier, commentaires retirés. */
+export function stylesDeFeuille(source) {
+	return source.replace(/\/\*[\s\S]*?\*\//g, '');
+}
+
+/**
+ *  ## Les voiles posés sur une PHOTO restent hors charte (#2946, 24/11/2026)
+ *
+ *  Un voile noir sous un bouton ou une légende posés sur une image « reste sombre
+ *  dans les deux thèmes » (`socle.css`, `--color-sur-voile`) : il ne suit pas la
+ *  charte, et son opacité se règle sur l'image qu'il couvre — le fond de la
+ *  visionneuse est plus dense que le voile d'une vignette. Ils sont DÉCLARÉS ici,
+ *  valeur par valeur : une autre couleur du même fichier reste comptée, et une
+ *  valeur déclarée qui disparaît fait échouer le contrôle.
+ */
+export const VOILES_SUR_PHOTO = {
+	'lib/components/BanniereResidence.svelte': ['rgba(0, 0, 0, 0.55)', 'rgba(0, 0, 0, 0.75)'],
+	'lib/components/FichiersUpload.svelte': ['rgba(0, 0, 0, 0.6)'],
+	'lib/components/FluxVignette.svelte': ['rgba(0, 0, 0, 0.62)'],
+	'lib/components/ImageUpload.svelte': ['rgba(0, 0, 0, 0.35)', 'rgba(255, 255, 255, 0.4)'],
+	'lib/components/Lightbox.svelte': [
+		'rgba(0, 0, 0, 0.88)',
+		'rgba(0, 0, 0, 0.45)',
+		'rgba(0, 0, 0, 0.75)',
+		'rgba(0, 0, 0, 0.45)',
+	],
+	'lib/components/PiecesJointes.svelte': ['rgba(0, 0, 0, 0.5)'],
+	'lib/components/Vignette.svelte': ['rgba(0, 0, 0, 0.55)'],
+};
+
+/** Les couleurs d'un fichier, sans ses voiles sur photo déclarés (chacun une fois). */
+export function sansVoilesSurPhoto(rel, couleurs, servis) {
+	const reste = [...couleurs];
+	(VOILES_SUR_PHOTO[rel] ?? []).forEach((v, i) => {
+		const j = reste.indexOf(v);
+		if (j < 0) return;
+		reste.splice(j, 1);
+		servis.add(`${rel}#${i}`);
+	});
+	return reste;
+}
+
 /** `#abc` → `#aabbcc`, en minuscules. */
 const hex6 = (h) =>
 	h.length === 4 ? '#' + [...h.slice(1).toLowerCase()].map((c) => c + c).join('') : h.toLowerCase();

@@ -200,12 +200,7 @@
 					{waStatusLoading ? '...' : '\u{1F504} Statut'}
 				</button>
 				{#if waStatus}
-					<span
-						style="font-size:var(--fs-sm);padding:.1rem .5rem;border-radius:4px;{waStatus.state ===
-						'open'
-							? 'background:var(--color-success-fond);color:var(--color-success)'
-							: 'background:var(--color-danger-fond);color:var(--color-danger)'}"
-					>
+					<span class="etat-wa" class:connecte={waStatus.state === 'open'}>
 						{waStatus.state === 'open'
 							? '✅ Connecté'
 							: waStatus.state === 'waiting_qr'
@@ -295,6 +290,19 @@
 </section>
 
 <style>
+	/*  L'état du bridge : rouge, et vert quand il est connecté. Écrit en ligne
+	    jusqu'au 24/11/2026, à côté de l'expression qui choisissait ses couleurs (#2946). */
+	.etat-wa {
+		font-size: var(--fs-sm);
+		padding: 0.1rem 0.5rem;
+		border-radius: 4px;
+		background: var(--color-danger-fond);
+		color: var(--color-danger);
+	}
+	.etat-wa.connecte {
+		background: var(--color-success-fond);
+		color: var(--color-success);
+	}
 	/*  Le QR en attente : un encart (#1455), étroit pour que le QR et ses deux
 	    lignes se lisent d'un bloc. */
 	.qr-attente {

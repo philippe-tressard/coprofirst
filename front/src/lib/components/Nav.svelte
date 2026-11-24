@@ -294,7 +294,7 @@
 		right: 0;
 		bottom: 0;
 		left: 0;
-		background: rgba(0, 0, 0, 0.35);
+		background: var(--color-voile-menu);
 		z-index: 199;
 	}
 

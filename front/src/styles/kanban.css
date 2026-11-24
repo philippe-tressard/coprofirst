@@ -110,7 +110,7 @@
 }
 @media (hover: hover) and (pointer: fine) {
 	.kanban-card:hover {
-		box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+		box-shadow: var(--shadow-survol-carte);
 	}
 }
 /*  `min-height` réserve la place de la rangée de tags : sans elle, deux cartes

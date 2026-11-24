@@ -45,9 +45,20 @@ import {
 	jetonsDe,
 	repliMortsDe,
 	resoudre,
+	stylesDe,
+	stylesDeFeuille,
+	sansVoilesSurPhoto,
+	VOILES_SUR_PHOTO,
 } from './lib-charte-jetons.mjs';
+import {
+	COULEURS_ETAT_ETRANGERES,
+	interditsDe,
+	TAILLES_HORS_ECHELLE,
+} from './lib-charte-interdits.mjs';
 
 export { contraste, contrastesBadges, egalesAUnJeton, jetonsDe, repliMortsDe, resoudre };
+export { stylesDe, stylesDeFeuille };
+export { COULEURS_ETAT_ETRANGERES, interditsDe, TAILLES_HORS_ECHELLE };
 
 /**
  *  Le compte autorisé, et son historique : c'est lui qui dit à quel rythme la
@@ -74,19 +85,6 @@ const PLAFOND = { couleurs: 0, tailles: 0 };
 
 const RACINE = join(dirname(fileURLToPath(import.meta.url)), '..', 'src');
 
-/** Le CSS d'un composant : ses blocs `<style>` et ses attributs `style="…"`. */
-export function stylesDe(source) {
-	const sans = source.replace(/<!--[\s\S]*?-->/g, '');
-	const blocs = [...sans.matchAll(/<style[^>]*>([\s\S]*?)<\/style>/g)].map((m) => m[1]);
-	const attributs = [...sans.matchAll(/\bstyle="([^"]*)"/g)].map((m) => m[1]);
-	return [...blocs, ...attributs].join('\n').replace(/\/\*[\s\S]*?\*\//g, '');
-}
-
-/** Le CSS d'une feuille : tout le fichier, commentaires retirés. */
-export function stylesDeFeuille(source) {
-	return source.replace(/\/\*[\s\S]*?\*\//g, '');
-}
-
 /**
  *  La feuille qui DÉFINIT les jetons : hors relevé des valeurs.
  *  ⚠️ `app.css` n'a que des `@import` (#453) ; s'il reprenait des règles, il
@@ -97,124 +95,12 @@ export const FEUILLE_DES_JETONS = 'socle.css';
  *  (#2379), hors relevé pour la même raison. */
 const FEUILLES_DES_JETONS = [FEUILLE_DES_JETONS, 'palette-sombre.css', 'palettes.css'];
 
-/** Couleurs hexadécimales et tailles de texte en `rem` écrites en dur. */
+/** Couleurs (hexadécimales, et `rgb()`/`hsl()` depuis #2946) et tailles en `rem` écrites en dur. */
 export function valeursEnDur(css) {
 	return {
-		couleurs: [...css.matchAll(/#[0-9a-fA-F]{3,8}\b/g)].map((m) => m[0]),
+		couleurs: [...css.matchAll(/#[0-9a-fA-F]{3,8}\b|\b(?:rgba?|hsla?)\([^)]*\)/g)].map((m) => m[0]),
 		tailles: [...css.matchAll(/font-size\s*:\s*([0-9]*\.?[0-9]+)rem/g)].map((m) => m[1]),
 	};
-}
-
-/**
- *  ## Ce qui est INTERDIT, sans plafond (arbitré le 27/09/2026, sur maquette)
- *
- *  Le plafond tolère une dette ; ces valeurs-ci ont été TRANCHÉES, elles ne se
- *  tolèrent plus nulle part — ni dans un composant, ni dans `src/styles/`.
- *
- *  - une taille hors échelle se range au cran SUPÉRIEUR : aucun texte ne
- *    rétrécit en se normalisant (lisibilité au pouce) ;
- *  - une couleur d'ÉTAT vient de la charte, jamais de la palette de Tailwind —
- *    le bloc des urgences de l'accueil portait deux rouges côte à côte ;
- *  - le texte sur un fond d'avertissement prend `--color-warning-texte` :
- *    `--color-warning` (3,62 sur blanc) ne sert pas au texte.
- *
- *  Le tableau dit la valeur de REMPLACEMENT : le message d'échec la donne.
- *
- *  ⚠️ Les palettes CATÉGORIELLES ne sont pas des états et restent hors de ce
- *  contrôle : la teinte d'un type du fil (`#lib/flux`), d'un périmètre
- *  (`#lib/perimetres/teinte`), d'une colonne de kanban, d'une nature
- *  (`--nature-fort`), l'orange de l'urgence, `.badge-yellow` (#495).
- */
-//  Sous 1 rem, la valeur suffit à dire le cran ; au-dessus, c'est la NATURE de
-//  l'élément (titre, pictogramme, chiffre) qui le choisit — le refus du plafond
-//  à zéro donne alors l'échelle à lire dans `socle.css` (#2313).
-export const TAILLES_HORS_ECHELLE = {
-	0.6: '--fs-3xs',
-	0.62: '--fs-3xs',
-	0.66: '--fs-2xs',
-	0.68: '--fs-2xs',
-	0.7: '--fs-2xs',
-	0.74: '--fs-xs',
-	0.76: '--fs-sm',
-	0.78: '--fs-sm',
-	0.82: '--fs-md',
-	0.83: '--fs-md',
-	0.84: '--fs-md',
-	0.86: '--fs-base',
-	0.875: '--fs-base',
-	0.88: '--fs-base',
-	0.92: '--fs-lg',
-	0.975: '--fs-xl',
-};
-
-/**
- *  La DÉFINITION d'un jeton de palette catégorielle (`--fil-rouge: #b91c1c;`,
- *  #2174 S2) est la seule place où ces teintes s'écrivent : ce ne sont pas des
- *  états. Partout ailleurs, la même valeur reste refusée.
- */
-const DEFINITION_CATEGORIELLE = /--(?:fil|teinte|kanban)-[\w-]+\s*:\s*#[0-9a-fA-F]{6}\s*;/g;
-
-export const COULEURS_ETAT_ETRANGERES = {
-	'#dc2626': '--color-danger',
-	'#b91c1c': '--color-danger',
-	'#991b1b': '--color-danger',
-	'#7f1d1d': '--color-danger',
-	'#ef4444': '--color-danger',
-	'#fef2f2': '--color-danger-fond',
-	'#fee2e2': '--color-danger-fond',
-	'#fecaca': '--color-danger-bordure',
-	'#16a34a': '--color-success',
-	'#15803d': '--color-success',
-	'#22c55e': '--color-success',
-	'#166534': '--color-success',
-	'#065f46': '--color-success',
-	'#059669': '--color-success',
-	'#10b981': '--color-success',
-	'#f0fdf4': '--color-success-fond',
-	'#dcfce7': '--color-success-fond',
-	'#d1fae5': '--color-success-fond',
-	'#ecfdf5': '--color-success-fond',
-	'#bbf7d0': '--color-success-bordure',
-	'#f59e0b': '--color-warning',
-	'#d97706': '--color-warning',
-	'#fbbf24': '--color-warning',
-	'#b45309': '--color-warning',
-	'#92400e': '--color-warning-texte',
-	'#78350f': '--color-warning-texte',
-	'#fffbeb': '--color-warning-fond',
-	'#fef3c7': '--color-warning-fond',
-	'#fde68a': '--color-warning-bordure',
-	'#fcd34d': '--color-warning-bordure',
-};
-
-/** Les mêmes rouges, verts et ambres écrits en `rgb()` / `rgba()`. */
-const RGB_ETAT =
-	/rgba?\(\s*(220\s*,\s*38\s*,\s*38|239\s*,\s*68\s*,\s*68|22\s*,\s*163\s*,\s*74|245\s*,\s*158\s*,\s*11|217\s*,\s*119\s*,\s*6)\b/g;
-
-/**
- *  Ce qui est interdit dans une source, commentaires retirés — le HISTORIQUE
- *  d'une couleur (« elle était `#f59e0b` ») reste lisible en commentaire.
- *  Les couleurs sont cherchées dans TOUT le fichier : une chaîne de style
- *  composée en JavaScript rend autant qu'un `<style>`.
- */
-export function interditsDe(source) {
-	const code = source
-		.replace(DEFINITION_CATEGORIELLE, '')
-		.replace(/<!--[\s\S]*?-->/g, '')
-		.replace(/\/\*[\s\S]*?\*\//g, '')
-		.replace(/(^|[^:'"])\/\/.*$/gm, '$1');
-	const trouves = [];
-	for (const m of code.matchAll(/font-size\s*:\s*([0-9]*\.?[0-9]+)rem/g)) {
-		const jeton = TAILLES_HORS_ECHELLE[parseFloat(m[1])];
-		if (jeton) trouves.push([`${m[1]}rem`, `var(${jeton})`]);
-	}
-	for (const m of code.matchAll(/#[0-9a-fA-F]{6}\b/g)) {
-		const jeton = COULEURS_ETAT_ETRANGERES[m[0].toLowerCase()];
-		if (jeton) trouves.push([m[0], `var(${jeton})`]);
-	}
-	for (const m of code.matchAll(RGB_ETAT))
-		trouves.push([m[0] + '…)', 'color-mix(… var(--color-…) …)']);
-	return trouves;
 }
 
 /**
@@ -242,6 +128,22 @@ if (process.argv.includes('--selftest')) {
 	cas('couleurs du bloc et de l’attribut, pas des commentaires', v.couleurs, ['#dc2626', '#fff']);
 	cas('tailles en rem du bloc et de l’attribut', v.tailles, ['0.85', '.8']);
 	cas('une variable de charte ne compte pas', valeursEnDur('.b{color:var(--x)}').couleurs, []);
+	//  🔴 #2946 : 22 couleurs en notation fonctionnelle passaient sous le relevé.
+	cas(
+		'rgb(), rgba(), hsl() comptent comme l’hexadécimal',
+		valeursEnDur('.a{background:rgba(0, 0, 0, 0.45);color:rgb(26 26 46 / 0.14);fill:hsl(0 0% 50%)}')
+			.couleurs.length,
+		3,
+	);
+	cas(
+		'un voile sur photo déclaré sort du compte, une autre valeur du fichier y reste',
+		sansVoilesSurPhoto(
+			'lib/components/Vignette.svelte',
+			['rgba(0, 0, 0, 0.55)', 'rgba(0, 0, 0, 0.9)'],
+			new Set(),
+		),
+		['rgba(0, 0, 0, 0.9)'],
+	);
 	cas(
 		'le hors-style ne compte pas (texte, script)',
 		valeursEnDur(stylesDe('<p>#1 font-size: 2rem</p><script>const c="#fff"</script>')),
@@ -361,6 +263,7 @@ function fichiers(dir, acc = []) {
 }
 
 const total = { couleurs: 0, tailles: 0 };
+const voilesServis = new Set();
 const parFichier = [];
 let blocsLus = 0;
 let feuillesLues = 0;
@@ -378,6 +281,11 @@ for (const [chemin, css] of releves) {
 	if (css.trim() && chemin.endsWith('.css')) feuillesLues++;
 	else if (css.trim()) blocsLus++;
 	const v = valeursEnDur(css);
+	v.couleurs = sansVoilesSurPhoto(
+		relative(RACINE, chemin).split(sep).join('/'),
+		v.couleurs,
+		voilesServis,
+	);
 	total.couleurs += v.couleurs.length;
 	total.tailles += v.tailles.length;
 	const n = v.couleurs.length + v.tailles.length;
@@ -471,6 +379,15 @@ for (const rel of Object.keys(EXCEPTIONS)) {
 		echec = 1;
 		console.error(`\n✗ Exception sans objet : ${rel} ne porte plus rien d’interdit — la retirer.`);
 	}
+}
+for (const [f, vs] of Object.entries(VOILES_SUR_PHOTO)) {
+	vs.forEach((v, i) => {
+		if (voilesServis.has(`${f}#${i}`)) return;
+		echec = 1;
+		console.error(
+			`\n✗ Voile sur photo déclaré sans objet : ${f} ${v} — le retirer de VOILES_SUR_PHOTO.`,
+		);
+	});
 }
 for (const cle of ['couleurs', 'tailles']) {
 	if (total[cle] > PLAFOND[cle]) {
