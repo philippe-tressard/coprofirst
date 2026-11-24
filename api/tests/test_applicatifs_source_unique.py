@@ -192,10 +192,6 @@ MOTIF_DES_DOCUMENTS = "*.md"
 DOCUMENTS_SANS_LISTE = {
     "README.md": (1, "poste de développement : la pile locale, aucune base de production"),
     "CONTRIBUTING.md": (1, "poste de développement : la pile locale, aucune base de production"),
-    "specs/architecture/stack.md": (
-        1,
-        "spécification d'origine, à un seul nœud : son installation est périmée (#2989)",
-    ),
 }
 
 
