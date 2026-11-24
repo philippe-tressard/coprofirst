@@ -64,12 +64,22 @@ def poser_mot_de_passe(
     Les jetons d'accès du compte tombent aussi, sans geste de plus : ils portent
     l'empreinte du condensé, que le nouveau mot de passe change (#1063,
     `jwt.empreinte_du_compte`).
+
+    Un mot de passe posé n'est plus temporaire : le drapeau `mot_de_passe_a_changer`
+    tombe ici, et nulle part ailleurs (#3019).
     """
     from app.auth.jetons_rafraichissement import revoquer_sessions
-    from app.auth.jwt import hash_password
+    from app.auth.jwt import hash_password, verify_password
 
     verifier_robustesse(nouveau)
+    #  Un mot de passe TEMPORAIRE (#3019) ne se repose pas tel quel : lu dans un journal,
+    #  il resterait valide, drapeau levé.
+    if utilisateur.mot_de_passe_a_changer and verify_password(
+        nouveau, utilisateur.hashed_password or ""
+    ):
+        raise HTTPException(400, "Choisissez un mot de passe différent du mot de passe temporaire.")
     utilisateur.hashed_password = hash_password(nouveau)
+    utilisateur.mot_de_passe_a_changer = False
     #  Une révocation SANS `remplace_le` : l'ancien jeton de l'autre appareil,
     #  s'il revient, est une session fermée, pas un vol (27/09/2026).
     revoquees = revoquer_sessions(session, utilisateur.id, sauf=jeton_courant)

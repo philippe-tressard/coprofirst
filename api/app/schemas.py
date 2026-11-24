@@ -57,6 +57,9 @@ class UserRead(NomServi):
     roles: list[str] = []
     actif: bool
     email_verifie: bool = False
+    #  Le mot de passe est temporaire (#3019) : le site et les apps mènent au changement
+    #  et n'ouvrent rien d'autre — l'API refuse le reste (`auth/mot_de_passe_a_changer`).
+    mot_de_passe_a_changer: bool = False
     onboarding_complete: bool
     onboarding_etape: int
     photo_url: Optional[str] = None
