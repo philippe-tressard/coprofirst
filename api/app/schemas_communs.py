@@ -37,7 +37,7 @@ def liste_depuis_json(v):
     if isinstance(v, str):
         try:
             charge = json.loads(v)
-        except Exception:
+        except Exception:  # noqa: BLE001 — ne lève jamais : une valeur illisible rend []
             return []
         return [str(u) for u in charge] if isinstance(charge, list) else []
     return v

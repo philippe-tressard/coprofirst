@@ -33,7 +33,7 @@ def _texte(valeur) -> str:
         return ""
     try:
         return str(make_header(decode_header(valeur)))
-    except Exception:
+    except Exception:  # noqa: BLE001 — un en-tête mal encodé se rend brut
         return str(valeur)
 
 

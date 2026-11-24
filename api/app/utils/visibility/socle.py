@@ -28,7 +28,7 @@ def _parse_json_list(raw: Optional[str], default: list[str]) -> list[str]:
     try:
         val = json.loads(raw) if isinstance(raw, str) else raw
         return list(val) if isinstance(val, (list, tuple)) else default
-    except Exception:
+    except Exception:  # noqa: BLE001 — un JSON abîmé rend la valeur par défaut
         return default
 
 
@@ -53,7 +53,7 @@ def _codes_json_pour_acces(raw: Optional[str]) -> Optional[list[str]]:
         return []
     try:
         val = json.loads(raw) if isinstance(raw, str) else raw
-    except Exception:
+    except Exception:  # noqa: BLE001 — JSON illisible : None, et l'appelant refuse
         return None
     if not isinstance(val, (list, tuple)):
         return None

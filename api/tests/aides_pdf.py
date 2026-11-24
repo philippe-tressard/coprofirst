@@ -27,7 +27,7 @@ import pytest
 def weasyprint_disponible() -> bool:
     try:
         import weasyprint  # noqa: F401
-    except Exception:
+    except Exception:  # noqa: BLE001 — toute erreur d'import vaut « weasyprint indisponible »
         return False
     return True
 

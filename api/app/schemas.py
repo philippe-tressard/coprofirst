@@ -313,7 +313,7 @@ class TicketRead(SaisiPourSortie, AssisteIASortie, ChampsIntervenant, AffaireSer
         if isinstance(v, str):
             try:
                 return json.loads(v) or None
-            except Exception:
+            except Exception:  # noqa: BLE001 — un JSON abîmé en base ne casse pas la lecture
                 return None
         return v
 
@@ -323,7 +323,7 @@ class TicketRead(SaisiPourSortie, AssisteIASortie, ChampsIntervenant, AffaireSer
         if isinstance(v, str):
             try:
                 return json.loads(v)
-            except Exception:
+            except Exception:  # noqa: BLE001 — un JSON abîmé rend le périmètre par défaut
                 return perimetre_defaut_liste()
         return v
 

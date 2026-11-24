@@ -246,7 +246,7 @@ def piece_jointe(doc: Document, budget_b64: int) -> PieceJointe | str:
             return MOTIF_TROP_LOURD
         with open(chemin, "rb") as fichier:
             octets = fichier.read()
-    except OSError as exc:  # noqa: BLE001 - un fichier illisible n'est pas une panne
+    except OSError as exc:  # un fichier illisible n'est pas une panne
         logger.warning("Lecture du fichier %s impossible : %s", doc.id, exc)
         return MOTIF_INTROUVABLE
     return PieceJointe(

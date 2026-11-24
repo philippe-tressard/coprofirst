@@ -86,7 +86,7 @@ def desepingler_affaires_closes(
         #  Une trace à CHAQUE passage, rien à retirer compris : un battement qu'on
         #  n'entend pas ne se distingue pas d'une tâche morte (`standards/07`).
         logger.info("Affaires closes désépinglées : %d", retirees)
-    except Exception as exc:  # pragma: no cover - la tâche ne meurt pas
+    except Exception as exc:  # noqa: BLE001 — la tâche planifiée ne meurt pas  # pragma: no cover
         session.rollback()
         logger.warning("Désépinglage des affaires closes non fait : %s", exc)
         retirees = 0

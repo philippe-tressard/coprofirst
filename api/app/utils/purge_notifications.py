@@ -81,7 +81,7 @@ def purger_notifications_lues(
         logger.info(
             "Notifications lues retirées (plus de %d jours) : %d", CONSERVATION_JOURS, retirees
         )
-    except Exception as exc:  # pragma: no cover - la tâche ne meurt pas
+    except Exception as exc:  # noqa: BLE001 — la tâche planifiée ne meurt pas  # pragma: no cover
         session.rollback()
         logger.warning("Purge des notifications lues non faite : %s", exc)
         retirees = 0

@@ -101,7 +101,7 @@ def lire_manuel(url: str = URL_MANUEL_INTERNE, timeout: float = 5.0) -> str:
             brut = reponse.read()
     except ManuelIndisponible:
         raise
-    except Exception as exc:  # noqa: BLE001
+    except Exception as exc:
         raise ManuelIndisponible(f"manuel illisible ({url}) : {exc}") from exc
 
     texte = brut.decode("utf-8", "replace")

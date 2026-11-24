@@ -93,7 +93,7 @@ def avertir(copro: contexte.Copropriete, en_attente: dict[int, bool]) -> None:
     try:
         with contexte.dans(copro), contexte.nouvelle_session() as s:
             avertir_dans(s, en_attente)
-    except Exception as exc:
+    except Exception as exc:  # noqa: BLE001 — un fil d'arrière-plan qui lève meurt sans trace
         logger.warning("Notifications push : envoi abandonné (%s)", type(exc).__name__)
 
 
@@ -112,7 +112,7 @@ def _transmettre(appareil: Appareil, *, urgent: bool) -> bool:
     """Un envoi ; rend vrai si l'appareil est à retirer (jeton périmé chez Apple)."""
     try:
         resultat = transport.TRANSPORT.transmettre(envoi_pour(appareil, urgent=urgent))
-    except Exception as exc:
+    except Exception as exc:  # noqa: BLE001 — transport en échec : l'envoi est refusé, pas levé
         #  Le nom de l'exception seul : son message pourrait répéter la requête.
         resultat = Resultat("refuse", f"transport en échec ({type(exc).__name__})")
     logger.info(

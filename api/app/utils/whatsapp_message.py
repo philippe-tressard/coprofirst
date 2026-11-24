@@ -58,7 +58,7 @@ def _libelle_perimetre(perimetre_cible: str | list | None) -> str:
             if isinstance(perimetre_cible, str)
             else (perimetre_cible or [])
         )
-    except Exception:
+    except Exception:  # noqa: BLE001 — un périmètre illisible ne casse pas le message
         lieux = []
     if not isinstance(lieux, list) or est_perimetre_par_defaut(lieux):
         return "Copropriété"
@@ -146,7 +146,7 @@ def _is_restreint(public_cible: str | list | None) -> bool:
         return False
     try:
         lst = json.loads(public_cible) if isinstance(public_cible, str) else public_cible
-    except Exception:
+    except Exception:  # noqa: BLE001 — un public illisible vaut « tous les résidents »
         return False
     return "résidents" not in lst
 

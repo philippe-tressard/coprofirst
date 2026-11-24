@@ -19,10 +19,9 @@ target-version = "py312"
 # qu'on garde (#2951) : RUF100 (« directive inutile ») les épargne.
 # - E402 reste dehors par décision (`ci.yml`, étape « Ruff ») : l'ordre des
 #   imports y est du comportement ;
-# - BLE001 : la directive est la raison écrite d'un `except Exception`. La règle
-#   n'est pas passée (69 autres n'en portent pas — #2998) ;
 # - S310 : une ouverture d'URL déclarée.
-external = ["E402", "BLE001", "S310"]
+# BLE001 n'y est plus : la CI la passe depuis #2998 (`ci.yml`, étape « Ruff »).
+external = ["E402", "S310"]
 
 [lint.per-file-ignores]
 # S608 passe sur les migrations depuis #2948. 0294 interpole `MODELES`, un NOM DE

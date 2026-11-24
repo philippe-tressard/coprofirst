@@ -81,7 +81,7 @@ def purger() -> tuple[dict[str, int], list[str]]:
                 + purger_demandes(s, maintenant)
             )
             s.commit()
-    except Exception as exc:
+    except Exception as exc:  # noqa: BLE001 — une étape en échec n'arrête pas la maintenance
         erreurs.append(f"purge tokens: {exc}")
 
     #  Les appareils muets depuis 60 jours (#2493) : la règle vit avec eux.
@@ -89,7 +89,7 @@ def purger() -> tuple[dict[str, int], list[str]]:
         with contexte.nouvelle_session() as s:
             comptes["appareils"] = purger_appareils(s)
             s.commit()
-    except Exception as exc:
+    except Exception as exc:  # noqa: BLE001 — une étape en échec n'arrête pas la maintenance
         erreurs.append(f"purge appareils: {exc}")
 
     #  `TRUE`, jamais `1` : PostgreSQL ne compare pas un booléen à un entier.
@@ -151,7 +151,7 @@ def purger() -> tuple[dict[str, int], list[str]]:
     for cle, libelle, sql, params in etapes:
         try:
             comptes[cle] = _supprimer(sql, **params)
-        except Exception as exc:
+        except Exception as exc:  # noqa: BLE001 — une étape en échec n'arrête pas la maintenance
             erreurs.append(f"{libelle}: {exc}")
 
     # Logs WhatsApp : garder les 6 derniers.
@@ -162,7 +162,7 @@ def purger() -> tuple[dict[str, int], list[str]]:
                 s.delete(old)
             s.commit()
             comptes["whatsapp"] = len(anciens)
-    except Exception as exc:
+    except Exception as exc:  # noqa: BLE001 — une étape en échec n'arrête pas la maintenance
         erreurs.append(f"logs WhatsApp: {exc}")
 
     #  🔴 Plus de purge des « évolutions archivées » (#1381, 27/09/2026). Elle
@@ -212,7 +212,7 @@ def run_maintenance(history_id: int | None = None) -> None:
                 contexte.moteur().execution_options(isolation_level="AUTOCOMMIT").connect() as conn
             ):
                 compacter(conn)
-        except Exception as exc:
+        except Exception as exc:  # noqa: BLE001 — une étape en échec n'arrête pas la maintenance
             erreurs.append(f"VACUUM: {exc}")
 
         # Taille de la base après compactage — inconnue (None) si la lecture échoue
@@ -220,7 +220,7 @@ def run_maintenance(history_id: int | None = None) -> None:
         try:
             with contexte.moteur().connect() as conn:
                 taille_db = taille_base(conn)
-        except Exception:
+        except Exception:  # noqa: BLE001 — taille illisible : inconnue, la maintenance continue
             pass
 
         end = horloge.maintenant()

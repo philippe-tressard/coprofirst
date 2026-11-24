@@ -338,7 +338,7 @@ def whatsapp_status(
 
     try:
         return get_whatsapp_status(config)
-    except Exception as e:
+    except Exception as e:  # noqa: BLE001 — toute panne du bridge se dit à l'écran
         raise HTTPException(500, f"Impossible de joindre le bridge : {e}")
 
 
@@ -363,7 +363,7 @@ def whatsapp_qr(
         return Response(content=qr_du_bridge(config), media_type="image/png")
     except AdresseBridgeRefusee as e:
         raise HTTPException(400, str(e))
-    except Exception:
+    except Exception:  # noqa: BLE001 — toute panne du bridge vaut 502, journalisée
         logging.getLogger("app").warning("QR du bridge WhatsApp indisponible", exc_info=True)
         raise HTTPException(502, "Impossible d'obtenir le QR code du bridge WhatsApp.")
 
@@ -421,7 +421,7 @@ async def smtp_test(
             )
             await fm.send_message(msg)
             envoyees.append(adresse)
-    except Exception as e:
+    except Exception as e:  # noqa: BLE001 — toute panne SMTP se dit, avec ce qui est déjà parti
         #  Dire ce qui est DÉJÀ parti : sans cela, un échec sur la seconde adresse
         #  se lirait comme un échec total, et on chercherait la panne du côté du
         #  serveur alors que seule l'adresse ajoutée est en cause.
@@ -464,12 +464,12 @@ def imap_test(
     demo.exiger_hors_demo("Boîte de réception")  # doublé par la garde du lot D1 (#1902)
     try:
         boite = imaplib.IMAP4_SSL(cfg["imap_server"], int(cfg.get("imap_port") or 993))
-    except Exception as e:
+    except Exception as e:  # noqa: BLE001 — réseau, TLS, DNS : tout échec de connexion vaut 502
         raise HTTPException(502, f"Connexion au serveur impossible : {e}")
     try:
         try:
             boite.login(cfg["imap_username"], cfg["imap_password"])
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001 — tout refus du serveur IMAP vaut 401
             raise HTTPException(401, f"Identifiants refusés par le serveur : {e}")
         statut, _ = boite.select(dossier, readonly=True)
         if statut != "OK":
@@ -479,7 +479,7 @@ def imap_test(
     finally:
         try:
             boite.logout()
-        except Exception:
+        except Exception:  # noqa: BLE001 — une déconnexion ratée ne change pas la réponse
             pass
 
     actif = service_actif(cfg, SERVICE_REPONSES_COURRIEL)

@@ -481,7 +481,7 @@ def health():
         with contexte.nouvelle_session() as _s:
             _s.exec(_text("SELECT 1"))  # type: ignore[arg-type]
         return {"status": "ok", "version": contrat.VERSION_CONTRAT}
-    except Exception as exc:
+    except Exception as exc:  # noqa: BLE001 — toute panne de la base répond 503, jamais 500
         _logger.error("Health check DB failed : %s", exc)
         return JSONResponse(
             status_code=503,
