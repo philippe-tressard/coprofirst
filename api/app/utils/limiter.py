@@ -149,6 +149,13 @@ LIMITE_LECTURE_PUBLIQUE = "60/minute"
 #: `demander`, relevée dans le code.
 LIMITE_APPEL_FACTURE = "10/minute"
 
+#: Le CLASSEMENT à la main d'un courriel reçu (créer une affaire, verser au fil d'une
+#: affaire ouverte) : il n'appelle le modèle que si l'usage est activé (mise en forme de
+#: la réponse), mais c'est une décision du conseil par message, et un tri en enchaîne
+#: plusieurs. Assez large pour ne jamais gêner un tri à la main, assez bas pour qu'une
+#: rafale ne se paie pas (#3005, 24/11/2026).
+LIMITE_CLASSEMENT_COURRIEL = "30/minute"
+
 #: Une installation qui **s'inscrit au registre** de la référence (`registre/routeur.py`,
 #: spec §4.11). Route publique, signée par la clé de l'installation : la limite
 #: protège le registre d'un remplissage, pas un secret. Une installation légitime

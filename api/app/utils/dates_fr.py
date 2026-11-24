@@ -136,6 +136,26 @@ def formule_anciennete(mois: list[int]) -> str:
     return f"{mini} à {maxi} mois"
 
 
+def duree_conservation(jours: int, espace: str = " ") -> str:
+    """Une durée de conservation comptée en jours, dite comme un texte légal la dit.
+
+    >>> duree_conservation(30)
+    '30 jours'
+    >>> duree_conservation(365)
+    '12 mois'
+    >>> duree_conservation(3650)
+    '10 ans'
+
+    Les politiques de confidentialité composent leurs durées des constantes qui les
+    appliquent (#2959) : une durée recopiée en clair diverge au premier changement de
+    la purge. `espace` sépare le nombre de l'unité — insécable dans un texte HTML.
+    """
+    if jours > 0 and jours % 365 == 0:
+        ans = jours // 365
+        return f"12{espace}mois" if ans == 1 else f"{ans}{espace}ans"
+    return f"{jours}{espace}jour{'s' if jours > 1 else ''}"
+
+
 def duree_jhm(ecart: timedelta) -> str | None:
     """Une durée écoulée, en `00j23h54'`. `None` si elle n'a pas de sens.
 

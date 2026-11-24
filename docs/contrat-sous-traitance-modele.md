@@ -126,7 +126,8 @@ Le responsable du traitement :
 4. répond aux demandes d'exercice des droits, avec l'aide du sous-traitant ;
 5. décide seul des **services tiers** de l'application qu'il active — diffusion sur
    une messagerie instantanée, assistant de rédaction, envoi et réception des
-   courriels — et de leurs fournisseurs, lorsqu'il les configure lui-même.
+   courriels, notifications sur téléphone — et de leurs fournisseurs, lorsqu'il les
+   configure lui-même.
 
    > **À vérifier** : la qualification de ces fournisseurs. Configurés par la
    > copropriété avec ses propres comptes, ils paraissent être ses sous-traitants
@@ -214,6 +215,7 @@ Mesures propres à l'exploitation, **à compléter par l'opérateur** :
 | [hébergeur] | hébergement du serveur et de ses disques | [pays] |
 | [intermédiaire technique, le cas échéant] | nom de domaine, acheminement des connexions | [pays, garanties du chapitre V s'il opère hors UE] |
 | [service d'envoi de courriels, s'il est fourni par l'opérateur] | acheminement des notifications | [pays] |
+| [relais de notifications de CoproFirst, s'il est fourni par l'opérateur] | acheminement des notifications sur téléphone vers Apple (APNs) ou Google (FCM) | [pays] |
 
 ## Annexe 4 — Contacts
 

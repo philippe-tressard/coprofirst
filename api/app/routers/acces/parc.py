@@ -71,6 +71,7 @@ from app.utils.dates_fr import date_courte
 from app.utils.perimetres import perimetre_label
 from app.utils.types_acces import TELECOMMANDE, TYPES_ACCES, TypeAcces, VIGIK
 from app.utils.recuperer import ou_404
+from app.utils.en_tete_fichier import en_tete_fichier
 
 router = APIRouter()
 
@@ -474,5 +475,5 @@ def exporter_parc(
     return StreamingResponse(
         iter([_csv_du_parc(session, type_acces)]),
         media_type="text/csv; charset=utf-8",
-        headers={"Content-Disposition": f'attachment; filename="{nom}"'},
+        headers=en_tete_fichier(nom),
     )

@@ -16,6 +16,7 @@ contenus différents :
 
 from __future__ import annotations
 
+import errno
 import os
 
 import pytest
@@ -28,7 +29,7 @@ from tests.aides_caddy import blocs_handle, caddyfile
 from tests.aides_base import compte
 from tests.aides_commune_reelle import HOTES, installation_commune_reelle, sous
 
-CLE = "photos/temoin.txt"
+CLE = "fichiers/temoin.txt"  # un dossier que le code écrit (claude-config#637)
 
 
 def _administrateur(nom: str, s) -> tuple[str, int]:
@@ -90,7 +91,12 @@ def test_sans_session_rien_n_est_servi(fichiers):
 
 @pytest.mark.parametrize(
     "cle",
-    ["prive/pv.txt", "annonces-hall/a.pdf", "../b/photos/temoin.txt", "%2e%2e/b/photos/temoin.txt"],
+    [
+        "prive/pv.txt",
+        "annonces-hall/a.pdf",
+        "../b/fichiers/temoin.txt",
+        "%2e%2e/b/fichiers/temoin.txt",
+    ],
 )
 def test_ni_les_dossiers_jamais_servis_ni_une_sortie_de_la_racine(fichiers, cle):
     jeton, _ = fichiers["temoins"]["a"]
@@ -105,14 +111,21 @@ def test_un_lien_vers_une_autre_racine_ne_sert_rien(fichiers, tmp_path):
 
     a = contexte.par_identifiant("essai-a").racine_fichiers
     b = contexte.par_identifiant("essai-b").racine_fichiers
-    lien = a / "photos" / "vers-b.txt"
+    #  Dans un dossier SERVI (celui du témoin) : ailleurs, le 404 viendrait du refus
+    #  d'un dossier inconnu (claude-config#637), et le test ne jugerait plus le lien.
+    lien = a / "fichiers" / "vers-b.txt"
+    lien.parent.mkdir(parents=True, exist_ok=True)
     try:
         os.symlink(b / CLE, lien)
-    except OSError:
+    except OSError as e:
+        if e.errno not in (errno.EPERM, errno.EACCES):
+            raise
         pytest.skip("créer un lien demande un privilège sur ce poste")
     jeton, _ = fichiers["temoins"]["a"]
+    #  Témoin : sans le lien, le même dossier sert bien le fichier de A.
+    assert sous(_client(), f"/uploads/{CLE}", "a", jeton).status_code == 200
     try:
-        assert sous(_client(), "/uploads/photos/vers-b.txt", "a", jeton).status_code == 404
+        assert sous(_client(), "/uploads/fichiers/vers-b.txt", "a", jeton).status_code == 404
     finally:
         lien.unlink()
 

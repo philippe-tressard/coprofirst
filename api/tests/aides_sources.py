@@ -66,6 +66,23 @@ def _tous() -> tuple[Module, ...]:
     return modules
 
 
+@functools.lru_cache(maxsize=None)
+def sources_api(dossier: str, *, minimum: int = 1) -> tuple[tuple[pathlib.Path, str], ...]:
+    """Les fichiers Python d'un AUTRE dossier de `api/` (`"alembic"`, `"tests"`) : chemin
+    et texte, triés, sans `__pycache__`. Même cas zéro que `modules_app` (#2959)."""
+    racine = APP.parent / dossier
+    trouves = tuple(
+        (p, p.read_text(encoding="utf-8"))
+        for p in sorted(racine.rglob("*.py"))
+        if "__pycache__" not in p.parts
+    )
+    assert len(trouves) >= minimum, (
+        f"`api/{dossier}/` ne rend que {len(trouves)} fichier(s) (plancher {minimum}) : "
+        "le dossier a bougé, et le contrôle qui le lit ne mesure plus rien."
+    )
+    return trouves
+
+
 def modules_app(sous_dossier: str = "", *, minimum: int = 1) -> tuple[Module, ...]:
     """Les modules de `app/` — ou d'un sous-dossier (`"routers"`, `"utils/email"`).
 
@@ -287,6 +304,11 @@ def atteint(rel: str, nom: str, cibles: set[str], *, modules=None, profondeur: i
         vus.add((rel, nom))
         module, fonction = _fonction(index, rel, nom)
         if fonction is None:
+            #  Un nom RÉEXPORTÉ (`from app.utils.llm_connexion import tester` dans
+            #  `utils/llm.py`) : on suit l'import jusqu'à la définition (#3005).
+            source = _portee_des_noms(module, index).get(nom) if module else None
+            if source and source != (rel, nom) and source[1]:
+                a_voir.append((*source, niveau))
             continue
         portee = _portee_des_noms(module, index)
         for appel in (n for n in ast.walk(fonction) if isinstance(n, ast.Call)):
