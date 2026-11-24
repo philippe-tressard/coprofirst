@@ -39,6 +39,9 @@ PORTEE = (
     *sorted(_API.glob("tests/test_appartenance*.py")),
     _API / "tests" / "test_moderateur_source_unique.py",
     _API / "tests" / "test_signature_registre_source_unique.py",
+    #  La skill qui enseigne ces portes : un emplacement faux y envoyait l'audit au mauvais
+    #  fichier (`COOKIE_OPTS`, CORS — #2933).
+    _API.parent / ".claude" / "skills" / "security-audit" / "SKILL.md",
 )
 
 MARQUEURS_HISTORIQUE = ("supprim", "retir", "n'existe plus", "a disparu", "remplac", "renomm")
@@ -95,7 +98,7 @@ def renvois_morts(fichiers) -> list[str]:
 
 
 def test_la_portee_voit_ce_qu_elle_annonce():
-    assert len(PORTEE) >= 15 and all(f.exists() for f in PORTEE), "portée perdue"
+    assert len(PORTEE) >= 16 and all(f.exists() for f in PORTEE), "portée perdue"
     cites = sum(len(_CITE.findall(f.read_text(encoding="utf-8-sig"))) for f in PORTEE)
     assert cites >= 50, f"{cites} renvoi(s) relevé(s) : le motif ne lit plus rien"
 
