@@ -455,4 +455,4 @@ Cette skill passait 800 lignes (#2910). L'ordre, l'étape 0 et le pré-check res
 | Annexe | Ce qu'elle porte |
 |---|---|
 | `POSTCHECK.md` | Post-check P1 à P12 après la MEP : déploiement constaté, version servie, clôture des tickets, retour arrière |
-| `REJEU-ET-VERSION.md` | Le rejeu de la CI en détail, version, images publiées, réplique et promotion |
+| `REJEU-ET-VERSION.md` | Le rejeu de la CI en détail, version, images publiées, réplique et bail |

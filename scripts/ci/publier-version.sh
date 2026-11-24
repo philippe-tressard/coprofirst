@@ -7,7 +7,7 @@
 #  ou une version choisie ; la référence ne propose que les versions qui ont leur
 #  release, puisque la mise à jour nocturne y télécharge l'archive de déploiement
 #  (`deploiement/standard/mise-a-jour.sh`). Chaque version taguée est donc publiée,
-#  et plus seulement les versions promues sur `replica`.
+#  et plus seulement les versions promues sur l'ancienne branche des répliques (retirée, #3009).
 #
 #  Elle joint aussi le CONTRAT D'API de la version (#2456) — `openapi.json`, exporté
 #  de l'image de l'API publiée, et les fichiers que l'app iOS en génère

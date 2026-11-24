@@ -19,8 +19,8 @@ on:
         type: boolean
         default: false
   schedule:
-    #  05:23 UTC : après la lecture des versions par la référence (03:50 à Paris)
-    #  et la promotion de la nuit (02:17 UTC) ; minute décalée exprès.
+    #  05:23 UTC : après la lecture des versions par la référence (03:50 à Paris) ;
+    #  minute décalée exprès.
     - cron: "23 5 * * *"
 
 concurrency:
