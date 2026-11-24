@@ -35,16 +35,43 @@
  * Une icône choisie en administration (`site_icone`, icône d'un périmètre)
  * vient de `ChampIcone`, qui ne propose QUE les clés du catalogue.
  *
+ * Et une sixième (#2975, 24/11/2026) : **une icône se dessine par `Icon`, jamais
+ * par un `<svg>` écrit dans un composant.** `SectionFormulaire` dessinait ses deux
+ * chevrons à la main (12 × 8, tracés recopiés), à côté de `chevron-down` du
+ * catalogue que `PastilleDeroulante` rendait déjà. Un `<svg>` hors d'`Icon.svelte`
+ * est refusé, sauf un DESSIN déclaré dans `DESSINS` avec sa raison — et un dessin
+ * déclaré qui n'a plus de `<svg>` fait échouer.
+ *
  * Usage : npm run lint:icones            (auto-test : --selftest)
  */
 import { readdirSync, readFileSync } from 'node:fs';
 import { join, relative } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { neutraliserCommentaires } from './lib-commentaires.mjs';
 
 const FRONT = fileURLToPath(new URL('..', import.meta.url));
 const SRC = join(FRONT, 'src');
 
 const LITTERAL = /['"]([a-z][a-z0-9-]*)['"]/g;
+
+/** Le seul composant qui pose un `<svg>` autour d'une icône du catalogue. */
+const ENVELOPPE = 'src/lib/components/Icon.svelte';
+
+/**  Les `<svg>` qui sont des DESSINS, pas des icônes — avec leur raison. Une entrée
+ *   qui n'a plus de `<svg>` fait échouer. */
+const DESSINS = {
+	'src/lib/components/DecorFeteDessin.svelte':
+		'le décor d’une fête : une illustration composée, pas un pictogramme du catalogue',
+	'src/lib/components/DecorFeteMouvement.svelte':
+		'les décors animés des fêtes : des dessins en mouvement, pas des pictogrammes',
+};
+
+/** Les lignes d'un source qui ouvrent un `<svg>`, hors commentaires. PURE. */
+export function svgEcrits(source) {
+	return neutraliserCommentaires(source)
+		.split('\n')
+		.flatMap((l, i) => (/<svg\b/.test(l) ? [i + 1] : []));
+}
 
 /**
  * Les noms d'icônes écrits dans un source, avec leur ligne. Fonction PURE.
@@ -121,6 +148,14 @@ function selftest() {
 	verifier('slot nommé : pas une icône', noms('<slot name="actions" />'), []);
 	verifier('classe de badge : pas une icône', noms("const c = STATUT[s] ?? 'badge-gray';"), []);
 	verifier('cas zéro : source vide', noms(''), []);
+	//  🔴 Le chevron de `SectionFormulaire`, dessiné à la main (#2975).
+	verifier(
+		'svg écrit dans un composant',
+		svgEcrits('<button>\n\t<svg class="section-chev" width="12" height="8">\n</svg></button>'),
+		[2],
+	);
+	verifier('svg cité en commentaire', svgEcrits('<!-- un <svg> écrit à la main -->'), []);
+	verifier('icône du catalogue', svgEcrits('<Icon name="chevron-down" size={20} />'), []);
 	verifier(
 		'relais nommé `icone` : accepté',
 		relaisMalNommes('export let icone = "";\n<Icon name={icone} />'),
@@ -152,10 +187,18 @@ try {
 
 const inconnus = [];
 const relais = [];
+const svg = [];
+const dessinsServis = new Set();
+let enveloppe = false;
 let lus = 0;
 for (const f of fichiers(SRC)) {
 	const source = readFileSync(f, 'utf8');
 	const chemin = relative(FRONT, f).split('\\').join('/');
+	const lignesSvg = f.endsWith('.svelte') ? svgEcrits(source) : [];
+	if (chemin === ENVELOPPE) enveloppe = lignesSvg.length > 0;
+	else if (chemin in DESSINS) {
+		if (lignesSvg.length) dessinsServis.add(chemin);
+	} else for (const l of lignesSvg) svg.push(`${chemin}:${l}`);
 	for (const t of nomsIcones(source)) {
 		lus++;
 		if (!Object.hasOwn(catalogue, t.nom)) inconnus.push(`${chemin}:${t.ligne} — « ${t.nom} »`);
@@ -172,6 +215,28 @@ if (lus < 50) {
 	process.exit(2);
 }
 
+//  Le témoin : `Icon.svelte` pose l'enveloppe. Sans elle, « aucun <svg> ailleurs »
+//  ne prouverait plus rien.
+if (!enveloppe) {
+	console.error(
+		`\n⚠️  INCONNU — ${ENVELOPPE} ne pose plus de <svg> : le relevé a perdu son témoin.\n`,
+	);
+	process.exit(2);
+}
+const dessinsMorts = Object.keys(DESSINS).filter((d) => !dessinsServis.has(d));
+if (dessinsMorts.length) {
+	console.error(
+		`\n✗ lint:icones — dessin(s) déclaré(s) sans <svg> : ${dessinsMorts.join(', ')} — les retirer de DESSINS.\n`,
+	);
+}
+if (svg.length) {
+	console.error(
+		`\n✗ lint:icones — ${svg.length} <svg> écrit(s) hors d’\`Icon\` :\n\n  ` +
+			svg.join('\n  ') +
+			'\n\n  Une icône se rend par `<Icon name="…" />`, tracé pris dans le catalogue.\n' +
+			'  Un dessin qui n’est pas une icône se déclare dans DESSINS, avec sa raison.\n',
+	);
+}
 if (relais.length) {
 	console.error(
 		`\n✗ lint:icones — ${relais.length} composant(s) relaient une icône sous un autre nom que \`icone\` :\n\n  ` +
@@ -188,7 +253,7 @@ if (inconnus.length) {
 			'    cp front/src/lib/icones-svg.json api/app/utils/icones-svg.json\n',
 	);
 }
-if (relais.length || inconnus.length) process.exit(1);
+if (relais.length || inconnus.length || svg.length || dessinsMorts.length) process.exit(1);
 
 console.log(
 	`✓ lint:icones — ${lus} nom(s) d’icône relevé(s), tous dans le catalogue ` +
