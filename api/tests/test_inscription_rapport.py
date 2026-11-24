@@ -62,6 +62,14 @@ def test_le_rapport_compte_sans_rien_dire_des_residents(copropriete):
         assert temoin not in texte, f"une donnée de résident part chez la référence : {temoin}"
 
 
+def test_sans_bail_le_canal_annonce_est_celui_du_registre_par_defaut(copropriete):
+    """#3009 : sans canal dans le bail, le rapport annonce Urgence — le canal par défaut
+    d'une installation au registre —, jamais la branche `replica`, retirée."""
+    from app.registre.canaux import CANAL_URGENCE
+
+    assert rapport.construire().identite.canal == CANAL_URGENCE
+
+
 def test_une_mesure_impossible_rend_inconnu_jamais_une_valeur(copropriete, monkeypatch):
     def panne(*_a, **_k):
         raise OSError("disque illisible")

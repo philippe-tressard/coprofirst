@@ -125,10 +125,10 @@ dépôt), l'archive `coprofirst-deploiement-X.Y.Z.tar.gz`. Elle contient,
    Les changer dès la première connexion, puis régler l'identité de la résidence
    (nom, adresse, logo) dans l'administration.
    *Administration › Exploitation › Installation* dit « Réplique » : la surcouche
-   pose ce rôle d'office. La branche
-   que l'écran affiche à côté (`replica`) ne décide pas de la version reçue : c'est
-   le bail (*La mise à jour automatique*, plus bas). Pour y voir si la version est
-   à jour, activer le service *Vérification de la version*.
+   pose ce rôle d'office. L'écran affiche à côté la version que le bail lui fait
+   installer (*La mise à jour automatique*, plus bas) — rien tant qu'il n'y en a
+   pas. Pour y voir si la version qui tourne l'a rejointe, activer le service
+   *Vérification de la version*.
 
 ## Mettre à jour
 

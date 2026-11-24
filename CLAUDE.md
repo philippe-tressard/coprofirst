@@ -378,6 +378,6 @@ commit …`. Avant de réécrire un fichier partagé : `git worktree list` (`sta
   par le point 0d.
 - Chaque commit de `main` publie ses images (`ghcr.io`, `sha-<commit>`) ; une version reçoit
   le tag `vX.Y.Z` par `scripts/ci/tag-version.sh`, jamais à la main.
-- **Je ne promeus jamais une version vers `replica` de moi-même** : c'est la décision de
-  l'auteur, qui choisit la version (workflow « Promotion »). Images, réplique, promotion et
-  mise à jour des installations : `mep-precheck`.
+- **Je ne choisis jamais la version d'une réplique** : c'est son bail, que l'opérateur règle
+  (ci-dessous). La branche `replica` et la promotion sont retirées (#3009). Images, réplique
+  et mise à jour des installations : `mep-precheck`.
