@@ -37,6 +37,7 @@ Get-ChildItem -Recurse -Filter "*.svelte" | Select-String -Pattern "@html"
 **Règle** : Tout `{@html}` DOIT passer par une fonction de `#lib/sanitize.ts` — elles sont **trois** (`safeHtml`, `safeRichContent`, `safeDescription`), toutes adossées à DOMPurify. Vérifié en CI par `npm run lint:html` (`CLAUDE.md`, règle front n° 1), qui exige que le nom vienne de l'**import** : une fonction locale homonyme ne prouve rien (#429).
 **Exceptions** : déclarées dans `front/scripts/check-html.mjs` (`EXCEPTIONS`), avec leur raison — et le contrôle **échoue** si l'une cesse de servir. Ne pas les recopier ici : cette ligne n'en nommait qu'une sur deux, et un audit qui la suivait signalait la seconde comme un écart qui n'en était pas un (#1051).
 **Fix** : `import { safeDescription } from '#lib/sanitize.ts'` → `{@html safeDescription(contenu)}` — et jamais un helper local, fût-il correct : c'est ainsi que trois copies de `safeDescription` ont coexisté.
+**Aperçu fidèle** : un HTML complet montré tel qu'il partira (aperçu d'un courriel, d'une affiche) ne passe pas par `{@html}` mais par un `<iframe srcdoc>` au bac à sable **VIDE** (`sandbox=""`) — sans `allow-scripts` ni `allow-same-origin` : le cadre n'exécute rien et ne lit rien de l'application, ce qui rend tenable de ne pas l'assainir (l'aperçu doit rester fidèle). 🔒 `npm run lint:ilots-clairs` refuse un cadre sans `sandbox` vide — absent, ouvert par un jeton ou calculé (#2945).
 
 Configuration DOMPurify — **lire `front/src/lib/sanitize.ts`**, jamais cette page :
 la liste recopiée ici avait déjà perdu `details` et `summary`, ajoutés le 17/09/2026
@@ -113,7 +114,7 @@ l'usage — la divergence n'arrive que le jour où la source apprend quelque cho
 
 | Contenu qui trahit une copie | Source | Contrôle |
 |---|---|---|
-| `….roles_autorises` lu | `visibility.profil_admet` | `test_autorisation.py` |
+| `….roles_autorises` lu | `visibility.profil_admet` | `test_profil_acces_source_unique.py` |
 | un élément de `….user_lots` jugé sur `actif` | `deps.est_rattache_au_lot` | `test_appartenance_lot_source_unique.py` |
 | un champ comparé à `user.id` par `auth/appartenance.py`, recomparé ailleurs | le prédicat du module (`peut_defaire_le_versement`…) | `test_appartenance_source_unique.py` |
 
@@ -334,13 +335,9 @@ s'écrit dans les scripts d'exploitation, pas dans l'application.
 
 ### 9. Dépendances vulnérables (A06:2021)
 
-```powershell
-# Python
-pip audit --requirement api/requirements.txt
-
-# Node.js
-cd front; npm audit
-```
+Les deux portes que la CI joue, chacune avec ses exceptions déclarées (`audit-exceptions.json`, qui
+échouent si l'une cesse de servir) : `cd api && python scripts/check_audit_python.py` et
+`cd front && npm run lint:audit` (#2933 — `pip audit` n'existe pas, et un audit nu ignore les exceptions).
 
 ### 10. Headers de sécurité (A05:2021)
 
@@ -415,6 +412,11 @@ refuse la copie.
   par tous : liste blanche, ni auteur ni destinataires). Ouvrir une route à un appareil = une
   ligne de la table. 🔒 `test_jetons_appareil.py` (toutes les routes × chaque portée, les deux
   sens du câblage, la porte relue), `test_ecrans.py` (ce qui est reçu), `test_jetons_montre.py`.
+- **La signature d'une INSTALLATION** (registre, #2953) : ni session ni jeton d'appareil — les
+  envois qu'une installation signe (inscription, bail, rapport, notification relayée) passent
+  par `registre/gardes` : `lire_contrat` (taille, contrat, version) puis `exiger_signature`, dans
+  l'ordre que chaque point spécifie. 🔒 `test_signature_registre_source_unique.py` (appelants de
+  `signature.verifier` déclarés, chaque route de `app/registre/` atteint la porte).
 - **Leurres** (#2365) : registre `utils/leurres` (`ROUTES_LEURRES`, `EVENEMENTS_LEURRES`) ;
   leurs VALEURS (`LEURRE_ADRESSE`, `LEURRE_CLE_MAINTENANCE`) ne vivent que dans le `.env` du
   nœud, jamais dans le dépôt. Une connexion leurre rend le refus ordinaire et journalise
@@ -474,6 +476,18 @@ trois règles ; ce qu'elles gagnent est un lieu. 🔒 `test_appartenance_source_
 délégation est en lecture seule depuis #1534 (`utils/delegations_actives`) ; `get_acting_user`
 n'avait jamais été prise par une route. 🔒 `test_autorisation.py` refuse une dépendance qu'aucune
 route ne prend ; `npm run lint:en-tetes-lus`, un en-tête posé par le front qu'aucune route ne lit.
+
+#### La portée : les routes MONTÉES, trois dispenses (#2911, #2942)
+`test_autorisation.py` lit les routes que l'application MONTE et les dépendances que FastAPI
+leur résout, reconnues par l'objet de `deps.py` — pas le texte d'`app/routers/` : douze routes
+(registre, installation commune, sonde, deux `__init__.py`) lui échappaient. Une route sans
+dépendance est publique (`_PUBLICS_ASSUMES`), à clé partagée (`_AUTHENTIFIES_PAR_CLE`) ou signée
+par une installation (`_AUTHENTIFIES_PAR_SIGNATURE`), chaque dispense justifiée et vérifiée
+dans les deux sens. Le REFUS « réservé au conseil » s'écrit `deps.exiger_moderateur(user, motif)`
+ou la dépendance `require_cs_or_admin` ; toute autre fonction qui lève 401/403 hors d'`auth/` et
+d'`utils/visibility/` se déclare dans `REFUS_DECLARES` avec la règle centrale qu'elle appelle
+(🔒 `test_autorisation_regles_locales.py`). Les renvois des modules d'`auth/` et de ces tests
+mènent à du code qui existe (🔒 `test_renvois_securite.py`).
 
 ## Rapport d'audit
 

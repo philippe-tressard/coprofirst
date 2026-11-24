@@ -24,7 +24,7 @@ from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Request
 from sqlmodel import Session, select
 
 from app.auth.appartenance import exiger_objet_autorise
-from app.auth.deps import est_moderateur, get_current_user
+from app.auth.deps import est_moderateur, exiger_moderateur, get_current_user
 from app.database import get_session
 from app.models.core import Ticket, TicketEvolution, Utilisateur
 from app.models.synthese import (
@@ -58,9 +58,8 @@ from app.utils.visibility import ticket_visible
 router = APIRouter()
 
 
-def _exiger_conseil(user: Utilisateur) -> None:
-    if not est_moderateur(user):
-        raise HTTPException(403, "Réservé au conseil syndical et à l'administration")
+#: Le refus des gestes de la synthèse — posé par la porte centrale (`exiger_moderateur`, #2942).
+_RESERVE = "Réservé au conseil syndical et à l'administration"
 
 
 def _courante(session: Session, ticket: Ticket) -> SyntheseAffaire:
@@ -122,7 +121,7 @@ def modifier_synthese(
     session: Session = Depends(get_session),
     user: Utilisateur = Depends(get_current_user),
 ):
-    _exiger_conseil(user)
+    exiger_moderateur(user, _RESERVE)
     synthese = _courante(
         session, exiger_objet_autorise(session, Ticket, ticket_id, "Ticket", user, ticket_visible)
     )
@@ -150,7 +149,7 @@ def supprimer_synthese(
     La ligne reste, `annulee` — « gardée, plus affichée », comme une synthèse
     remplacée : elle ne bloque pas une nouvelle production (`STATUTS_VIVANTS`),
     et « Produire la synthèse » redevient offert au conseil."""
-    _exiger_conseil(user)
+    exiger_moderateur(user, _RESERVE)
     synthese = _courante(
         session, exiger_objet_autorise(session, Ticket, ticket_id, "Ticket", user, ticket_visible)
     )
@@ -192,7 +191,7 @@ async def relancer_synthese(
     session: Session = Depends(get_session),
     user: Utilisateur = Depends(get_current_user),
 ):
-    _exiger_conseil(user)
+    exiger_moderateur(user, _RESERVE)
     synthese = _brouillon(
         session, exiger_objet_autorise(session, Ticket, ticket_id, "Ticket", user, ticket_visible)
     )
@@ -209,7 +208,7 @@ async def recommencer_synthese(
 ):
     """Arbitré : « Recommencer » propose sans complément — l'appliquer l'efface ;
     l'historique des tentatives reste."""
-    _exiger_conseil(user)
+    exiger_moderateur(user, _RESERVE)
     synthese = _brouillon(
         session, exiger_objet_autorise(session, Ticket, ticket_id, "Ticket", user, ticket_visible)
     )
@@ -226,7 +225,7 @@ def appliquer_proposition(
     user: Utilisateur = Depends(get_current_user),
 ):
     """« Appliquer » : la rédaction proposée par une relance remplace le texte."""
-    _exiger_conseil(user)
+    exiger_moderateur(user, _RESERVE)
     synthese = _brouillon(
         session, exiger_objet_autorise(session, Ticket, ticket_id, "Ticket", user, ticket_visible)
     )
@@ -246,7 +245,7 @@ def valider_synthese(
     session: Session = Depends(get_session),
     user: Utilisateur = Depends(get_current_user),
 ):
-    _exiger_conseil(user)
+    exiger_moderateur(user, _RESERVE)
     synthese = _brouillon(
         session, exiger_objet_autorise(session, Ticket, ticket_id, "Ticket", user, ticket_visible)
     )
@@ -273,7 +272,7 @@ async def produire_synthese(
     user: Utilisateur = Depends(get_current_user),
 ):
     """« Produire la synthèse » — une affaire du carnet close qui n'en a pas."""
-    _exiger_conseil(user)
+    exiger_moderateur(user, _RESERVE)
     ticket = exiger_objet_autorise(session, Ticket, ticket_id, "Ticket", user, ticket_visible)
     if not peut_etre_produite(ticket):
         raise HTTPException(422, "Seule une affaire close du carnet d'entretien a une synthèse")

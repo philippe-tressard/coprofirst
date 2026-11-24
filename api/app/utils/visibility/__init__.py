@@ -51,7 +51,6 @@ from .socle import (
 from .objets import (
     adresse_de_contact,
     annonce_visible,
-    can_see_ag,
     contenu_hors_du_groupe,
     sondage_hors_du_groupe,
     evenement_visible,
@@ -116,7 +115,6 @@ __all__ = [
     "resultats_sondage_visibles",
     "sondage_accessible",
     "evenement_visible",
-    "can_see_ag",
     "ticket_visible",
     "CODES_COPROPRIETAIRES",
     "CONCERNE",
