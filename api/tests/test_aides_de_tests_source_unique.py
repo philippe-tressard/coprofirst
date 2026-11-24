@@ -24,6 +24,8 @@ import re
 from collections import defaultdict
 from dataclasses import dataclass
 
+from tests.aides_sources import empreinte_du_corps
+
 TESTS = pathlib.Path(__file__).resolve().parent
 CE_FICHIER = pathlib.Path(__file__).name
 
@@ -230,30 +232,17 @@ INSTRUCTIONS_MINIMUM = 3
 COPIES_ADMISES: dict[frozenset[str], str] = {}
 
 
-def _corps_sans_docstring(fonction: ast.FunctionDef | ast.AsyncFunctionDef) -> list[ast.stmt]:
-    corps = fonction.body
-    if (
-        corps
-        and isinstance(corps[0], ast.Expr)
-        and isinstance(corps[0].value, ast.Constant)
-        and isinstance(corps[0].value.value, str)
-    ):
-        return corps[1:]
-    return corps
-
-
 def empreintes(source: str) -> dict[str, tuple[str, str]]:
     """{empreinte: (nom, ligne)} des fonctions de niveau module assez longues. PURE."""
     trouvees = {}
     for noeud in ast.parse(source).body:
         if not isinstance(noeud, (ast.FunctionDef, ast.AsyncFunctionDef)):
             continue
-        corps = _corps_sans_docstring(noeud)
-        taille = sum(isinstance(n, ast.stmt) for c in corps for n in ast.walk(c))
-        if taille < INSTRUCTIONS_MINIMUM:
+        taille = sum(isinstance(n, ast.stmt) for c in noeud.body for n in ast.walk(c))
+        if taille - (ast.get_docstring(noeud) is not None) < INSTRUCTIONS_MINIMUM:
             continue
         empreinte = "|".join(
-            [ast.dump(noeud.args), *map(ast.dump, noeud.decorator_list), *map(ast.dump, corps)]
+            [ast.dump(noeud.args), *map(ast.dump, noeud.decorator_list), empreinte_du_corps(noeud)]
         )
         trouvees[empreinte] = (noeud.name, str(noeud.lineno))
     return trouvees

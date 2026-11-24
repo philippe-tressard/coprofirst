@@ -160,7 +160,11 @@ valeurs, identifiants depuis une constante, ajouter puis retirer) et
 `standards/06-donnees-et-integrite.md` §3 pour le générique — seules copies
 (claude-config#122). Ce qui n'est écrit que là :
 - tester l'existence d'une colonne avant `add_column` par
-  `sa.inspect(conn).get_columns(TABLE)`, jamais par une requête en f-string.
+  `utils/colonnes_presentes.colonnes_presentes(op.get_bind(), TABLE)`, jamais par une requête
+  en f-string ; lire un texte servi par `utils/textes_livres.lire_texte`. Seize migrations
+  recopiaient la première, trois la seconde : `test_textes_livres.py` refuse, au-delà de
+  `DERNIERE_FIGEE`, une migration qui lit `get_columns` elle-même ou recopie le corps d'une aide
+  (empreinte d'AST, #2950).
 - **Jamais** modifier une migration existante : en créer une nouvelle.
 - Une colonne ajoutée est **nullable ou porte un `server_default`** : l'image
   précédente doit pouvoir insérer sans la connaître. Retirer ou renommer se fait
