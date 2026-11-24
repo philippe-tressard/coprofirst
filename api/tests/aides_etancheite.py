@@ -8,8 +8,6 @@ commune réelle, résolue par l'hôte) les emploient l'un et l'autre (#2223).
 
 from __future__ import annotations
 
-import re
-
 from sqlmodel import Session, select
 
 from app.auth.jwt import creer_jeton_acces
@@ -18,7 +16,7 @@ from app.models.copropriete import Copropriete
 from app.models.core import RoleUtilisateur
 from app.models.tickets import Ticket
 from tests.aides_base import compte
-from tests.aides_sources import operations_montees
+from tests.aides_sources import chemin_concret, operations_montees
 
 #: Le témoin planté dans A : un mot qu'aucun libellé de l'application ne contient.
 MARQUE_A = "Fuitezq"
@@ -70,7 +68,7 @@ def temoins_dans(nom: str, s: Session) -> tuple[str, int]:
 def chemins_get() -> list[str]:
     """Chaque route GET montée, ses paramètres de chemin valant 1 — l'identifiant partagé."""
     chemins = {
-        re.sub(r"\{[^}]+\}", "1", chemin)
+        chemin_concret(chemin)
         for methode, chemin, _route in operations_montees(app)
         if methode == "GET" and chemin not in ROUTES_ECARTEES
     }

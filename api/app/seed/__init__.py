@@ -161,6 +161,9 @@ def _compte_technique(nom: str, adresse: str, roles_json: str, mot_de_passe: str
         #  administrateur. Trouvé par l'essai de bout en bout de DI-4 (10/10/2026).
         email_verifie=True,
         consentement_rgpd=True,
+        #  Son mot de passe est écrit au journal : il ne sert qu'à en choisir un autre
+        #  (#3019, `auth/mot_de_passe_a_changer`).
+        mot_de_passe_a_changer=True,
     )
 
 
@@ -197,9 +200,10 @@ def _admin_initial(session: Session) -> None:
     )
     #  Exception DÉCLARÉE à « jamais de mot de passe dans un journal » (#2973, arbitrée par
     #  Philippe le 23/11/2026) : au premier démarrage seulement, dans le journal du conteneur
-    #  — la seule voie par laquelle l'installateur se connecte la première fois. Le
-    #  changement forcé à la première connexion est porté par #3019. Le libellé de cette
-    #  ligne est lu par `scripts/ci/essai-mise-a-jour.sh` et `tests/test_seed.py`.
+    #  — la seule voie par laquelle l'installateur se connecte la première fois. Les deux
+    #  comptes naissent marqués : rien d'autre ne s'ouvre avant le changement (#3019).
+    #  Le libellé de cette ligne est lu par `scripts/ci/essai-mise-a-jour.sh` et
+    #  `tests/test_seed.py`.
     logging.getLogger("app.seed").warning(
         "\n"
         + "=" * 60
