@@ -31,14 +31,16 @@ for (const statut of ['syndic', 'mandataire']) {
 	});
 }
 
-test('l’aidant a les pages générales et Délégations, pas la Communauté', async ({ page }) => {
+//  #2993 : le serveur ouvre la Communauté à l'aidant (`communaute.motif_de_refus`) ;
+//  le menu s'aligne, comme les apps.
+test('l’aidant a les pages générales, la Communauté et Délégations', async ({ page }) => {
 	await ouvrirEnTantQue(page, {
 		...MEMBRE_CS,
 		statut: 'aidant',
 		role: 'externe',
 		roles: ['externe'],
 	});
-	for (const href of [...GENERALES, '/delegations']) await expect(lien(page, href)).toHaveCount(1);
-	for (const href of [...DU_CONSEIL, '/sondages', '/admin'])
-		await expect(lien(page, href)).toHaveCount(0);
+	for (const href of [...GENERALES, '/sondages', '/delegations'])
+		await expect(lien(page, href)).toHaveCount(1);
+	for (const href of [...DU_CONSEIL, '/admin']) await expect(lien(page, href)).toHaveCount(0);
 });
