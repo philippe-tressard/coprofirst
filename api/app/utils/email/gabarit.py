@@ -25,7 +25,7 @@ from app.utils.logo import adresse_logo
 # `modele_email` — surtout pas recopié dans chaque corps : il resterait
 # introuvable le jour où il faudrait le changer, et une migration qui réécrit
 # vingt-quatre corps écraserait les personnalisations faites depuis
-# Admin → Emails.
+# Admin › Présentation › Modèles e-mail.
 #
 # code → (libellé affiché, fond, texte)
 INTENTIONS: dict[str, tuple[str, str, str]] = {
@@ -33,7 +33,7 @@ INTENTIONS: dict[str, tuple[str, str, str]] = {
     "action_requise": ("Action requise", "#FEF3E2", "#8A5A0B"),
     "reponse_attendue": ("Réponse attendue", "#F0F7F2", "#2C5138"),
     # Un envoi qu'on garde sans avoir à en faire quoi que ce soit — le CR validé
-    # d'un point CS / Syndic, PDF joint (#2082), et ce qu'Admin → Emails y range.
+    # d'un point CS / Syndic, PDF joint (#2082), et ce que Modèles e-mail y range.
     "archive": ("À conserver", "#F4F2ED", "#5A6070"),
 }
 

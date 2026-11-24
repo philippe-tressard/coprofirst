@@ -32,6 +32,7 @@ from pathlib import Path
 from app.models.tickets import CategorieTicket
 from app.utils.carnet_entretien import CATEGORIES_BATI
 from app.utils.categories_ticket import LIBELLES_CATEGORIE, libelle_categorie
+from tests.aides_routes_front import decoder_js
 
 #  ⚠️ `tickets-categories.ts` depuis le 21/09/2026 : la table a quitté
 #  `tickets.ts`, qui dépassait 500 lignes. `#lib/tickets` la réexporte, donc
@@ -183,15 +184,10 @@ def test_l_ecran_marque_exactement_les_categories_du_carnet():
 #  rester la même grille.
 
 
-def _decoder_js(texte: str) -> str:
-    """`'\\u{1F6E0}️'` → le caractère : la table du front écrit ses pictogrammes échappés."""
-    return re.sub(r"\\u\{([0-9A-Fa-f]+)\}", lambda m: chr(int(m.group(1), 16)), texte)
-
-
 def _source_decodee() -> str:
     """La table du front, échappements décodés et commentaires retirés : `\\u{…}`
     porte une accolade, et un commentaire entre deux entrées en porterait d'autres."""
-    source = _decoder_js(_FRONT.read_text(encoding="utf-8"))
+    source = decoder_js(_FRONT.read_text(encoding="utf-8"))
     source = re.sub(r"/\*.*?\*/", "", source, flags=re.S)
     return re.sub(r"^\s*//.*$", "", source, flags=re.M)
 

@@ -4,9 +4,9 @@ Merci de l'intérêt porté au projet. Ce document décrit la méthode **réelle
 suivie — pas une méthode générique : les commandes ci-dessous sont celles que
 l'intégration continue exécute, et les contrôles qu'elles rejouent sont les mêmes.
 
-> ⚠️ **Avant tout** : lire la section [Licence](#licence). Le code est
-> *accessible*, il n'est pas libre au sens de l'OSI, et une contribution est
-> versée sous la licence du projet.
+> ⚠️ **Avant tout** : lire la section [Licence](#licence). CoproFirst est un
+> logiciel libre sous **AGPL-3.0-or-later**, et une contribution est versée sous
+> cette licence.
 
 ---
 
@@ -25,14 +25,11 @@ derrière elle.
 
 ## 2. Démarrer en local
 
-```bash
-git clone https://github.com/philippe-tressard/coprofirst.git
-cd coprofirst
-cp .env.example .env          # puis renseigner SECRET_KEY (32 caractères au moins)
-docker compose up --build -d
-```
-
-Le site répond alors sur `http://localhost`.
+L'installation locale — les variables sans lesquelles rien ne démarre, le
+développement sans Docker et les navigateurs des tests — s'écrit **une fois**,
+dans le [Démarrage rapide du README](README.md#démarrage-rapide) : la suivre.
+`api/tests/test_env_exemple_coherent.py` vérifie qu'elle nomme ce que le code
+exige.
 
 **Armer les hooks git — une fois par clone**, sinon ils sont inertes :
 
@@ -47,19 +44,6 @@ La dernière ligne fait sauter à `git blame` les commits purement mécaniques
 Le hook de pré-commit refuse un commit dont la branche est en retard sur son
 distant ; celui de pré-poussée refuse un envoi sans trace de pré-contrôle. Un
 hook versionné n'est **pas** un hook actif.
-
-### Sans Docker
-
-```bash
-cd api && python -m venv .venv && .venv/Scripts/activate  # ou source .venv/bin/activate
-pip install -r requirements.txt && uvicorn app.main:app --reload
-```
-
-`DATABASE_URL` désigne alors un PostgreSQL joignable depuis le poste.
-
-```bash
-cd front && npm install && npm run dev
-```
 
 ## 3. Signaler une anomalie ou proposer une évolution
 
@@ -101,7 +85,10 @@ comportement observé en production. Jamais sur « ça devrait aller ».
 
    Ce script **extrait** ses commandes de `.github/workflows/ci.yml` : une liste
    tenue à la main divergerait au premier travail ajouté, et c'est justement
-   celui qu'on n'a pas pensé à lancer qui échoue.
+   celui qu'on n'a pas pensé à lancer qui échoue. Par défaut, il joue les étapes
+   **rapides** de tous les travaux ; les lentes (pytest, tests de navigateur) sont
+   confiées à la CI de la demande de fusion. Ce qu'il joue, et ce que `--complet`
+   ajoute, se lit dans son usage : `sed -n '/^#  Usage/,/^$/p' scripts/poste/rejouer-ci.sh`.
 
 4. Ouvrir la demande de fusion **vers `dev`**. Une demande visant `main`
    directement est refusée.

@@ -103,6 +103,10 @@ class Utilisateur(SQLModel, table=True):
     #  du compte tombent (#2481). Écrite par `jetons_rafraichissement.fermer_apres_rejeu`
     #  seule ; l'empreinte se compose par `jwt.empreinte_du_compte`.
     generation_sessions: int = Field(default=0)
+    #  Le mot de passe est TEMPORAIRE (#3019) : posé par le seed sur les deux comptes
+    #  initiaux, retiré par `utils/mots_de_passe.poser_mot_de_passe`. Tant qu'il tient,
+    #  le compte ne fait que changer son mot de passe (`auth/mot_de_passe_a_changer`).
+    mot_de_passe_a_changer: bool = Field(default=False)
     statut: StatutUtilisateur = StatutUtilisateur.copropriétaire_résident
     role: RoleUtilisateur = RoleUtilisateur.résident  # rôle principal (legacy + fallback)
     roles_json: str = Field(

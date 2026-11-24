@@ -28,6 +28,7 @@ from tests.aides_courriel import (  # noqa: F401 — `scene` est une fixture
     scene,
 )
 from tests.aides_purge import purger_ligne
+from tests.conftest import requete_de_test
 
 _RECU = datetime(2026, 11, 5, 11, 29)
 
@@ -130,7 +131,9 @@ def test_rattacher_verse_le_message_au_fil_et_efface_son_contenu(file):
     session, ticket, _syndic, cs = file
     _recevoir(session, cs.email, texte="Toujours bloqué ce matin.")
     item = _item(session)
-    reponse = route.rattacher(item.id, route.Rattachement(numero=f"#{ticket.numero}"), cs, session)
+    reponse = route.rattacher(
+        requete_de_test(), item.id, route.Rattachement(numero=f"#{ticket.numero}"), cs, session
+    )
     assert reponse.ticket_id == ticket.id
     (suite,) = _evolutions(session, ticket)
     assert "Toujours bloqué ce matin." in suite.contenu
@@ -144,7 +147,7 @@ def test_rattacher_verse_le_message_au_fil_et_efface_son_contenu(file):
 def test_creer_ouvre_une_affaire_du_conseil(file):
     session, _ticket, syndic, cs = file
     _recevoir(session, syndic.email, sujet="Fuite au 3e", texte="Une fuite au plafond.")
-    reponse = route.creer(_item(session).id, cs, session)
+    reponse = route.creer(requete_de_test(), _item(session).id, cs, session)
     neuve = session.get(Ticket, reponse.ticket_id)
     assert neuve.titre == "Fuite au 3e"
     assert "Une fuite au plafond." in neuve.description
@@ -172,7 +175,7 @@ def test_un_message_deja_classe_ne_se_classe_pas_deux_fois(file):
     item = _item(session)
     route.ecarter(item.id, cs, session)
     with pytest.raises(HTTPException) as refus:
-        route.creer(item.id, cs, session)
+        route.creer(requete_de_test(), item.id, cs, session)
     assert refus.value.status_code == 409
 
 
@@ -181,13 +184,17 @@ def test_on_ne_rattache_pas_a_une_affaire_close_ni_inconnue(file):
     _recevoir(session, cs.email)
     item = _item(session)
     with pytest.raises(HTTPException) as inconnue:
-        route.rattacher(item.id, route.Rattachement(numero="TK-000000"), cs, session)
+        route.rattacher(
+            requete_de_test(), item.id, route.Rattachement(numero="TK-000000"), cs, session
+        )
     assert inconnue.value.status_code == 404
     ticket.statut = StatutTicket.résolu
     session.add(ticket)
     session.commit()
     with pytest.raises(HTTPException) as close:
-        route.rattacher(item.id, route.Rattachement(numero=ticket.numero), cs, session)
+        route.rattacher(
+            requete_de_test(), item.id, route.Rattachement(numero=ticket.numero), cs, session
+        )
     assert close.value.status_code == 409
 
 
@@ -224,7 +231,9 @@ def test_creer_depuis_un_message_reexpedie_garde_le_texte_et_son_auteur(file):
     citation, était retiré) et nommait qui réexpédiait au lieu de qui écrivait."""
     session, _ticket, _syndic, cs = file
     _recevoir(session, cs.email, sujet=" trou sur le mur à gauche du portillon ?", texte=_REEXPEDIE)
-    neuve = session.get(Ticket, route.creer(_item(session).id, cs, session).ticket_id)
+    neuve = session.get(
+        Ticket, route.creer(requete_de_test(), _item(session).id, cs, session).ticket_id
+    )
     assert "À quoi sert le trou sur le mur" in neuve.description
     assert "Alice Martin" in neuve.description
     assert neuve.saisi_pour_nom == "Alice Martin"
@@ -239,7 +248,9 @@ def test_creer_depuis_un_message_reexpedie_garde_le_texte_et_son_auteur(file):
 def test_rattacher_un_message_reexpedie_verse_le_message_d_origine(file):
     session, ticket, _syndic, cs = file
     _recevoir(session, cs.email, sujet="Re: Portillon", texte=_REEXPEDIE)
-    route.rattacher(_item(session).id, route.Rattachement(numero=ticket.numero), cs, session)
+    route.rattacher(
+        requete_de_test(), _item(session).id, route.Rattachement(numero=ticket.numero), cs, session
+    )
     (suite,) = _evolutions(session, ticket)
     assert "À quoi sert le trou sur le mur" in suite.contenu
     assert "Alice Martin" in suite.contenu
@@ -248,7 +259,9 @@ def test_rattacher_un_message_reexpedie_verse_le_message_d_origine(file):
 def test_un_message_fait_d_une_seule_citation_ne_donne_jamais_une_description_vide(file):
     session, _ticket, _syndic, cs = file
     _recevoir(session, cs.email, sujet="Portillon", texte="> Le portillon reste bloqué.\n")
-    neuve = session.get(Ticket, route.creer(_item(session).id, cs, session).ticket_id)
+    neuve = session.get(
+        Ticket, route.creer(requete_de_test(), _item(session).id, cs, session).ticket_id
+    )
     assert "Le portillon reste bloqué." in neuve.description
     purger_ligne(session, Ticket, neuve.id)
     session.commit()
