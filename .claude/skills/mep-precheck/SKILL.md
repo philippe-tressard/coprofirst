@@ -1,6 +1,6 @@
 ---
 name: mep-precheck
-description: "MEP 5Hostachy : lancer `bash scripts/poste/rejouer-ci.sh` puis `bash scripts/poste/precheck-mep.sh` (tous les points s'exécutent), lire ses verdicts, dérouler le post-check P1-P12 (dont la clôture des tickets, après vérification en production, puis le retrait de la copie de travail du lot), rollback. Use when: AVANT tout `git push` sur dev ou main, avant de remettre une PR, après un merge vers main, pour diagnostiquer un déploiement qui n'a pas eu lieu ou vérifier qu'un correctif est réellement servi. L'histoire des incidents qui ont fait naître chaque contrôle est dans HISTORIQUE.md, à ouvrir seulement pour diagnostiquer."
+description: "MEP 5Hostachy — l'ordre d'un lot (rejeu `bash scripts/poste/rejouer-ci.sh`, push de la branche, PR vers `dev`, CI verte, pré-check `bash scripts/poste/precheck-mep.sh`, puis `bash scripts/poste/conduire-mep.sh`), lecture des verdicts du pré-check (tous les points s'exécutent), version et images publiées, post-check P1-P12 (dont la clôture des tickets après vérification en production, puis le retrait de la copie de travail du lot), retour arrière. À charger : avant d'ouvrir la PR d'un lot, avant le pré-check et `conduire-mep.sh`, après une fusion vers `main`, pour diagnostiquer un déploiement qui n'a pas eu lieu ou vérifier qu'un correctif est réellement servi. L'histoire des incidents qui ont fait naître chaque contrôle est dans HISTORIQUE.md, à ouvrir seulement pour diagnostiquer."
 argument-hint: "Décrire le lot à déployer ou le point à vérifier (ex. « pré-check avant MEP v2.31.3 », « post-check après merge »)"
 ---
 
@@ -59,9 +59,9 @@ de la confiance.
 | # | Vérification | Commande | Attendu |
 |---|---|---|---|
 | 0a | Clone à jour | `git fetch origin && git merge --ff-only origin/dev` | Fast-forward propre (cf. section ci-dessus) |
-| 0b | Modes des fichiers exécutables versionnés | **Automatisé** : job CI `test-scripts` (étape « Bits d'exécution versionnés ») | `100755` sur tout ce qui doit s'exécuter, `100644` sur les modules sourcés `lib-*.sh` |
+| modes | Modes des fichiers exécutables versionnés | **Automatisé** : job CI `test-scripts` (étape « Bits d'exécution versionnés ») | `100755` sur tout ce qui doit s'exécuter, `100644` sur les modules sourcés `lib-*.sh` |
 
-**0b** — pourquoi un clone Windows avale `chmod +x` : `standards/08` §3.
+**Modes** (sans numéro : `0b` est la modularité, au script) — pourquoi un clone Windows avale `chmod +x` : `standards/08` §3.
 Remédiation : `git update-index --chmod=+x <fichier>`.
 
 ## Étape 0 bis — exigences sans exception (avant le pré-check)
@@ -76,11 +76,11 @@ règles reste un mauvais déploiement.
 
 | # | Exigence | Vérification | Automatisé par |
 |---|---|---|---|
-| 0c | **Autorisation centralisée, aucun passe-droit** | Toute règle de sécurité dans `app/auth/deps.py` · tout endpoint porte une dépendance · exceptions publiques énumérées et justifiées · `has_role(RoleUtilisateur.…)` jamais `user.role` ni chaîne · exposition publique en **liste blanche** | `api/tests/test_autorisation.py` (5 tests, CI) |
-| 0d | **Factorisation** | Aucun code spécifique ne réimplémente une bibliothèque partagée (dates, montants, alertes, thème PDF, destinataires) | `test_dates_fr.py` · `npm run lint:dates` · `npm run lint:notifications` — le reste par relecture |
-| 0e | **Documentation à jour** | README (et ses badges) · manuel utilisateur · `specs/` reflètent l'état livré | `api/tests/test_documentation.py` pour la partie mécanique ; le fond reste à relire |
+| E1 | **Autorisation centralisée, aucun passe-droit** | Les dépendances d'auth dans `app/auth/deps.py`, les règles d'appartenance dans `app/auth/appartenance.py` (`CLAUDE.md`, « Dépendances d'auth ») · tout endpoint porte une dépendance · exceptions publiques énumérées et justifiées · `has_role(RoleUtilisateur.…)` jamais `user.role` ni chaîne · exposition publique en **liste blanche** | `api/tests/test_autorisation.py` (CI) |
+| E2 | **Factorisation** | Aucun code spécifique ne réimplémente une bibliothèque partagée (dates, montants, alertes, thème PDF, destinataires) | `test_dates_fr.py` · `npm run lint:dates` · `npm run lint:notifications` — le reste par relecture |
+| E3 | **Documentation à jour** | README (et ses badges) · manuel utilisateur · `specs/` reflètent l'état livré | `api/tests/test_documentation.py` pour la partie mécanique ; le fond reste à relire |
 
-**0c — pourquoi cette exigence a besoin d'un test et non d'une consigne** (principe :
+**E1 — pourquoi cette exigence a besoin d'un test et non d'une consigne** (principe :
 `standards/03-securite.md` §1 ; ici, son instanciation). L'audit du
 26/07/2026 a trouvé l'exigence globalement respectée — 276 endpoints, aucun contrôle
 sur `user.role`, tout par `has_role()` — et pourtant **trois dérives installées sans
@@ -101,7 +101,7 @@ Le point commun : **aucune n'était visible sans rouvrir le fichier concerné**.
 exigence, même « critique et prioritaire », ne se maintient pas par la consigne — la
 consigne était là. Elle se maintient par un contrôle qui échoue.
 
-**0e — pourquoi.** La synchronisation du manuel entre `docs/` et `front/static/`
+**E3 — pourquoi.** La synchronisation du manuel entre `docs/` et `front/static/`
 n'était qu'une case à cocher : elle a tenu, mais une case ne résiste pas à une
 session pressée, et les résidents auraient lu une version périmée. Les badges du
 README avaient connu la dérive inverse, réelle : Python annoncé « 3.10+ » pour une
@@ -119,12 +119,15 @@ bash scripts/poste/precheck-mep.sh          # à la racine du dépôt
 **Ne pas dérouler la grille à la main.** Elle l'a été trop souvent de mémoire, en
 sous-ensemble : trois lots sont partis sans aucun pré-check les 07 et 08/08/2026,
 et deux contrôles improvisés ont rendu des faux verts. Le script mesure, écrit sa
-trace dans `.git/precheck-mep.ok`, et `.githooks/pre-push` refuse le push sans
-elle.
+trace dans `.git/precheck-mep.ok`, et `.githooks/pre-push` refuse sans elle un push
+À LA MAIN sur `dev` ou `main` — le chemin nominal n'en fait plus : `conduire-mep.sh`
+pousse la version sous `SKIP_PRECHECK=1`.
 
-**Fusionner la PR EST la mise en production** : `auto-deploy.sh` déploie
-`origin/main` toutes les 5 minutes. Le pré-check se passe donc **avant le push sur
-`dev`**, pas après la fusion.
+**Fusionner vers `main` EST la mise en production** : `auto-deploy.sh` déploie
+`origin/main` toutes les 5 minutes. Le pré-check se passe donc **avant
+`conduire-mep.sh`**, jamais après la fusion — et après la CI verte de la PR du lot,
+que le point 16 lit. L'ordre d'un lot s'écrit une fois, dans `CLAUDE.md` (« Ordre d'un
+lot ») ; cette skill dit ce que chaque point y lit (#2908).
 
 🔴 **Depuis le 28/08/2026, c'est Claude qui crée et fusionne la PR, et qui conduit
 la MEP** — l'utilisateur n'intervient plus. Le pré-check ne s'allège pas pour
@@ -295,10 +298,6 @@ AUTOUR d'un verdict faux est un contrôle qu'on finit par ne plus lire.
   ancêtre de HEAD, et son échec bloquait le lot qui le remplace. Une déclaration
   refusée par 0a ne dépasse rien (`ascendance_0c`, `lib-reecriture.sh`).
 
-  ⚠️ **Deux contrôles différents portent le nom « 0c »** : celui-ci, exécuté par
-  le script, et l'exigence d'**autorisation centralisée** de l'étape 0 bis
-  ci-dessus, qui est vérifiée par `test_autorisation.py`. La collision est
-  historique ; à renommer un jour, en attendant lire le contexte.
 - **6** → il compte les `ERROR`/`CRITICAL` de la dernière heure sur l'API de
   production. Depuis le 19/08/2026 (#502), un lot peut **déclarer la signature de
   l'erreur qu'il corrige**, dans `.git/erreur-corrigee` — même forme datée que le
@@ -355,8 +354,8 @@ AUTOUR d'un verdict faux est un contrôle qu'on finit par ne plus lire.
   déclaration du lot précédent est refusée), et elle **ne survit pas à son
   objet** (déclarer un commit qui ne manque pas, ou en oublier un, refuse aussi).
 
-- **0f** → le lot doit porter son titre et son descriptif de PR **avant** le push,
-  dans `.git/pr-brief.md` : première ligne `commit: <sha court de HEAD>`, deuxième
+- **0f** → le lot doit porter son titre et son descriptif de PR dans
+  `.git/pr-brief.md`, rédigés avant d'ouvrir la PR : première ligne `commit: <sha court de HEAD>`, deuxième
   ligne le titre en `# …`, puis le corps (5 lignes minimum). Un brief rédigé pour
   un autre commit **échoue** — sinon il décrirait le lot précédent. Ajouté le
   11/08/2026 après deux oublis dans la même journée, le second juste après
@@ -382,8 +381,8 @@ AUTOUR d'un verdict faux est un contrôle qu'on finit par ne plus lire.
   (pytest, tests de navigateur) sont **confiées à la CI de la PR**, et la trace le dit
   (`MODE=rapide`). Sur une telle trace, le point lit par `gh` les checks de la PR ouverte
   pour la branche : même arbre et tous verts → OK ; un check rouge → FAIL ; en cours, PR
-  absente, autre arbre ou `gh` muet → INCONNU. L'ordre d'un lot est donc : rejeu, pousser,
-  ouvrir la PR, attendre sa CI, **puis** le pré-check. `--complet` joue tout au poste.
+  absente, autre arbre ou `gh` muet → INCONNU. C'est pourquoi le pré-check vient **après**
+  la CI de la PR (l'ordre : `CLAUDE.md`, « Ordre d'un lot »). `--complet` joue tout au poste.
 
   ```bash
   bash scripts/poste/rejouer-ci.sh
@@ -439,7 +438,7 @@ AUTOUR d'un verdict faux est un contrôle qu'on finit par ne plus lire.
 
 ### Avant même le script — l'étape 0 bis
 
-Les exigences 0c à 0e, hors machines, sont au tableau de l'**étape 0 bis** plus
+Les exigences E1 à E3, hors machines, sont au tableau de l'**étape 0 bis** plus
 haut, et nulle part ailleurs : ce fichier en portait une seconde copie, qui avait
 recompté « deux » au-dessus de trois lignes (#122).
 
@@ -542,13 +541,11 @@ pied de page bloqué en v2.22.8 après la MEP v2.23.0, alors que P3 était vert.
 bandeau de mise à jour (v2.24.0) couvre ce cas, et `api/tests/test_pwa_maj.py` le
 verrouille.
 
-> 🔒 **Pourquoi ne pas exposer la version dans `/api/health`** (question posée le
-> 03/08/2026). L'endpoint est public et porte déjà un champ `version`, mais figé à
-> `"0.2.0"` — une constante (`API_VERSION`, `main.py`) sans aucun rapport avec
-> l'application. Le rendre exact donnerait un P3 en une ligne, au
-> prix d'une **divulgation publique de la version déployée** que rien n'impose
-> aujourd'hui. Décision : on ne l'a pas fait, et elle reste vraie. Lire le bundle
-> coûte trois requêtes et n'expose rien de plus qu'aujourd'hui.
+> 🔒 **La version servie est publique, et c'est voulu** (#2833) : `GET /config`, sans
+> authentification, publie `version_logicielle` — les apps la lisent (P3b). Le
+> `version` de `/api/health` est celui du CONTRAT de l'API (`contrat.VERSION_CONTRAT`),
+> pas celui de l'application. La réserve écrite le 03/08/2026 (« ne pas divulguer la
+> version ») a été levée par cette décision ; elle ne se rétablit pas sans la rouvrir.
 
 **P7 — pourquoi :** c'est le seul contrôle qui teste ce que la MEP était censée
 apporter. Le 26/07, le bug du mois en anglais n'a été trouvé par **aucun** contrôle
@@ -622,23 +619,26 @@ le français n'est pas reconnu par GitHub, donc cette mention ne ferme rien, et
 c'est très bien ainsi. Les tickets **ouverts** par le lot se listent aussi, pour
 qu'un relecteur voie ce qui a été découvert sans être traité.
 
-**Rollback si P1–P6 échoue :** le retour arrière classique est de ramener l'actif
-au commit précédent (`git reset --hard <commit-précédent>`), puis
-`. scripts/lib/lib-applicatifs.sh && docker compose build $SERVICES_APPLICATIFS && docker compose up -d $SERVICES_APPLICATIFS`
-— l'application seule, la base ne se relance pas (#2706).
+**Rollback si P1–P6 échoue :** le retour arrière qui TIENT est une PR `revert` vers
+`main` (voir plus bas) : tant que `main` porte le commit fautif, `auto-deploy.sh`
+ramène le nœud à `origin/main` à chaque passage (`git reset --hard origin/main`, toutes
+les 5 minutes) — un retour arrière posé à la main sur l'actif est défait au passage
+suivant. Le nœud TIRE les images de la CI (#1758, `sha-<commit>`) : le revert redéploie
+l'image du commit précédent, sans construire ; il ne construit qu'en secours. Seule
+l'application change d'image, la base ne se relance pas (#2706).
 
 Ce retour au code précédent tient **sans restaurer la base** parce que les
 migrations sont compatibles sur une version (#1757, `test_migrations_compatibles.py`) :
 l'ancien code lit et écrit le schéma que la version fautive a migré.
 
-🔴 **Mais ce geste ne se lance pas de sa propre initiative.** Le hook global
+🔴 **Jamais de `git reset --hard <commit-précédent>` sur l'actif.** Il ne tiendrait
+pas (`auto-deploy.sh` le défait au passage suivant), et le hook global
 `garde-git-destructif.py` le **refuse** depuis l'outil Bash — y compris glissé dans
 un `ssh … '… && git reset --hard …'` —, parce que rien n'en défait l'effet et qu'il
-a déjà détruit du travail non committé. **L'accord de Philippe se demande**, dans
-la conversation, avant le geste ; sans lui, on ne cherche pas à contourner le
-hook. La voie qui ne détruit rien : une PR `revert` vers `main`, qui suit le cycle
-normal (CI, fusion, `auto-deploy.sh`) — plus lente, et c'est le prix d'un geste que
-personne ne peut défaire.
+a déjà détruit du travail non committé ; il ne se contourne que sur l'accord de
+Philippe, demandé dans la conversation. La voie : une PR `revert` vers `main`, qui
+suit le cycle normal (CI, images, fusion, `auto-deploy.sh`) — plus lente, et c'est
+le prix d'un retour arrière qui reste en place.
 
 **P10 — bilan mémoire du lot (🟡 priorité 3, ajouté le 03/08/2026).** Une MEP réussie
 n'est pas une MEP close : ce qui a été appris pendant le lot disparaît si personne ne
@@ -800,7 +800,7 @@ Ce que le point 16 ci-dessus ne dit pas, et qui sert quand un rejeu ou un job d�
   journal dit « en attente des images de la CI », et au-delà de 30 min le nœud construit en
   secours et alerte. `Déployé:` arrive donc après la CI « Images », une quinzaine de minutes.
 - **Une réplique suit son BAIL** (#2210) : canal Urgence ou une version choisie ; vagues
-  (Urgence, Pilote, Standard, Fixe) et règle dans `registre/versions` et `registre/canaux`,
+  (Urgence, Standard, Fixe — la vague Pilote est retirée, `canaux.py`) et règle dans `registre/versions` et `registre/canaux`,
   réglées par l'opérateur dans Admin › Installations. Chaque version taguée est publiée
   (release + archive, job `publier-version`) et la purge nocturne retire ce que plus aucune
   vague ne sert (`purge-paquets.yml`, règle de `python3 -I api/app/registre/versions.py

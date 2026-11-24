@@ -1,6 +1,6 @@
 ---
 name: svelte-patterns
-description: "Create SvelteKit pages and components following 5Hostachy conventions: page structure, data loading, stores, API client, CSS variables, accessibility. Use when: creating a new page, creating a new component, refactoring a Svelte page, adding a frontend feature."
+description: "Page ou composant SvelteKit de 5Hostachy : structure de page, chargement des données, store, appel API côté front (client `#lib/api`), variables CSS, accessibilité, et les tests Playwright (tests de navigateur, e2e). À charger : avant de créer ou de refondre une page ou un composant, d'ajouter un store ou un appel API côté front, ou d'écrire un test Playwright."
 argument-hint: "Describe the page or component to create (e.g. 'page fournisseurs with list + detail modal')"
 ---
 
@@ -22,7 +22,8 @@ Conventions et patterns pour créer des pages et composants SvelteKit dans le pr
 	import { safeHtml } from '#lib/sanitize.ts';
 	import { toast } from '#lib/components/Toast.svelte';
 	import { fmtDate, fmtDatetime } from '#lib/date.ts';
-	import { fmtMontant, perimetreLabel } from '#lib/utils.ts';
+	import { fmtMontant } from '#lib/utils.ts';
+	// le lieu d'un contenu est SERVI (`perimetre_libelle`) : `BadgePerimetre libelle=…`
 </script>
 ```
 
@@ -268,7 +269,8 @@ s'écrit pas ici :
 
 | Ce qu'on écrit | Ce qui existe | Où lire pourquoi |
 |---|---|---|
-| une **section** de formulaire | l'enveloppe est `SectionFormulaire` (intitulé, filet, pliage) ; le contenu partagé entre écrans est un `Section<Nom>` : `SectionQuand`, `SectionPerimetre`, `SectionEquipement`, `SectionDiffusion`, `SectionDestinataires`, `SectionAffairesLiees`, `SectionOptionsPublication`, `SectionDescription`…, et `SectionsSuiteConseil` pour ce que le conseil pose dans une Suite. Elle se **déclare** dans `#lib/entites/<entité>` (`CLAUDE.md`, checklist front) | l'en-tête du composant |
+| un équipement à l'écran (libellé, icône, liste) | `#lib/equipements.ts` (rendu), `#lib/stores/equipements.ts` (le seul qui appelle `GET /equipements`) | leur en-tête, #2442 |
+| une **section** de formulaire | l'enveloppe est `SectionFormulaire` (intitulé, filet, pliage) ; le contenu partagé entre écrans est un `Section<Nom>` : `SectionQuand`, `SectionPerimetre`, `SectionEquipement`, `SectionDiffusion`, `SectionDestinataires`, `SectionAffairesLiees`, `SectionOptionsPublication`, `SectionDescription`…, et `SectionsSuiteConseil` pour ce que le conseil pose dans une Suite. Elle se **déclare** dans `#lib/entites/<entité>` (`ux-patterns`, checklist avant commit) | l'en-tête du composant |
 | un **onglet d'administration** | un composant `Onglet<Nom>` (`OngletSmtp`, `OngletWhatsApp`, `OngletConsommations`, `OngletPerimetres`, `OngletAcces`…) : l'état et les appels réseau vivent **dedans**, la page ne garde que le choix de l'onglet — c'est ce qui la garde sous le plafond de modularité. `Onglet.svelte` est, lui, le **bouton** d'une rangée | `OngletSmtp.svelte` (même forme que `OngletWhatsApp`) |
 | un onglet **qui n'est pas celui par défaut**, ou un formulaire qui ne s'ouvre qu'au geste (✏️, « Répondre », « Nouvelle… ») | `ChargementDiffere` : la page passe l'`import()`, le composant revient typé par le snippet `contenu`. Importé en tête de page, il entre dans l'**ouverture** de l'écran — `/admin` téléchargeait ses seize onglets pour en afficher un (298 → 94 Ko compressés, 11/10/2026). 🔒 `npm run lint:poids-ouverture` (après le build) refuse qu'un composant ainsi confié soit chargé d'emblée par un écran. ⚠️ Le parent ne lui parle que par des props liées : un `bind:this` vaut `null` tant que le morceau n'est pas arrivé, et la méthode appelée se perd (« Nouveau contrat », 12/10/2026). Le **corps déplié d'une carte** se diffère de même, son conteneur `.carte-corps` restant dans la carte (le fondu d'entrée) : le chargeur se NOMME (`const chargerCorps = () => import(…)`) et sert deux fois — `charger={chargerCorps}` et `CarteListe onApprocher={chargerCorps}`, qui le précharge à l'appui, au survol à la souris et au focus (`CarteTicket` → `CorpsCarteTicket`, #1860) | `ChargementDiffere.svelte` |
 | un **formulaire d'entité** | un `Formulaire<Entité>` qui sert la création **et** la correction (`FormulaireBail`, `FormulaireAnnonce`, `FormulaireSondage`, `FormulaireAnnonceHall`…) ; ses seules différences se passent par props (`avecLots`, `avecDateEntree`). Ne pas le réécrire dans un écran | `FormulaireBail.svelte` |
@@ -295,8 +297,8 @@ Les formats de date et de montant sont **centralisés**. Une page qui redéfinit
 <script lang="ts">
 	// #lib/date.ts — TOUTES les dates affichées (locale fr-FR + TZ Europe/Paris figés)
 	import { fmtDate, fmtDateLong, fmtDateShort, fmtDatetime, fmtTime, fmtMonthYear } from '#lib/date.ts';
-	// #lib/utils.ts — montants, périmètre, extraits HTML
-	import { fmtMontant, perimetreLabel, stripHtml } from '#lib/utils.ts';
+	// #lib/utils.ts — montants, nombres, extraits HTML
+	import { fmtMontant, fmtNombre, stripHtml } from '#lib/utils.ts';
 </script>
 ```
 
@@ -305,7 +307,6 @@ Les formats de date et de montant sont **centralisés**. Une page qui redéfinit
 | `fmtDate(d)` | `'2026-07-25'` → `25/07/2026` |
 | `fmtDatetime(d)` | horodatage → date + heure de Paris |
 | `fmtMontant(v)` | `1234` → `1 234 €` · `1234.5` → `1 234,50 €` · `null` → `—` |
-| `perimetreLabel(items)` | `['bat:1','parking']` → `Bât. 1 · Parking` |
 | `fmtNombre(v)` | `27054` → `27 054` · `3864.9` → `3 864,9` — **tout** nombre reçu de l'API (#2358) |
 | `fmtPartEnPourcent(n, d, 1)` | `7500, 27054, 1` → `27,7 %` (deux décimales par défaut) |
 | `fmtMonthYear(cle)` | `'2026-05'` (`MoisIso`) → `mai 2026` |
@@ -424,8 +425,11 @@ test du dépôt (#1557).
 
 ## Accessibilité
 
-La règle : `standards/11-interface-et-ux.md` §2 (seule copie) ; son instanciation, `CLAUDE.md` —
-« Front », règle 3 ; ce qu'en vérifie la CI : `npm run lint:a11y`.
+La règle : `standards/11-interface-et-ux.md` §2, seule écriture — `role="button"` quand le
+clic est le seul chemin vers le geste, `role="presentation"` sans `tabindex` pour les trois cas
+qui n'en sont pas. Son instanciation : `CLAUDE.md`, « Front », règle 3 (le cas de
+`CarteListe`, ci-dessus) ; ce qu'en vérifie la CI : `npm run lint:a11y`,
+`npm run lint:bouton-icone`.
 
 🔴 Cette section en portait une septième copie, avec une ligne **fausse** depuis
 le 22/09/2026 — « Labels : `Titre *` (astérisque pour les champs requis) », là
@@ -482,42 +486,5 @@ seulement (`clientSeul` dans `vite.config.ts`, dossier `outDir` nommé).
 
 ## Tests de navigateur (Playwright) — `front/e2e/`, job `e2e-frontend`
 
-Venu de `CLAUDE.md` (#2709). Lancer : `cd front && npm run e2e`.
-
-- Profils **bureau ET mobile**. En CI, quatre tranches Chromium (`--shard`) et une WebKit ;
-  le check requis « Tests de navigateur (Playwright) » est l'agrégat `e2e-verdict` (#2632).
-- **Un test qui mesure la mise en page se joue aussi sous WebKit** (#2640) : son titre finit
-  par `@mise-en-page` (`e2e/mise-en-page.ts`) ; une mesure du défilement sans elle est
-  refusée (`npm run lint:e2e-mise-en-page`). Le profil se lit par
-  `info.project.use.isMobile` ou `hasTouch`, jamais par son nom.
-- **Un `import()` a toujours un destinataire** (#2683) : rattrapé (`.catch`, `try`) ou rendu à
-  qui y répond (`charger={() => import(…)}` de `ChargementDiffere`) — sous WebKit, un rejet
-  sans destinataire devient une exception de la page. `npm run lint:imports-rattrapes` ;
-  `e2e/import-interrompu.spec.ts` (`@moteur`). Les `ECONNREFUSED` du journal viennent du proxy
-  de `/telemetry/collect`, sans API derrière.
-- **Un test ne quitte un écran qu'à son état final** (#2807) : une lecture lancée pendant un
-  `page.goto` fait écrire à WebKit `Fetch API cannot load … due to access control checks.`,
-  que Playwright compte comme exception de la page — même rejet rattrapé. Attendre ce que
-  l'écran affiche une fois chargé, jamais filtrer le message ni rattraper dans le client
-  (`e2e/admin-a-traiter.spec.ts`, `LECTURES_TARDIVES`).
-- Un écran authentifié se rend avec l'**API simulée** (`e2e/depot-fichier.spec.ts`,
-  `e2e/ligne-pastilles.spec.ts`) ; le motif d'interception vise le chemin `/api/` du serveur
-  seulement, sinon il attrape `/src/lib/api/…` (`standards/05` §13).
-- Position ou taille lue juste après l'ouverture d'une boîte : `boiteStable` (`e2e/aides.ts`),
-  jamais `boundingBox()` seul (#1625).
-- « La page ne défile pas en largeur » : `attendreSansDefilementHorizontal`
-  (`e2e/defilement.ts`), précédée d'`elargirLeTexte` pour un tableau ou une longue rangée
-  (#2437, `npm run lint:defilement`).
-- Un spec prend `test` et `expect` dans `./aides`, jamais dans `@playwright/test` (`npm run
-  lint:e2e-test`) : ce `test`-là fait échouer toute exception de la page (#1475). Une réponse
-  simulée qui ne se devine pas au chemin se déclare dans `REPONSES_PAR_DEFAUT` (`e2e/aides.ts`).
-- Une lecture qui ne réessaie pas (`count()`, `allTextContents`, `textContent()`,
-  `innerText()`, `isVisible()`) suivie d'un `expect` vit dans un `expect.poll`, ou se déclare
-  dans `DECLAREES` (`npm run lint:e2e-lectures`, #1830).
-- Le serveur des tests écoute sur `127.0.0.1`, et les tests le visent là, jamais `localhost`
-  (#1732, `npm run lint:e2e-serveur`).
-- Aucun rechargement de Vite pendant les tests (#1421) : une dépendance chargée par un
-  `import()` dynamique se déclare dans `optimizeDeps.include` (`vite.config.ts`) — `npm run
-  lint:optimize-deps`.
-- Un délai d'hydratation dépassé se lit au bilan **⏱ hydratation** en fin de sortie
-  (`test-results/hydratation.json`).
+Les règles vivent dans l'annexe `PLAYWRIGHT.md` de cette skill (#2910) : la lire avant
+d'écrire ou de corriger un test de navigateur.

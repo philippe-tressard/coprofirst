@@ -22,7 +22,7 @@ demander confirmation.
 
 | Tâche | Skill |
 |---|---|
-| MEP, rejeu de la CI, pré-check, post-check, rollback, version et images | `mep-precheck` |
+| MEP, rejeu, pré-check, post-check, retour arrière, version et images | `mep-precheck` |
 | Infra, bascule, RPi, base, crons, WhatsApp, incident, scripts d'infra en CI | `infra-rpi` |
 | Écran, composant, libellé, checklist front avant commit | `ux-patterns` |
 | Page ou composant SvelteKit, store, appel API côté front, tests Playwright | `svelte-patterns` |
@@ -91,13 +91,15 @@ Les arbitrages d'interface sont numérotés dans `.claude/skills/ux-patterns/ARB
    raison.
 2. **Dates, montants, nombres** : jamais un format réimplémenté dans une page. `#lib/date.ts`
    (`fmtDate`, `fmtDatetime`, `fmtMonthYear`…), `#lib/utils.ts` (`fmtMontant`, `fmtOctets`,
-   `fmtNombre`, `perimetreLabel`), côté API `app/utils/dates_fr.py`. Un nombre ou un mois que
+   `fmtNombre`) ; le lieu d'un contenu est SERVI (`perimetre_libelle`), côté API `app/utils/dates_fr.py`. Un nombre ou un mois que
    l'API envoie ne se rend pas brut (une clé `AAAA-MM` se type `MoisIso`, `api/valeurs.ts`,
    #2358). 🔒 `api/tests/test_dates_fr.py`, `npm run lint:dates` (`check-nombres-bruts.mjs`,
    écarts déclarés : `NON_QUANTITES`, `HOMONYMES`).
-3. **Accessibilité** : tout élément cliquable non-`<button>` porte `role="button"`,
-   `tabindex="0"` et `on:keydown` (Enter/Space) ; `aria-label` sur les boutons icône-seule ;
-   `role="dialog"` + `aria-modal="true"` sur les modales (`standards/11` §2).
+3. **Accessibilité** : la règle est `standards/11` §2, seule écriture — `role="button"`
+   seulement quand le clic est le seul chemin vers le geste, `role="presentation"` sans
+   `tabindex` pour les trois cas qui n'en sont pas. Le cas du projet : le conteneur d'une
+   carte de liste (`CarteListe`) est `role="presentation"`, le geste appartient au chevron
+   d'`EnteteCarte`. 🔒 `npm run lint:a11y`, `npm run lint:bouton-icone`.
 4. **Icônes de contexte** : 📍 = lieu physique, 🔹 = périmètre logique, jamais mélangés. Le
    périmètre par défaut ne s'affiche pas : la question se pose à `estPerimetreParDefaut`
    (`#lib/perimetres`), jamais par un `=== 'résidence'` (le nom de la racine est
@@ -338,7 +340,11 @@ commit …`. Avant de réécrire un fichier partagé : `git worktree list` (`sta
   `conduire-mep.sh` (qui s'arrête faute de SSH à la lecture de l'actif). Le pré-check est
   INCONNU et la PR le dit ; le post-check P1–P9 reste au poste, et le compte rendu le
   demande. Les tickets se ferment à la fusion dans `main`, avec l'observation en production
-  restant à faire. Environnement : `.claude/cloud/LISEZMOI.md`.
+  restant à faire. **Exception : un lot qui retire une colonne ou une table ne se fusionne
+  pas depuis le cloud** — sa preuve sans perte se lit sur la production (`standards/06` §3) :
+  la session donne la requête à jouer au poste, et `PREUVES_SANS_PERTE`
+  (`test_migrations_compatibles.py`) refuse le retrait sans elle (#2937). Environnement :
+  `.claude/cloud/LISEZMOI.md`.
 - `.env` non versionné · `SECRET_KEY` ≥ 32 caractères · `ENABLE_API_DOCS=false` en prod.
 
 ## Versioning
