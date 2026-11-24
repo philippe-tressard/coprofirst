@@ -14,6 +14,7 @@ from app.models.communaute import (
     VoteSondage,
 )
 from app.models.core import Utilisateur
+from app.utils.prix_annonce import poser_prix
 
 #: Les votants, par clé de compte, et l'option choisie (son rang).
 _VOTES_BORNES = {
@@ -144,13 +145,12 @@ def poser(session: Session, comptes: dict[str, Utilisateur]) -> None:
             None,
         ),
     ):
-        session.add(
-            PetiteAnnonce(
-                titre=titre,
-                description=description,
-                auteur_id=comptes[auteur].id,
-                type_annonce=type_annonce,
-                categorie=categorie,
-                prix=prix,
-            )
+        annonce = PetiteAnnonce(
+            titre=titre,
+            description=description,
+            auteur_id=comptes[auteur].id,
+            type_annonce=type_annonce,
+            categorie=categorie,
         )
+        poser_prix(annonce, prix)
+        session.add(annonce)
