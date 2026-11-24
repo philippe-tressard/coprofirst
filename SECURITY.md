@@ -42,7 +42,7 @@ qu'un correctif livré sans ces étapes n'est pas un correctif livré.
 
 - **Authentification** : jeton JWT en témoin `HttpOnly` · `Secure` ·
   `SameSite=strict`, mots de passe hachés avec bcrypt.
-- **Limitation de débit** : slowapi sur les routes d'authentification.
+- **Limitation de débit** : slowapi sur toute route qui éprouve un secret (mot de passe, clé partagée des tâches planifiées) et sur les routes d'authentification, une limite nommée par intention.
 - **Validation des entrées** : schémas Pydantic et SQLModel.
 - **Origines croisées** : liste blanche explicite, jamais de joker avec témoins.
 - **Injection HTML** : assainissement DOMPurify sur tout contenu rédigé par un

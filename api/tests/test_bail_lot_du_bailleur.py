@@ -32,12 +32,26 @@ from datetime import date
 
 import pytest
 from fastapi import HTTPException
-from sqlmodel import select
+from sqlmodel import Session, select
 
-from app.models.core import LocationBail, Lot, TypeLien, UserLot
-from app.routers.bailleur.baux import creer_bail_multi, update_bail
+from app.models.core import (
+    LocationBail,
+    Lot,
+    RoleUtilisateur,
+    StatutUtilisateur,
+    TypeLien,
+    UserLot,
+)
+from app.routers.bailleur.baux import (
+    creer_bail_multi,
+    locataires_suggeres,
+    search_locataire,
+    update_bail,
+)
 from app.routers.bailleur.commun import BailCreateMulti, BailUpdate
 from tests.aides_base import compte
+from tests.aides_http import base_http, client_http
+from tests.conftest import requete_de_test
 
 
 def _lot(session, numero: str) -> Lot:
@@ -60,7 +74,7 @@ def _proprio(session):
 
 def _creer(session, user, lot_ids, **champs):
     data = BailCreateMulti(lot_ids=lot_ids, date_entree=date(2026, 10, 2), **champs)
-    return creer_bail_multi(data, user, session)
+    return creer_bail_multi(requete_de_test("/bailleur/baux/creer-multi"), data, user, session)
 
 
 def _baux(session):
@@ -164,5 +178,135 @@ def test_corriger_le_locataire_vers_un_compte_inexistant_est_refuse(session):
     (bail,) = _creer(session, u, [lot.id])
 
     with pytest.raises(HTTPException) as refus:
-        update_bail(bail.id, BailUpdate(locataire_id=987654), u, session)
+        _corriger(session, u, bail, locataire_id=987654)
     assert refus.value.status_code == 404
+
+
+# ── Le locataire désigné : un compte que la recherche rendrait (claude-config#656) ──
+#
+#  La règle : `auth/appartenance.est_locataire_designable`, que la recherche, les
+#  suggestions et les deux routes appellent. Hors de son périmètre, la réponse est
+#  celle d'un compte inexistant.
+
+
+def _corriger(session, user, bail, **champs):
+    requete = requete_de_test(f"/bailleur/baux/{bail.id}", "PATCH")
+    return update_bail(requete, bail.id, BailUpdate(**champs), user, session)
+
+
+def _bailleur_et_son_lot(session, numero: str):
+    u = compte(session, prefixe="bailleur", roles_json="propriétaire", nom="MARTIN")
+    lot = _lot(session, numero)
+    _rattacher(session, u, lot)
+    return u, lot
+
+
+def _refus(appel) -> tuple[int, str]:
+    with pytest.raises(HTTPException) as refus:
+        appel()
+    return refus.value.status_code, refus.value.detail
+
+
+@pytest.mark.parametrize(
+    "statut",
+    [
+        StatutUtilisateur.copropriétaire_résident,
+        StatutUtilisateur.syndic,
+        StatutUtilisateur.admin_technique,
+        None,
+    ],
+)
+def test_un_compte_hors_de_la_recherche_ne_se_designe_pas_locataire(session, statut):
+    """La réponse est celle d'un compte inexistant : même code, même message, aucun nom."""
+    u, lot = _bailleur_et_son_lot(session, "30")
+    autre = compte(session, prefixe="autre", prenom="Claire", nom="LAMBERT", statut=statut)
+    inexistant = _refus(lambda: _creer(session, u, [lot.id], locataire_id=987654))
+
+    hors = _refus(lambda: _creer(session, u, [lot.id], locataire_id=autre.id))
+
+    assert hors == inexistant == (404, "Locataire introuvable")
+    session.rollback()
+    assert _baux(session) == []
+
+
+def test_corriger_vers_un_compte_hors_de_la_recherche_est_refuse(session):
+    u, lot = _bailleur_et_son_lot(session, "32")
+    (bail,) = _creer(session, u, [lot.id])
+    autre = compte(session, prefixe="autre", statut=StatutUtilisateur.copropriétaire_résident)
+
+    assert _refus(lambda: _corriger(session, u, bail, locataire_id=autre.id)) == (
+        404,
+        "Locataire introuvable",
+    )
+    session.rollback()
+    session.refresh(bail)
+    assert bail.locataire_id is None
+
+
+def test_un_locataire_trouve_par_la_recherche_se_designe(session):
+    """Le parcours de l'écran : chercher, choisir, créer — puis corriger vers un autre."""
+    u, lot = _bailleur_et_son_lot(session, "34")
+    loc = compte(
+        session, prefixe="loc", prenom="Alice", nom="PERRIN", statut=StatutUtilisateur.locataire
+    )
+    autre = compte(
+        session, prefixe="loc", prenom="Bruno", nom="PERRIN", statut=StatutUtilisateur.locataire
+    )
+    requete = requete_de_test("/bailleur/search-locataire", "GET")
+    (trouve,) = search_locataire(requete, q="Alice", user=u, session=session)
+    assert trouve.id == loc.id
+
+    (bail,) = _creer(session, u, [lot.id], locataire_id=trouve.id)
+    assert bail.locataire_id == loc.id
+
+    assert _corriger(session, u, bail, locataire_id=autre.id).locataire_id == autre.id
+
+
+def test_un_locataire_suggere_se_designe(session):
+    """Les suggestions de l'écran (le locataire a nommé ce bailleur) passent aussi."""
+    u, lot = _bailleur_et_son_lot(session, "36")
+    loc = compte(
+        session, prefixe="loc", statut=StatutUtilisateur.locataire, nom_proprietaire="M. MARTIN"
+    )
+    (suggere,) = locataires_suggeres(user=u, session=session)
+
+    (bail,) = _creer(session, u, [lot.id], locataire_id=suggere.id)
+    assert bail.locataire_id == loc.id
+
+
+def test_corriger_un_bail_garde_le_locataire_qui_y_est_deja(session):
+    """L'écran de correction renvoie le locataire du bail avec chaque modification.
+
+    Il a pu y être rattaché par le serveur (`auto_match_service`,
+    `rattachement_bailleur`) ou changer de statut depuis : ce n'est pas une
+    désignation nouvelle, la corriger (une date, une note) reste permis.
+    """
+    u, lot = _bailleur_et_son_lot(session, "38")
+    ancien = compte(session, prefixe="loc", statut=StatutUtilisateur.locataire)
+    (bail,) = _creer(session, u, [lot.id], locataire_id=ancien.id)
+    ancien.statut = StatutUtilisateur.copropriétaire_résident
+    session.add(ancien)
+    session.commit()
+
+    corrige = _corriger(session, u, bail, locataire_id=ancien.id, notes="Préavis reçu")
+    assert (corrige.locataire_id, corrige.notes) == (ancien.id, "Préavis reçu")
+
+
+def test_vingt_corrections_d_affilee_passent_la_limite_freine_au_dela():
+    """Par la porte réelle (la limite ne s'applique qu'à travers l'application) : un
+    bailleur qui corrige son bail vingt fois dans la minute passe ; la vingt-et-unième
+    est freinée (`LIMITE_RECHERCHE_DE_PERSONNES`). L'usage normal tient dessous."""
+    with base_http() as moteur:
+        http, ident = client_http(
+            moteur, RoleUtilisateur.propriétaire, statut=StatutUtilisateur.copropriétaire_bailleur
+        )
+        with Session(moteur) as s:
+            lot = _lot(s, "L-limite")
+            s.add(UserLot(user_id=ident, lot_id=lot.id, type_lien=TypeLien.bailleur, actif=True))
+            bail = LocationBail(lot_id=lot.id, bailleur_id=ident, date_entree=date(2026, 10, 2))
+            s.add(bail)
+            s.commit()
+            s.refresh(bail)
+            chemin = f"/bailleur/baux/{bail.id}"
+        codes = [http.patch(chemin, json={"notes": f"note {i}"}).status_code for i in range(21)]
+    assert codes[:20] == [200] * 20 and codes[20] == 429, codes

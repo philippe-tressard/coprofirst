@@ -36,12 +36,19 @@ plusieurs lignes, avec les rôles dans l'autre ordre ou importés sous un autre
 nom, est vu exactement pareil. Les vingt-six occurrences d'origine s'écrivaient
 de quatre façons différentes (`admin` d'abord, `conseil_syndical` d'abord, sur
 une ligne ou sur trois) — un `grep` en aurait manqué la moitié.
+
+Il ne voyait pourtant qu'UN appel qui nomme les deux rôles (#2940) : la même notion
+écrite en deux appels, `u.has_role(CS) or u.has_role(admin)`, passait — et sa
+négation, `not u.has_role(CS) and not u.has_role(admin)`, la forme d'un refus.
+Les deux sont lues, sur un même receveur, parenthèses aplaties. Hors de portée :
+deux receveurs différents, et `and` sans négation (« les deux à la fois »), qui
+sont d'autres questions.
 """
 
 import ast
 from pathlib import Path
 
-from tests.aides_sources import modules_app
+from tests.aides_sources import Module, modules_app
 
 RACINE = Path(__file__).resolve().parents[1] / "app"
 
@@ -62,26 +69,76 @@ def _fonction_englobante(arbre: ast.Module, noeud: ast.AST) -> str | None:
     return None
 
 
-def _derivations() -> list[tuple[str, int, str | None]]:
-    """Tout appel `…has_role(<CS>, <admin>)` du code applicatif."""
+def _appel_has_role(noeud: ast.AST) -> ast.Call | None:
+    if (
+        isinstance(noeud, ast.Call)
+        and isinstance(noeud.func, ast.Attribute)
+        and noeud.func.attr == "has_role"
+    ):
+        return noeud
+    return None
+
+
+def _roles(appel: ast.Call) -> set:
+    return {
+        a.attr if isinstance(a, ast.Attribute) else a.value
+        for a in appel.args
+        if isinstance(a, (ast.Attribute, ast.Constant))
+    }
+
+
+def _termes(noeud: ast.BoolOp) -> list[ast.AST]:
+    """Les termes d'un `or` (ou d'un `and`), parenthèses imbriquées aplaties."""
+    termes = []
+    for v in noeud.values:
+        if isinstance(v, ast.BoolOp) and isinstance(v.op, type(noeud.op)):
+            termes.extend(_termes(v))
+        else:
+            termes.append(v)
+    return termes
+
+
+def _paires(noeud: ast.BoolOp) -> list[ast.Call]:
+    """Les appels qui, ENSEMBLE, disent « conseil ou admin » sur un même receveur (#2940).
+
+    `u.has_role(CS) or u.has_role(admin)`, et sa négation
+    `not u.has_role(CS) and not u.has_role(admin)` — « ni l'un ni l'autre », la forme
+    naturelle d'un refus. Rend [] si aucun receveur ne réunit les deux rôles.
+    """
+    if isinstance(noeud.op, ast.Or):
+        appels = [_appel_has_role(t) for t in _termes(noeud)]
+    else:
+        appels = [
+            _appel_has_role(t.operand)
+            for t in _termes(noeud)
+            if isinstance(t, ast.UnaryOp) and isinstance(t.op, ast.Not)
+        ]
+    par_receveur: dict[str, list[ast.Call]] = {}
+    for appel in appels:
+        if appel is not None and _roles(appel) < ROLES and _roles(appel):
+            par_receveur.setdefault(ast.dump(appel.func.value), []).append(appel)
+    for groupe in par_receveur.values():
+        if len(groupe) >= 2 and set().union(*map(_roles, groupe)) == ROLES:
+            return groupe
+    return []
+
+
+def _derivations(modules) -> list[tuple[str, int, str | None]]:
+    """Toute dérivation de « conseil ou admin » : un appel `…has_role(<CS>, <admin>)`, ou
+    deux appels joints sur le même receveur (`or`, ou `and` de leurs négations)."""
     trouves = []
-    for m in modules_app():
+    for m in modules:
         arbre = m.arbre
+        comptes: set[int] = set()  # un `or` imbriqué dans un autre ne compte qu'une fois
         for noeud in ast.walk(arbre):
-            if not isinstance(noeud, ast.Call):
-                continue
-            cible = noeud.func
-            if not (isinstance(cible, ast.Attribute) and cible.attr == "has_role"):
-                continue
-            roles = {
-                a.attr if isinstance(a, ast.Attribute) else a.value
-                for a in noeud.args
-                if isinstance(a, (ast.Attribute, ast.Constant))
-            }
-            if roles != ROLES:
-                continue
-            chemin = m.rel
-            trouves.append((chemin, noeud.lineno, _fonction_englobante(arbre, noeud)))
+            appel = _appel_has_role(noeud)
+            if appel is not None and _roles(appel) == ROLES:
+                trouves.append((m.rel, noeud.lineno, _fonction_englobante(arbre, noeud)))
+            elif isinstance(noeud, ast.BoolOp):
+                paire = _paires(noeud)
+                if paire and not {id(a) for a in paire} <= comptes:
+                    comptes |= {id(a) for a in paire}
+                    trouves.append((m.rel, noeud.lineno, _fonction_englobante(arbre, noeud)))
     return trouves
 
 
@@ -89,7 +146,7 @@ def test_le_predicat_moderateur_ne_s_ecrit_qu_une_fois():
     """Une seule dérivation dans tout `app/`, et c'est la définition."""
     ailleurs = [
         f"app/{chemin}:{ligne}" + (f" (dans {fn})" if fn else "")
-        for chemin, ligne, fn in _derivations()
+        for chemin, ligne, fn in _derivations(modules_app())
         if (chemin, fn) != SOURCE
     ]
     assert not ailleurs, (
@@ -108,7 +165,7 @@ def test_la_source_existe_encore():
     deviendrait vert **en ne mesurant plus rien** — il ne compte que ce qu'il
     trouve. C'est le faux vert par sortie vide (`standards/04` §1 et §27).
     """
-    source = [d for d in _derivations() if (d[0], d[2]) == SOURCE]
+    source = [d for d in _derivations(modules_app()) if (d[0], d[2]) == SOURCE]
     assert len(source) == 1, (
         f"`est_moderateur` de `auth/deps.py` ne contient plus exactement une "
         f"dérivation de {sorted(ROLES)} (trouvé : {source}). Si le prédicat a été "
@@ -133,10 +190,57 @@ def test_le_refus_passe_par_le_predicat():
         None,
     )
     assert fn is not None, "`require_cs_or_admin` a disparu de auth/deps.py"
-    appels = {
-        n.func.id for n in ast.walk(fn) if isinstance(n, ast.Call) and isinstance(n.func, ast.Name)
-    }
-    assert "est_moderateur" in appels, (
-        "`require_cs_or_admin` n'appelle pas `est_moderateur` : la règle « qui "
-        "modère » serait écrite deux fois, une pour dire et une pour refuser"
+
+    #  Depuis #2942, le refus s'écrit UNE fois, `exiger_moderateur(user, motif)`, que
+    #  la dépendance appelle comme les gestes qui gardent leur message : la chaîne est
+    #  suivie — la dépendance appelle la porte, la porte appelle le prédicat.
+    def appels(nom: str) -> set[str]:
+        f = next(n for n in ast.walk(arbre) if isinstance(n, ast.FunctionDef) and n.name == nom)
+        return {
+            n.func.id
+            for n in ast.walk(f)
+            if isinstance(n, ast.Call) and isinstance(n.func, ast.Name)
+        }
+
+    assert "exiger_moderateur" in appels("require_cs_or_admin") and "est_moderateur" in appels(
+        "exiger_moderateur"
+    ), (
+        "`require_cs_or_admin` n'atteint pas `est_moderateur` par `exiger_moderateur` : la "
+        "règle « qui modère » serait écrite deux fois, une pour dire et une pour refuser"
+    )
+
+
+def test_le_detecteur_voit_CHAQUE_forme_de_la_notion():
+    """Un extrait forgé par forme à refuser, et trois autres questions qu'il laisse (#2940)."""
+    source = "\n".join(
+        (
+            "def a(u):",  # 1
+            "    return u.has_role(R.conseil_syndical, R.admin)",  # 2 — un appel
+            "def b(u):",  # 3
+            "    return u.has_role(R.conseil_syndical) or u.has_role(R.admin)",  # 4 — deux
+            "def c(u):",  # 5
+            "    if not u.has_role(R.admin) and not u.has_role(R.conseil_syndical):",  # 6
+            "        raise Refus()",  # 7
+            "def d(u):",  # 8
+            "    return (",  # 9
+            "        u.has_role('admin')",  # 10 — sur trois lignes, un terme entre
+            "        or est_x(u)",  # 11
+            "        or u.has_role(R.conseil_syndical)",  # 12
+            "    )",  # 13
+            "def e(u):",  # 14
+            "    return x or (u.has_role(R.conseil_syndical) or u.has_role(R.admin))",  # 15
+            "def f(u, v):",  # 16
+            "    return u.has_role(R.admin) or v.has_role(R.conseil_syndical)",  # deux comptes
+            "def g(u):",  # 18
+            "    return u.has_role(R.admin) or u.has_role(R.syndic)",  # autre paire
+            "def h(u):",  # 20
+            "    return u.has_role(R.admin) and u.has_role(R.conseil_syndical)",  # les deux
+        )
+    )
+    forge = Module(chemin=RACINE / "utils" / "forge.py", rel="utils/forge.py", source=source)
+    vues = sorted((ligne, fn) for _, ligne, fn in _derivations([forge]))
+    attendues = [(2, "a"), (4, "b"), (6, "c"), (10, "d"), (15, "e")]
+    assert vues == attendues, (
+        f"le détecteur a vu {vues}, il devait voir {attendues} : une écriture de "
+        "« conseil ou admin » lui échappe, ou une autre question passe pour elle"
     )
