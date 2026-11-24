@@ -1,6 +1,6 @@
 ---
 name: api-scaffold
-description: "Scaffold a complete FastAPI endpoint for 5Hostachy: SQLModel model + Alembic migration + router CRUD + Pydantic schemas + frontend API client module. Use when: creating a new feature, adding a new entity, adding a new API resource, or writing any code under api/app (model, schema, router, utils, migration) or api/tests — §8 holds the backend conventions (the single entry points), §9 what the pytest suite enforces."
+description: "Code de l'API de 5Hostachy (FastAPI + SQLModel + Alembic) : modèle, schéma, routeur, migration, utilitaire, client API du front, et les tests pytest — un point d'entrée complet, ou toute écriture sous api/app ou api/tests. §8 porte les conventions du backend (les portes uniques), §9 ce que la suite pytest impose. À charger : avant de créer une entité, une ressource ou une route, d'écrire une migration ou un utilitaire, ou un test pytest."
 argument-hint: "Describe the entity to create (e.g. 'Fournisseur with nom, siret, email')"
 ---
 
@@ -119,6 +119,9 @@ décision que `from_attributes`, pas une seconde manière de l'écrire.
   `schemas.py` ;
 - propres à UN routeur (le corps d'un geste, la réponse d'un écran) → à côté de
   lui, dans le routeur ou son `_schemas.py`.
+- servis tels qu'un utilitaire les CALCULE (`app/utils/…`) → dans le module de cet
+  utilitaire, que le routeur importe : `utils/tableau_charges` (`TableauCharges`,
+  rendu par `tableau_des_charges`), `utils/constats` (`Constat`, servi par deux routeurs).
 - ⚠️ `schemas_communs.py` n'importe RIEN du projet : c'est ce qui évite le cycle
   `schemas` ⇄ `schemas_tickets`. Ne pas lui en ajouter.
 
@@ -158,13 +161,19 @@ def downgrade():
 **Règles migration :** `CLAUDE.md` → « Migrations Alembic » (liaison des
 valeurs, identifiants depuis une constante, ajouter puis retirer) et
 `standards/06-donnees-et-integrite.md` §3 pour le générique — seules copies
-(claude-config#122). Ce qui n'est écrit que là :
+(claude-config#122) : ne jamais modifier une migration existante, une colonne neuve
+nullable ou avec `server_default`, retirer en deux versions, n'y sont plus recopiés
+ici. Ce qui n'est écrit que là :
 - tester l'existence d'une colonne avant `add_column` par
   `sa.inspect(conn).get_columns(TABLE)`, jamais par une requête en f-string.
-- **Jamais** modifier une migration existante : en créer une nouvelle.
-- Une colonne ajoutée est **nullable ou porte un `server_default`** : l'image
-  précédente doit pouvoir insérer sans la connaître. Retirer ou renommer se fait
-  en deux versions (`CLAUDE.md` → « Migrations Alembic », #1757).
+- **Le second temps d'un retrait** (`drop_column`, `drop_table`) se prouve sans perte
+  SUR LA PRODUCTION avant la fusion (`standards/06` §3, #2937) : jouer sur l'actif la
+  requête qui montre que la colonne ne porte rien qui ne soit repris ailleurs —
+  `docker exec hostachy_postgres psql -U coprofirst -d coprofirst -Atc "select
+  count(*) from <table> where <colonne> is not null"`, ou la comparaison avec la
+  colonne qui la reprend —, puis écrire date, requête et résultat dans
+  `PREUVES_SANS_PERTE` (`test_migrations_compatibles.py`), qui refuse le retrait sans
+  elle. Une session sans SSH (cloud) donne la requête dans sa PR et ne fusionne pas.
 - Corriger un texte **livré** en base (FAQ, modèle d'e-mail) : `utils/textes_livres.remplacer_si_intact` — il ne touche que les lignes intactes. Recopié quinze fois avant le 24/09/2026 ; `test_textes_livres.py` refuse la seizième copie.
 
 ### 4. Routeur FastAPI — `api/app/routers/`
@@ -222,7 +231,7 @@ def modifier(entite_id: int, body: EntiteUpdate, session: Session = Depends(get_
 
 - **`ou_404(session, Modele, id, "libellé")`**, jamais `session.get` + `raise
   HTTPException(404)` : le 404 nomme ce qui manque, et c'est écrit une fois.
-- **`model_dump()`**, pas `.dict()` (déprécié).
+- **`model_dump()`**, pas `.dict()` (déprécié). 🔒 `test_model_dump_pas_dict.py` (#2956).
 - **Rendre un objet** : `return obj` ou `EntiteRead.model_validate(obj)` ; s'il
   y a des champs CALCULÉS, `lire_objet(EntiteRead, obj, champ_calcule=…)`
   (`app/utils/lecture.py`) — jamais `EntiteRead(id=obj.id, nom=obj.nom, …)`,
@@ -308,6 +317,9 @@ Chacun porte, en tête de fichier, le pourquoi et la règle arbitrée :
 
 | Ce qu'on veut faire | Le module |
 |---|---|
+| dire si une affaire est close (`close`, servie aux deux clients) | `utils/etat_affaire` |
+| lire ou refuser un équipement (la liste vit en base) | `utils/equipements` |
+| fermer un geste en mode démo (`MODE_DEMO`) | `utils/demo` |
 | prévenir quelqu'un **dans l'application** (la cloche) | `utils/cloche` (`sonner`, `sonner_systeme`) — la porte unique, qui obéit au profil ; jamais une ligne écrite dans la table à la main |
 | savoir **ce qu'est** une affaire (actualité, affaire suivie, catégorie réservée, statut de départ) | `utils/nature_affaire` — dérivé, jamais saisi ; `utils/categories_ticket.libelle_categorie` pour le libellé français d'une catégorie |
 | marquer un texte « Rédigé avec l'assistant IA » | `utils/assiste_ia` (`marquer`) ; les usages de l'assistant (modèle, prompt, plafond) se déclarent dans `utils/llm_usages` |
@@ -333,7 +345,8 @@ Côté front, les familles équivalentes (composants `Section*`, `Onglet*`,
 
 - [ ] Modèle dans `app/models/<domaine>.py`, importé par `models/__init__.py` — jamais `core.py`
 - [ ] Pas de colonne `actif` : l'archivage se déclare dans `utils/archivage.REGLES`
-- [ ] Schémas dans `schemas_<domaine>.py` s'ils sont partagés, à côté du routeur sinon
+- [ ] Schémas dans `schemas_<domaine>.py` s'ils sont partagés, à côté du routeur sinon, à
+      côté de l'utilitaire qui les calcule s'il y en a un (§2)
 - [ ] Migration `NNNN_slug.py` au bon numéro ; colonne neuve nullable ou avec `server_default`
 - [ ] Routeur monté (`main.py` ou `__init__.py` du paquet), routes fixes avant routes à paramètre
 - [ ] `ou_404` et `model_dump()` — ni `session.get` + 404, ni `.dict()`
@@ -438,8 +451,10 @@ n'apporte pas son bâtiment à « mes bâtiments » : ce qui la concerne passe p
 Trois formes par entité exposée : `EntiteCreate` (sans id ni horodatage), `EntiteRead`
 (`class Config: from_attributes = True`), `EntiteUpdate` (tout `Optional`). Ils vivent dans
 le `schemas_<domaine>.py` de l'entité, que `schemas.py` ré-exporte ; un schéma propre à un
-routeur vit à côté de lui. `schemas_communs.py` n'importe RIEN du projet (cycle `schemas` ⇄
-`schemas_tickets`).
+routeur vit à côté de lui, celui qu'un utilitaire calcule à côté de cet utilitaire (§2).
+`schemas_communs.py` n'importe RIEN du projet (cycle `schemas` ⇄ `schemas_tickets`).
+Un nom de classe déjà pris dans `app/` se qualifie de son module dans `openapi.json`, que
+l'app iOS génère (`app__schemas_communaute__MessageRead`) : un schéma neuf prend un nom neuf.
 
 ### Nommage, contrat, tables publiées
 - Français, tables, routes et tags compris. Les noms anglais existants sont **figés
@@ -562,8 +577,10 @@ CI, dans les deux sens.
   la seule porte (`PAR_COPROPRIETE`).
 - **La suite passe sur PostgreSQL** (#1747, check requis) : un schéma neuf par test sur le
   PostgreSQL de `TESTS_BASE_URL` (`tests/aides_base`). En parallèle et dans un ordre tiré au
-  sort (#2223) : `pytest -n` (`--dist loadfile`, workers `PYTEST_WORKERS` sinon
-  `workers_suite`) et pytest-randomly, dont la graine se rejoue (`PYTEST_GRAINE=<n>`). Chaque
+  sort (#2223) : `pytest -n` (`--dist load`, `scripts/ci/mesure-postgresql.sh` ; workers
+  `PYTEST_WORKERS` sinon `workers_suite`) et pytest-randomly, dont la graine se rejoue
+  (`PYTEST_GRAINE=<n>`). En `load`, les tests d'un même fichier se répartissent entre
+  workers : rejouer un ordre demande la même graine ET le même nombre de workers. Chaque
   worker pose son schéma (`tests/aides_processus`), chaque fichier le trouve neuf
   (`aides_purge.remettre_a_neuf`). Les schémas jetables portent heure et créateur ; la suite
   retire ceux d'un créateur mort ou de plus de 6 h (`dialecte.schemas_jetables_a_retirer`,

@@ -60,6 +60,27 @@ EXCEPTIONS_PLAFOND=(
   ".github/workflows/ci.yml|déclare le pipeline entier ; le découper change rejouer-ci.sh, lint:ci et check-ci-complete.mjs (#1547, arbitrage du 04/10/2026)"
 )
 
+#  Les skills du projet (#2910) : un Markdown de skill se charge EN ENTIER dès qu'on
+#  l'ouvre (socle `standards/02` §6, 22/10/2026), et six avaient passé 500 lignes en
+#  grossissant encore — aucun contrôle ne mesurait un `.md`. Celles qui le dépassent
+#  déjà ont un PLAFOND à leur longueur du jour : elles ne grossissent plus, et se
+#  découpent au fil de l'eau en annexes (`ux-patterns` l'a été le 23/11/2026). Un
+#  plafond ne se relève jamais : il se BAISSE quand le fichier raccourcit.
+#  Format : `chemin|plafond|raison`.
+PLAFONDS_DECLARES=(
+  ".claude/skills/infra-rpi/SKILL.md|1260|longueur au 23/11/2026 — à découper en annexes (#2910)"
+  ".claude/skills/mep-precheck/SKILL.md|827|longueur au 23/11/2026 — à découper en annexes (#2910)"
+  ".claude/skills/api-scaffold/SKILL.md|600|longueur au 23/11/2026, lots du jour compris — §8 et §9 sont cités par numéro depuis CLAUDE.md (#2910)"
+  ".claude/skills/ux-patterns/ARBITRAGES.md|700|registre qui ne fait que s'allonger, lu par grep (son en-tête) ; à 700 lignes, il se scinde par tranche de numéros (#2910)"
+)
+plafond_declare_de() {
+  local e reste
+  for e in "${PLAFONDS_DECLARES[@]}"; do
+    [ "${e%%|*}" = "$1" ] && { reste="${e#*|}"; echo "${reste%%|*}"; return 0; }
+  done
+  return 1
+}
+
 exception_de() {
   local e
   for e in "${EXCEPTIONS_PLAFOND[@]}"; do
@@ -76,6 +97,7 @@ plafond_de() {
     *.py|*.ts|*.js|*.mjs|*.svelte|*.sh) echo "$PLAFOND" ;;
     .github/workflows/*.yml)            echo "$PLAFOND" ;;
     *.css)                              echo "$PLAFOND_STYLE" ;;
+    .claude/skills/*.md)                echo "$PLAFOND" ;;
   esac
 }
 
@@ -89,6 +111,7 @@ hors_plafond() {
     p=$(plafond_de "$f")
     [ -n "$p" ] || continue
     exception_de "$f" >/dev/null && continue    # décision écrite, vérifiée par exceptions_inutiles
+    p=$(plafond_declare_de "$f" || echo "$p")    # plafond déclaré : la longueur du jour (#2910)
     [ "$n" -gt "$p" ] && echo "  $f : $n lignes (plafond $p)"
   done
   return 0
@@ -107,6 +130,20 @@ exceptions_inutiles() {
       echo "  $f : exception sur un fichier absent des mesures"
     elif [ -n "$p" ] && [ "$n" -le "$p" ]; then
       echo "  $f : $n lignes, sous le plafond $p — l'exception ne sert plus"
+    fi
+  done
+  return 0
+}
+plafonds_inutiles() {
+  local mesures e f n
+  mesures=$(cat)
+  for e in "${PLAFONDS_DECLARES[@]}"; do
+    f="${e%%|*}"
+    n=$(printf '%s\n' "$mesures" | awk -v f="$f" '$2 == f { print $1 }')
+    if [ -z "$n" ]; then
+      echo "  $f : plafond déclaré sur un fichier absent des mesures"
+    elif [ "$n" -le "$PLAFOND" ]; then
+      echo "  $f : $n lignes, sous le plafond $PLAFOND — le plafond déclaré ne sert plus"
     fi
   done
   return 0
@@ -131,11 +168,20 @@ if [ "${1:-}" = "--selftest" ]; then
   t "ci.yml admis (exception)"        "2269 .github/workflows/ci.yml"    ""
   t "autre workflow au-dessus"        "600 .github/workflows/autre.yml"  "  .github/workflows/autre.yml : 600 lignes (plafond 500)"
   t "autre workflow sous le plafond"  "120 .github/workflows/autre.yml"  ""
+  #  #2910 — une skill se mesure ; une skill déjà longue a son plafond du jour.
+  t "skill au-dessus de 500"          "640 .claude/skills/x/SKILL.md"    "  .claude/skills/x/SKILL.md : 640 lignes (plafond 500)"
+  t "annexe de skill sous 500"        "420 .claude/skills/x/CADRE.md"    ""
+  t "skill longue à son plafond"      "1260 .claude/skills/infra-rpi/SKILL.md" ""
+  t "skill longue qui grossit"        "1261 .claude/skills/infra-rpi/SKILL.md" "  .claude/skills/infra-rpi/SKILL.md : 1261 lignes (plafond 1260)"
   u() { r=$(printf '%s\n' "$2" | exceptions_inutiles); [ "$r" = "$3" ] && echo "PASS  $1" \
         || { echo "FAIL  $1  attendu=[$3] obtenu=[$r]"; st=1; }; }
   u "exception qui sert"              "2269 .github/workflows/ci.yml"    ""
   u "exception revenue sous le plafond" "400 .github/workflows/ci.yml"   "  .github/workflows/ci.yml : 400 lignes, sous le plafond 500 — l'exception ne sert plus"
   u "exception sur un fichier disparu"  "40 front/a.ts"                  "  .github/workflows/ci.yml : exception sur un fichier absent des mesures"
+  v() { r=$(printf '%s\n' "$2" | plafonds_inutiles | grep -F "$3"); [ -n "$r" ] && echo "PASS  $1" \
+        || { echo "FAIL  $1  attendu une ligne contenant [$3]"; st=1; }; }
+  v "plafond d'une skill revenue sous 500" "480 .claude/skills/infra-rpi/SKILL.md" "infra-rpi/SKILL.md : 480 lignes, sous le plafond 500"
+  v "plafond d'une skill disparue"         "40 front/a.ts"                         "infra-rpi/SKILL.md : plafond déclaré sur un fichier absent"
   [ $st -eq 0 ] && echo "== TOUS OK ==" || echo "== ÉCHECS =="
   exit $st
 fi
@@ -153,7 +199,7 @@ if ! LISTE=$(git ls-files -z --cached --others --exclude-standard 2>&1 | tr '\0'
   echo "::error::Modularité INCONNUE — git ls-files a échoué : $LISTE"
   exit 2
 fi
-MESURES=$(printf '%s\n' "$LISTE" | grep -E '\.(py|ts|js|mjs|svelte|sh|css)$|^\.github/workflows/.*\.yml$' \
+MESURES=$(printf '%s\n' "$LISTE" | grep -E '\.(py|ts|js|mjs|svelte|sh|css)$|^\.github/workflows/.*\.yml$|^\.claude/skills/.*\.md$' \
   | while IFS= read -r f; do [ -f "$f" ] && printf '%s\0' "$f"; done \
   | xargs -0 wc -l | grep -v ' total$')
 
@@ -167,7 +213,7 @@ if [ "$nb" -lt 100 ]; then
 fi
 
 fautifs=$(printf '%s\n' "$MESURES" | hors_plafond)
-inutiles=$(printf '%s\n' "$MESURES" | exceptions_inutiles)
+inutiles=$(printf '%s\n' "$MESURES" | exceptions_inutiles; printf '%s\n' "$MESURES" | plafonds_inutiles)
 if [ -n "$inutiles" ]; then
   printf "::error::Modularité — exception(s) de plafond devenue(s) inutile(s) (à retirer de EXCEPTIONS_PLAFOND) :\n%s\n" "$inutiles"
   exit 1
@@ -180,4 +226,5 @@ if [ -n "$fautifs" ]; then
 fi
 echo "✓ Modularité : $nb fichiers mesurés, aucun au-dessus de son plafond (code $PLAFOND l. · styles $PLAFOND_STYLE l.)."
 echo "  Admis par décision écrite (EXCEPTIONS_PLAFOND) : ${EXCEPTIONS_PLAFOND[*]%%|*}"
-echo "  NON MESURÉ, faute de règle : .html .md .json .sql, les .yml hors workflows, et toute autre extension."
+echo "  Plafonds déclarés (skills déjà longues, #2910) : ${PLAFONDS_DECLARES[*]%%|*}"
+echo "  NON MESURÉ, faute de règle : .html .json .sql, les .md hors skills, les .yml hors workflows, et toute autre extension."

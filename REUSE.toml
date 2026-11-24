@@ -26,7 +26,7 @@ SPDX-PackageDownloadLocation = "https://github.com/philippe-tressard/coprofirst"
 [[annotations]]
 path = "**"
 precedence = "aggregate"
-SPDX-FileCopyrightText = "2026 Philippe TRESSARD"
+SPDX-FileCopyrightText = "2024-2026 Philippe TRESSARD"
 SPDX-License-Identifier = "AGPL-3.0-or-later"
 
 #  ── Contenus repris de projets tiers (#1543, 02/10/2026) ──────────────────
