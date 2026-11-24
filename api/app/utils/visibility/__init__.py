@@ -73,6 +73,7 @@ from .documents import (
 )
 from .trace_droits import trace_droits, trace_lecture_par_defaut
 from .fichiers import (
+    DOSSIERS_SERVIS,
     PORTEURS,
     TOUTE_SESSION,
     Porteur,
@@ -135,6 +136,7 @@ __all__ = [
     "reserve_a_l_admin",
     "trace_droits",
     #  Le droit de lire un fichier servi en direct : celui de son porteur (#2154).
+    "DOSSIERS_SERVIS",
     "PORTEURS",
     "TOUTE_SESSION",
     "Porteur",
