@@ -113,7 +113,13 @@ CONTRACTIONS: dict[str, tuple[str, str]] = {
 #: `{cible: "JJ/MM/AAAA — requête jouée sur la base servie → résultat"}`. La requête
 #: se joue sur l'actif (`docker exec hostachy_postgres psql …`), donc au poste : une
 #: session cloud ne l'écrit pas. Vide tant qu'aucun retrait n'est en cours.
-PREUVES_SANS_PERTE: dict[str, str] = {}
+PREUVES_SANS_PERTE: dict[str, str] = {
+    "petite_annonce.prix": (
+        "25/11/2026 — rpi1 (actif), v3.126.0, alembic 0353 : select count(*), count(prix), "
+        "count(prix_centimes) from petite_annonce → 4|0|1 (la 0353 a reporté chaque prix "
+        "dans prix_centimes, puis vidé prix ; 0 écart relevé avant elle)"
+    ),
+}
 
 #: La règle de la preuve naît avec #2937 : les retraits d'avant (0308, 0311) sont en
 #: production depuis v3.13 et n'ont pas à la produire après coup. Seuil fixe, jamais
