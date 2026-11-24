@@ -7,16 +7,16 @@ conseil n'est pas touchée. Les deux textes sont RECOPIÉS ici, figés — une m
 ne dépend pas d'un seed qui bouge. Données seules ; l'image précédente lit les mêmes
 colonnes (#1757).
 
-Revision ID: 0350
-Revises: 0349
+Revision ID: 0351
+Revises: 0350
 """
 
 from alembic import op
 
 from app.utils.textes_livres import remplacer_si_intact
 
-revision = "0350"
-down_revision = "0349"
+revision = "0351"
+down_revision = "0350"
 branch_labels = None
 depends_on = None
 
