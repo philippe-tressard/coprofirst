@@ -15,6 +15,7 @@ from app.utils.etat_affaire import libelle_etat
 from app.utils.liens import lien_element, lien_sondage
 from app.utils.montants import montant_fr
 from app.utils.photos import parse_photos
+from app.utils.prix_annonce import prix_euros
 from app.utils.visibility import annonce_visible, idee_visible, sondage_accessible, sondage_clos
 
 from .commun import ContexteFlux, auteur_nom, strip_html
@@ -131,8 +132,9 @@ def _collecter_annonces(ctx: ContexteFlux) -> list[FluxItem]:
         if not annonce_visible(a, ctx.user):
             continue
         detail_parts = [_ANN_TYPE_LABELS.get(a.type_annonce, a.type_annonce)]
-        if a.prix and a.type_annonce == "vente":
-            detail_parts.append(montant_fr(a.prix))
+        prix = prix_euros(a)
+        if prix and a.type_annonce == "vente":
+            detail_parts.append(montant_fr(prix))
         if a.negotiable:
             detail_parts.append("négociable")
         cartes.append(
@@ -167,7 +169,7 @@ def _collecter_annonces(ctx: ContexteFlux) -> list[FluxItem]:
                     "statut": a.statut,
                     #  En clair, comme le badge d'état le rend (#2633).
                     "statut_libelle": libelle_etat(a.statut),
-                    "prix": a.prix,
+                    "prix": prix,
                     #  Le nom, comme la page de l'annonce : « coordonnées »
                     #  ne règle que l'adresse (`adresse_de_contact`, #2145).
                     "auteur": auteur_nom(ctx.session, a.auteur_id),
