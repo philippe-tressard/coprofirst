@@ -4,6 +4,7 @@
 	import { auth as authApi } from '#lib/api/index.ts';
 	import { messageErreur } from '#lib/erreurs.ts';
 	import EnteteAuthentification from '#lib/components/EnteteAuthentification.svelte';
+	import EtatListe from '#lib/components/EtatListe.svelte';
 	import { getSiteNom } from '#lib/stores/pageConfig.ts';
 
 	const _siteNom = getSiteNom();
@@ -54,7 +55,9 @@
 		<EnteteAuthentification sousTitre="Vérification de l’adresse e-mail" />
 
 		{#if status === 'loading'}
-			<p class="attente">Vérification en cours…</p>
+			<div class="attente">
+				<EtatListe chargement messageChargement="Vérification en cours…" />
+			</div>
 		{:else if status === 'success'}
 			<div class="alert alert-success">
 				{#if changementAdresse}
@@ -104,9 +107,9 @@
 </div>
 
 <style>
+	/*  L'attente est celle d'`EtatListe` (#2975) ; la carte la centre, comme le reste. */
 	.attente {
 		text-align: center;
-		color: var(--color-text-muted);
 	}
 	.lien-retour {
 		text-align: center;
