@@ -15,7 +15,7 @@ on:
   workflow_dispatch:
   schedule:
     #  Lundi 06:37 UTC : après la semaine de PR, hors des créneaux de nuit
-    #  (promotion 02:17, veille 04:41, purge 05:23) ; minute décalée exprès.
+    #  (veille 04:41, purge 05:23) ; minute décalée exprès.
     - cron: "37 6 * * 1"
 
 concurrency:

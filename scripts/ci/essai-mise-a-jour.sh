@@ -5,7 +5,7 @@
 #
 #  Lancé par le workflow « Essai de mise à jour » (`essai-mise-a-jour.yml`), sur
 #  un runner GitHub : jamais sur les RPi, dont les noms de conteneurs sont ceux
-#  de la production. Rien n'est promu, `replica` n'est pas lue.
+#  de la production. La cible est imposée, aucun bail n'est lu.
 #
 #    bash scripts/ci/essai-mise-a-jour.sh <de X.Y.Z> <vers X.Y.Z>
 #

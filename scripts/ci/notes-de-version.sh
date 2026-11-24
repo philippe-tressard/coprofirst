@@ -3,8 +3,8 @@
 #  notes-de-version.sh — Les notes d'une version publiée, pour les exploitants
 #  des répliques (#1754, 08/10/2026 ; chaque version taguée depuis #2210)
 #
-#  Appelé par `publier-version.sh` (workflow « Images », chaque version taguée)
-#  et par le workflow « Promotion », après l'avance de `replica`. Publie une
+#  Appelé par `publier-version.sh` (workflow « Images », chaque version taguée ;
+#  la promotion sur `replica`, son autre appelant, est retirée depuis #3009). Publie une
 #  release GitHub sur le tag `vX.Y.Z`, qui dit ce qu'un exploitant doit savoir
 #  AVANT la mise à jour nocturne de son installation :
 #  - les lots livrés depuis la version précédente (titres des fusions) ;
@@ -12,13 +12,13 @@
 #  - les réglages ajoutés ou retirés dans `.env.example`.
 #
 #  Elle joint l'archive du DÉPLOIEMENT STANDARD de la version (#1755) :
-#  `coprofirst-deploiement-X.Y.Z.tar.gz`, tirée du commit promu par
+#  `coprofirst-deploiement-X.Y.Z.tar.gz`, tirée du commit de la version par
 #  `git archive` — les fichiers exacts de cette version, rien du poste.
 #  Et, si `PIECES_JOINTES` nomme un dossier, chacun de ses fichiers (le contrat
 #  d'API d'une version taguée, `lib-contrat-version.sh`, #2456).
 #
 #  Entrées (environnement) : VERSION, COMMIT, PRECEDENT (vide pour la première
-#  version), MODE (`urgence`, `automatique` ou vide, #1934), GH_TOKEN. Une release déjà publiée n'est pas réécrite.
+#  version), GH_TOKEN. Une release déjà publiée n'est pas réécrite.
 #
 #  Test : bash scripts/ci/notes-de-version.sh --selftest
 # =============================================================================
@@ -30,16 +30,11 @@ set -euo pipefail
 source "$(dirname "${BASH_SOURCE[0]}")/lib-archive-deploiement.sh"
 
 # ── La composition (PURE sur un dépôt git) ────────────────────────────────────
-#  $1 précédent (vide : première promotion) · $2 commit promu · $3 version
-#  · $4 mode de la promotion (`urgence`, `automatique` ou vide)
+#  $1 précédent (vide : première version) · $2 commit de la version · $3 version
 composer_notes() {
-    local precedent="$1" commit="$2" version="$3" mode="${4:-}" plage migrations reglages
+    local precedent="$1" commit="$2" version="$3" plage migrations reglages
     echo "# CoproFirst $version"
     echo
-    case "$mode" in
-        urgence)     echo "> ⚡ **Correctif urgent** : promue sans les 7 jours de rodage sur la référence."; echo ;;
-        automatique) echo "> Version majeure promue automatiquement après 7 jours de rodage sur la référence."; echo ;;
-    esac
     if [ -z "$precedent" ]; then
         echo "Première version publiée."
         return
@@ -90,27 +85,22 @@ if [ "${1:-}" = "--selftest" ]; then
         echo "FAIL  archive d'un commit où il manque des fichiers : acceptée"; fail=1
     else echo "PASS  archive d'un commit incomplet : refusée"; fi
     rm -rf "$SORTIE"
-    urgente=$(cd "$DEPOT" && composer_notes "$p" "$c" 2.0.1 urgence)
-    if grep -q "Correctif urgent" <<<"$urgente"; then echo "PASS  l'urgence est dite"
-    else echo "FAIL  l'urgence n'est pas dite"; fail=1; fi
-    if grep -q "Correctif urgent\|automatiquement" <<<"$notes"; then echo "FAIL  une promotion manuelle se dit urgente"; fail=1
-    else echo "PASS  une promotion manuelle ne dit rien de plus"; fi
     premiere=$(cd "$DEPOT" && composer_notes "" "$c" 1.0.0)
-    if grep -q "Première version publiée" <<<"$premiere"; then echo "PASS  première promotion"
-    else echo "FAIL  première promotion : « $premiere »"; fail=1; fi
+    if grep -q "Première version publiée" <<<"$premiere"; then echo "PASS  première version"
+    else echo "FAIL  première version : « $premiere »"; fail=1; fi
     rm -rf "$DEPOT"
     exit "$fail"
 fi
 
 VERSION="${VERSION:?VERSION manquante}"
 COMMIT="${COMMIT:?COMMIT manquant}"
-PIECES_JOINTES="${PIECES_JOINTES:-}"   # facultative : la promotion n'en joint pas
+PIECES_JOINTES="${PIECES_JOINTES:-}"   # facultative : un dossier de pièces jointes
 if gh release view "v$VERSION" >/dev/null 2>&1; then
     echo "Release v$VERSION déjà publiée : laissée telle quelle."
     exit 0
 fi
 notes=$(mktemp)
-composer_notes "${PRECEDENT:-}" "$COMMIT" "$VERSION" "${MODE:-}" > "$notes"
+composer_notes "${PRECEDENT:-}" "$COMMIT" "$VERSION" > "$notes"
 archive=$(archiver_deploiement "$COMMIT" "$VERSION" "$(mktemp -d)")
 #  Les pièces jointes de plus — le contrat d'API (`publier-version.sh`, #2456).
 pieces=()

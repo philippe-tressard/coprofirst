@@ -379,6 +379,12 @@ gérera plusieurs copropriétés de façon isolée ; les installations se
 synchronisent chaque nuit sur une branche qui reçoit des versions choisies et
 stables de main. »*
 
+> **Retirés le 24/11/2026 (#3009)** : la branche `replica`, le workflow « Promotion »
+> et son script. Depuis #2210, chaque installation suit la version que
+> son bail lui signe (§4.11, `registre/canaux.py`), et le relevé du registre n'en
+> montrait plus aucune sur `replica`. Le schéma et les règles 1 à 5 ci-dessous
+> décrivent l'état d'avant : ils restent pour l'histoire des décisions.
+
 ```
         développement (sessions, PR)
                   │
