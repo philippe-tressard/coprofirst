@@ -27,7 +27,7 @@ from app.models.core import HistoriqueEmail, ModeleEmail, Utilisateur
 #  La configuration du canal SMTP est un sujet distinct de la composition
 #  d'un message : elle vit dans `app/utils/smtp.py` depuis le 08/08/2026.
 from app.seed.emails import est_desactivable, expediteur_du_modele
-from app.utils.smtp import (  # noqa: F401  (ré-export : config.py l'importe d'ici)
+from app.utils.smtp import (  # ré-export : config.py l'importe d'ici
     _get_smtp_config,
     adresse_expedition,
     connexion_smtp,

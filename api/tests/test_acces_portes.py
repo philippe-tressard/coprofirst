@@ -17,7 +17,7 @@ import pathlib
 import pytest
 from sqlmodel import select
 
-import app.models.core  # noqa: F401  (relations entre modèles)
+import app.models.core  # relations entre modèles
 from app.models.acces import Vigik
 from app.models.copropriete import Lot, NatureLot, TypeLot
 from app.models.perimetre import Perimetre

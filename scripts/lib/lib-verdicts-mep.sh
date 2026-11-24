@@ -194,7 +194,7 @@ verdict_brief() {          # $1 = commit du brief, $2 = HEAD, $3 = lignes de cor
   #  passerait le contrôle en décrivant autre chose — le faux vert par fichier
   #  périmé, cousin de la liste d'exceptions qui ne pourrit pas.
   [ -z "$1" ] && { echo INCONNU; return; }        # brief absent ou illisible
-  [ "$1" != "$2" ] && { echo FAIL; return; }      # brief d'un autre lot
+  [ "$(memes_hachages "$1" "$2")" = oui ] || { echo FAIL; return; }  # autre lot (préfixe, #2967)
   case "$3" in ''|*[!0-9]*) echo INCONNU; return ;; esac
   #  Cinq lignes : de quoi porter un « ce qui change » et un « pourquoi ». En
   #  dessous, ce n'est pas un descriptif, c'est un titre répété.

@@ -25,7 +25,7 @@ from sqlmodel import Session, select
 #  Ce qui reste ici est la seule chose qui leur soit propre — comment lire les
 #  colonnes. `normaliser` est ré-exporté : `acces.py` et `auto_match_service.py`
 #  l'importent depuis ce module.
-from app.utils.import_xlsx import (  # noqa: F401  (ré-export de `normaliser`)
+from app.utils.import_xlsx import (  # ré-export de `normaliser`
     NOMS_NON_RESIDENTS,
     importeurs,
     normaliser,

@@ -194,7 +194,7 @@ cd "$DOSSIER"
 exec 9>/tmp/coprofirst-maj.lock
 flock -n 9 || { echo "$(date '+%F %T') Une mise à jour tourne déjà — rien à faire."; exit 0; }
 
-COMPOSE=(docker compose -f docker-compose.yml -f deploiement/standard/compose.images.yml)
+definir_compose  # surcouche commune comprise (lib-installation.sh)
 DEBUT=$(date +%s)
 PROJET=$(printf '%s' "${COMPOSE_PROJECT_NAME:-$(basename "$DOSSIER")}" | tr '[:upper:]' '[:lower:]')
 

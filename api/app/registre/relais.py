@@ -3,17 +3,19 @@
 Spécification : `specs/architecture/notifications-push.md` §4. Une route PUBLIQUE de la
 référence, sous le nom dédié du registre : une réplique lui demande d'avertir UN
 appareil ; le relais juge sur pièces, compose lui-même la charge et la transmet
-(`utils/push/relais.transmettre`). Ses gardes, dans l'ordre — celles du registre
-APPELÉES, jamais recopiées :
+(`utils/push/relais.transmettre`). Ses gardes, dans l'ordre — les communes APPELÉES
+dans `registre/gardes`, jamais recopiées (#2953) :
 
 1. **Servie seulement ici** : `routeur.servi_ici` — ailleurs, 404.
-2. **Taille et débit** : `routeur.TAILLE_MAX`, `LIMITE_RELAIS_PUSH` par adresse, et
+2. **Taille et débit** : `gardes.lire_contrat` (taille, contrat, version),
+   `LIMITE_RELAIS_PUSH` par adresse, et
    `PLAFOND_PAR_MINUTE` par installation — une installation bavarde ne prive pas les
    autres.
 3. **Le bail se croit** : `inscription/constat.constater`, la règle de l'installation
    elle-même (clés par époque, clés révoquées, empreinte de la clé, échéance, état) —
    puis l'état `active` et le service `notifications_push` dans le bail.
-4. **Signée** par la clé dont le bail porte l'empreinte, sur les octets REÇUS.
+4. **Signée** par la clé dont le bail porte l'empreinte, sur les octets REÇUS :
+   `gardes.exiger_signature`.
 5. **Fraîche et unique** : `emis_le` à moins de `FENETRE` de l'horloge du relais, et
    un nonce jamais vu dans cette fenêtre — un envoi rejoué n'avertit pas deux fois.
 
@@ -29,18 +31,12 @@ from collections import deque
 from datetime import datetime, timedelta
 
 from fastapi import APIRouter, Depends, HTTPException, Request
-from pydantic import ValidationError
 
 from app.inscription import cles, constat
 from app.inscription.depot import EtatLocal
-from app.registre import signature
-from app.registre.contrat import (
-    EN_TETE_SIGNATURE,
-    VERSION_CONTRAT,
-    DemandeNotification,
-    ReponseNotification,
-)
-from app.registre.routeur import TAILLE_MAX, servi_ici
+from app.registre.contrat import DemandeNotification, ReponseNotification
+from app.registre.gardes import exiger_signature, lire_contrat
+from app.registre.routeur import servi_ici
 from app.utils import horloge
 from app.utils.limiter import LIMITE_RELAIS_PUSH, limiter
 from app.utils.push import relais
@@ -110,22 +106,10 @@ def _frais_et_unique(demande: DemandeNotification, maintenant: datetime) -> None
 async def relayer(request: Request):
     """Avertit UN appareil d'une installation au bail cru — la charge est composée ici."""
     corps = await request.body()
-    if len(corps) > TAILLE_MAX:
-        raise HTTPException(413, "Demande trop volumineuse.")
-    try:
-        demande = DemandeNotification.model_validate_json(corps)
-    except ValidationError:
-        raise HTTPException(
-            422, "Demande illisible : elle ne suit pas le contrat de données."
-        ) from None
-    if demande.version_contrat != VERSION_CONTRAT:
-        raise HTTPException(400, f"Version du contrat de données attendue : {VERSION_CONTRAT}.")
+    demande = lire_contrat(corps, DemandeNotification)
     maintenant = horloge.maintenant()
     _bail_admis(demande, maintenant)
-    if not signature.cle_publique_valide(demande.cle_publique) or not signature.verifier(
-        demande.cle_publique, corps, request.headers.get(EN_TETE_SIGNATURE, "")
-    ):
-        raise HTTPException(401, "Signature de l'installation absente ou invalide.")
+    exiger_signature(demande.cle_publique, corps, request)
     _sous_le_plafond(demande.identifiant, maintenant)
     _frais_et_unique(demande, maintenant)
     resultat = relais.transmettre(demande.envoi)

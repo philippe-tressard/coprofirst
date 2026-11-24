@@ -54,13 +54,9 @@ from __future__ import annotations
 import io
 import pathlib
 
-import pytest
-
-Image = pytest.importorskip(
-    "PIL.Image",
-    reason="Pillow est une dépendance de production ; son absence rend ces "
-    "tests INCONNUS, pas verts",
-)
+#  Un IMPORT, pas un `importorskip` (#2952) : Pillow est épinglé ; s'il
+#  disparaît, ces tests doivent échouer, pas sauter.
+from PIL import Image
 from fastapi import UploadFile  # noqa: E402
 from starlette.datastructures import Headers  # noqa: E402
 

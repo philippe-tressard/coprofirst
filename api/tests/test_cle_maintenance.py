@@ -29,7 +29,7 @@ from app.auth.cle_maintenance import exiger_cle_maintenance
 from app.config import get_settings
 from tests.aides_sources import modules_app
 
-CLE = "cle-de-test-du-temps-constant"
+CLE = "cle-de-test-du-temps-constant-et-assez-longue"
 SECRET = re.compile(r"(key|secret|password|token)$", re.IGNORECASE)
 REGLAGES = {"settings", "_settings"}
 
@@ -49,6 +49,18 @@ def test_une_cle_fausse_est_refusee_en_403(cle, recue):
 
 def test_la_bonne_cle_passe(cle):
     exiger_cle_maintenance(CLE)
+
+
+def test_une_cle_configuree_trop_courte_ferme_le_canal(monkeypatch):
+    """Le plancher de `SECRET_KEY` (32 caractères) vaut pour la clé partagée — au CONTRÔLE,
+    jamais au démarrage : 503, la bonne clé comprise, et le message ne dit pas la valeur."""
+    courte = "c" * 31
+    monkeypatch.setattr(get_settings(), "maintenance_key", courte)
+    with pytest.raises(HTTPException) as refus:
+        exiger_cle_maintenance(courte)
+    assert refus.value.status_code == 503 and courte not in refus.value.detail
+    monkeypatch.setattr(get_settings(), "maintenance_key", "c" * 32)
+    exiger_cle_maintenance("c" * 32)
 
 
 @pytest.mark.parametrize("recue", [None, ""])

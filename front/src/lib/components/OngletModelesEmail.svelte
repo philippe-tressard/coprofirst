@@ -69,7 +69,7 @@
 	//  `{{ ["civilite" }}`, crochets et guillemets compris. Le défaut est corrigé
 	//  en le fusionnant ici (19/08/2026) plutôt que recopié : on analyse le JSON, et
 	//  on ne retombe sur la virgule que pour une valeur ancienne écrite à plat.
-	//  🔴 Le dédoublonnage n'est PAS un artifice pour satisfaire `lint:each-key`.
+	//  🔴 Le dédoublonnage n'est PAS un artifice pour satisfaire `svelte/require-each-key`.
 	//  Annoncer deux fois la même variable disponible est un défaut d'affichage à
 	//  part entière — et c'est ce qui rendait la clé impossible : `variables_disponibles`
 	//  est du texte libre en base (JSON, ou liste à plat pour les valeurs héritées),
