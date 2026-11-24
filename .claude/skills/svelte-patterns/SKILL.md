@@ -311,13 +311,14 @@ Les formats de date et de montant sont **centralisés**. Une page qui redéfinit
 | `fmtPartEnPourcent(n, d, 1)` | `7500, 27054, 1` → `27,7 %` (deux décimales par défaut) |
 | `fmtPourcent(taux)` | un taux **déjà calculé** (`57`) → `57 %`, espace insécable · `null` → `—` |
 | `jourIso()` | le jour de Paris en `AAAA-MM-JJ` — la valeur qu'un champ `type="date"` propose |
+| `anneeDe(d)`, `moisDe(d)` | l'année, le mois (0 à 11) de Paris — à la place de `getFullYear()`, `getMonth()` |
 | `fmtMonthYear(cle)` | `'2026-05'` (`MoisIso`) → `mai 2026` |
 
 **Interdits, vérifiés par `npm run lint:dates`** (sur `front/src/` **et**
 `vite.config.ts`) : `toLocaleDateString`, `toLocaleTimeString`,
 `Intl.DateTimeFormat` et `new Date(…).toLocaleString` **sans `timeZone`** ; un jour
-tronqué d'un instant (`toISOString().slice(0, 10)`, le jour UTC) ou recomposé de
-`getDate()` et `getMonth()` (`check-jour-paris.mjs`) ; un pourcentage composé derrière
+tronqué d'un instant (`toISOString().slice(0, 10)`, le jour UTC), un jour, un mois ou
+une année lus par `getDate()`, `getMonth()`, `getFullYear()` (`check-jour-paris.mjs`) ; un pourcentage composé derrière
 une interpolation, `{x} %` (`check-formats.mjs`). Restent autorisés : `toISOString()`
 seul (sérialisation UTC d'un payload d'API) et `toLocaleString()` sur un **nombre** —
 ce n'est pas une date.

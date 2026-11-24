@@ -55,6 +55,20 @@ test('sans réglage, la carte montre la marque, les mentions et les liens', asyn
 	]);
 });
 
+test.describe('sur un appareil réglé hors de France', () => {
+	test.use({ timezoneId: 'America/New_York' });
+
+	test('l’année des mentions est celle de Paris, pas celle de l’appareil (#3059)', async ({
+		page,
+	}) => {
+		//  Le 31 décembre à 18 h 30 à New York : déjà le 1er janvier 2027 à Paris.
+		//  `getFullYear()` lisait 2026.
+		await page.clock.setFixedTime(new Date('2026-12-31T23:30:00Z'));
+		const pied = await piedSansReglage(page);
+		await expect(pied.locator('.mentions')).toContainText('© 2027');
+	});
+});
+
 test('les deux liens du logiciel sortent du site : nouvel onglet, icône, infobulle', async ({
 	page,
 }) => {

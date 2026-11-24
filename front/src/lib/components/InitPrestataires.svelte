@@ -11,6 +11,7 @@
 -->
 <script lang="ts">
 	import { createEventDispatcher } from 'svelte';
+	import { anneeDe } from '#lib/date.ts';
 	import { prestataires as prestApi, tickets as ticketsApi, type Ticket } from '#lib/api/index.ts';
 	import { confirmer } from '#lib/confirmation.ts';
 	import { messageErreur } from '#lib/erreurs.ts';
@@ -29,7 +30,7 @@
 	export let tickets: Ticket[] = [];
 
 	const dispatch = createEventDispatcher<{ cree: void }>();
-	const annee = new Date().getFullYear();
+	const annee = anneeDe();
 	//  L'exercice en cours et le suivant : on l'initialise en début d'année, ou
 	//  en décembre pour l'année qui vient.
 	const EXERCICES = [annee, annee + 1];
