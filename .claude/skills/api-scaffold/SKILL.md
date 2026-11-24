@@ -119,6 +119,9 @@ décision que `from_attributes`, pas une seconde manière de l'écrire.
   `schemas.py` ;
 - propres à UN routeur (le corps d'un geste, la réponse d'un écran) → à côté de
   lui, dans le routeur ou son `_schemas.py`.
+- servis tels qu'un utilitaire les CALCULE (`app/utils/…`) → dans le module de cet
+  utilitaire, que le routeur importe : `utils/tableau_charges` (`TableauCharges`,
+  rendu par `tableau_des_charges`), `utils/constats` (`Constat`, servi par deux routeurs).
 - ⚠️ `schemas_communs.py` n'importe RIEN du projet : c'est ce qui évite le cycle
   `schemas` ⇄ `schemas_tickets`. Ne pas lui en ajouter.
 
@@ -228,7 +231,7 @@ def modifier(entite_id: int, body: EntiteUpdate, session: Session = Depends(get_
 
 - **`ou_404(session, Modele, id, "libellé")`**, jamais `session.get` + `raise
   HTTPException(404)` : le 404 nomme ce qui manque, et c'est écrit une fois.
-- **`model_dump()`**, pas `.dict()` (déprécié).
+- **`model_dump()`**, pas `.dict()` (déprécié). 🔒 `test_model_dump_pas_dict.py` (#2956).
 - **Rendre un objet** : `return obj` ou `EntiteRead.model_validate(obj)` ; s'il
   y a des champs CALCULÉS, `lire_objet(EntiteRead, obj, champ_calcule=…)`
   (`app/utils/lecture.py`) — jamais `EntiteRead(id=obj.id, nom=obj.nom, …)`,
@@ -342,7 +345,8 @@ Côté front, les familles équivalentes (composants `Section*`, `Onglet*`,
 
 - [ ] Modèle dans `app/models/<domaine>.py`, importé par `models/__init__.py` — jamais `core.py`
 - [ ] Pas de colonne `actif` : l'archivage se déclare dans `utils/archivage.REGLES`
-- [ ] Schémas dans `schemas_<domaine>.py` s'ils sont partagés, à côté du routeur sinon
+- [ ] Schémas dans `schemas_<domaine>.py` s'ils sont partagés, à côté du routeur sinon, à
+      côté de l'utilitaire qui les calcule s'il y en a un (§2)
 - [ ] Migration `NNNN_slug.py` au bon numéro ; colonne neuve nullable ou avec `server_default`
 - [ ] Routeur monté (`main.py` ou `__init__.py` du paquet), routes fixes avant routes à paramètre
 - [ ] `ou_404` et `model_dump()` — ni `session.get` + 404, ni `.dict()`
@@ -447,8 +451,10 @@ n'apporte pas son bâtiment à « mes bâtiments » : ce qui la concerne passe p
 Trois formes par entité exposée : `EntiteCreate` (sans id ni horodatage), `EntiteRead`
 (`class Config: from_attributes = True`), `EntiteUpdate` (tout `Optional`). Ils vivent dans
 le `schemas_<domaine>.py` de l'entité, que `schemas.py` ré-exporte ; un schéma propre à un
-routeur vit à côté de lui. `schemas_communs.py` n'importe RIEN du projet (cycle `schemas` ⇄
-`schemas_tickets`).
+routeur vit à côté de lui, celui qu'un utilitaire calcule à côté de cet utilitaire (§2).
+`schemas_communs.py` n'importe RIEN du projet (cycle `schemas` ⇄ `schemas_tickets`).
+Un nom de classe déjà pris dans `app/` se qualifie de son module dans `openapi.json`, que
+l'app iOS génère (`app__schemas_communaute__MessageRead`) : un schéma neuf prend un nom neuf.
 
 ### Nommage, contrat, tables publiées
 - Français, tables, routes et tags compris. Les noms anglais existants sont **figés
@@ -568,8 +574,10 @@ CI, dans les deux sens.
   la seule porte (`PAR_COPROPRIETE`).
 - **La suite passe sur PostgreSQL** (#1747, check requis) : un schéma neuf par test sur le
   PostgreSQL de `TESTS_BASE_URL` (`tests/aides_base`). En parallèle et dans un ordre tiré au
-  sort (#2223) : `pytest -n` (`--dist loadfile`, workers `PYTEST_WORKERS` sinon
-  `workers_suite`) et pytest-randomly, dont la graine se rejoue (`PYTEST_GRAINE=<n>`). Chaque
+  sort (#2223) : `pytest -n` (`--dist load`, `scripts/ci/mesure-postgresql.sh` ; workers
+  `PYTEST_WORKERS` sinon `workers_suite`) et pytest-randomly, dont la graine se rejoue
+  (`PYTEST_GRAINE=<n>`). En `load`, les tests d'un même fichier se répartissent entre
+  workers : rejouer un ordre demande la même graine ET le même nombre de workers. Chaque
   worker pose son schéma (`tests/aides_processus`), chaque fichier le trouve neuf
   (`aides_purge.remettre_a_neuf`). Les schémas jetables portent heure et créateur ; la suite
   retire ceux d'un créateur mort ou de plus de 6 h (`dialecte.schemas_jetables_a_retirer`,
