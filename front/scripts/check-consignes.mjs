@@ -448,6 +448,38 @@ for (const notion of NOMBRES) {
 	}
 }
 
+// ── 5. Les FORMULATIONS périmées (#2908, #2934) ──────────────────────────────
+//
+//  Une phrase qui décrit un état défait, et que rien d'autre ne relit. Une entrée
+//  par défaut constaté, avec ce qui est vrai à la place — jamais un mot isolé : le
+//  motif porte la phrase fautive, pour ne pas punir celle qui raconte l'histoire.
+const FORMULATIONS = [
+	{
+		motif: /pr[ée]-?check[^.\n]{0,40}\bavant (?:le|tout) `?(?:git )?push/giu,
+		vrai: "le pré-check se passe après la CI de la PR, avant `conduire-mep.sh` (CLAUDE.md, « Ordre d'un lot », #2908)",
+	},
+	{
+		motif: /\bAPI_VERSION\b/gu,
+		vrai: 'la constante est partie : `/api/health` rend `contrat.VERSION_CONTRAT`, `GET /config` publie `version_logicielle` (#2934)',
+	},
+	{
+		//  Un compte de tests se périme au premier test ajouté (« 5 tests » pour huit).
+		motif: /\(\s*\d+ tests?\b|\b\d+ tests?,? CI\b/gu,
+		vrai: 'nommer le fichier de tests, sans son compte (#2934)',
+	},
+];
+
+for (const { relatif, texte } of textes) {
+	for (const { motif, vrai } of FORMULATIONS) {
+		for (const m of texte.matchAll(motif)) {
+			const ligne = texte.slice(0, m.index).split('\n').length;
+			erreurs.push(
+				`${relatif}:${ligne} — formulation périmée : « ${m[0].slice(0, 80)} »\n      ce qui est vrai : ${vrai}`,
+			);
+		}
+	}
+}
+
 if (erreurs.length) {
 	console.error('✗ Consigne incomplète — elle décrit un dépôt qui n’existe pas :\n');
 	for (const e of erreurs) console.error(`  • ${e}`);

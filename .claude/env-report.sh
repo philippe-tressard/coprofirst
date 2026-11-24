@@ -17,11 +17,13 @@ ATTENDUS=(
   "/volumes/data/dev/5hostachy"    # Mac (minuscules : comparaison insensible à la casse)
 )
 
-# Banque de mémoire du poste pour un répertoire donné. Le nom Windows est
-# constaté ; le nom Mac suit la convention de Claude Code (chemin à « - ») et
-# reste à confirmer par `ls ~/.claude/projects/` sur le Mac.
+# En minuscules, sans `${x,,}` : le bash d'Apple est un 3.2, qui ne le connaît pas
+# — l'autotest y sortait en 0 sans avoir jugé un seul cas (#2935).
+minuscules() { printf '%s' "$1" | tr '[:upper:]' '[:lower:]'; }
+
+# Banque de mémoire du poste pour un répertoire donné (les deux noms sont constatés).
 memoire_pour() {
-  case "${1,,}" in
+  case "$(minuscules "$1")" in
     /c/dev/5hostachy)            echo "C--Dev-5hostachy" ;;
     /volumes/data/dev/5hostachy) echo "-Volumes-Data-Dev-5hostachy" ;;
     *)                           echo "" ;;
@@ -32,7 +34,7 @@ memoire_pour() {
 dans_le_projet() {
   local a
   for a in "${ATTENDUS[@]}"; do
-    [ "${1,,}" = "${a,,}" ] && return 0
+    [ "$(minuscules "$1")" = "$(minuscules "$a")" ] && return 0
   done
   return 1
 }
@@ -56,6 +58,9 @@ if [ "${1:-}" = "--selftest" ]; then
   [ "$(memoire_pour /c/Dev/5hostachy)" = "C--Dev-5hostachy" ] \
     || { echo_ko=$((echo_ko+1)); echo "KO : banque Windows" >&2; }
   echo "env-report --selftest : $echo_ok OK, $echo_ko KO"
+  #  Aucun cas jugé n'est pas un succès (`standards/04` §2) : c'est l'autotest qui
+  #  n'a pas tourné.
+  [ "$echo_ok" -gt 0 ] || { echo "KO : aucun cas jugé — l'autotest n'a pas tourné" >&2; exit 1; }
   [ "$echo_ko" -eq 0 ]
   exit $?
 fi
@@ -100,7 +105,8 @@ elif ! dans_le_projet "$COURANT"; then
   echo "      AVANT d'agir : mémoires et étiquette partiront au mauvais endroit."
 fi
 if ! dans_le_projet "$COURANT"; then
-  echo "  → Si la demande porte sur List-dons, dis-le et propose de relancer depuis C:\\Dev\\List-dons."
+  echo "  → Si la demande porte sur un autre projet, dis-le et propose de relancer la session depuis son"
+  echo "    répertoire, tel que ~/.claude/projets.json le déclare pour ce poste."
 fi
 echo "  → Reprends cette ligne en tête de ta 1ʳᵉ réponse."
 echo "════════════════════════════════════════════════════════"

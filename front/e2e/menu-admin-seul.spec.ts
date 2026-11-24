@@ -18,7 +18,7 @@ import { expect, MEMBRE_CS, simulerApi, test } from './aides';
 const ADMIN_SEUL = {
 	...MEMBRE_CS,
 	prenom: 'Admin',
-	statut: 'compte_technique',
+	statut: 'admin_technique',
 	role: 'admin',
 	roles: ['admin'],
 };

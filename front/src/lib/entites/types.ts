@@ -280,10 +280,10 @@ export interface SectionDeclaree {
 	 * Pourquoi ce pliage s'écarte de la règle — **obligatoire** quand il s'en
 	 * écarte, refusé quand il ne s'en écarte pas.
 	 *
-	 * Les trois du 20/09/2026 : « Au nom de » et « Destinataires » sont
-	 * obligatoires et **pliés** (le défaut est juste dans la quasi-totalité des
-	 * cas) ; « Pièces jointes » est facultatif et **déplié** (c'est le premier
-	 * geste sur téléphone).
+	 * Chaque exception porte sa raison ici même, dans la déclaration de l'entité
+	 * (`git grep exceptionPliage -- front/src/lib/entites`). Celles de l'affaire,
+	 * arbitrées le 20/09/2026, ont été défaites les 21 et 22/09 (registre n° 84 de
+	 * `ux-patterns`) : elle suit la règle sans exception.
 	 *
 	 * ⚠️ Le contrôle refuse aussi une exception qui ne sert plus : une règle
 	 * changée laisserait sinon derrière elle des justifications sans objet, et

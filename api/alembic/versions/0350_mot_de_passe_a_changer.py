@@ -10,14 +10,14 @@ Colonne additive, FAUSSE par défaut (`server_default`) : aucun compte existant 
 touché — seule une installation neuve la voit vraie, sur ses deux comptes initiaux —,
 et l'image précédente l'ignore (#1757).
 
-Revision ID: 0348
+Revision ID: 0350
 Revises: 0347
 """
 
 import sqlalchemy as sa
 from alembic import op
 
-revision = "0348"
+revision = "0350"
 down_revision = "0347"
 branch_labels = None
 depends_on = None
