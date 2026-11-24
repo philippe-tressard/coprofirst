@@ -7,7 +7,12 @@
 #  un runner GitHub : jamais sur les RPi, dont les noms de conteneurs sont ceux
 #  de la production. La cible est imposée, aucun bail n'est lu.
 #
-#    bash scripts/ci/essai-mise-a-jour.sh <de X.Y.Z> <vers X.Y.Z>
+#    bash scripts/ci/essai-mise-a-jour.sh <de X.Y.Z> <vers X.Y.Z> [propre|commune]
+#
+#  `commune` (#3007) : l'installation de <de> devient COMMUNE à deux copropriétés
+#  avant la mise à jour, et l'assemblage se constate sur les conteneurs, avant et
+#  après (`lib-essai-commune.sh`). <de> doit porter l'outillage commun de #3006
+#  (3.123.1 ou plus).
 #
 #  Le déroulé, celui d'un exploitant :
 #    1. l'archive de déploiement des DEUX versions, tirée de leurs tags
@@ -60,9 +65,13 @@ fi
 
 DE="${1:?version de départ manquante}"
 VERS="${2:?version cible manquante}"
+MODE="${3:-propre}"
+case "$MODE" in propre|commune) ;; *) echo "mode inconnu : $MODE (propre ou commune)"; exit 2 ;; esac
 RACINE=$(git rev-parse --show-toplevel)
 # shellcheck source=lib-archive-deploiement.sh
 source "$RACINE/scripts/ci/lib-archive-deploiement.sh"
+# shellcheck source=lib-essai-commune.sh
+source "$RACINE/scripts/ci/lib-essai-commune.sh"
 
 TRAVAIL=$(mktemp -d)
 INST="$TRAVAIL/coprofirst"
@@ -108,11 +117,21 @@ attendre_sante || { echo "::error::$DE ne démarre pas"; exit 1; }
 echo "== 3. Le témoin : le compte administrateur initial"
 MDP_ADMIN=$("${COMPOSE[@]}" logs api 2>&1 | sed -n 's/.*Mot de passe temporaire : *//p' | tail -1 | tr -d '\r ')
 [ -n "$MDP_ADMIN" ] || { echo "::error::mot de passe initial introuvable dans les journaux"; exit 1; }
+HOTE_TEMOIN=localhost
+if [ "$MODE" = commune ]; then
+    echo "== 3 bis. L'installation devient commune : deux copropriétés"
+    installer_commune || exit 1
+    #  L'hôte commun ne sert aucune copropriété (421) : le témoin est l'administrateur
+    #  initial de A, sous l'hôte de A.
+    HOTE_TEMOIN="$HOTE_A"; MDP_ADMIN="$MDP_A"
+    AVANT=$(constater_commune avant | tee /dev/stderr | tail -1)
+    [ "$AVANT" = OK ] || { echo "::error::installation commune AVANT la mise à jour : $AVANT"; exit 1; }
+fi
 #  → le code HTTP de la connexion (200 attendu). Le code, pas oui/non : un 403
 #  disait « adresse non vérifiée », et l'essai ne le montrait pas (10/10/2026).
 connexion() {
     curl -s -m 10 -o "$TRAVAIL/connexion.json" -w '%{http_code}' -X POST http://localhost/api/auth/login \
-        -H 'Content-Type: application/json' \
+        -H "Host: $HOTE_TEMOIN" -H 'Content-Type: application/json' \
         -d "{\"email\":\"admin@localhost\",\"password\":\"$MDP_ADMIN\"}" || true
 }
 se_connecte() { [ "$(connexion)" = 200 ] && echo oui || echo non; }
@@ -136,6 +155,10 @@ BASE=$(ls "$SAUV"/*-base.tar.gz >/dev/null 2>&1 && echo oui || echo non)
 TEMOIN=$(se_connecte)
 ls -la "$SAUV"
 VERDICT=$(verdict_essai "$REUSSIE" "$ENV_VERSION" "$SERVIE" "$VERS" "$VOLUMES" "$BASE" "$TEMOIN")
-echo "Essai $DE → $VERS : $VERDICT"
+if [ "$MODE" = commune ]; then
+    APRES=$(constater_commune après | tee /dev/stderr | tail -1)
+    VERDICT=$(joindre_verdicts "$VERDICT" "$APRES")
+fi
+echo "Essai $DE → $VERS ($MODE) : $VERDICT"
 "${COMPOSE[@]}" down -v >/dev/null 2>&1 || true
 [ "$VERDICT" = OK ] || { echo "::error::$VERDICT"; exit 1; }
