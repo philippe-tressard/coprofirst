@@ -116,7 +116,7 @@ l'usage — la divergence n'arrive que le jour où la source apprend quelque cho
 |---|---|---|
 | `….roles_autorises` lu | `visibility.profil_admet` | `test_profil_acces_source_unique.py` |
 | un élément de `….user_lots` jugé sur `actif` | `deps.est_rattache_au_lot` | `test_appartenance_lot_source_unique.py` |
-| un champ comparé à `user.id` par `auth/appartenance.py`, recomparé ailleurs | le prédicat du module (`peut_defaire_le_versement`…) | `test_appartenance_source_unique.py` |
+| un champ comparé à l'identité du compte courant (quel que soit son nom, `in` compris, #2940) par `auth/appartenance.py`, recomparé ailleurs | le prédicat du module (`peut_defaire_le_versement`…) | `test_appartenance_source_unique.py` |
 
 **Le geste d'audit** : pour une règle neuve, se demander *quelle donnée elle
 lit* (un champ de profil, `actif`, un champ de propriété), puis chercher cette

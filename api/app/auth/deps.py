@@ -295,8 +295,8 @@ def est_moderateur(user: Utilisateur) -> bool:
     un ticket, simplement pas d'en fixer l'adressage ni l'étape.
 
     🔒 `api/tests/test_moderateur_source_unique.py` refuse toute redérivation en
-    ligne, lit l'arbre syntaxique (les vingt-six occurrences d'origine
-    s'écrivaient de quatre façons), et vérifie que ce prédicat existe encore —
+    ligne — un appel ou deux joints par `or` (#2940) —, lit l'arbre syntaxique, et
+    vérifie que ce prédicat existe encore —
     un contrôle qui ne trouve plus sa source passerait au vert sans rien mesurer.
     """
     return user.has_role(RoleUtilisateur.conseil_syndical, RoleUtilisateur.admin)
