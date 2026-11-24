@@ -30,6 +30,7 @@ from app.routers.admin.comptes import CompteAction, traiter_compte
 from app.routers.admin.utilisateurs import AdminUserUpdate, modifier_utilisateur
 from app.utils.comptes import DESACTIVATION, condition_compte_en_attente, est_en_attente
 from tests.aides_base import compte
+from tests.conftest import requete_de_test
 
 
 def _cs(session):
@@ -43,7 +44,12 @@ def _admin(session):
 def _desactive_par_l_admin(session):
     resident = compte(session, prefixe="resident")
     modifier_utilisateur(
-        resident.id, AdminUserUpdate(actif=False), BackgroundTasks(), session, _admin(session)
+        requete_de_test("/admin/utilisateurs/1", "PATCH"),
+        resident.id,
+        AdminUserUpdate(actif=False),
+        BackgroundTasks(),
+        session,
+        _admin(session),
     )
     session.refresh(resident)
     assert resident.actif is False and resident.fermeture_compte == DESACTIVATION

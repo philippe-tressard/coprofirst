@@ -299,8 +299,8 @@ for (const [collection, raison] of Object.entries(PAS_DU_FIL)) {
 //  `each_key_duplicate` fige alors l'écran entier.
 //
 //  Retirer la clé serait sûr — ces listes sont des affichages sans état — mais
-//  `check-each-key.mjs` tient un PLAFOND DÉCROISSANT du nombre de `{#each}` sans
-//  clé, et le faire remonter de 1 à 7 aurait défait son travail. Les deux règles
+//  `svelte/require-each-key` (ESLint, en service depuis #2976 ; jadis le plafond
+//  de `check-each-key.mjs`) refuse un `{#each}` sans clé. Les deux règles
 //  se concilient par une clé UNIQUE PAR CONSTRUCTION : l'index d'abord, la
 //  valeur ensuite (`${i}|${url}`). L'index garantit l'unicité, la valeur garde
 //  la clé lisible dans les outils de développement.

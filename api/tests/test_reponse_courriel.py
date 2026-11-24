@@ -113,7 +113,7 @@ def test_sans_assistant_fiable_le_texte_nettoye_entre_quand_meme(monkeypatch, fa
 # ── Ce qui est écrit dans le fil ──────────────────────────────────────────────
 
 
-def test_la_suite_est_datee_de_l_envoi_sans_assistant(scene):  # noqa: F811
+def test_la_suite_est_datee_de_l_envoi_sans_assistant(scene):
     """🔴 Cas zéro : la Suite était datée de la relève."""
     session, ticket, syndic, _cs = scene
     envoi = datetime(2026, 9, 25, 16, 0)
@@ -130,7 +130,7 @@ def test_la_suite_est_datee_de_l_envoi_sans_assistant(scene):  # noqa: F811
     assert "Nous intervenons jeudi" in evol.contenu
 
 
-def test_la_suite_porte_la_mise_en_forme_et_le_texte_recu(scene, monkeypatch):  # noqa: F811
+def test_la_suite_porte_la_mise_en_forme_et_le_texte_recu(scene, monkeypatch):
     session, ticket, syndic, _cs = scene
     monkeypatch.setattr(llm, "demander", _modele("Nous intervenons jeudi 2 octobre à 9 h."))
     traiter(
@@ -149,7 +149,7 @@ def test_la_suite_porte_la_mise_en_forme_et_le_texte_recu(scene, monkeypatch):  
 # ── La ligne « Mail reçu de … le … », écrite par le code (25/09, libellé du 28/09) ─
 
 
-def test_la_suite_s_ouvre_sur_qui_a_repondu_et_quand(scene):  # noqa: F811
+def test_la_suite_s_ouvre_sur_qui_a_repondu_et_quand(scene):
     """En italique, en tête : le nom du compte (l'adresse seule n'en porte pas), et
     la date d'ENVOI en heure de Paris — 16:00 UTC le 25/09 → 18:00."""
     session, ticket, syndic, _cs = scene

@@ -46,6 +46,7 @@ from app.routers.delegations import (
     revoquer_delegation,
 )
 from tests.aides_base import compte
+from tests.conftest import requete_de_test
 
 
 @pytest.fixture()
@@ -119,10 +120,20 @@ def test_valider_un_aidant_journalise_la_delegation_posee_d_office(session, jour
 def test_desactiver_puis_reactiver_un_compte(session, journal):
     admin, resident = _admin(session), compte(session, prefixe="resident")
     modifier_utilisateur(
-        resident.id, AdminUserUpdate(actif=False), BackgroundTasks(), session, admin
+        requete_de_test("/admin/utilisateurs/1", "PATCH"),
+        resident.id,
+        AdminUserUpdate(actif=False),
+        BackgroundTasks(),
+        session,
+        admin,
     )
     modifier_utilisateur(
-        resident.id, AdminUserUpdate(actif=True), BackgroundTasks(), session, admin
+        requete_de_test("/admin/utilisateurs/1", "PATCH"),
+        resident.id,
+        AdminUserUpdate(actif=True),
+        BackgroundTasks(),
+        session,
+        admin,
     )
     assert journal() == [
         f"securite compte_desactive acteur={admin.id} cible={resident.id}",
@@ -135,10 +146,20 @@ def test_une_modification_qui_ne_touche_pas_actif_ne_journalise_rien(session, jo
     """Corriger un téléphone n'est pas un geste de sécurité — ni renvoyer le même état."""
     admin, resident = _admin(session), compte(session, prefixe="resident")
     modifier_utilisateur(
-        resident.id, AdminUserUpdate(telephone="0600000000"), BackgroundTasks(), session, admin
+        requete_de_test("/admin/utilisateurs/1", "PATCH"),
+        resident.id,
+        AdminUserUpdate(telephone="0600000000"),
+        BackgroundTasks(),
+        session,
+        admin,
     )
     modifier_utilisateur(
-        resident.id, AdminUserUpdate(actif=True), BackgroundTasks(), session, admin
+        requete_de_test("/admin/utilisateurs/1", "PATCH"),
+        resident.id,
+        AdminUserUpdate(actif=True),
+        BackgroundTasks(),
+        session,
+        admin,
     )
     assert journal() == []
 

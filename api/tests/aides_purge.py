@@ -218,7 +218,7 @@ def realigner_identifiants(session, *modeles) -> None:
         table = modele.__tablename__  # identifiant lu dans les métadonnées, jamais une entrée
         session.exec(
             text(
-                f"SELECT setval(pg_get_serial_sequence('{table}', 'id'), "  # noqa: S608
+                f"SELECT setval(pg_get_serial_sequence('{table}', 'id'), "
                 f"coalesce((SELECT max(id) FROM {table}), 0) + 1, false)"
             )
         )
@@ -352,19 +352,14 @@ def remettre_a_neuf(url) -> int:
             pleines = []
             for lot in par_lots(tables):
                 pleines += c.execute(
-                    text(
-                        " UNION ALL ".join(
-                            f"(SELECT '{t}' FROM \"{t}\" LIMIT 1)"  # noqa: S608
-                            for t in lot
-                        )
-                    )
+                    text(" UNION ALL ".join(f"(SELECT '{t}' FROM \"{t}\" LIMIT 1)" for t in lot))
                 ).scalars()
             if pleines:
                 #  Une connexion restée ouverte sur une table bloquerait le geste :
                 #  10 s, puis l'erreur le dit au lieu de figer.
                 c.execute(text("SET lock_timeout = '10s'"))
                 liste = ", ".join(f'"{t}"' for t in pleines)
-                c.execute(text(f"TRUNCATE TABLE {liste} CASCADE"))  # noqa: S608
+                c.execute(text(f"TRUNCATE TABLE {liste} CASCADE"))
             for sequence in c.execute(
                 text(
                     "SELECT sequencename FROM pg_sequences "

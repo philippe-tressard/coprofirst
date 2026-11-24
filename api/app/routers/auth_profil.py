@@ -95,6 +95,8 @@ class MeUpdate(BaseModel):
 
 
 @router.patch("/me", response_model=UserRead)
+#  Un enregistrement : la limite des préférences. Le mot de passe, éprouvé à un
+#  changement d'adresse seulement, se compte à la tentative (`compter_tentative_secret`).
 @limiter.limit(LIMITE_PREFERENCE)
 def update_me(
     request: Request,
@@ -116,6 +118,7 @@ def update_me(
             nouvelle_adresse=body.email,
             mot_de_passe=body.mot_de_passe_actuel,
             background_tasks=background_tasks,
+            request=request,
         )
     if body.prenom is not None:
         user.prenom = body.prenom

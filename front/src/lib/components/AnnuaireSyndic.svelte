@@ -208,7 +208,7 @@
 			<!--  Clé = l'INDEX, et c'est la seule honnête : le champ écrit dans le tableau par
 			    sa position (`bind:value={…telephones[ti]}`), et une clé tirée de la valeur
 			    changerait à chaque caractère tapé — Svelte recréerait le nœud, le champ
-			    perdrait le focus (`lint:each-key`, #1571). -->
+			    perdrait le focus (`svelte/require-each-key`, #1571). -->
 			{#each m.telephones as _tel, ti (ti)}
 				<div class="syndic-telephone">
 					<input bind:value={membresSyndic[i].telephones[ti]} placeholder="ex. 01 23 45 67 89" />

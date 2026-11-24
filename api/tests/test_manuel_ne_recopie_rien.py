@@ -35,11 +35,20 @@ constante du code ne dit combien de temps prend une lecture.
 
 from __future__ import annotations
 
+import html
 import pathlib
 import re
 
+import pytest
+
 _RACINE = pathlib.Path(__file__).resolve().parents[2]
 _MANUEL = _RACINE / "docs" / "manuel-utilisateur.html"
+
+#: Les nombres qu'on écrit en lettres devant une durée — « un » excepté.
+NOMBRES_EN_LETTRES = (
+    r"(?:deux|trois|quatre|cinq|six|sept|huit|neuf|dix|onze|douze|treize|quatorze|"
+    r"quinze|seize|vingt|trente|quarante|cinquante|soixante|cent)(?:-\w+)*"
+)
 
 #: Ce qui trahit une valeur RECOPIÉE depuis le code, avec ce qu'elle vaut.
 #:
@@ -48,8 +57,8 @@ _MANUEL = _RACINE / "docs" / "manuel-utilisateur.html"
 INTERDITS = {
     "une taille de fichier": (
         re.compile(r"\b\d+(?:[.,]\d+)?\s*(?:Mo|Ko|MB|KB)\b"),
-        "la source est `MAX_SIZE_MB` / `MAX_SIZE_MB_DOC` (api/app/routers/uploads.py) ; "
-        "l'écran l'affiche déjà au bon endroit, au moment de joindre un fichier",
+        "la source est le plafond de chaque famille, `utils/fichiers.FAMILLES` ; le refus "
+        "le dit au moment de joindre un fichier trop lourd",
     ),
     "un nombre de pièces jointes": (
         re.compile(r"\b\d+\s*(?:photos|documents|fichiers|pi[eè]ces jointes)\b", re.IGNORECASE),
@@ -59,8 +68,11 @@ INTERDITS = {
         re.compile(r"\.(?:pdf|docx?|xlsx?|txt)\b", re.IGNORECASE),
         "la source est la liste des types acceptés côté serveur",
     ),
+    #  Un délai écrit en LETTRES est le même délai (#2906) : « trente jours après »
+    #  recopiait le défaut d'un délai réglable, hors de tout motif. « Un jour » n'en
+    #  est pas un — c'est une tournure.
     "un délai en jours": (
-        re.compile(r"\b\d+\s*jours?\b", re.IGNORECASE),
+        re.compile(rf"\b(?:\d+|{NOMBRES_EN_LETTRES})\s*jours?\b", re.IGNORECASE),
         "les délais (archivage, relance, rétention) sont administrables : "
         "les écrire ici les fige à la valeur d'un jour donné",
     ),
@@ -99,27 +111,38 @@ INTERDITS = {
 }
 
 
-def _corps() -> str:
-    """Le manuel SANS son CSS ni ses icônes.
+def corps_lu(texte: str) -> str:
+    """Ce que LIT le lecteur : sans CSS ni icônes, les entités décodées. PURE.
 
     Le CSS est plein de `.5rem` et de `24px`, et les tracés d'icônes de nombres :
     les scanner ferait échouer le contrôle sur du décor, et un contrôle qui crie
     sur du légitime finit désarmé.
+
+    🔴 Les entités se DÉCODENT (#2906) : le manuel écrit `90&nbsp;jours`, et `\\s`
+    ne lit pas `&nbsp;`. Jusqu'au 23/11/2026 ce contrôle était vert sur douze
+    valeurs recopiées — il lisait la source, pas le texte.
     """
-    texte = _MANUEL.read_text(encoding="utf-8")
     texte = texte[texte.index("</style>") :]
-    return re.sub(r"<svg.*?</svg>", "", texte, flags=re.S)
+    return html.unescape(re.sub(r"<svg.*?</svg>", "", texte, flags=re.S))
 
 
-def test_le_manuel_ne_cite_aucune_valeur_dont_le_code_est_la_source():
-    corps = _corps()
+def _corps() -> str:
+    return corps_lu(_MANUEL.read_text(encoding="utf-8"))
+
+
+def fautes_de(corps: str) -> list[str]:
     fautes = []
     for quoi, (motif, source) in INTERDITS.items():
         for trouve in set(motif.findall(corps)):
             fautes.append(f"  « {trouve} » — {quoi} : {source}")
+    return sorted(fautes)
+
+
+def test_le_manuel_ne_cite_aucune_valeur_dont_le_code_est_la_source():
+    fautes = fautes_de(_corps())
     assert not fautes, (
         "Le manuel recopie des valeurs dont le code est la source :\n"
-        + "\n".join(sorted(fautes))
+        + "\n".join(fautes)
         + "\n\nUne valeur recopiée diverge — c'est arrivé quatre fois ici. "
         "Le manuel dit ce qu'on peut faire ; l'application dit avec quelles limites."
     )
@@ -139,6 +162,30 @@ def test_le_controle_lit_bien_le_manuel():
     assert INTERDITS["une taille de fichier"][0].search("jusqu'à 15 Mo par fichier")
     assert INTERDITS["un nombre de pièces jointes"][0].search("5 photos maximum")
     assert not INTERDITS["un délai en jours"][0].search("3 minutes pour démarrer")
+
+
+@pytest.mark.parametrize(
+    "source",
+    [
+        "<p>rouge au-delà de 90&nbsp;jours</p>",
+        "<p>une image de 2&nbsp;Mo au plus</p>",
+        "<p>conservée 90&#160;jours</p>",
+        "<p>Résolu trente jours après</p>",
+        "<p>sous quinze jours</p>",
+        "<p>quatre-vingt-dix jours</p>",
+    ],
+)
+def test_temoin_une_valeur_ecrite_avec_une_entite_ou_en_lettres_mord(source):
+    """Cas zéro (#2906) : ce que le lecteur lit, le contrôle le lit."""
+    assert fautes_de(corps_lu("<style></style>" + source))
+
+
+@pytest.mark.parametrize(
+    "source",
+    ["<p>un jour</p>", "<p>Mois (les jours du mois)</p>", "<p>trois écrans, les jours fériés</p>"],
+)
+def test_temoin_une_tournure_ne_mord_pas(source):
+    assert not fautes_de(corps_lu("<style></style>" + source))
 
 
 def test_le_motif_des_CATEGORIES_refuse_bien_la_version_que_j_ai_ecrite():

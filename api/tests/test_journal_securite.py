@@ -21,8 +21,10 @@ violations CSP (leur collecte a été retirée le 01/10/2026).
    champs qui rendent une ligne exploitable : quoi, qui, sur qui.
 2. Chaque geste sensible l'appelle — connexion refusée, mot de passe changé ou
    réinitialisé, rôle ajouté ou retiré, bannissement. La liste est **déclarée**
-   ici : un geste qui cesse d'exister fait échouer le test, plutôt que de laisser
-   une exigence protéger une fonction disparue.
+   (`aides_gestes_sensibles.GESTES_SENSIBLES`, avec sa raison) et **dérivée** de
+   ce que le code émet (#2941) : toute fonction de `app/` qui appelle le journal y
+   figure, toute entrée l'appelle. Un geste qui cesse d'exister fait échouer le
+   test, plutôt que de laisser une exigence protéger une fonction disparue.
 3. 🔴 **Aucune donnée personnelle dans le journal.** #777 a montré l'inverse :
    des adresses e-mail journalisées en clair sur échec d'envoi. Un journal de
    sécurité nomme un **identifiant**, jamais une adresse, jamais un mot de passe
@@ -35,7 +37,8 @@ plusieurs lignes ou renommé à l'import est vu pareil.
 import ast
 from pathlib import Path
 
-from tests.aides_sources import modules_app
+from tests.aides_gestes_sensibles import GESTES_SENSIBLES
+from tests.aides_sources import Module, modules_app
 
 RACINE = Path(__file__).resolve().parents[1] / "app"
 
@@ -43,67 +46,17 @@ RACINE = Path(__file__).resolve().parents[1] / "app"
 MODULE = RACINE / "utils" / "journal_securite.py"
 FONCTION = "journaliser_securite"
 
-#: Les gestes qui DOIVENT laisser une trace : (fichier, fonction du routeur).
-#: Une entrée dont la fonction a disparu fait échouer `test_les_gestes_declares_existent`.
-GESTES_SENSIBLES = {
-    ("utils/courriel_delegation.py", "apres_ecriture"): "un signataire admis pour le domaine "
-    "d'un autre (#2554) — un tiers de plus à qui l'on confie l'authenticité des réponses",
-    ("utils/acces_gestes.py", "journaliser_acces"): "ce qu'un badge ouvre, posé ou "
-    "changé par le conseil — une porte physique (#2217) ; la dérivation ne fait que proposer",
-    ("routers/auth.py", "login"): "une connexion refusée — sans elle, une attaque "
-    "par force brute est freinée par le rate limit mais jamais signalée",
-    ("routers/auth_mot_de_passe.py", "change_password"): "un mot de passe changé par son porteur",
-    ("routers/auth_mot_de_passe.py", "reset_password"): "un mot de passe réinitialisé "
-    "par jeton — le chemin qu'emprunterait quelqu'un qui a pris la boîte mail",
-    ("routers/admin/utilisateurs.py", "ajouter_role"): "une élévation de rôle : c'est "
-    "le geste qui donne des droits, et rien ne nommait l'admin qui l'a fait",
-    ("routers/admin/utilisateurs.py", "retirer_role"): "un retrait de rôle",
-    ("utils/roles_du_statut.py", "changer_statut"): "les rôles qu'un changement de statut "
-    "ajoute ou retire — la fiche de l'administrateur et la demande approuvée (claude-config#603)",
-    ("routers/admin/utilisateurs.py", "ban_communaute"): "un bannissement",
-    ("routers/auth.py", "refresh"): "un jeton de rafraîchissement rejoué — le seul "
-    "signal d'un vol de session, et toutes les sessions du compte viennent de fermer",
-    ("auth/appartenance.py", "exiger_lot_du_bailleur"): "un bail demandé sur le lot "
-    "d'un autre — l'écran ne le propose pas, la requête a été forgée (#1535)",
-    #  Le cycle de vie d'un compte (#1548, audit du 02/10/2026) : #1040 avait posé
-    #  la porte, la liste s'arrêtait aux mots de passe et aux rôles.
-    ("auth/appartenance.py", "exiger_lots_proposes_au_locataire"): "un locataire qui "
-    "se dit locataire d'un lot qu'on ne lui proposait pas — requête forgée",
-    ("utils/rattachement_locataire.py", "rattacher_lots_declares"): "un locataire "
-    "rattaché sur sa seule déclaration : il reçoit les badges du lot",
-    ("routers/admin/comptes.py", "traiter_compte"): "un compte validé ou refusé — "
-    "le geste qui OUVRE l'accès, fait par le conseil syndical",
-    ("routers/admin/utilisateurs.py", "modifier_utilisateur"): "un compte désactivé ou "
-    "réactivé par l'administration",
-    ("routers/admin/utilisateurs.py", "supprimer_utilisateur"): "un compte effacé "
-    "définitivement — après lui, il ne reste QUE cette ligne pour dire qui l'a fait",
-    ("routers/delegations.py", "create_delegation"): "une délégation créée : un "
-    "tiers va lire au nom d'un résident",
-    ("routers/delegations.py", "accepter_delegation"): "une délégation acceptée — "
-    "c'est à cet instant que la lecture au nom d'autrui commence",
-    ("routers/delegations.py", "revoquer_delegation"): "une délégation révoquée",
-    ("utils/verification_adresse.py", "demander_changement_adresse"): "un changement "
-    "d'adresse demandé, par le titulaire ou l'administrateur — le premier geste d'un "
-    "détournement de compte, que rien ne traçait (#1549)",
-    ("utils/verification_adresse.py", "_confirmer_changement"): "une nouvelle adresse "
-    "confirmée : c'est désormais elle qui reçoit le mot de passe oublié (#1549)",
-    #  La purge des comptes inactifs (#1580) : personne n'agit, le planificateur
-    #  efface. Après lui, il ne reste QUE cette ligne pour dire qu'un compte a
-    #  existé et pourquoi il n'est plus là.
-    ("utils/purge_comptes/tache.py", "_supprimer"): "un compte effacé par la purge "
-    "des comptes inactifs, sans acteur humain",
-    ("utils/purge_comptes/tache.py", "_avertir"): "l'avertissement qui ouvre le délai "
-    "de trente jours avant l'effacement",
-    ("utils/fusion_conciliation.py", "appliquer"): "une fusion conciliée : la principale "
-    "change de lecteurs et des personnes liront ce qu'elles ne lisaient pas",
-}
+#: Le module qui porte la fonction, relatif à `app/` — hors du relevé des émettrices.
+MODULE_REL = MODULE.relative_to(RACINE).as_posix()
 
-#: Ce qui reconnaît un geste sur un compte dans un routeur — le relevé mécanique
-#: que demande #1548 : la liste ci-dessus est tenue à la main, ce relevé dit ce
-#: qu'elle oublie. Chaque signature nomme une ÉCRITURE, jamais une lecture :
+#: Ce qui reconnaît un geste sur un compte, partout dans `app/` — le relevé
+#: mécanique que demande #1548, étendu des routeurs à tout `app/` par #2941 :
+#: `GESTES_SENSIBLES` dit ce qui émet, ce relevé dit ce qui ÉCRIT un compte sans
+#: émettre. Chaque signature nomme une ÉCRITURE, jamais une lecture :
 #:   • `marquer_decide(...)` — la décision sur un compte (valider, refuser,
 #:     désactiver) : `utils/comptes.py` la rend obligatoire pour les trois ;
-#:   • `.ajouter_role(...)` / `.retirer_role(...)` — les droits ;
+#:   • `.ajouter_role(...)` / `.retirer_role(...)` / `poser_roles_du_statut(...)`
+#:     ou `roles_json` écrit (affecté, ou passé à un constructeur) — les droits ;
 #:   • `purger(session, "utilisateur", ...)` ou `supprimer_compte(...)` —
 #:     l'effacement d'un compte (la seconde porte la première depuis #1580) ;
 #:   • `Delegation(...)` ou `.statut = StatutDelegation.…` — la lecture au nom
@@ -112,8 +65,35 @@ APPELS_SIGNATURES = {
     "marquer_decide",
     "ajouter_role",
     "retirer_role",
+    "poser_roles_du_statut",
     "Delegation",
     "supprimer_compte",
+}
+
+#: Les PORTES : les primitives qui écrivent un compte sans juger du geste — c'est
+#: leur appelant qui sait qui agit, et qui journalise. Une porte n'est admise que
+#: si son nom est une signature : chacun de ses appelants est alors relevé à son
+#: tour, et doit être déclaré (`test_les_portes_et_les_exceptions_servent`).
+PORTES_D_ECRITURE = {
+    ("models/core.py", "ajouter_role"): "la méthode du modèle : le routeur qui l'appelle "
+    "journalise `role_ajoute`",
+    ("models/core.py", "retirer_role"): "la méthode du modèle : le routeur qui l'appelle "
+    "journalise `role_retire`",
+    ("utils/roles_du_statut.py", "poser_roles_du_statut"): "la règle des rôles du statut "
+    "— `changer_statut` journalise chaque rôle qui change ; l'inscription est déclarée plus bas",
+    ("utils/suppression_compte.py", "supprimer_compte"): "l'effacement par `purger` — "
+    "ses appelants (administration, demande, purge) journalisent qui l'a voulu",
+}
+
+#: Les écritures sur un compte qui ne laissent pas de ligne, et pourquoi.
+ECRITURES_SANS_LIGNE = {
+    ("routers/auth.py", "register"): "l'inscription pose les rôles du statut sur un "
+    "compte créé INACTIF : ils n'ouvrent rien avant la validation, que `traiter_compte` "
+    "journalise (`compte_valide`)",
+    ("demo/comptes.py", "_compte"): "les comptes FICTIFS de la démonstration, posés à sa "
+    "création : aucune personne derrière eux, aucun geste à relire",
+    ("seed/__init__.py", "_compte_technique"): "l'administrateur et l'opérateur initiaux "
+    "d'une installation neuve, posés par le seed avant tout utilisateur",
 }
 
 
@@ -126,6 +106,57 @@ def _fonction(arbre: ast.Module, nom: str):
         if isinstance(n, (ast.FunctionDef, ast.AsyncFunctionDef)) and n.name == nom:
             return n
     return None
+
+
+def _noms_du_journal(arbre: ast.Module) -> set[str]:
+    """`journaliser_securite` et les alias sous lesquels ce module l'importe."""
+    noms = {FONCTION}
+    for n in ast.walk(arbre):
+        if isinstance(n, ast.ImportFrom):
+            noms |= {a.asname for a in n.names if a.name == FONCTION and a.asname}
+    return noms
+
+
+def _appelle_le_journal(n: ast.AST, noms: set[str]) -> bool:
+    """Un appel direct (`journaliser_securite(…)`, alias compris) ou par le module."""
+    if not isinstance(n, ast.Call):
+        return False
+    f = n.func
+    return (isinstance(f, ast.Name) and f.id in noms) or (
+        isinstance(f, ast.Attribute) and f.attr == FONCTION
+    )
+
+
+def emettrices(modules) -> set[tuple[str, str]]:
+    """Chaque `(module, fonction)` de ces modules qui écrit au journal de sécurité.
+
+    L'appel revient à la fonction qui l'ENGLOBE au plus près : une fonction
+    imbriquée est une émettrice à son nom. Un appel hors de toute fonction est
+    rendu sous `<module>` — aucune entrée ne peut le déclarer, il échoue donc.
+    Le module qui DÉFINIT la fonction n'est pas lu.
+    """
+    trouvees: set[tuple[str, str]] = set()
+    for module in modules:
+        if module.rel == MODULE_REL:
+            continue
+        noms = _noms_du_journal(module.arbre)
+
+        def visiter(noeud: ast.AST, englobante: str) -> None:
+            for enfant in ast.iter_child_nodes(noeud):
+                if isinstance(enfant, (ast.FunctionDef, ast.AsyncFunctionDef)):
+                    visiter(enfant, enfant.name)
+                    continue
+                if _appelle_le_journal(enfant, noms):
+                    trouvees.add((module.rel, englobante))
+                visiter(enfant, englobante)
+
+        visiter(module.arbre, "<module>")
+    return trouvees
+
+
+def ecarts_aux_gestes_declares(emises: set, declares: set) -> tuple[list, list]:
+    """`(émettrices non déclarées, gestes déclarés qui n'émettent pas)`, triés."""
+    return sorted(emises - declares), sorted(declares - emises)
 
 
 def test_la_fonction_d_audit_existe_et_porte_ce_qu_il_faut():
@@ -185,6 +216,67 @@ def test_les_gestes_declares_existent():
     )
 
 
+def test_les_emettrices_sont_exactement_les_gestes_declares():
+    """La liste se DÉRIVE de ce que le code émet (#2941), dans les deux sens.
+
+    Tenue à la main, elle comptait 24 entrées quand 41 fonctions émettaient :
+    retirer l'appel de `routers/montres.py` ou de `routers/ecrans.py` laissait
+    tous les tests verts. Toute émettrice est déclarée avec sa raison ; toute
+    entrée émet encore.
+    """
+    emises = emettrices(modules_app())
+    #  Cas ZÉRO : un relevé qui ne voit plus la connexion ne voit plus rien.
+    assert ("routers/auth.py", "login") in emises, (
+        f"le relevé ne voit plus `{FONCTION}` dans `routers/auth.py::login` : il est cassé"
+    )
+    hors_liste, muettes = ecarts_aux_gestes_declares(emises, set(GESTES_SENSIBLES))
+    assert not hors_liste, (
+        f"Ces fonctions appellent `{FONCTION}` sans figurer dans GESTES_SENSIBLES "
+        "(`tests/aides_gestes_sensibles.py`) :\n"
+        + "\n".join(f"  • app/{f}::{fn}" for f, fn in hors_liste)
+        + "\n\nLes y déclarer, avec ce que la ligne permet de savoir après coup."
+    )
+    assert not muettes, (
+        f"Ces gestes déclarés n'appellent plus `{FONCTION}` :\n"
+        + "\n".join(f"  • app/{f}::{fn} — {GESTES_SENSIBLES[(f, fn)]}" for f, fn in muettes)
+        + "\n\nCe qu'on ne journalise pas n'a pas eu lieu : rendre l'appel, ou retirer "
+        "l'entrée en écrivant pourquoi le geste n'est plus sensible."
+    )
+
+
+def test_le_releve_des_emettrices_sait_refuser():
+    """Le témoin : une émettrice FORGÉE, non déclarée, est vue et refusée.
+
+    Alias d'import, appel par le module, fonction imbriquée, appel hors fonction :
+    les formes qu'un relevé naïf (`ast.Name` seul, `ast.walk` de la fonction
+    externe) laisserait passer ou attribuerait à la mauvaise fonction.
+    """
+    source = (
+        "from app.utils.journal_securite import journaliser_securite as noter\n"
+        "import app.utils.journal_securite as journal\n"
+        "def geste():\n"
+        "    noter('role_ajoute')\n"
+        "def lecture():\n"
+        "    return 1\n"
+        "def externe():\n"
+        "    def interne():\n"
+        "        journal.journaliser_securite('role_retire')\n"
+        "    return interne\n"
+        "journal.journaliser_securite('ban_communaute')\n"
+    )
+    forge = Module(RACINE / "utils" / "forge.py", "utils/forge.py", source)
+    emises = emettrices([forge])
+    assert emises == {
+        ("utils/forge.py", "geste"),
+        ("utils/forge.py", "interne"),
+        ("utils/forge.py", "<module>"),
+    }
+    declares = set(GESTES_SENSIBLES) | {("utils/forge.py", "lecture")}
+    hors_liste, muettes = ecarts_aux_gestes_declares(emises, declares)
+    assert hors_liste == sorted(emises), "une émettrice forgée non déclarée doit être refusée"
+    assert ("utils/forge.py", "lecture") in muettes, "une entrée qui n'émet pas doit l'être aussi"
+
+
 def test_le_journal_ne_porte_aucune_donnee_personnelle():
     """🔴 La trace ne doit pas devenir la fuite.
 
@@ -209,13 +301,13 @@ def test_le_journal_ne_porte_aucune_donnee_personnelle():
     #: Et les appelants ne lui passent pas non plus une adresse.
     fautes = []
     for fichier, fonction in GESTES_SENSIBLES:
-        fn_appelante = _fonction(_arbre(RACINE / fichier), fonction)
+        arbre = _arbre(RACINE / fichier)
+        fn_appelante = _fonction(arbre, fonction)
         if fn_appelante is None:
             continue
+        noms = _noms_du_journal(arbre)
         for n in ast.walk(fn_appelante):
-            if not (isinstance(n, ast.Call) and isinstance(n.func, ast.Name)):
-                continue
-            if n.func.id != FONCTION:
+            if not _appelle_le_journal(n, noms):
                 continue
             #  ⚠️ Les littéraux sont EXCLUS, et ce n'est pas une tolérance : le nom
             #  de l'événement est `"mot_de_passe_change"`, et ce contrôle le
@@ -241,6 +333,8 @@ def _signatures(fn) -> set[str]:
             nom = getattr(n.func, "id", None) or getattr(n.func, "attr", None)
             if nom in APPELS_SIGNATURES:
                 vues.add(nom)
+            if any(k.arg == "roles_json" for k in n.keywords):
+                vues.add("roles_json=")
             if (
                 nom == "purger"
                 and len(n.args) >= 2
@@ -248,9 +342,24 @@ def _signatures(fn) -> set[str]:
                 and n.args[1].value == "utilisateur"
             ):
                 vues.add('purger("utilisateur")')
+        if isinstance(n, ast.Assign) and any(
+            isinstance(c, ast.Attribute) and c.attr == "roles_json" for c in n.targets
+        ):
+            vues.add(".roles_json =")
         if isinstance(n, ast.Assign) and "StatutDelegation." in ast.unparse(n.value):
             if any(isinstance(c, ast.Attribute) and c.attr == "statut" for c in n.targets):
                 vues.add(".statut = StatutDelegation")
+    return vues
+
+
+def _ecritures_sur_un_compte() -> dict[tuple[str, str], set[str]]:
+    """Chaque fonction de `app/` qui écrit un compte, avec ses signatures."""
+    vues = {}
+    for module in modules_app():
+        for n in ast.walk(module.arbre):
+            if isinstance(n, (ast.FunctionDef, ast.AsyncFunctionDef)):
+                if signatures := _signatures(n):
+                    vues[(module.rel, n.name)] = signatures
     return vues
 
 
@@ -261,33 +370,58 @@ def test_tout_geste_sur_un_compte_est_declare():
     trouvé six autres sans trace — valider, désactiver, supprimer un compte,
     créer, accepter, révoquer une délégation. Une liste qu'on complète quand on y
     pense oublie précisément ce à quoi on ne pensait pas : ce test la confronte
-    à ce que les routeurs ÉCRIVENT.
+    à ce que le code ÉCRIT — dans tout `app/` depuis #2941, et plus seulement
+    dans les routeurs : la suppression demandée et la purge vivent dans `utils/`.
     """
-    declares = set(GESTES_SENSIBLES)
-    vus, oublies = set(), []
-    for module in modules_app("routers", minimum=20):
-        for n in ast.walk(module.arbre):
-            if not isinstance(n, (ast.FunctionDef, ast.AsyncFunctionDef)):
-                continue
-            signatures = _signatures(n)
-            if not signatures:
-                continue
-            vus.add((module.rel, n.name))
-            if (module.rel, n.name) not in declares:
-                oublies.append(f"app/{module.rel}::{n.name} — {sorted(signatures)}")
+    declares = set(GESTES_SENSIBLES) | set(PORTES_D_ECRITURE) | set(ECRITURES_SANS_LIGNE)
+    vus = _ecritures_sur_un_compte()
+    oublies = [
+        f"app/{rel}::{nom} — {sorted(signatures)}"
+        for (rel, nom), signatures in sorted(vus.items())
+        if (rel, nom) not in declares
+    ]
     #  Cas ZÉRO : un relevé qui ne trouve plus rien est un relevé cassé, pas un
-    #  dépôt sain — les rôles, au moins, s'écrivent dans un routeur.
-    assert ("routers/admin/utilisateurs.py", "ajouter_role") in vus, (
-        "Le relevé ne reconnaît plus `ajouter_role` : ses signatures ne disent plus "
-        "comment le code écrit un compte, et il ne garde plus rien."
-    )
+    #  dépôt sain — les rôles s'écrivent dans un routeur, l'effacement demandé
+    #  dans `utils/`.
+    for attendu in (
+        ("routers/admin/utilisateurs.py", "ajouter_role"),
+        ("utils/demande_suppression.py", "traiter"),
+    ):
+        assert attendu in vus, (
+            f"Le relevé ne reconnaît plus app/{attendu[0]}::{attendu[1]} : ses signatures "
+            "ne disent plus comment le code écrit un compte, ou sa portée a rétréci."
+        )
     assert not oublies, (
         "Ces fonctions écrivent un compte (droits, décision, effacement, délégation) "
         "sans figurer dans GESTES_SENSIBLES :\n"
         + "\n".join(f"  • {o}" for o in oublies)
         + "\n\nLes y déclarer — ce qui exigera l'appel à `journaliser_securite` —, "
-        "ou retirer la signature ici en écrivant pourquoi ce n'est pas un geste sensible."
+        "ou, avec la raison : dans PORTES_D_ECRITURE si c'est une primitive dont "
+        "l'appelant journalise, dans ECRITURES_SANS_LIGNE si le geste n'a rien à relire."
     )
+
+
+def test_les_portes_et_les_exceptions_servent():
+    """Les deux listes d'écarts se vérifient dans l'autre sens (#2941).
+
+    Une porte ou une exception que le relevé ne voit plus protège un souvenir ;
+    une porte dont le nom n'est pas une signature laisserait ses appelants hors
+    du relevé ; une exception qui émet n'en est pas une.
+    """
+    vus = _ecritures_sur_un_compte()
+    perimees = [
+        f"app/{rel}::{nom}"
+        for rel, nom in sorted({*PORTES_D_ECRITURE, *ECRITURES_SANS_LIGNE})
+        if (rel, nom) not in vus
+    ]
+    assert not perimees, f"Portes ou exceptions qui n'écrivent plus de compte : {perimees}"
+    hors_signatures = sorted(nom for _, nom in PORTES_D_ECRITURE if nom not in APPELS_SIGNATURES)
+    assert not hors_signatures, (
+        f"Portes dont le nom n'est pas dans APPELS_SIGNATURES : {hors_signatures} — "
+        "leurs appelants échapperaient au relevé."
+    )
+    doubles = sorted(set(ECRITURES_SANS_LIGNE) & set(GESTES_SENSIBLES))
+    assert not doubles, f"Déclarées sans ligne ET émettrices : {doubles}"
 
 
 def test_chaque_evenement_journalise_est_declare():
@@ -302,8 +436,9 @@ def test_chaque_evenement_journalise_est_declare():
 
     appels, inconnus = 0, []
     for module in modules_app():
+        noms = _noms_du_journal(module.arbre)
         for n in ast.walk(module.arbre):
-            if not (isinstance(n, ast.Call) and getattr(n.func, "id", None) == FONCTION):
+            if not _appelle_le_journal(n, noms):
                 continue
             appels += 1
             premier = n.args[0] if n.args else None

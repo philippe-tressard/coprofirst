@@ -234,7 +234,7 @@ class Mandat(SQLModel, table=True):
 #  Les tables vivent dans `models/validations.py` depuis le 17/08/2026
 #  (modularité, rang 1). Ré-exportées ici : les imports existants ne bougent
 #  pas, et les modèles restent enregistrés auprès de SQLModel.
-from app.models.validations import (  # noqa: E402,F401
+from app.models.validations import (  # noqa: E402
     CommandeAcces as CommandeAcces,
     DemandeModificationProfil as DemandeModificationProfil,
     StatutCommande as StatutCommande,
@@ -253,13 +253,13 @@ from app.models.validations import (  # noqa: E402,F401
 # ──────────────────────────────────────────────
 
 
-from app.models.residence import (  # noqa: E402,F401
+from app.models.residence import (  # noqa: E402
     FaqItem as FaqItem,
     RegleResidence as RegleResidence,
 )
 
 #  La délégation aidant vit dans `delegations.py` depuis le 28/09/2026 (#779).
-from app.models.delegations import (  # noqa: E402,F401
+from app.models.delegations import (  # noqa: E402
     Delegation as Delegation,
     StatutDelegation as StatutDelegation,
 )
@@ -271,7 +271,7 @@ from app.models.delegations import (  # noqa: E402,F401
 #  Les quatre modèles vivent dans `models/prestataires.py` depuis le
 #  20/08/2026 (#490). L'import n'est PAS décoratif : c'est lui qui enregistre
 #  les tables auprès de SQLModel avant `create_all`.
-from app.models.prestataires import (  # noqa: E402,F401
+from app.models.prestataires import (  # noqa: E402
     ContratEntretien as ContratEntretien,
     NotationPrestataire as NotationPrestataire,
     Prestataire as Prestataire,
@@ -290,7 +290,7 @@ from app.models.prestataires import (  # noqa: E402,F401
 #  Ces deux-là parce qu'elles ne portent AUCUNE `Relationship` : l'extraction
 #  ne pouvait rien casser, et c'est ce qui l'a désignée plutôt qu'une autre au
 #  milieu d'un lot qui parlait d'autre chose.
-from app.models.compteurs import (  # noqa: E402,F401
+from app.models.compteurs import (  # noqa: E402
     CompteurConfig as CompteurConfig,
     ReleveCompteur as ReleveCompteur,
 )
@@ -302,7 +302,7 @@ from app.models.compteurs import (  # noqa: E402,F401
 
 
 #  Dans `models/notifications.py` depuis le 30/10/2026 (#2316).
-from app.models.notifications import Notification as Notification  # noqa: E402,F401
+from app.models.notifications import Notification as Notification  # noqa: E402
 
 # ──────────────────────────────────────────────
 #  Import lots (staging depuis Excel)
@@ -323,7 +323,7 @@ from app.models.lot_import import LotImport, StatutLotImport  # noqa: E402,F401
 #  d'après une entité qui ne la contient pas. Ré-exportées : les imports
 #  existants ne bougent pas, et les modèles restent enregistrés auprès de
 #  SQLModel.
-from app.models.evenement import (  # noqa: E402,F401
+from app.models.evenement import (  # noqa: E402
     Evenement as Evenement,
     StatutKanban as StatutKanban,
     TypeEvenement as TypeEvenement,
@@ -336,7 +336,7 @@ from app.models.evenement import (  # noqa: E402,F401
 #  Les tables vivent dans `models/communaute.py` depuis le 16/08/2026
 #  (modularité, rang 1). Ré-exportées ici : les imports existants ne bougent
 #  pas, et les modèles restent enregistrés auprès de SQLModel.
-from app.models.communaute import (  # noqa: E402,F401
+from app.models.communaute import (  # noqa: E402
     CategorieAnnonce as CategorieAnnonce,
     CommentaireSondage as CommentaireSondage,
     FluxMasque as FluxMasque,
@@ -388,7 +388,7 @@ from app.models.annonce_hall import AnnonceHall  # noqa: E402,F401
 
 #  Le bail et les objets remis au locataire vivent dans `bailleur.py` depuis le
 #  28/09/2026 (#779) — le domaine du paquet `routers/bailleur/`.
-from app.models.bailleur import (  # noqa: E402,F401
+from app.models.bailleur import (  # noqa: E402
     LocationBail as LocationBail,
     RemiseObjet as RemiseObjet,
     StatutBail as StatutBail,
@@ -408,13 +408,13 @@ from app.models.bailleur import (  # noqa: E402,F401
 
 
 #  Dans `models/reglages.py` depuis le 30/10/2026 (#2316).
-from app.models.reglages import ConfigSite as ConfigSite  # noqa: E402,F401
+from app.models.reglages import ConfigSite as ConfigSite  # noqa: E402
 
 # ──────────────────────────────────────────────
 #  Messages WhatsApp planifiés — extraits le 05/09/2026 dans `models/whatsapp.py`
 #  (modularité, rang 1). Ré-exportés ici : aucun appelant n'a changé.
 # ──────────────────────────────────────────────
-from app.models.whatsapp import (  # noqa: E402,F401
+from app.models.whatsapp import (  # noqa: E402
     WhatsAppLog as WhatsAppLog,
     WhatsAppScheduled as WhatsAppScheduled,
 )
@@ -469,13 +469,13 @@ from app.models.exploitation import (  # noqa: E402
     PorteeExecution as PorteeExecution,
     TachePlanifiee as TachePlanifiee,
 )
-from app.models.affaires_liees import AffaireLiee as AffaireLiee  # noqa: E402,F401
-from app.models.fichiers_recus import FichierRecu as FichierRecu  # noqa: E402,F401
+from app.models.affaires_liees import AffaireLiee as AffaireLiee  # noqa: E402
+from app.models.fichiers_recus import FichierRecu as FichierRecu  # noqa: E402
 
 #  La synthèse d'une affaire close (#1643) — importée ici pour qu'Alembic la voie.
-from app.models.synthese import SyntheseAffaire as SyntheseAffaire  # noqa: E402,F401
-from app.models.synthese import TentativeSynthese as TentativeSynthese  # noqa: E402,F401
+from app.models.synthese import SyntheseAffaire as SyntheseAffaire  # noqa: E402
+from app.models.synthese import TentativeSynthese as TentativeSynthese  # noqa: E402
 
 #  Le règlement de copropriété et les questions qu'on lui pose — vu par Alembic ici.
-from app.models.reglement import QuestionReglement as QuestionReglement  # noqa: E402,F401
-from app.models.reglement import TexteReglement as TexteReglement  # noqa: E402,F401
+from app.models.reglement import QuestionReglement as QuestionReglement  # noqa: E402
+from app.models.reglement import TexteReglement as TexteReglement  # noqa: E402

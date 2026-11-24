@@ -10,7 +10,27 @@
 # dépôt. 88 ou 120 ne changeaient presque rien au volume (499 à 504 fichiers).
 line-length = 100
 
+# La version de l'image (`api/Dockerfile`, `FROM python:3.12-slim`). Sans elle,
+# Ruff supposait 3.10 (#2951). 🔒 `test_version_python_alignee.py`.
+target-version = "py312"
+
+[lint]
+# Règles que la CI ne passe PAS, mais dont la directive `# noqa` porte une raison
+# qu'on garde (#2951) : RUF100 (« directive inutile ») les épargne.
+# - E402 reste dehors par décision (`ci.yml`, étape « Ruff ») : l'ordre des
+#   imports y est du comportement ;
+# - BLE001 : la directive est la raison écrite d'un `except Exception`. La règle
+#   n'est pas passée (69 autres n'en portent pas — #2998) ;
+# - S310 : une ouverture d'URL déclarée.
+external = ["E402", "BLE001", "S310"]
+
+[lint.per-file-ignores]
+# S608 passe sur les migrations depuis #2948. 0294 interpole `MODELES`, un NOM DE
+# TABLE pris dans une constante du fichier — un identifiant ne se lie pas. Une
+# migration appliquée ne se modifie jamais : l'exception se déclare ici.
+"alembic/versions/0294_modeles_non_desactivables_actifs.py" = ["S608"]
+
 [format]
 # 🔴 Une migration appliquée ne se modifie JAMAIS (CLAUDE.md) — pas même pour
 # des guillemets. `alembic/env.py`, lui, n'est pas une migration.
-exclude = ["alembic/versions/**"]
+exclude = ["alembic/versions/**", "alembic_plateforme/versions/**"]

@@ -18,6 +18,24 @@ VERSIONS = pathlib.Path(__file__).resolve().parents[1] / "alembic" / "versions"
 #: La chaîne de la base `plateforme` (registre des installations), à part de celle d'une copropriété.
 VERSIONS_PLATEFORME = VERSIONS.parent.parent / "alembic_plateforme" / "versions"
 
+#: Les DEUX chaînes de migrations (#2948) : celle d'une copropriété et celle de la
+#: base `plateforme`. Un contrôle qui ne lit que la première laisse la seconde
+#: hors de toute garde — ce qu'il était jusqu'au 23/11/2026.
+CHAINES = {"copropriete": VERSIONS, "plateforme": VERSIONS_PLATEFORME}
+
+
+def sources_des_chaines() -> dict[str, str]:
+    """`<chaîne>/<fichier>` → source, pour chaque migration des deux chaînes.
+
+    Cas zéro PAR chaîne : un dossier qui a bougé fait échouer, au lieu de rendre
+    une chaîne vide qu'aucun relevé ne verrait."""
+    sources = {}
+    for nom, dossier in CHAINES.items():
+        fichiers = sorted(dossier.glob("*.py"))
+        assert fichiers, f"la chaîne `{nom}` ({dossier}) ne rend aucune migration"
+        sources |= {f"{nom}/{f.name}": f.read_text(encoding="utf-8") for f in fichiers}
+    return sources
+
 
 def chemin_migration(motif: str, dossier: pathlib.Path | None = None) -> pathlib.Path:
     """Le fichier de migration qui correspond à `motif` (`"0194_*.py"`, `"0243"`…), ou lève.
