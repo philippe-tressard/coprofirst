@@ -41,6 +41,7 @@
 import { execFileSync, spawn } from 'node:child_process';
 import { existsSync } from 'node:fs';
 import { fileURLToPath, pathToFileURL } from 'node:url';
+import { buildDeCetteSource, CODE_INCONNU } from './lib-build-a-jour.mjs';
 
 const RACINE = fileURLToPath(new URL('..', import.meta.url));
 const ROUTE = '/auth/connexion';
@@ -120,6 +121,7 @@ async function mesurer() {
 		);
 		return 1;
 	}
+	if (!buildDeCetteSource(`${RACINE}build/index.js`, 'e2e:sw')) return CODE_INCONNU; // #2976
 	let chromium;
 	try {
 		({ chromium } = await import('@playwright/test'));

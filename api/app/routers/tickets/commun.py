@@ -57,7 +57,7 @@ from .lecture_groupee import LectureGroupee, lecture_groupee
 
 #: La table des libellés d'état vit avec sa règle (`utils/etat_affaire`, #2633) :
 #: ré-exportée ici pour les courriels, les notifications et le fil, qui la lisent.
-from app.utils.etat_affaire import STATUT_LABELS  # noqa: F401  (ré-export volontaire)
+from app.utils.etat_affaire import STATUT_LABELS  # ré-export volontaire
 
 
 def pieces_du_ticket(ticket) -> list[str]:

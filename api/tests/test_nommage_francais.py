@@ -33,7 +33,7 @@ import re
 import pytest
 from sqlmodel import SQLModel
 
-import app.models.core  # noqa: F401 — enregistre toutes les tables
+import app.models.core  # enregistre toutes les tables
 from app.main import app
 
 ANGLAIS = {

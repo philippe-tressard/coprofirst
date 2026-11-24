@@ -24,7 +24,7 @@ from tests.aides_purge import purger_ligne
 
 
 @pytest.fixture()
-def propre(session):  # noqa: F811
+def propre(session):
     """La base de l'application est PARTAGÉE : ce que le test y écrit en part avec lui.
 
     Une affaire et un compte laissés derrière ressortaient dans les tests qui

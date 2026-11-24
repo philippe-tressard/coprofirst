@@ -15,20 +15,30 @@ l'ADAPTATEUR du seul canal déclaré.
 
 ## Ce que ce test vérifie
 
-Qu'aucun module hors de l'adaptateur et du registre n'importe l'un des trois
-gestes du transport. Les exceptions sont NOMMÉES avec leur raison, et le test
-échoue si l'une cesse de servir.
+Qu'aucun module hors de l'adaptateur et du registre n'importe un geste du
+transport : la lecture de sa configuration (`config_whatsapp`) et chacun de ses
+gestes d'envoi, dont la liste est tenue par l'adaptateur (`GESTES_D_ENVOI`). Les
+exceptions sont NOMMÉES avec leur raison, et le test échoue si l'une cesse de servir.
+
+🔴 Jusqu'au 23/11/2026 (#2977), sa liste en recopiait deux sur trois : un module
+qui importait `envoyer_whatsapp_raw` passait. Les deux appelants qui le font, sans
+objet derrière, sont déclarés une fois (`aides_transport.SANS_OBJET`) pour les deux
+contrôles — `test_groupe_portes`, qui lit les APPELS, fait référence.
 """
 
 from __future__ import annotations
 
 import ast
 
+from app.utils.whatsapp import GESTES_D_ENVOI
 from tests.aides_sources import modules_app
+from tests.aides_transport import SANS_OBJET
 
-GESTES_DU_TRANSPORT = {"config_whatsapp", "envoyer_whatsapp_avec_log"}
+GESTES_DU_TRANSPORT = GESTES_D_ENVOI | {"config_whatsapp"}
 
 EXCEPTIONS = {
+    #  Les appelants sans objet derrière — déclarés une fois pour les deux contrôles.
+    **SANS_OBJET,
     #  L'adaptateur lui-même, et le registre qui le déclare.
     "utils/whatsapp.py": "l'adaptateur du canal WhatsApp",
     "utils/diffusion.py": "le registre des canaux",

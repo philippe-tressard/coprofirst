@@ -37,7 +37,7 @@ from tests.aides_purge import purger_ligne
 
 
 @pytest.fixture()
-def lieu(monde):  # noqa: F811
+def lieu(monde):
     """La scène, et la purge de ce que ces tests ajoutent : les traces, les
     affaires détachées, les comptes de passage."""
     session, ticket, syndic, cs, objet = monde

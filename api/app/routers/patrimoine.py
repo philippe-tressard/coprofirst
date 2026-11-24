@@ -74,7 +74,7 @@ from app.utils.perimetres.libelles import perimetre_badge
 from app.utils.perimetres.servi import libelle_complet
 from app.utils.recuperer import ou_404
 
-from app.routers.patrimoine_schemas import (  # noqa: F401 — ré-exportés (patrimoine_branche, tests)
+from app.routers.patrimoine_schemas import (  # ré-exportés (patrimoine_branche, tests)
     PerimetreCreate,
     PerimetreRead,
     PerimetreUpdate,
