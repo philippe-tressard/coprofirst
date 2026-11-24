@@ -1,0 +1,58 @@
+name: Contexte du front
+
+#  #3032 (23/11/2026) — un `front/node_modules` résiduel sur un nœud entrait dans
+#  l'image par `COPY . .`, APRÈS `npm ci`, et cassait la construction de secours.
+#  `front/.dockerignore` l'écarte ; ce workflow le prouve sur un vrai `docker build`,
+#  le cas fautif d'abord : un `node_modules/.bin/vite` piégé (il sort en 3) est posé
+#  dans le dossier, puis
+#    1. sans `.dockerignore`, la construction DOIT échouer — sinon l'essai ne juge rien ;
+#    2. avec, elle DOIT réussir.
+#  🔒 api/tests/test_front_dockerignore.py lit le fichier ; ici, le comportement.
+on:
+  pull_request:
+    branches: [dev, main]
+    paths:
+      - "front/Dockerfile"
+      - "front/.dockerignore"
+      - ".github/workflows/contexte-front.yml"
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
+
+permissions: {}
+
+jobs:
+  contexte:
+    name: Contexte du front (node_modules local écarté)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+
+      - name: Poser un node_modules local piégé
+        run: |
+          mkdir -p front/node_modules/.bin
+          printf '#!/bin/sh\necho "node_modules du dossier de travail" >&2\nexit 3\n' > front/node_modules/.bin/vite
+          chmod +x front/node_modules/.bin/vite
+
+      - name: Cas fautif — sans .dockerignore, la construction échoue
+        run: |
+          mv front/.dockerignore /tmp/dockerignore
+          if docker build --progress=plain -f front/Dockerfile front >/tmp/sortie 2>&1; then
+            echo "::error::construite malgré le node_modules piégé : l'essai ne juge rien"
+            exit 1
+          fi
+          grep -q "node_modules du dossier de travail" /tmp/sortie \
+            || { echo "::error::échec sans le piège en cause :"; tail -20 /tmp/sortie; exit 1; }
+          echo "échec attendu, causé par le node_modules recopié"
+          mv /tmp/dockerignore front/.dockerignore
+
+      - name: Avec .dockerignore, la construction réussit
+        run: docker build -q -f front/Dockerfile front

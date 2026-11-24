@@ -5,6 +5,7 @@ from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from sqlmodel import Session
 
 from app.auth.jetons_appareil import JetonLu, jeton_lu, noter_lecture, route_ouverte
+from app.auth.jetons_rafraichissement import session_encore_ouverte
 from app.auth.jwt import decode_token, empreinte_du_compte
 from app.database import get_session
 from app.utils import horloge
@@ -38,17 +39,16 @@ def _get_current_user(
             status_code=status.HTTP_401_UNAUTHORIZED, detail="Utilisateur introuvable ou inactif"
         )
 
-    #  🔴 Le jeton d'accès est AUTOPORTEUR : sans cette comparaison, rien côté
-    #  serveur ne peut l'invalider avant ses 120 minutes — ni un changement de
-    #  mot de passe, ni une déconnexion (#1063). Le compte vient d'être chargé
-    #  pour vérifier qu'il est actif : l'empreinte est donc gratuite. Un jeton
-    #  de rafraîchissement rejoué la change aussi (`generation_sessions`, #2481).
-    #
-    #  ⚠️ Un jeton émis avant le 22/09/2026 n'en porte pas : il est refusé, et
-    #  le front renouvelle en silence sur 401. Accepter l'absence rouvrirait le
-    #  trou pour 120 minutes — et pour toujours, le jour où quelqu'un
-    #  réintroduirait un appelant qui ne pose pas l'empreinte.
-    if payload.get("pwd") != empreinte_du_compte(user.hashed_password, user.generation_sessions):
+    #  🔴 Le jeton d'accès est AUTOPORTEUR : sans ces deux questions, rien ne l'invalide
+    #  avant 120 minutes. L'EMPREINTE du compte (#1063) tombe pour toutes ses sessions
+    #  avec un mot de passe changé ou un rejeu (`generation_sessions`, #2481) ; gratuite,
+    #  le compte est chargé. Absente : refus, sinon un émetteur l'oublierait en silence.
+    #  La SESSION (`sid`) tombe seule, à la déconnexion (23/11/2026) — une lecture
+    #  indexée. Un jeton d'avant n'en porte pas : jugé sur l'empreinte, il expire seul.
+    sid = payload.get("sid")
+    if payload.get("pwd") != empreinte_du_compte(
+        user.hashed_password, user.generation_sessions
+    ) or (sid is not None and not (isinstance(sid, str) and session_encore_ouverte(session, sid))):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Session invalidée — reconnectez-vous.",
