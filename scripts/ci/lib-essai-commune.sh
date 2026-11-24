@@ -62,30 +62,6 @@ joindre_verdicts() {
 #  L'hôte d'une adresse (`http://75011-essai-a.localhost/` → `75011-essai-a.localhost`).
 hote_de() { printf '%s\n' "$1" | sed -E 's#^[a-z]+://##; s#[/:].*$##'; }
 
-if [ "${BASH_SOURCE[0]}" = "$0" ] && [ "${1:-}" = "--selftest" ]; then
-    st=0
-    t() { local r; r=$(verdict_commune "${@:3}"); r=${r%%:*}
-          [ "$r" = "$2" ] && echo "PASS  $1 → $r" || { echo "FAIL  $1  attendu=$2 obtenu=$r"; st=1; }; }
-    t "tout tient"                              OK     oui oui 200 oui 401 200 200
-    t "redirection du front admise"             OK     oui oui 200 oui 401 302 307
-    t "sans la surcouche dans Caddy"            ECHEC  non oui 200 oui 401 200 200
-    t "front sans l'hôte demandé"               ECHEC  oui non 200 oui 401 200 200
-    t "le fichier de A n'est pas servi"         ECHEC  oui oui 404 non 401 200 200
-    t "un autre contenu sous l'hôte de A"       ECHEC  oui oui 200 non 401 200 200
-    t "le jeton de A ouvre B"                   ECHEC  oui oui 200 oui 200 200 200
-    t "le front de B rend 421"                  ECHEC  oui oui 200 oui 401 200 421
-    t "une mesure absente"                      ECHEC  oui oui ""  oui 401 200 200
-    j() { local r; r=$(joindre_verdicts "$3" "$4")
-          [ "$r" = "$2" ] && echo "PASS  $1 → $r" || { echo "FAIL  $1  attendu=$2 obtenu=$r"; st=1; }; }
-    j "les deux tiennent"         OK                                        OK          OK
-    j "l'essai seul échoue"       "ECHEC:pas d'export"                      "ECHEC:pas d'export" OK
-    j "la commune seule échoue"   "ECHEC:installation commune : front B"    OK          "ECHEC:front B"
-    j "les deux échouent"         "ECHEC:x;installation commune : y"        "ECHEC:x"   "ECHEC:y"
-    h=$(hote_de "http://75011-essai-a.localhost/")
-    [ "$h" = 75011-essai-a.localhost ] && echo "PASS  hôte d'une adresse → $h" || { echo "FAIL  hôte d'une adresse : $h"; st=1; }
-    [ "$st" -eq 0 ] && echo "lib-essai-commune : tous les cas passent."
-    exit "$st"
-fi
 
 # ── Les gestes (sur l'installation de l'essai) ────────────────────────────────
 
@@ -112,7 +88,10 @@ HOTE_COMMUN_ESSAI="essai.test"
 #  celui de A : $1).
 installer_commune() {
     local log adresse
-    MDP_A="${1:?mot de passe de l'administrateur initial attendu}"
+    #  Pas d'apostrophe dans le message de `:?` : bash l'y lit comme un début de
+    #  chaîne, et tout le reste du fichier disparaissait (constater_commune jamais
+    #  définie — l'essai du 25/11/2026, run 45511494349).
+    MDP_A="${1:?mot de passe attendu : administrateur initial}"
     poser ORIGIN "http://$HOTE_COMMUN_ESSAI"
     poser COPROPRIETES_FICHIER /app/data/coproprietes.json
     "${COMPOSE[@]}" exec -T -u app api sh -c 'cat > /app/data/coproprietes.json' <<JSON
@@ -164,3 +143,33 @@ constater_commune() {
     echo "Constat commun ($1) : caddy=$caddy front=$front A/A=$code_a ($contenu) A/B=$code_b front A=$front_a B=$front_b"
     verdict_commune "$caddy" "$front" "$code_a" "$contenu" "$code_b" "$front_a" "$front_b"
 }
+
+# ── Autotest : en DERNIER, une fois toutes les fonctions définies ─────────────
+if [ "${BASH_SOURCE[0]}" = "$0" ] && [ "${1:-}" = "--selftest" ]; then
+    st=0
+    t() { local r; r=$(verdict_commune "${@:3}"); r=${r%%:*}
+          [ "$r" = "$2" ] && echo "PASS  $1 → $r" || { echo "FAIL  $1  attendu=$2 obtenu=$r"; st=1; }; }
+    t "tout tient"                              OK     oui oui 200 oui 401 200 200
+    t "redirection du front admise"             OK     oui oui 200 oui 401 302 307
+    t "sans la surcouche dans Caddy"            ECHEC  non oui 200 oui 401 200 200
+    t "front sans l'hôte demandé"               ECHEC  oui non 200 oui 401 200 200
+    t "le fichier de A n'est pas servi"         ECHEC  oui oui 404 non 401 200 200
+    t "un autre contenu sous l'hôte de A"       ECHEC  oui oui 200 non 401 200 200
+    t "le jeton de A ouvre B"                   ECHEC  oui oui 200 oui 200 200 200
+    t "le front de B rend 421"                  ECHEC  oui oui 200 oui 401 200 421
+    t "une mesure absente"                      ECHEC  oui oui ""  oui 401 200 200
+    j() { local r; r=$(joindre_verdicts "$3" "$4")
+          [ "$r" = "$2" ] && echo "PASS  $1 → $r" || { echo "FAIL  $1  attendu=$2 obtenu=$r"; st=1; }; }
+    j "les deux tiennent"         OK                                        OK          OK
+    j "l'essai seul échoue"       "ECHEC:pas d'export"                      "ECHEC:pas d'export" OK
+    j "la commune seule échoue"   "ECHEC:installation commune : front B"    OK          "ECHEC:front B"
+    j "les deux échouent"         "ECHEC:x;installation commune : y"        "ECHEC:x"   "ECHEC:y"
+    h=$(hote_de "http://75011-essai-a.localhost/")
+    [ "$h" = 75011-essai-a.localhost ] && echo "PASS  hôte d'une adresse → $h" || { echo "FAIL  hôte d'une adresse : $h"; st=1; }
+    #  Le module entier s'est chargé : chaque fonction dont l'essai a besoin existe.
+    for f in verdict_commune joindre_verdicts hote_de code_sous installer_commune constater_commune; do
+        [ "$(type -t "$f")" = function ] && echo "PASS  $f définie" || { echo "FAIL  $f absente après chargement"; st=1; }
+    done
+    [ "$st" -eq 0 ] && echo "lib-essai-commune : tous les cas passent."
+    exit "$st"
+fi
