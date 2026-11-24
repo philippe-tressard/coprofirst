@@ -158,13 +158,19 @@ def downgrade():
 **Règles migration :** `CLAUDE.md` → « Migrations Alembic » (liaison des
 valeurs, identifiants depuis une constante, ajouter puis retirer) et
 `standards/06-donnees-et-integrite.md` §3 pour le générique — seules copies
-(claude-config#122). Ce qui n'est écrit que là :
+(claude-config#122) : ne jamais modifier une migration existante, une colonne neuve
+nullable ou avec `server_default`, retirer en deux versions, n'y sont plus recopiés
+ici. Ce qui n'est écrit que là :
 - tester l'existence d'une colonne avant `add_column` par
   `sa.inspect(conn).get_columns(TABLE)`, jamais par une requête en f-string.
-- **Jamais** modifier une migration existante : en créer une nouvelle.
-- Une colonne ajoutée est **nullable ou porte un `server_default`** : l'image
-  précédente doit pouvoir insérer sans la connaître. Retirer ou renommer se fait
-  en deux versions (`CLAUDE.md` → « Migrations Alembic », #1757).
+- **Le second temps d'un retrait** (`drop_column`, `drop_table`) se prouve sans perte
+  SUR LA PRODUCTION avant la fusion (`standards/06` §3, #2937) : jouer sur l'actif la
+  requête qui montre que la colonne ne porte rien qui ne soit repris ailleurs —
+  `docker exec hostachy_postgres psql -U coprofirst -d coprofirst -Atc "select
+  count(*) from <table> where <colonne> is not null"`, ou la comparaison avec la
+  colonne qui la reprend —, puis écrire date, requête et résultat dans
+  `PREUVES_SANS_PERTE` (`test_migrations_compatibles.py`), qui refuse le retrait sans
+  elle. Une session sans SSH (cloud) donne la requête dans sa PR et ne fusionne pas.
 - Corriger un texte **livré** en base (FAQ, modèle d'e-mail) : `utils/textes_livres.remplacer_si_intact` — il ne touche que les lignes intactes. Recopié quinze fois avant le 24/09/2026 ; `test_textes_livres.py` refuse la seizième copie.
 
 ### 4. Routeur FastAPI — `api/app/routers/`

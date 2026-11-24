@@ -11,8 +11,10 @@ Il ne reste ici que ce qu'un hook seul peut apporter : des DÉCLENCHEURS liés �
 une action concrète, et non à une intention.
 
 ┌─ AVANT CETTE ACTION ──────────────→ CHARGER / LANCER ─────────────────────┐
-│ `git push` sur dev ou main          bash scripts/poste/precheck-mep.sh   (le hook        │
-│   = tu t'apprêtes à déployer          pre-push le refuse sans sa trace)    │
+│ ouvrir la PR d'un lot                bash scripts/poste/rejouer-ci.sh      │
+│ lancer conduire-mep.sh (déployer)    bash scripts/poste/precheck-mep.sh    │
+│   — ordre : CLAUDE.md, « Ordre       après la CI verte de la PR            │
+│   d'un lot »                         + .claude/skills/mep-precheck         │
 │ écrire dans front/src/**             .claude/skills/ux-patterns            │
 │                                      + svelte-patterns                     │
 │ écrire dans api/** (modèle, route…)  .claude/skills/api-scaffold           │

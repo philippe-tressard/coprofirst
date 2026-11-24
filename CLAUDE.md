@@ -338,7 +338,11 @@ commit …`. Avant de réécrire un fichier partagé : `git worktree list` (`sta
   `conduire-mep.sh` (qui s'arrête faute de SSH à la lecture de l'actif). Le pré-check est
   INCONNU et la PR le dit ; le post-check P1–P9 reste au poste, et le compte rendu le
   demande. Les tickets se ferment à la fusion dans `main`, avec l'observation en production
-  restant à faire. Environnement : `.claude/cloud/LISEZMOI.md`.
+  restant à faire. **Exception : un lot qui retire une colonne ou une table ne se fusionne
+  pas depuis le cloud** — sa preuve sans perte se lit sur la production (`standards/06` §3) :
+  la session donne la requête à jouer au poste, et `PREUVES_SANS_PERTE`
+  (`test_migrations_compatibles.py`) refuse le retrait sans elle (#2937). Environnement :
+  `.claude/cloud/LISEZMOI.md`.
 - `.env` non versionné · `SECRET_KEY` ≥ 32 caractères · `ENABLE_API_DOCS=false` en prod.
 
 ## Versioning
