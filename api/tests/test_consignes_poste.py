@@ -22,12 +22,7 @@ POWERSHELL = re.compile(r"```powershell|\b(?:Get-ChildItem|Select-String|Copy-It
 
 #: Les consignes qui en portent encore, et pourquoi. Une entrée qui ne sert plus
 #: fait échouer le contrôle.
-EXCEPTIONS = {
-    ".claude/skills/security-audit/SKILL.md": (
-        "neuf blocs, réécrits par le lot de l'audit de sécurité du 23/11/2026, qui "
-        "tient cette skill"
-    ),
-}
+EXCEPTIONS: dict[str, str] = {}
 
 
 def _consignes() -> list[pathlib.Path]:
