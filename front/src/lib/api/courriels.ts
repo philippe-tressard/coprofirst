@@ -1,7 +1,7 @@
 //  Le domaine **Courriels des affaires** : ce que la relève de la boîte des
 //  réponses a fait de chaque message reçu à l'adresse des affaires (#1447).
 //
-//  Né le 05/10/2026 avec l'onglet Espace CS › Courriels. Le client de
+//  Né le 05/10/2026 avec l'onglet Espace CS › Courriels affaires. Le client de
 //  l'administration (`administration.ts`) et ses types sont au plafond de
 //  modularité : un domaine neuf a son propre fichier.
 import { api } from './client';
