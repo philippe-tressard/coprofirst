@@ -68,10 +68,14 @@ def test_sans_mot_de_passe_du_env_le_compte_garde_celui_du_seed(
     from tests.aides_base import compte
 
     monkeypatch.setattr(get_settings(), reglage, "")
-    technique = compte(session, email=adresse, role="admin", roles_json="admin")
+    technique = compte(
+        session, email=adresse, role="admin", roles_json="admin", mot_de_passe_a_changer=True
+    )
     avant = technique.hashed_password
     assert administrateur.fixer_mot_de_passe(session, technique) is False
     assert technique.hashed_password == avant
+    #  La démo ferme le changement de mot de passe : un compte marqué y serait enfermé (#3019).
+    assert technique.mot_de_passe_a_changer is False
 
 
 @pytest.mark.parametrize("adresse,reglage", sorted(TECHNIQUES.items()))
@@ -84,10 +88,14 @@ def test_le_mot_de_passe_du_env_est_pose_sur_son_compte(session, monkeypatch, ad
     for autre in TECHNIQUES.values():
         monkeypatch.setattr(get_settings(), autre, "")
     monkeypatch.setattr(get_settings(), reglage, "Secret-Demo-42")
-    comptes = {a: compte(session, email=a, role="admin", roles_json="admin") for a in TECHNIQUES}
+    comptes = {
+        a: compte(session, email=a, role="admin", roles_json="admin", mot_de_passe_a_changer=True)
+        for a in TECHNIQUES
+    }
     poses = {a: administrateur.fixer_mot_de_passe(session, c) for a, c in comptes.items()}
     assert poses == {a: a == adresse for a in TECHNIQUES}
     assert verify_password("Secret-Demo-42", comptes[adresse].hashed_password)
+    assert not any(c.mot_de_passe_a_changer for c in comptes.values())
 
 
 @pytest.mark.parametrize("reglage", sorted(TECHNIQUES.values()))

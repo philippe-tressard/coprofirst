@@ -34,6 +34,17 @@ def verifier_robustesse(password: str) -> None:
         raise HTTPException(400, "Le mot de passe doit contenir : " + ", ".join(errors) + ".")
 
 
+def _est_le_mot_de_passe(saisi: str, condense: str | None) -> bool:
+    """`saisi` est-il le mot de passe de ce condensé ? Un condensé absent ou illisible
+    ne reconnaît rien : il n'y a pas d'ancien mot de passe à refuser de reprendre."""
+    from app.auth.jwt import verify_password
+
+    try:
+        return bool(condense) and verify_password(saisi, condense)
+    except ValueError:
+        return False
+
+
 def poser_mot_de_passe(
     session,
     utilisateur,
@@ -66,16 +77,17 @@ def poser_mot_de_passe(
     `jwt.empreinte_du_compte`).
 
     Un mot de passe posé n'est plus temporaire : le drapeau `mot_de_passe_a_changer`
-    tombe ici, et nulle part ailleurs (#3019).
+    tombe ici (#3019) — ailleurs, seulement dans la démo, qui ferme le changement de
+    mot de passe (`demo/administrateur.fixer_mot_de_passe`).
     """
     from app.auth.jetons_rafraichissement import revoquer_sessions
-    from app.auth.jwt import hash_password, verify_password
+    from app.auth.jwt import hash_password
 
     verifier_robustesse(nouveau)
     #  Un mot de passe TEMPORAIRE (#3019) ne se repose pas tel quel : lu dans un journal,
     #  il resterait valide, drapeau levé.
-    if utilisateur.mot_de_passe_a_changer and verify_password(
-        nouveau, utilisateur.hashed_password or ""
+    if utilisateur.mot_de_passe_a_changer and _est_le_mot_de_passe(
+        nouveau, utilisateur.hashed_password
     ):
         raise HTTPException(400, "Choisissez un mot de passe différent du mot de passe temporaire.")
     utilisateur.hashed_password = hash_password(nouveau)

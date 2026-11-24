@@ -28,6 +28,13 @@ test('un compte au mot de passe temporaire est mené au changement, puis où il 
 		},
 	);
 
+	//  Ce que la page du changement appelle, une fois qu'on y est.
+	const appels: string[] = [];
+	page.on('request', (r) => {
+		const url = new URL(r.url());
+		if (url.pathname.startsWith('/api/') && page.url().includes('/auth/mot-de-passe-temporaire'))
+			appels.push(`${r.method()} ${url.pathname}`);
+	});
 	await page.goto('/notifications');
 	await expect(page).toHaveURL(/\/auth\/mot-de-passe-temporaire\?next=%2Fnotifications$/);
 	await attendreHydratation(page);
@@ -45,10 +52,20 @@ test('un compte au mot de passe temporaire est mené au changement, puis où il 
 		mot_de_passe_actuel: 'Temporaire-Journal-1',
 		nouveau_mot_de_passe: 'Nouveau-Secret-2026',
 	});
+	//  La page n'appelle que ce que l'API ouvre à un compte marqué : ses deux routes
+	//  admises, et la configuration publique (relevé du 24/11/2026, confronté au balayage
+	//  de `test_mot_de_passe_a_changer.py`).
+	expect([...new Set(appels)].sort()).toEqual([
+		'GET /api/auth/me',
+		'GET /api/config',
+		'POST /api/auth/change-password',
+	]);
 });
 
 test('un compte sans mot de passe temporaire ne passe pas par le changement', async ({ page }) => {
 	await simulerApi(page);
 	await page.goto('/auth/mot-de-passe-temporaire');
 	await expect(page).toHaveURL(/\/tableau-de-bord$/);
+	//  Le témoin du sélecteur que le premier test attend absent : le menu est là.
+	await expect(page.locator('nav').first()).toBeAttached();
 });
