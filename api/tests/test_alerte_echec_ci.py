@@ -71,11 +71,15 @@ def test_la_portee_comprend_main_et_les_passages_planifies():
     assert {"ci.yml", "images.yml", "veille-securite.yml"} <= portee, portee  # cas zéro
 
 
-@pytest.mark.parametrize("fichier", _workflows(), ids=lambda f: f.name)
+def _portee() -> list:
+    #  Pas de test SAUTÉ en CI (#2952) : seuls les workflows de la portée sont
+    #  paramétrés ; ceux de PR seulement en sont exclus, et c'est voulu.
+    return [f for f in _workflows() if dans_la_portee(yaml.safe_load(f.read_text()))]
+
+
+@pytest.mark.parametrize("fichier", _portee(), ids=lambda f: f.name)
 def test_chaque_job_de_la_portee_finit_par_l_alerte(fichier):
     donnees = yaml.safe_load(fichier.read_text(encoding="utf-8"))
-    if not dans_la_portee(donnees):
-        pytest.skip("workflow de PR : son rouge se voit sur la PR")
     fautes = [f for nom, job in donnees["jobs"].items() for f in fautes_du_job(donnees, nom, job)]
     assert not fautes, f"{fichier.name} :\n" + "\n".join(fautes)
 
