@@ -8,16 +8,16 @@ une réponse retouchée par le conseil n'est pas touchée. Les deux textes sont 
 ici, figés — une migration ne dépend pas d'un seed qui bouge. Données seules ; l'image
 précédente lit les mêmes colonnes (#1757).
 
-Revision ID: 0347
-Revises: 0346
+Revision ID: 0348
+Revises: 0347
 """
 
 from alembic import op
 
 from app.utils.textes_livres import remplacer_si_intact
 
-revision = "0347"
-down_revision = "0346"
+revision = "0348"
+down_revision = "0347"
 branch_labels = None
 depends_on = None
 
