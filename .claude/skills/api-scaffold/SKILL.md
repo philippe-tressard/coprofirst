@@ -382,6 +382,11 @@ Venu de `CLAUDE.md` (#2709). Chaque règle nomme sa porte et le test qui la tien
   `horloge.TZ_PARIS`. Jamais `date.today()`, `datetime.now()` sans fuseau ni
   `maintenant.date()` (faux d'un jour entre 0 h et 2 h, #1565). 🔒 `test_horloge.py`
   (`default_factory` compris), Ruff `DTZ005/011`.
+- Un instant **conscient** (bail, certificat, en-tête de courriel, ISO en « Z ») se ramène en
+  UTC naïf par `horloge.utc_naif(x)`, une heure murale de Paris par `horloge.de_paris(x)` —
+  jamais `.astimezone(timezone.utc).replace(tzinfo=None)` hors d'`horloge` (#2949, 🔒
+  `test_horloge_utc_naif.py`, exception déclarée : `registre/versions.py`, bibliothèque
+  standard seulement).
 - **Archiver, pas une colonne `actif`** : les objets qui quittent les listes se déclarent dans
   `utils/archivage.REGLES`. 🔒 `test_archivage_colonnes_booleennes.py` (toute colonne
   `actif`/`active`/`archivee` couverte par `REGLES` ou déclarée référentiel, #1568).
