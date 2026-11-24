@@ -35,17 +35,16 @@ graves seulement — muette, clone, deux références (`GENRES`, `grave`), et de
 
 from __future__ import annotations
 
-import logging
 import re
 from dataclasses import dataclass
 from datetime import datetime, timedelta
 from typing import Iterable, Optional
 
-from pydantic import ValidationError
 from sqlmodel import Session, func, select
 
 from app.registre.contrat import Rapport
 from app.registre.decisions import consigner
+from app.registre.rapports import relire
 from app.registre.modeles import (
     IDENTIFIANT_REFERENCE,
     DecisionRegistre,
@@ -54,8 +53,6 @@ from app.registre.modeles import (
     RapportInstallation,
 )
 from app.utils import horloge
-
-logger = logging.getLogger("hostachy.registre")
 
 #: Sans signe de vie au-delà, l'installation est muette (spec §4.11).
 MUETTE_APRES = timedelta(hours=48)
@@ -217,16 +214,6 @@ def evaluer(
 # ── Lecture du registre ──────────────────────────────────────────────────────
 
 
-def _lire(ligne: Optional[RapportInstallation]) -> Optional[Rapport]:
-    if ligne is None:
-        return None
-    try:
-        return Rapport.model_validate_json(ligne.corps)
-    except ValidationError:
-        logger.warning("registre : rapport %s illisible au contrat en vigueur", ligne.id)
-        return None
-
-
 def alertes_du_registre(
     session: Session, maintenant: Optional[datetime] = None
 ) -> dict[int, list[Alerte]]:
@@ -251,7 +238,7 @@ def alertes_du_registre(
             .group_by(DecisionRegistre.installation_id)
         ).all()
     )
-    rapports = {i: _lire(r) for i, r in derniers.items()}
+    rapports = {i: relire(r) for i, r in derniers.items()}
     tete = version_de_tete(
         r.identite.version_logicielle for r in rapports.values() if r is not None
     )
