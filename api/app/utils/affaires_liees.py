@@ -37,7 +37,7 @@ from fastapi import HTTPException
 from pydantic import NaiveDatetime
 from sqlmodel import Session, or_, select
 
-from app.auth.deps import est_moderateur
+from app.auth.deps import exiger_moderateur
 from app.models.affaires_liees import AffaireLiee
 from app.models.core import Ticket, Utilisateur
 from app.utils.etat_affaire import affaire_close, libelle_etat
@@ -139,10 +139,8 @@ def _cibles_lisibles(session: Session, ticket: Ticket, ids, lecteur: Utilisateur
     return cibles
 
 
-def _exiger_conseil(lecteur: Utilisateur) -> None:
-    """Relier des affaires est un geste du conseil ou de l'admin (lève 403 sinon)."""
-    if not est_moderateur(lecteur):
-        raise HTTPException(403, "Seul le conseil syndical relie des affaires entre elles")
+#: Relier des affaires est un geste du conseil ou de l'admin.
+_RELIER = "Seul le conseil syndical relie des affaires entre elles"
 
 
 def poser_liens(session: Session, ticket: Ticket, ids, lecteur: Utilisateur) -> None:
@@ -155,7 +153,7 @@ def poser_liens(session: Session, ticket: Ticket, ids, lecteur: Utilisateur) -> 
         if (t := session.get(Ticket, i)) is not None and ticket_visible(t, lecteur)
     }
     if cibles - actuels or visibles - cibles:
-        _exiger_conseil(lecteur)
+        exiger_moderateur(lecteur, _RELIER)
     for i in cibles - actuels:
         a, b = _paire(ticket.id, i)
         session.add(AffaireLiee(affaire_id=a, liee_id=b, cree_par_id=lecteur.id))
@@ -173,7 +171,7 @@ def ajouter_liens(session: Session, ticket: Ticket, ids, lecteur: Utilisateur) -
     actuels = ids_lies(session, ticket.id)
     nouveaux = _cibles_lisibles(session, ticket, ids, lecteur) - actuels
     if nouveaux:
-        _exiger_conseil(lecteur)
+        exiger_moderateur(lecteur, _RELIER)
     for i in nouveaux:
         a, b = _paire(ticket.id, i)
         session.add(AffaireLiee(affaire_id=a, liee_id=b, cree_par_id=lecteur.id))

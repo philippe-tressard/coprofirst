@@ -197,15 +197,6 @@ def evenement_visible(ev: Evenement, user: Utilisateur) -> bool:
 # ── Règle AG (helper rapide) ──────────────────────────────────────────────────
 
 
-def can_see_ag(user: Utilisateur) -> bool:
-    """True si l'utilisateur peut voir les événements AG."""
-    return user.has_role(
-        RoleUtilisateur.propriétaire,
-        RoleUtilisateur.conseil_syndical,
-        RoleUtilisateur.admin,
-    )
-
-
 # ── Règles ticket ─────────────────────────────────────────────────────────────
 def ticket_visible(ticket: Ticket, user: Utilisateur) -> bool:
     """Qui peut LIRE ce ticket — jamais qui peut y écrire.
