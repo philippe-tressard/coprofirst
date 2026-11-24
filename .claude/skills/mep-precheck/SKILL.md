@@ -78,7 +78,7 @@ règles reste un mauvais déploiement.
 
 | # | Exigence | Vérification | Automatisé par |
 |---|---|---|---|
-| E1 | **Autorisation centralisée, aucun passe-droit** | Les dépendances d'auth dans `app/auth/deps.py`, les règles d'appartenance dans `app/auth/appartenance.py` (`CLAUDE.md`, « Dépendances d'auth ») · tout endpoint porte une dépendance · exceptions publiques énumérées et justifiées · `has_role(RoleUtilisateur.…)` jamais `user.role` ni chaîne · exposition publique en **liste blanche** | `api/tests/test_autorisation.py` (CI) |
+| E1 | **Autorisation centralisée, aucun passe-droit** | Les dépendances d'auth dans `app/auth/deps.py`, les règles d'appartenance dans `app/auth/appartenance.py` (`CLAUDE.md`, « Dépendances d'auth ») · tout endpoint porte une dépendance · exceptions publiques énumérées et justifiées · `has_role(RoleUtilisateur.…)` jamais `user.role` ni chaîne · exposition publique en **liste blanche** | `api/tests/test_autorisation.py`, `api/tests/test_autorisation_regles_locales.py` (CI) |
 | E2 | **Factorisation** | Aucun code spécifique ne réimplémente une bibliothèque partagée (dates, montants, alertes, thème PDF, destinataires) | `test_dates_fr.py` · `npm run lint:dates` · `npm run lint:notifications` — le reste par relecture |
 | E3 | **Documentation à jour** | README (et ses badges) · manuel utilisateur · `specs/` reflètent l'état livré | `api/tests/test_documentation.py` pour la partie mécanique ; le fond reste à relire |
 
@@ -129,7 +129,9 @@ pousse la version sous `SKIP_PRECHECK=1`.
 `origin/main` toutes les 5 minutes. Le pré-check se passe donc **avant
 `conduire-mep.sh`**, jamais après la fusion — et après la CI verte de la PR du lot,
 que le point 16 lit. L'ordre d'un lot s'écrit une fois, dans `CLAUDE.md` (« Ordre d'un
-lot ») ; cette skill dit ce que chaque point y lit (#2908).
+lot ») ; cette skill dit ce que chaque point y lit (#2908). `conduire-mep.sh` refuse
+d'avancer sans cette trace pour la tête du lot (`origin/dev` pour `--lot -`) : un autre
+commit au MÊME ARBRE est couvert, un pré-check d'une autre copie ne l'est pas.
 
 🔴 **Depuis le 28/08/2026, c'est Claude qui crée et fusionne la PR, et qui conduit
 la MEP** — l'utilisateur n'intervient plus. Le pré-check ne s'allège pas pour
@@ -346,6 +348,10 @@ AUTOUR d'un verdict faux est un contrôle qu'on finit par ne plus lire.
   137cab0
   ```
 
+  La ligne `commit:` porte le sha de HEAD, court ou complet : 0a et 0f le
+  comparent par PRÉFIXE (`lib-parite.memes_hachages`, 7 caractères au moins — en
+  deçà, INCONNU), et 0a nomme la cause de son refus (#2967).
+
   🔴 **Déclarer ne suffit pas** — sinon ce serait une case à cocher pour écraser
   le travail d'une autre session. Le point vérifie que les commits déclarés sont
   **exactement** ceux qui manquent, et surtout que **chaque fichier qu'ils
@@ -358,7 +364,7 @@ AUTOUR d'un verdict faux est un contrôle qu'on finit par ne plus lire.
   objet** (déclarer un commit qui ne manque pas, ou en oublier un, refuse aussi).
 
 - **0f** → le lot doit porter son titre et son descriptif de PR dans
-  `.git/pr-brief.md`, rédigés avant d'ouvrir la PR : première ligne `commit: <sha court de HEAD>`, deuxième
+  `.git/pr-brief.md`, rédigés avant d'ouvrir la PR : première ligne `commit: <sha de HEAD>` (court ou complet), deuxième
   ligne le titre en `# …`, puis le corps (5 lignes minimum). Un brief rédigé pour
   un autre commit **échoue** — sinon il décrirait le lot précédent. Ajouté le
   11/08/2026 après deux oublis dans la même journée, le second juste après

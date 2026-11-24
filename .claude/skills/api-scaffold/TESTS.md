@@ -52,6 +52,9 @@ Les titres et numéros de section sont ceux de toujours : un renvoi se lit au so
   `dialecte.mois`, base jetable). Une base neuve reçoit le schéma courant d'un coup, marqué à
   la tête (`utils/schema_initial`, appelé par `start.sh`).
 - `test_routeurs_nommes_par_un_test.py` : un routeur qu'aucun test ne nomme est refusé (#1569).
+  « Nommé » veut dire l'import du module, son chemin `routers/…` ou l'une de ses URL montées
+  écrite comme chaîne — jamais le seul nom de fichier, qu'un homonyme couvrait (#2914). Portée :
+  les modules qui portent une route montée.
 - **Un module s'importe seul** (#2241) : `test_imports_sans_cycle.py` ; un cycle se coupe par
   un import dans la fonction qui s'en sert.
 - **Clones Python** (#1564) : `scripts/ci/clones_python.py` (jscpd épinglé) échoue dans les
