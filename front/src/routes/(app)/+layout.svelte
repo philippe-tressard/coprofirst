@@ -7,6 +7,7 @@
 	import { auth as authApi } from '#lib/api/index.ts';
 	import { setUser, currentUser, marquerAuthResolue } from '#lib/stores/auth.ts';
 	import { urlDeConnexion } from '#lib/redirection.ts';
+	import { menerAuChangement } from '#lib/mot-de-passe-temporaire.ts';
 	import { loadSiteConfig, configStore } from '#lib/stores/pageConfig.ts';
 	import { chargerPerimetres } from '#lib/stores/perimetres.ts';
 	import { chargerEquipements } from '#lib/stores/equipements.ts';
@@ -39,6 +40,12 @@
 			//  Utilisateur déjà en mémoire (navigation interne) : l'état est résolu
 			//  d'emblée. Sans cette branche, un garde d'accès attendrait indéfiniment.
 			marquerAuthResolue();
+		}
+		//  Un mot de passe temporaire (#3019) : l'écran du changement, et rien d'autre —
+		//  ni périmètres ni équipements, que l'API refuserait.
+		if ($currentUser?.mot_de_passe_a_changer) {
+			menerAuChangement();
+			return;
 		}
 		//  L'arborescence des périmètres alimente `perimetreLabel()`. Chargée APRÈS
 		//  l'authentification — l'endpoint exige une session — et sans `await` : les

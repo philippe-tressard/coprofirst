@@ -55,7 +55,7 @@ LIBELLE_ACCES: dict[Acces, str] = {
 }
 
 #: Les groupes d'Admin, tels que `front/src/lib/pages-roles.ts` les range depuis #2062
-#: (`test_carte_reglages` confronte chaque écran déclaré à ce fichier).
+#: (`test_carte_reglages` confronte chaque écran déclaré à `pages.ts` et `pages-roles.ts`).
 G_PERSONNES = "👥 Personnes"
 G_COPROPRIETE = "🏢 Copropriété"
 G_SERVICES = "🔌 Services"
@@ -70,8 +70,11 @@ class Notion:
     code: str
     libelle: str
     acces: Acces
-    #: L'écran qui le règle : `Admin › <groupe> › <onglet>` pour un onglet d'Admin (lu et
-    #: confronté à `pages-roles.ts`), sinon le chemin de menus.
+    #: L'écran qui le règle, nommé comme le front le nomme, pictogramme compris :
+    #: `<page> › <onglet>`, ou `Admin › <groupe> › <onglet>` ; la page par son `nom` ou
+    #: son `navLabel`. Une précision finale entre parenthèses est admise, plusieurs écrans
+    #: se séparent par « ; ». Chacun est confronté à `pages.ts` et `pages-roles.ts`
+    #: (`test_carte_reglages`, #2922) ; `SANS_ECRAN` pour une constante du code.
     ecran: str
     #: Où la valeur vit : `config_site`, une table, `.env`, le code.
     stockage: str
@@ -87,6 +90,8 @@ class Notion:
 
 
 PUT_CONFIG = ("PUT", "/config")
+#: L'écran d'une notion qu'aucun écran ne règle — une constante du code (`Acces.PERSONNE`).
+SANS_ECRAN = "— (aucun écran)"
 
 NOTIONS: tuple[Notion, ...] = (
     # ── Administrateur : PUT /config, onglet par onglet (#2057) ──────────────────
@@ -210,7 +215,7 @@ NOTIONS: tuple[Notion, ...] = (
         "fiche_copropriete",
         "Fiche de la copropriété : identité, adresse, syndic, références",
         Acces.ADMIN,
-        f"Admin › {G_COPROPRIETE} › Identité ; Ma résidence",
+        f"Admin › {G_COPROPRIETE} › Identité ; Ma résidence › 🏢 Fiche",
         "table `copropriete` (+ `config_site.site_nom`)",
         ("PATCH", "/copropriete"),
     ),
@@ -234,7 +239,7 @@ NOTIONS: tuple[Notion, ...] = (
         "provenance_reglement",
         "Provenance du règlement",
         Acces.ADMIN,
-        "Ma résidence › Règlement (mode administration)",
+        "Ma résidence › ⚖\ufe0f Règlement (mode administration)",
         "table / `config_site`",
         ("PUT", "/reglement/provenance"),
     ),
@@ -243,7 +248,7 @@ NOTIONS: tuple[Notion, ...] = (
         "annuaire_syndic",
         "Annuaire du syndic",
         Acces.CS,
-        "Espace CS › Annuaire CS & Syndic",
+        "Espace CS › 📒 Annuaire CS & Syndic",
         "table / `config_site`",
         ("PUT", "/admin/annuaire/syndic"),
     ),
@@ -251,7 +256,7 @@ NOTIONS: tuple[Notion, ...] = (
         "annuaire_cs",
         "Annuaire du conseil syndical (composition)",
         Acces.CS,
-        "Espace CS › Annuaire CS & Syndic",
+        "Espace CS › 📒 Annuaire CS & Syndic",
         "table / `config_site`",
         ("PUT", "/admin/annuaire/cs"),
     ),
@@ -259,7 +264,7 @@ NOTIONS: tuple[Notion, ...] = (
         "consignes_arrivant",
         "Consignes aux arrivants",
         Acces.CS,
-        "Espace CS › Annuaire CS & Syndic (consignes aux arrivants)",
+        "Espace CS › 📒 Annuaire CS & Syndic (consignes aux arrivants)",
         "`config_site.consignes_arrivant`, `config_site.accueil_arrivant`",
         ("PUT", "/admin/consignes-arrivant"),
     ),
@@ -267,7 +272,7 @@ NOTIONS: tuple[Notion, ...] = (
         "compteurs",
         "Compteurs (relevés)",
         Acces.CS,
-        "Espace CS › Compteurs (configuration des catégories)",
+        "Prestataires › 💧 Consommations (catégories de compteur)",
         "table `compteur_config`",
         ("POST", "/prestataires/compteurs-config"),
     ),
@@ -317,7 +322,7 @@ NOTIONS: tuple[Notion, ...] = (
         "conservation",
         "Durées de conservation des données (courriels relevés, journal IA, erreurs du navigateur, comptes)",
         Acces.PERSONNE,
-        "— (aucun écran)",
+        SANS_ECRAN,
         "constantes du code",
         constantes=(
             "app.utils.courriel_journal:CONSERVATION_RELEVES_JOURS",

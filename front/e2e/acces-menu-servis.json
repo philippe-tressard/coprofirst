@@ -1,0 +1,353 @@
+{
+	"_lisez_moi": "Ce que le SERVEUR sert en `acces_menu` (`utils/acces_menu.acces_du_menu`) pour les comptes simulés : statut, rôles, aidant désigné par une délégation active ou en attente (`aidant`) — vérifié par api/tests/test_acces_menu.py (#2969). `compteServi` l'applique à toute réponse de `/api/auth/me`.",
+	"comptes": [
+		{
+			"statut": null,
+			"roles": ["admin"],
+			"aidant": false,
+			"acces_menu": ["admin"]
+		},
+		{
+			"statut": null,
+			"roles": ["résident"],
+			"aidant": false,
+			"acces_menu": ["tous", "resident"]
+		},
+		{
+			"statut": null,
+			"roles": ["admin", "operateur"],
+			"aidant": false,
+			"acces_menu": ["admin"]
+		},
+		{
+			"statut": null,
+			"roles": ["propriétaire"],
+			"aidant": false,
+			"acces_menu": ["tous", "resident"]
+		},
+		{
+			"statut": null,
+			"roles": ["operateur", "résident"],
+			"aidant": false,
+			"acces_menu": ["tous", "resident", "admin"]
+		},
+		{
+			"statut": null,
+			"roles": ["conseil_syndical"],
+			"aidant": false,
+			"acces_menu": ["cs", "cs-ou-aidant"]
+		},
+		{
+			"statut": null,
+			"roles": ["admin", "conseil_syndical"],
+			"aidant": false,
+			"acces_menu": ["cs", "cs-ou-aidant", "admin"]
+		},
+		{
+			"statut": null,
+			"roles": ["propriétaire", "résident"],
+			"aidant": false,
+			"acces_menu": ["tous", "resident"]
+		},
+		{
+			"statut": null,
+			"roles": ["conseil_syndical", "propriétaire"],
+			"aidant": false,
+			"acces_menu": ["tous", "resident", "cs", "cs-ou-aidant"]
+		},
+		{
+			"statut": null,
+			"roles": ["admin", "propriétaire"],
+			"aidant": false,
+			"acces_menu": ["tous", "resident", "cs", "cs-ou-aidant", "admin"]
+		},
+		{
+			"statut": null,
+			"roles": ["operateur"],
+			"aidant": false,
+			"acces_menu": ["admin"]
+		},
+		{
+			"statut": "copropriétaire_résident",
+			"roles": ["admin"],
+			"aidant": false,
+			"acces_menu": ["tous", "resident", "admin"]
+		},
+		{
+			"statut": "copropriétaire_résident",
+			"roles": ["résident"],
+			"aidant": false,
+			"acces_menu": ["tous", "resident"]
+		},
+		{
+			"statut": "copropriétaire_résident",
+			"roles": ["admin", "operateur"],
+			"aidant": false,
+			"acces_menu": ["tous", "resident", "admin"]
+		},
+		{
+			"statut": "copropriétaire_résident",
+			"roles": ["propriétaire"],
+			"aidant": false,
+			"acces_menu": ["tous", "resident"]
+		},
+		{
+			"statut": "copropriétaire_résident",
+			"roles": ["operateur", "résident"],
+			"aidant": false,
+			"acces_menu": ["tous", "resident", "admin"]
+		},
+		{
+			"statut": "copropriétaire_résident",
+			"roles": ["conseil_syndical"],
+			"aidant": false,
+			"acces_menu": ["tous", "resident", "cs", "cs-ou-aidant"]
+		},
+		{
+			"statut": "copropriétaire_résident",
+			"roles": ["admin", "conseil_syndical"],
+			"aidant": false,
+			"acces_menu": ["tous", "resident", "cs", "cs-ou-aidant", "admin"]
+		},
+		{
+			"statut": "copropriétaire_résident",
+			"roles": ["propriétaire", "résident"],
+			"aidant": false,
+			"acces_menu": ["tous", "resident"]
+		},
+		{
+			"statut": "copropriétaire_résident",
+			"roles": ["conseil_syndical", "propriétaire"],
+			"aidant": false,
+			"acces_menu": ["tous", "resident", "cs", "cs-ou-aidant"]
+		},
+		{
+			"statut": "copropriétaire_résident",
+			"roles": ["admin", "propriétaire"],
+			"aidant": false,
+			"acces_menu": ["tous", "resident", "cs", "cs-ou-aidant", "admin"]
+		},
+		{
+			"statut": "copropriétaire_résident",
+			"roles": ["operateur"],
+			"aidant": false,
+			"acces_menu": ["tous", "resident", "admin"]
+		},
+		{
+			"statut": "copropriétaire_bailleur",
+			"roles": ["admin"],
+			"aidant": false,
+			"acces_menu": ["tous", "resident", "admin"]
+		},
+		{
+			"statut": "copropriétaire_bailleur",
+			"roles": ["résident"],
+			"aidant": false,
+			"acces_menu": ["tous", "resident"]
+		},
+		{
+			"statut": "copropriétaire_bailleur",
+			"roles": ["admin", "operateur"],
+			"aidant": false,
+			"acces_menu": ["tous", "resident", "admin"]
+		},
+		{
+			"statut": "copropriétaire_bailleur",
+			"roles": ["propriétaire"],
+			"aidant": false,
+			"acces_menu": ["tous", "resident"]
+		},
+		{
+			"statut": "copropriétaire_bailleur",
+			"roles": ["operateur", "résident"],
+			"aidant": false,
+			"acces_menu": ["tous", "resident", "admin"]
+		},
+		{
+			"statut": "copropriétaire_bailleur",
+			"roles": ["conseil_syndical"],
+			"aidant": false,
+			"acces_menu": ["tous", "resident", "cs", "cs-ou-aidant"]
+		},
+		{
+			"statut": "copropriétaire_bailleur",
+			"roles": ["admin", "conseil_syndical"],
+			"aidant": false,
+			"acces_menu": ["tous", "resident", "cs", "cs-ou-aidant", "admin"]
+		},
+		{
+			"statut": "copropriétaire_bailleur",
+			"roles": ["propriétaire", "résident"],
+			"aidant": false,
+			"acces_menu": ["tous", "resident"]
+		},
+		{
+			"statut": "copropriétaire_bailleur",
+			"roles": ["conseil_syndical", "propriétaire"],
+			"aidant": false,
+			"acces_menu": ["tous", "resident", "cs", "cs-ou-aidant"]
+		},
+		{
+			"statut": "copropriétaire_bailleur",
+			"roles": ["admin", "propriétaire"],
+			"aidant": false,
+			"acces_menu": ["tous", "resident", "cs", "cs-ou-aidant", "admin"]
+		},
+		{
+			"statut": "copropriétaire_bailleur",
+			"roles": ["operateur"],
+			"aidant": false,
+			"acces_menu": ["tous", "resident", "admin"]
+		},
+		{
+			"statut": "locataire",
+			"roles": ["admin"],
+			"aidant": false,
+			"acces_menu": ["tous", "resident", "admin"]
+		},
+		{
+			"statut": "locataire",
+			"roles": ["résident"],
+			"aidant": false,
+			"acces_menu": ["tous", "resident"]
+		},
+		{
+			"statut": "locataire",
+			"roles": ["admin", "operateur"],
+			"aidant": false,
+			"acces_menu": ["tous", "resident", "admin"]
+		},
+		{
+			"statut": "locataire",
+			"roles": ["propriétaire"],
+			"aidant": false,
+			"acces_menu": ["tous", "resident"]
+		},
+		{
+			"statut": "locataire",
+			"roles": ["operateur", "résident"],
+			"aidant": false,
+			"acces_menu": ["tous", "resident", "admin"]
+		},
+		{
+			"statut": "locataire",
+			"roles": ["conseil_syndical"],
+			"aidant": false,
+			"acces_menu": ["tous", "resident", "cs", "cs-ou-aidant"]
+		},
+		{
+			"statut": "locataire",
+			"roles": ["admin", "conseil_syndical"],
+			"aidant": false,
+			"acces_menu": ["tous", "resident", "cs", "cs-ou-aidant", "admin"]
+		},
+		{
+			"statut": "locataire",
+			"roles": ["propriétaire", "résident"],
+			"aidant": false,
+			"acces_menu": ["tous", "resident"]
+		},
+		{
+			"statut": "locataire",
+			"roles": ["conseil_syndical", "propriétaire"],
+			"aidant": false,
+			"acces_menu": ["tous", "resident", "cs", "cs-ou-aidant"]
+		},
+		{
+			"statut": "locataire",
+			"roles": ["admin", "propriétaire"],
+			"aidant": false,
+			"acces_menu": ["tous", "resident", "cs", "cs-ou-aidant", "admin"]
+		},
+		{
+			"statut": "locataire",
+			"roles": ["operateur"],
+			"aidant": false,
+			"acces_menu": ["tous", "resident", "admin"]
+		},
+		{
+			"statut": "admin_technique",
+			"roles": ["admin"],
+			"aidant": false,
+			"acces_menu": ["admin"]
+		},
+		{
+			"statut": "admin_technique",
+			"roles": ["résident"],
+			"aidant": false,
+			"acces_menu": ["tous", "resident"]
+		},
+		{
+			"statut": "admin_technique",
+			"roles": ["admin", "operateur"],
+			"aidant": false,
+			"acces_menu": ["admin"]
+		},
+		{
+			"statut": "admin_technique",
+			"roles": ["propriétaire"],
+			"aidant": false,
+			"acces_menu": ["tous", "resident"]
+		},
+		{
+			"statut": "admin_technique",
+			"roles": ["operateur", "résident"],
+			"aidant": false,
+			"acces_menu": ["tous", "resident", "admin"]
+		},
+		{
+			"statut": "admin_technique",
+			"roles": ["conseil_syndical"],
+			"aidant": false,
+			"acces_menu": ["cs", "cs-ou-aidant"]
+		},
+		{
+			"statut": "admin_technique",
+			"roles": ["admin", "conseil_syndical"],
+			"aidant": false,
+			"acces_menu": ["cs", "cs-ou-aidant", "admin"]
+		},
+		{
+			"statut": "admin_technique",
+			"roles": ["propriétaire", "résident"],
+			"aidant": false,
+			"acces_menu": ["tous", "resident"]
+		},
+		{
+			"statut": "admin_technique",
+			"roles": ["conseil_syndical", "propriétaire"],
+			"aidant": false,
+			"acces_menu": ["tous", "resident", "cs", "cs-ou-aidant"]
+		},
+		{
+			"statut": "admin_technique",
+			"roles": ["admin", "propriétaire"],
+			"aidant": false,
+			"acces_menu": ["tous", "resident", "cs", "cs-ou-aidant", "admin"]
+		},
+		{
+			"statut": "admin_technique",
+			"roles": ["operateur"],
+			"aidant": false,
+			"acces_menu": ["admin"]
+		},
+		{
+			"statut": "syndic",
+			"roles": ["externe"],
+			"aidant": false,
+			"acces_menu": ["tous", "resident"]
+		},
+		{
+			"statut": "mandataire",
+			"roles": ["externe"],
+			"aidant": false,
+			"acces_menu": ["tous", "resident"]
+		},
+		{
+			"statut": "aidant",
+			"roles": ["externe"],
+			"aidant": false,
+			"acces_menu": ["tous", "resident", "cs-ou-aidant"]
+		}
+	]
+}

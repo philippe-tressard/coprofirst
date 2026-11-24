@@ -102,7 +102,12 @@ memes_hachages() {
 # tentative a DÉJÀ échoué. On ne réessaie pas le même, on attend le suivant.
 #
 # $1 = HEAD local · $2 = marqueur des images · $3 = sha d'un échec déjà connu
-# → reconstruire | rien
+# → reconstruire | tirer | rien
+#
+# `tirer` (#3033, 24/11/2026) : un échec connu sur CE code interdit de le
+# reconstruire, jamais de TIRER les images de la CI, qui ne coûte rien et peut
+# réussir — le 23/11, elles ont été publiées 9 min après l'abandon de l'attente,
+# et le nœud est resté bloqué jusqu'à un geste à la main.
 verdict_reconstruction() {
     local git="${1:-}" images="${2:-}" echoue="${3:-}"
     #  Sans HEAD, on ne sait rien : ne rien faire vaut mieux qu'un build à
@@ -122,9 +127,14 @@ verdict_reconstruction() {
         return
     fi
     #  Une tentative a déjà échoué sur CE code : le refaire toutes les cinq
-    #  minutes ne le fera pas réussir, et la trace est dans le journal.
+    #  minutes ne le fera pas réussir, et la trace est dans le journal. Les
+    #  images de la CI, elles, se tirent encore — sauf si elles valent déjà le code.
     if [ -n "$echoue" ] && [ "$(memes_hachages "$git" "$echoue")" = oui ]; then
-        echo rien
+        if [ "$(verdict_parite_servie "$git" "$images")" = a-jour ]; then
+            echo rien
+        else
+            echo tirer
+        fi
         return
     fi
     case "$(verdict_parite_servie "$git" "$images")" in
@@ -277,8 +287,9 @@ if [ "${BASH_SOURCE[0]}" = "$0" ] && [ "${1:-}" = "--selftest" ]; then
     checkr "marqueur court concordant : ne rien faire"           "rien"        "$LONG" "a1b2c3d" ""
     #  ⚠️ Le battement : une tentative a échoué sur CE code, on ne la refait pas
     #  toutes les cinq minutes (`project_battement_auto_deploy`).
-    checkr "échec déjà connu sur ce sha : on attend le suivant"  "rien"        "$LONG" "$AUTRE" "$LONG"
+    checkr "échec déjà connu sur ce sha : tirer seulement (#3033)" "tirer"     "$LONG" "$AUTRE" "$LONG"
     checkr "échec connu sur un AUTRE sha : on reconstruit"       "reconstruire" "$LONG" "$AUTRE" "$AUTRE"
+    checkr "échec connu, images déjà au code : rien"             "rien"        "$LONG" "$LONG" "$LONG"
     checkr "sans HEAD, aucun build à l'aveugle"                  "rien"        ""      "$AUTRE" ""
 
     # ── 🔴 SOUS `set -e`, et c'est le cas qui manquait (22/09/2026) ──────────

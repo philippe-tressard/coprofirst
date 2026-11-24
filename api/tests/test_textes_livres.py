@@ -77,7 +77,8 @@ def test_un_passage_n_est_remplace_que_s_il_figure_tel_quel():
 
 #: La dernière migration écrite avant la règle : elle et les précédentes sont
 #: figées (une migration appliquée ne se modifie jamais), leurs copies restent.
-DERNIERE_FIGEE = 347
+#: 0348 à 0350 ont été fusionnées avant la règle, dans le train qui la livre.
+DERNIERE_FIGEE = 350
 
 #: Migrations plus récentes qui ont le droit de lire `get_columns` elles-mêmes,
 #: avec leur raison (une colonne dont il faut le TYPE, pas seulement le nom).

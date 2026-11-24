@@ -34,7 +34,7 @@ import re
 
 import pytest
 
-from tests.aides_compose import COMPOSE, RACINE, etape_finale, lire_yaml, services_construits
+from tests.aides_compose import COMPOSE, RACINE, etape_finale, lire_yaml, services_node
 
 RETRAIT_NPM = (
     "rm -rf /usr/local/lib/node_modules /usr/local/bin/npm /usr/local/bin/npx "
@@ -64,28 +64,14 @@ def _ecarts(source: str, compose: dict | None = None) -> list[str]:
     return ecarts
 
 
-def _services_node() -> dict[str, str]:
-    """Service → Dockerfile, pour chaque image construite dont l'étape finale part de node:."""
-    retenus = {}
-    for nom, (_, fichier) in services_construits().items():
-        source = (RACINE / fichier).read_text(encoding="utf-8")
-        etape = etape_finale(source)
-        image = (
-            next((t for t in etape[0][1].split() if not t.startswith("--")), "") if etape else ""
-        )
-        if image.startswith("node:"):
-            retenus[nom] = fichier
-    return retenus
-
-
 def test_les_images_node_sont_trouvees():
     """Cas zéro : un contrôle qui ne trouve aucune image Node n'a rien jugé."""
-    assert {"front", "whatsapp-bridge"} <= set(_services_node()), _services_node()
+    assert {"front", "whatsapp-bridge"} <= set(services_node()), services_node()
 
 
-@pytest.mark.parametrize("service", sorted(_services_node()))
+@pytest.mark.parametrize("service", sorted(services_node()))
 def test_l_image_d_execution_n_emporte_pas_npm(service):
-    fichier = _services_node()[service]
+    fichier = services_node()[service]
     compose = lire_yaml(COMPOSE)["services"][service]
     ecarts = _ecarts((RACINE / fichier).read_text(encoding="utf-8"), compose)
     assert not ecarts, f"{fichier} : " + " ; ".join(ecarts)

@@ -99,6 +99,11 @@ const MUETS_DECLARES = [
 		raison: 'lit le corps d’une réponse DÉJÀ en échec ; le repli est le libellé par défaut',
 	},
 	{
+		fichier: 'src/lib/api/client.ts',
+		affecte: 'detail',
+		raison: 'le même corps en échec, gardé pour son motif (#3019) ; absent, aucun motif ne se lit',
+	},
+	{
 		fichier: 'src/lib/components/Reponses.svelte',
 		affecte: 'content',
 		raison:
