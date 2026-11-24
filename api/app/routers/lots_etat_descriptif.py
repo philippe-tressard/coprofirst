@@ -52,6 +52,7 @@ from app.utils.fichiers import lire_tableur_recu
 from app.utils.import_xlsx import feuille_du_classeur, lignes_du_classeur
 from app.utils.libelles_lot import libelle_type_lot
 from app.utils.recuperer import ou_404
+from app.utils.en_tete_fichier import en_tete_fichier
 
 router = APIRouter()
 
@@ -189,7 +190,7 @@ def gabarit_etat_descriptif(_: Utilisateur = Depends(require_cs_or_admin)):
     return StreamingResponse(
         tampon,
         media_type=_TYPE_XLSX,
-        headers={"Content-Disposition": 'attachment; filename="etat-descriptif.xlsx"'},
+        headers=en_tete_fichier("etat-descriptif.xlsx"),
     )
 
 

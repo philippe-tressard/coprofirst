@@ -1,5 +1,5 @@
 {
-	"_lisez_moi": "Ce que le SERVEUR sert en `acces_menu` (`utils/acces_menu.acces_du_menu`) pour les comptes simulés : statut, rôles, aidant d'une délégation active — vérifié par api/tests/test_acces_menu.py (#2969). `compteServi` l'applique à toute réponse de `/api/auth/me`.",
+	"_lisez_moi": "Ce que le SERVEUR sert en `acces_menu` (`utils/acces_menu.acces_du_menu`) pour les comptes simulés : statut, rôles, aidant désigné par une délégation active ou en attente (`aidant`) — vérifié par api/tests/test_acces_menu.py (#2969). `compteServi` l'applique à toute réponse de `/api/auth/me`.",
 	"comptes": [
 		{
 			"statut": null,
@@ -347,7 +347,7 @@
 			"statut": "aidant",
 			"roles": ["externe"],
 			"aidant": false,
-			"acces_menu": ["tous", "cs-ou-aidant"]
+			"acces_menu": ["tous", "resident", "cs-ou-aidant"]
 		}
 	]
 }

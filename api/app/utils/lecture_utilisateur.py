@@ -25,7 +25,7 @@ from app.utils.noms import nom_affiche
 
 
 def construire_user_read(user: Utilisateur, session: Session) -> UserRead:
-    from app.utils.delegations_actives import delegations_de_l_aidant
+    from app.utils.delegations_actives import delegations_de_l_aidant, est_aidant_designe
 
     batiment_nom = None
     if user.batiment_id:
@@ -46,7 +46,11 @@ def construire_user_read(user: Utilisateur, session: Session) -> UserRead:
                 )
             )
     lecture = UserRead.from_orm_with_roles(
-        user, batiment_nom=batiment_nom, delegations_aidant=delegations_aidant
+        user,
+        batiment_nom=batiment_nom,
+        delegations_aidant=delegations_aidant,
+        #  Active OU en attente : l'entrée « Délégations » (#3001) — rien de plus.
+        aidant_designe=bool(deleg_rows) or est_aidant_designe(session, user.id),
     )
     #  Le logement, nommé par le serveur pour le site ET l'app iOS (#2500).
     lecture.libelle_logement = (
