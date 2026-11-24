@@ -4,9 +4,9 @@ Merci de l'intérêt porté au projet. Ce document décrit la méthode **réelle
 suivie — pas une méthode générique : les commandes ci-dessous sont celles que
 l'intégration continue exécute, et les contrôles qu'elles rejouent sont les mêmes.
 
-> ⚠️ **Avant tout** : lire la section [Licence](#licence). Le code est
-> *accessible*, il n'est pas libre au sens de l'OSI, et une contribution est
-> versée sous la licence du projet.
+> ⚠️ **Avant tout** : lire la section [Licence](#licence). CoproFirst est un
+> logiciel libre sous **AGPL-3.0-or-later**, et une contribution est versée sous
+> cette licence.
 
 ---
 

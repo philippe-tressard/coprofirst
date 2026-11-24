@@ -7,6 +7,8 @@
 - **l'accès déclaré est celui de la route** — lu sur la route MONTÉE (ses
   dépendances d'autorisation), pas sur sa déclaration : le réglage de la sauvegarde
   se montrait à l'opérateur seul et la route acceptait tout administrateur ;
+- **l'écran déclaré est un écran que le front range** — tous, pas seulement ceux
+  d'Admin (#2922) ;
 - **rien n'échappe à la carte** — chaque onglet de la liste blanche a sa notion,
   chaque variable de `Settings` son thème, et un écart déclaré qui cesse d'être
   vrai fait échouer (il se retire alors du registre).
@@ -28,6 +30,7 @@ from app.utils import reglages
 from app.utils.llm_usages import CHAMPS_USAGE
 from app.utils.reglages_carte import (
     NOTIONS,
+    SANS_ECRAN,
     SECRETS_ENV,
     THEMES_ENV,
     TYPES,
@@ -36,6 +39,7 @@ from app.utils.reglages_carte import (
     ecarts_d_acces,
 )
 from app.utils.reglages_carte_rendu import rendre_document
+from tests.aides_routes_front import ecrans_ranges
 from tests.aides_sources import operations_montees
 
 _DOCUMENT = pathlib.Path(__file__).resolve().parents[2] / "docs" / "carte-reglages.md"
@@ -151,45 +155,62 @@ def test_les_routes_citees_par_un_refus_existent():
 
 # ── L'écran déclaré est celui que le front range ───────────────────────────────
 
-_PAGES_ROLES = (
-    pathlib.Path(__file__).resolve().parents[2] / "front" / "src" / "lib" / "pages-roles.ts"
-)
-_ONGLET_RANGE = re.compile(r"label: '([^']+)',\s*groupe: '([^']+)'")
+#  Une précision finale entre parenthèses (« (consignes aux arrivants) ») dit où regarder
+#  dans l'écran ; elle ne se retire que si l'écran exact n'existe pas, car un vrai
+#  libellé en porte (« 🏷️ Mes badges d'accès (Vigik) »).
+_PRECISION = re.compile(r" \([^()]*\)$")
 
 
-def _onglets_ranges() -> set[tuple[str, str]]:
-    """(groupe, onglet) de chaque onglet d'Admin tel que `pages-roles.ts` le range."""
-    source = _PAGES_ROLES.read_text(encoding="utf-8")
-    return {(groupe, label) for label, groupe in _ONGLET_RANGE.findall(source)}
+def ecrans_inconnus(notions, ranges: set[str]) -> list[str]:
+    """PURE. Les écrans déclarés que la table des pages du front ne range pas.
 
-
-def ecrans_d_admin_inconnus(notions, ranges: set[tuple[str, str]]) -> list[str]:
-    """PURE. Les écrans « Admin › groupe › onglet » que le front ne range pas."""
+    TOUS les écrans, et chaque morceau d'un écran multiple (« … ; Ma résidence ›
+    🏢 Fiche ») : la confrontation ne lisait que les chemins « Admin › … », et
+    « Espace CS › Compteurs » — un onglet qui n'a jamais existé — passait (#2922).
+    `SANS_ECRAN` n'est admis que d'une constante du code : ailleurs, il tairait un écran.
+    """
     inconnus = []
     for n in notions:
-        premier = n.ecran.split(" ; ")[0]
-        if not premier.startswith("Admin › "):
+        if n.ecran == SANS_ECRAN:
+            if n.acces is not Acces.PERSONNE:
+                inconnus.append(f"{n.code} : « {SANS_ECRAN} » pour un réglage qu'une route écrit")
             continue
-        morceaux = premier.removeprefix("Admin › ").split(" › ")
-        if len(morceaux) != 2 or (morceaux[0], morceaux[1]) not in ranges:
-            inconnus.append(
-                f"{n.code} : « {premier} » n'est pas un onglet rangé par pages-roles.ts"
-            )
+        for morceau in n.ecran.split(" ; "):
+            if morceau not in ranges and _PRECISION.sub("", morceau) not in ranges:
+                inconnus.append(
+                    f"{n.code} : « {morceau} » n'est pas un écran que pages.ts "
+                    "ou pages-roles.ts range"
+                )
     return inconnus
 
 
-def test_chaque_ecran_d_admin_est_un_onglet_que_le_front_range():
-    ranges = _onglets_ranges()
-    assert len(ranges) >= 18  # cas zéro : le relevé lit bien les onglets d'Admin
-    assert ecrans_d_admin_inconnus(NOTIONS, ranges) == []
+def test_chaque_ecran_declare_est_un_ecran_que_le_front_range():
+    ranges = ecrans_ranges()
+    #  Cas zéro : le relevé lit les onglets d'Admin ET des autres pages, pictogrammes
+    #  décodés (`\u{1F4A7}`) — sans quoi aucun écran hors Admin ne correspondrait.
+    assert sum(e.startswith("Admin › ") for e in ranges) >= 18
+    assert sum(e.startswith("Espace CS › ") for e in ranges) >= 7
+    assert "Prestataires › 💧 Consommations" in ranges
+    inconnus = ecrans_inconnus(NOTIONS, ranges)
+    assert not inconnus, "\n".join(inconnus)
 
 
-def test_le_controle_d_ecran_voit_un_onglet_qui_n_existe_pas():
-    """Témoin : un écran inventé, et un ancien libellé (« Paramétrage site »), sont refusés."""
-    ranges = _onglets_ranges()
+def test_le_controle_d_ecran_voit_un_ecran_qui_n_existe_pas():
+    """Témoins : un onglet inventé, un ancien libellé, un onglet réel sous une autre
+    page, une page à onglets nommée seule, un second morceau faux, un « aucun écran »
+    sur une route — et l'écran des compteurs tel qu'il était déclaré avant #2922."""
+    ranges = ecrans_ranges()
     sauvegarde = next(n for n in NOTIONS if n.code == "sauvegarde")
-    for faux in ("Admin › 🛠 Exploitation › Inventé", "Admin › Paramétrage site"):
-        assert ecrans_d_admin_inconnus((replace(sauvegarde, ecran=faux),), ranges)
+    for faux in (
+        "Admin › 🛠 Exploitation › Inventé",
+        "Admin › Paramétrage site",
+        "Espace CS › Compteurs (configuration des catégories)",
+        "Espace CS › 💧 Consommations",
+        "Ma résidence",
+        "Admin › 🛠 Exploitation › Maintenance ; Espace CS › Inventé",
+        SANS_ECRAN,
+    ):
+        assert ecrans_inconnus((replace(sauvegarde, ecran=faux),), ranges), faux
 
 
 # ── Les textes qui renvoient vers un onglet d'Admin le nomment comme le front (#2927) ──

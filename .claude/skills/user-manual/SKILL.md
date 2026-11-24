@@ -1,6 +1,6 @@
 ---
 name: user-manual
-description: "Update the 5Hostachy user-facing documentation — manuel-utilisateur.html AND README.md — when a feature is added, modified or removed. Use when: adding a new feature visible to users, modifying UI behavior, adding or removing a page, screen or module, updating navigation or workflows. Do NOT use for purely technical changes (migrations, refactor, backend-only security)."
+description: "Documentation utilisateur de 5Hostachy — le manuel (docs/manuel-utilisateur.html et sa copie servie) et le README.md — quand une fonctionnalité visible est ajoutée, modifiée ou retirée. À charger : nouvel écran, onglet ou parcours, libellé ou geste qui change, page retirée, navigation modifiée. Pas pour un changement purement technique (migration, refactor, sécurité côté serveur seulement)."
 argument-hint: "Describe the feature to document (e.g. 'new fournisseurs page with list and detail')"
 ---
 

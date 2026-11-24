@@ -17,8 +17,8 @@ texte fixe, l'abonnement, la priorité haute pour un avis urgent seulement.
 
 ## La charge APNs
 
-`charge_apns` est la seule écriture de ce qui part chez Apple — le relais la
-composera par elle quand son transport APNs sera branché (#2494), jamais l'installation (N4). Un texte générique fixe,
+`charge_apns` est la seule écriture de ce qui part chez Apple — le transport APNs du
+relais la compose par elle (`utils/push/apns`, #2494), jamais l'installation (N4). Un texte générique fixe,
 l'abonnement, le niveau *time-sensitive* pour un avis urgent, et **aucune
 pastille** (décision du 03/11/2026 : l'application la calcule à l'ouverture).
 """

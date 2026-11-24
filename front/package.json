@@ -1,6 +1,6 @@
 {
 	"name": "hostachy-front",
-	"version": "3.123.2",
+	"version": "3.124.0",
 	"private": true,
 	"imports": {
 		"#lib": "./src/lib/index.js",
@@ -68,7 +68,7 @@
 		"lint:etats": "node scripts/check-etats.mjs",
 		"lint:options-publication": "node scripts/check-options-publication.mjs",
 		"lint:manuels": "node scripts/check-manuels.mjs",
-		"lint:pages": "node scripts/check-pages.mjs",
+		"lint:pages": "node scripts/check-pages.mjs && node scripts/check-descriptifs-pages.mjs --selftest && node scripts/check-descriptifs-pages.mjs",
 		"lint:ci": "node scripts/check-ci-complete.mjs",
 		"lint:a11y": "node scripts/check-a11y.mjs",
 		"lint:icones": "node scripts/check-icones.mjs",

@@ -88,10 +88,15 @@ dépôt), l'archive `coprofirst-deploiement-X.Y.Z.tar.gz`. Elle contient,
    référence dans *Administration › Exploitation › Installation*, carte
    *Inscription au registre*
    (contact de l'administrateur, conditions à accepter) ; la clé et l'état
-   d'inscription vivent dans le volume `app_data`. L'état affiché — limitée,
-   active, suspendue — n'est encore que **constaté**, sauf pour les **services** :
-   une réplique n'allume que ceux que la référence lui accorde dans son bail
-   (Administration › Services › Services les grise sinon, avec la raison).
+   d'inscription vivent dans le volume `app_data`. Tant que l'inscription n'est
+   pas validée, ou quand son bail est échu, l'installation est en **mode limité** :
+   **5 comptes actifs** au plus — les deux comptes techniques créés au démarrage
+   ne comptent pas, aucun compte existant n'est touché, le sixième est refusé.
+   Une réplique n'allume que les **services** que la référence lui accorde dans
+   son bail (Administration › Services › Services les grise sinon, avec la raison).
+   **Suspendue** par la référence, elle passe en **lecture seule**, l'export de
+   chaque copropriété restant ouvert à son administrateur. `REGISTRE_CONSTAT=true`
+   (`.env`) ramène le plafond et la lecture seule à un simple constat.
 3. Ajouter **la version à installer** dans `.env` :
    ```
    COPROFIRST_VERSION=2.119.1
