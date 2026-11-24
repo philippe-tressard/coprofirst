@@ -27,7 +27,7 @@ from tests.aides_registre import installation_branchee
 
 CONTACT = Contact(prenom="Alix", nom="Durand", courriel="alix@example.org")
 REPLIQUE = "CF-000002"
-CLE = "cle-de-test-du-bail"
+CLE = "cle-de-test-du-bail-de-trente-deux-caracteres"
 
 #: Les versions publiées, et leur âge en jours.
 PUBLIEES = {"2.169.0": 30, "2.170.0": 20, "2.171.0": 10, "2.171.1": 2, "2.172.0": 1}

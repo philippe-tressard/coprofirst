@@ -243,7 +243,9 @@ Les **fichiers** (`uploads`) et l'état WhatsApp arrivent avec la bascule suivan
 ## Étape 10 — Tunnel Cloudflare, installé et ARRÊTÉ
 
 ```bash
-sudo bash /opt/5hostachy/scripts/installation/install-cloudflared.sh <JETON_DU_TUNNEL>
+sudo bash /opt/5hostachy/scripts/installation/install-cloudflared.sh
+# Le jeton se colle à l'invite, sans écho — jamais en argument : il resterait dans
+# l'historique et dans la trace de sudo (le script refuse un argument).
 # Le script démarre le tunnel. Sur un STANDBY, l'arrêter aussitôt : il enverrait du
 # trafic public vers un nœud sans application. La bascule le démarrera.
 sudo systemctl disable --now cloudflared

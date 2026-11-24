@@ -292,7 +292,8 @@ ROUTES_SANS_QUESTION = {
         "create_ticket",
     ): "le lot d'une affaire est une ÉTIQUETTE : il n'ouvre aucun droit (ni "
     "visibilité, ni badge, ni destinataire). Qu'un résident puisse désigner le "
-    "lot d'un autre reste à trancher — signalé au rapport de #1535",
+    "lot d'un autre est la RÈGLE (#2987, arbitré le 23/11/2026 par délégation) : on signale "
+    "un dégât chez un voisin",
     (
         "app.routers.tickets.mise_a_jour",
         "update_ticket",

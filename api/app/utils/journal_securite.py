@@ -24,8 +24,9 @@ mais des identifiants : on ne peut pas journaliser par mégarde un champ qu'on n
 pas reçu.
 
 🔒 `api/tests/test_journal_securite.py` refuse un `email`, un `password` ou un
-`jeton` ici **et** chez les appelants, exige un appel dans chacun des gestes
-sensibles déclarés, et confronte cette liste à ce que les routeurs écrivent
+`jeton` ici **et** chez les appelants, exige que les gestes sensibles déclarés
+(`tests/aides_gestes_sensibles.py`) soient exactement les fonctions qui appellent
+ce module (#2941), et confronte cette liste à ce que `app/` écrit d'un compte
 (#1548) ; `test_journal_gestes_comptes.py` vérifie la ligne émise par les routes.
 
 ## Le niveau dit la lecture, pas la gravité du geste
@@ -59,6 +60,9 @@ _NIVEAUX: dict[str, int] = {
     #  Un jeton de rafraîchissement déjà échangé qui revient : un vol probable,
     #  toutes les sessions du compte ont été fermées (27/09/2026).
     "jeton_rejoue": logging.WARNING,
+    #  Une déconnexion : la session présentée ferme, jetons d'accès compris ; les
+    #  autres sessions du compte restent ouvertes (23/11/2026). Un geste ordinaire.
+    "session_fermee": logging.INFO,
     #  Un locataire lié à un lot par le seul nom (#1136) : il en porte les badges.
     "rattachement_auto": logging.WARNING,
     #  Un locataire qui se déclare lui-même sur les lots de son propriétaire,
@@ -115,6 +119,9 @@ _NIVEAUX: dict[str, int] = {
     #  change de lecteurs, des personnes liront ce qu'elles ne lisaient pas, sur
     #  confirmation nominative du conseil (`utils/fusion_conciliation`).
     "fusion_conciliation": logging.WARNING,
+    #  L'export complet de la copropriété (#1749, #2941) : toutes les tables et tous
+    #  les fichiers dans une archive. Qui l'a lancé se relit — S6 le remonte la nuit.
+    "export_copropriete": logging.WARNING,
     #  L'EMPLOI d'un leurre (#2365, `utils/leurres`) : une connexion sur le faux
     #  compte, la fausse clé de maintenance présentée. Personne de légitime ne le
     #  fait — S6 de l'audit nocturne en fait un FAIL. WARNING et non ERROR : le
@@ -134,6 +141,8 @@ _NIVEAUX: dict[str, int] = {
     "ecran_retire": logging.INFO,
     "connexion_leurre": logging.WARNING,
     "cle_maintenance_leurre": logging.WARNING,
+    #  Une clé partagée présentée et fausse : compté par l'audit de la nuit (S6).
+    "cle_maintenance_refusee": logging.WARNING,
 }
 
 

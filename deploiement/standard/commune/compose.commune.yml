@@ -7,12 +7,22 @@
 #          -f deploiement/standard/compose.images.yml \
 #          -f deploiement/standard/commune/compose.commune.yml up -d
 #
-#  Elle ne dit qu'une chose : le front ne connaît pas UNE adresse, il sert celle
-#  que le visiteur a demandée. Le reste — déclaration, garde des pages, gestes de
-#  l'hébergeur — est dans `LISEZMOI.md`, à côté.
+#  Elle dit deux choses : le front ne connaît pas UNE adresse, il sert celle que
+#  le visiteur a demandée ; et Caddy reçoit la garde des pages et le relais des
+#  fichiers vers l'API, que le `Caddyfile` importe (`import commune/…*.caddy`).
+#  Livrés par le dépôt, jamais retouchés à la main : une mise à jour remplace le
+#  `Caddyfile` (claude-config#604). Elle compose avec cette surcouche dès que
+#  `COPROPRIETES_FICHIER` est posé (`definir_compose`, `lib-installation.sh`).
+#  Le reste — déclaration, gestes de l'hébergeur — est dans `LISEZMOI.md`.
+#  🔒 api/tests/test_surcouche_commune_caddy.py
 # =============================================================================
 
 services:
+  caddy:
+    volumes:
+      #  Les chemins que le `Caddyfile` importe, relatifs à lui (`/etc/caddy`).
+      - ./deploiement/standard/commune/fichiers.caddy:/etc/caddy/commune/fichiers.caddy:ro
+      - ./deploiement/standard/commune/garde-des-pages.caddy:/etc/caddy/commune/garde-des-pages.caddy:ro
   front:
     environment:
       #  Le front ne fixe aucune adresse (SvelteKit 3 : plus d'`ORIGIN`, #2205) :

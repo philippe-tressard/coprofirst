@@ -52,7 +52,7 @@ from __future__ import annotations
 from fastapi import BackgroundTasks, HTTPException
 from sqlmodel import Session, or_, select
 
-from app.auth.deps import est_moderateur
+from app.auth.deps import exiger_moderateur
 from app.models.affaires_liees import AffaireLiee
 from app.models.core import STATUTS_TICKET_CLOS, Ticket, TicketEvolution, Utilisateur
 from app.utils.recuperer import ou_rien
@@ -172,9 +172,9 @@ def _absorbables(
     posée sur la principale, qui garde ensuite l'invariant — ceux qui liraient
     l'absorbée sans la lire sont tous confirmés par leur nom."""
     from app.utils.fusion_conciliation import appliquer, lecteurs_en_trop
+    from app.utils.fusion_en_cours import FUSIONNER
 
-    if not est_moderateur(lecteur):
-        raise HTTPException(403, "Seul le conseil syndical fusionne des affaires")
+    exiger_moderateur(lecteur, FUSIONNER)
     admises = {c["id"]: c for c in candidates(session, principale, lecteur)}
     conciliations = conciliations or {}
     rendu = []
