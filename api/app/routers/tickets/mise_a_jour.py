@@ -30,11 +30,10 @@ from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException
 from sqlmodel import Session
 
 from app.auth.deps import est_moderateur, get_current_user, peut_commenter, peut_editer
-from app.auth.gestes_affaire import ETATS_CORRIGEABLES, categorie_permise
+from app.auth.gestes_affaire import categorie_permise, peut_modifier
 from app.database import get_session
 from app.models.core import (
     STATUTS_TICKET_CLOS,
-    RoleUtilisateur,
     Ticket,
     TicketEvolution,
     Utilisateur,
@@ -257,10 +256,8 @@ def update_ticket(
         #  le suivi engagé, corriger le texte ferait mentir ce que le CS a lu
         #  avant d'agir. L'admin, lui, intervient précisément quand il y a un
         #  problème — c'est sa raison d'être dans cette règle.
-        #  Les états sont ceux que l'écran lit (`peut_modifier`, #2508).
-        if not user.has_role(RoleUtilisateur.admin) and (
-            valeur(ticket.statut) not in ETATS_CORRIGEABLES
-        ):
+        #  La règle est celle que l'écran lit : `peut_modifier` s'APPELLE (#2508, #2942).
+        if not peut_modifier(ticket, user):
             raise HTTPException(403, "Modification impossible : le ticket n'est plus ouvert")
         changes += _appliquer_contenu(body, ticket, est_cs=is_cs_admin)
         if est_bug(ticket.categorie):  # le périmètre d'un bogue est verrouillé (#1191)
