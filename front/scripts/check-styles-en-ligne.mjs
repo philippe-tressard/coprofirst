@@ -19,6 +19,12 @@
  *  retirés. Un style qui porte une expression (`style="width:{pct}%"`) est
  *  légitime : la valeur vient des données, aucune feuille ne peut la porter.
  *
+ *  ⚠️ L'expression ne couvre QUE sa déclaration (#2946, 24/11/2026). Un attribut
+ *  passait entier dès qu'il contenait une accolade : le badge d'état de WhatsApp
+ *  écrivait `font-size`, `padding` et `border-radius` en dur à côté d'une
+ *  expression qui choisissait ses couleurs. Les déclarations sans expression d'un
+ *  attribut mixte sont comptées comme un style statique.
+ *
  *  ## Un PLAFOND, et il ne fait que baisser
  *
  *  Tout convertir d'un coup changerait des centaines de rendus sans qu'on en
@@ -74,14 +80,28 @@ const PLAFOND = 0;
 
 const RACINE = join(dirname(fileURLToPath(import.meta.url)), '..', 'src');
 
-/** Les styles en ligne STATIQUES d'une source : sans expression `{…}`. */
+/** Les déclarations d'un attribut `style` qui ne portent aucune expression `{…}`. */
+export function partieStatique(valeur) {
+	let hors = '';
+	let profondeur = 0;
+	for (const c of valeur) {
+		if (c === '{' && !profondeur++) hors += '§';
+		else if (c === '}') profondeur--;
+		else if (!profondeur) hors += c;
+	}
+	return hors
+		.split(';')
+		.map((d) => d.trim())
+		.filter((d) => d && !d.includes('§'))
+		.join(';');
+}
+
+/** Les styles en ligne STATIQUES d'une source — ou la partie statique d'un attribut mixte. */
 export function stylesEnLigne(source) {
 	//  Le CSS du composant n'est pas du balisage : un commentaire qui y CITE un
 	//  `style="…"` (le récit d'une conversion) n'est pas un attribut.
 	const sans = source.replace(/<!--[\s\S]*?-->/g, '').replace(/<style[^>]*>[\s\S]*?<\/style>/g, '');
-	return [...sans.matchAll(/\bstyle="([^"]*)"/g)]
-		.map((m) => m[1])
-		.filter((v) => v.trim() && !v.includes('{'));
+	return [...sans.matchAll(/\bstyle="([^"]*)"/g)].map((m) => partieStatique(m[1])).filter(Boolean);
 }
 
 if (process.argv.includes('--selftest')) {
@@ -97,6 +117,17 @@ if (process.argv.includes('--selftest')) {
 		['margin:0'],
 	);
 	cas('un commentaire ne compte pas', stylesEnLigne('<!-- <p style="color:red"></p> -->'), []);
+	//  🔴 #2946 : l'accolade ne couvre que sa déclaration.
+	cas(
+		'un attribut mixte compte par sa partie statique',
+		stylesEnLigne(`<span style="font-size:var(--fs-sm);padding:.1rem;{ok ? 'color:green' : ''}">`),
+		['font-size:var(--fs-sm);padding:.1rem'],
+	);
+	cas(
+		'une expression dans une valeur reste sa déclaration',
+		stylesEnLigne('<i style="left:{x}%;width:{w}px"></i>'),
+		[],
+	);
 	cas('un attribut vide ne compte pas', stylesEnLigne('<p style="">a</p>'), []);
 	//  08/10/2026 : deux commentaires CSS qui racontent la conversion (« les styles
 	//  étaient EN LIGNE, `style="…"` ») étaient comptés comme des attributs.

@@ -100,10 +100,10 @@
 				no-repeat local,
 			linear-gradient(to left, var(--color-surface) 30%, transparent) right center / 1.5rem 100%
 				no-repeat local,
-			linear-gradient(to right, rgb(26 26 46 / 0.14), transparent) left center / 0.75rem 100%
-				no-repeat scroll,
-			linear-gradient(to left, rgb(26 26 46 / 0.14), transparent) right center / 0.75rem 100%
-				no-repeat scroll;
+			linear-gradient(to right, var(--color-ombre-defilement), transparent) left center / 0.75rem
+				100% no-repeat scroll,
+			linear-gradient(to left, var(--color-ombre-defilement), transparent) right center / 0.75rem
+				100% no-repeat scroll;
 	}
 	.defilement:focus-visible {
 		outline: 2px solid var(--color-primary);

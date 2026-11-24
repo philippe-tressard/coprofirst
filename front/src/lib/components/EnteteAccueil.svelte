@@ -147,7 +147,7 @@
 		min-height: 44px;
 		padding: 2px;
 		border-radius: 50%;
-		background: rgba(255, 255, 255, 0.3);
+		background: var(--color-voile-sur-plein);
 		text-decoration: none;
 		transition:
 			background var(--duree-geste),
@@ -156,7 +156,7 @@
 	}
 	@media (hover: hover) and (pointer: fine) {
 		.hero-avatar:hover {
-			background: rgba(255, 255, 255, 0.6);
+			background: var(--color-voile-sur-plein-survol);
 			transform: scale(1.04);
 		}
 	}
@@ -188,7 +188,7 @@
 	.hero-lot-inline {
 		font-size: var(--fs-md);
 		font-weight: 400;
-		color: rgba(255, 255, 255, 0.75);
+		color: var(--color-sur-plein-secondaire);
 	}
 	.hero-role-inline {
 		font-size: var(--fs-xs);
