@@ -261,7 +261,7 @@ Pied de page (toutes les pages)
 | 4 | Tickets | `page_config_mes-demandes` | Tickets | Mes Tickets | Signalez un problème, une nuisance ou posez une question au conseil syndical. Suivez l'avancement de vos tickets. |
 | 5 | Annuaire | `page_config_annuaire` | Annuaire | Annuaire | Coordonnées des membres du Conseil Syndical et du Syndic. |
 | 6 | Résidence | `page_config_residence` | Résidence | Ma résidence | Documents et informations de la copropriété. |
-| 7 | Mon lot | `page_config_mon-lot` | Mes lots | Mes lots | Informations sur votre bien : situation de vous lots (appartement, cave & parkings) dans la résidence et gestion locative pour les copropriétaires mandataires. |
+| 7 | Mon lot | `page_config_mon-lot` | Mes lots | Mes lots | Informations sur votre bien : situation de vous lots (appartement, cave & parkings) dans la résidence et gestion locative pour le copropriétaire bailleur. |
 | 8 | Accès & badges | `page_config_acces-badges` | Accès & badges | Accès & badges | Gestion de vos Télécommandes parkings & Vigiks. |
 | 9 | Prestataires *(proprio/CS)* | `page_config_prestataires` | Prestataires | Prestataires | Intervenants de la résidence, contrats de maintenance, documents contractuels et creation de prestations avec workflow, planning et pieces jointes. |
 | 10 | Communauté | `page_config_communaute` | Communauté | Communauté | Sondages et boîte à idées pour contribuer à la vie de la résidence. |
