@@ -504,7 +504,7 @@ Documents : `fiche_arrivant.py`, `annonce_hall.py`, `manuel_pdf.py`. Le rendu s'
 `fork`, qui hériterait des connexions à la base ; coût assumé +1,5 à 2 s.
 🔒 `test_weasyprint_appel_unique.py` (aucun appel au moteur ailleurs — c'est aussi la porte de
 la dérogation GHSA-jf6q-chmf-3h3v), `test_pdf_hors_process.py`. La mécanique de l'enfant :
-`app/utils/process_isole.py`, partagée avec les images (#2396).
+`app/utils/process_isole.py`, partagée avec les images (#2396). Un fichier servi ou joint se nomme par `utils/en_tete_fichier.en_tete_fichier(nom)` (repli ASCII et `filename*` UTF-8, RFC 6266), jamais un `Content-Disposition` en ligne (🔒 `test_en_tete_fichier.py`, #2985).
 
 ### Destinataires (`app/utils/destinataires.py`, source unique)
 

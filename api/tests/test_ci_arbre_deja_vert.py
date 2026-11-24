@@ -60,7 +60,8 @@ def test_arbre_cherche_exactement_les_jobs_qui_le_guettent():
     assert cherches, "le job arbre ne dit pas quels jobs il cherche"
     assert sorted(cherches.group(1).split()) == _guettes(jobs)
     assert sorted(k for k in arbre["outputs"] if k != "arbre") == _guettes(jobs)
-    assert arbre["permissions"] == {"contents": "read", "actions": "read"}
+    #  `issues: write` : l'alerte d'échec de son dernier pas (#2988).
+    assert arbre["permissions"] == {"contents": "read", "actions": "read", "issues": "write"}
     assert "if" not in arbre, "le job arbre tourne toujours"
 
 
