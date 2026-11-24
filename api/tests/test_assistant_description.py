@@ -18,7 +18,6 @@ from __future__ import annotations
 
 import pytest
 
-from app.models.core import ConfigSite
 from app.utils.assistant_description import Demande, disponible, preparer
 from app.utils.description_format import (
     CONSIGNE_DEFAUT,
@@ -30,6 +29,7 @@ from app.utils.description_format import (
     lire_reponse,
 )
 from app.utils.llm import ErreurLLM
+from tests.aides_reglages import poser_reglages
 
 
 # ── 1. Lire la réponse ─────────────────────────────────────────────────────
@@ -153,19 +153,13 @@ def test_le_contexte_est_borne_et_les_vides_ecartes():
 # ── 6. Disponible ? — le serveur décide ────────────────────────────────────
 
 
-def _poser(session, **valeurs):
-    for cle, valeur in valeurs.items():
-        session.add(ConfigSite(cle=cle, valeur=valeur))
-    session.commit()
-
-
 def test_indisponible_tant_que_l_usage_n_est_pas_active(session):
-    _poser(session, llm_actif="1", llm_api_key="sk-x", llm_description_modele="m")
+    poser_reglages(session, llm_actif="1", llm_api_key="sk-x", llm_description_modele="m")
     assert disponible(session) is False
 
 
 def test_disponible_quand_les_deux_etages_le_sont(session):
-    _poser(
+    poser_reglages(
         session,
         llm_actif="1",
         llm_api_key="sk-x",

@@ -14,38 +14,9 @@ from __future__ import annotations
 
 from datetime import datetime
 
-import pytest
-
-from app.models.core import ConfigSite
-from app.models.prestataires import Prestataire
 from app.utils.llm import config_llm
 from app.utils.synthese_contrat import entete_provenance
-
-
-@pytest.fixture()
-def session(session):
-    session.add(Prestataire(id=1, nom="5M Services", specialite="ascenseur"))
-    session.commit()
-    return session
-
-
-def _config(session, **kw):
-    valeurs = {
-        "llm_actif": "1",
-        "llm_api_key": "sk-x",
-        "llm_envoi_document": "1",
-        "llm_synthese_contrat_actif": "1",
-        "llm_synthese_contrat_modele": "gpt-4o-mini",
-    }
-    valeurs.update(kw)
-    for cle, valeur in valeurs.items():
-        existant = session.get(ConfigSite, cle)
-        if existant:
-            existant.valeur = valeur
-            session.add(existant)
-        else:
-            session.add(ConfigSite(cle=cle, valeur=valeur))
-    session.commit()
+from tests.aides_synthese_contrat import _config, session  # noqa: F401
 
 
 #  ── L'encart de provenance ────────────────────────────────────────────────

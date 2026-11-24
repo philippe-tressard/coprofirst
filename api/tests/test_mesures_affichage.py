@@ -28,14 +28,13 @@ from app.main import app
 from app.models.core import RoleUtilisateur
 from app.models.telemetrie import MesureAffichage, TelemetryEvent
 from app.utils import horloge
+from app.utils.erreurs_navigateur import CONSERVATION_JOURS, purger_releves_du_navigateur
 from app.utils.mesures_affichage import (
     ACTION_MESURE,
-    CONSERVATION_JOURS,
     DUREE_MAX_MS,
     INDICATEURS,
     centile,
     lire_mesure,
-    purger_mesures,
     synthese_mesures,
 )
 from tests.aides_base import moteur_de_test
@@ -154,7 +153,7 @@ def test_la_purge_retire_ce_qui_depasse_la_conservation():
                 )
             )
         s.commit()
-        assert purger_mesures(s, aujourd_hui) == 1
+        assert purger_releves_du_navigateur(s, MesureAffichage, aujourd_hui) == 1
         restantes = sorted(m.page for m in s.exec(select(MesureAffichage)).all())
     assert restantes == ["/age-0", f"/age-{CONSERVATION_JOURS}"]
 

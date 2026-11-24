@@ -21,6 +21,20 @@ Le vocabulaire surveillé est volontairement court : des mots sans équivalent
 français homographe. « auto » (auto-résoudre) et « vérification » le sont, donc
 ils n'y figurent pas — un faux positif désarme un contrôle en une semaine.
 
+Les COLONNES aussi (#2954, 24/11/2026) : « champs et tables en français » ne
+lisait que les tables, les routes et les tags. Quarante-huit colonnes portaient un mot
+anglais (`user_id`, `hashed_password`, `negotiable`…) : figées comme les tables
+(`COLONNES_FIGEES`) — renommer une colonne, c'est une migration en deux temps
+pour un gain invisible —, et la suivante est refusée. Elles se lisent dans
+`SQLModel.metadata` : colonnes réelles, héritées d'un mixin comprises.
+
+Mots ajoutés au vocabulaire pour les colonnes : `hashed`, `enabled`, `revoked`,
+`used`, `negotiable`, `require`, `onboarding`, `rule`, `raw`, `events` — aucun
+n'est un mot français écrit sans accent. Écartés, parce qu'ils le sont ou que
+le français les emploie : `type`, `email`, `url`, `purges`, `label`, `message`,
+`ban`, et `complete` (« complète » s'écrit `complete` dans un nom sans accent,
+comme `validee` ou `terminee`).
+
 Les TAGS d'OpenAPI suivent une convention : minuscules, mots séparés par un
 tiret, sans espace ni apostrophe (accents permis). Trois y dérogeaient ; renommés
 le 24/09/2026 — un tag ne change aucune adresse.
@@ -31,6 +45,7 @@ from __future__ import annotations
 import re
 
 import pytest
+import sqlalchemy as sa
 from sqlmodel import SQLModel
 
 import app.models.core  # enregistre toutes les tables
@@ -66,6 +81,17 @@ ANGLAIS = {
     "password",
     "me",
     "telemetry",
+    #  Ajoutés pour les colonnes (#2954) — voir l'en-tête.
+    "hashed",
+    "enabled",
+    "revoked",
+    "used",
+    "negotiable",
+    "require",
+    "onboarding",
+    "rule",
+    "raw",
+    "events",
 }
 
 #: Tables anglaises existantes au 24/09/2026 — figées définitivement (#2314,
@@ -131,6 +157,60 @@ ROUTES_FIGEES = {
     "/telemetry/users-active",
 }
 
+#: Colonnes existantes portant un mot anglais au 24/11/2026, `table.colonne` —
+#: figées définitivement comme les tables (#2314, #2954) : une colonne renommée,
+#: c'est une migration en deux temps (`CONTRACTIONS`). Une figée renommée en sort.
+COLONNES_FIGEES = {
+    "commande_acces.user_id",
+    "derniere_visite.user_id",
+    "email_verification_token.expires_at",
+    "email_verification_token.token",
+    "email_verification_token.used",
+    "email_verification_token.user_id",
+    "evenement.saisi_pour_user_id",
+    "historique_maintenance.tokens_supprimes",
+    "historique_sauvegarde.declenchee_par_user_id",
+    "historique_telemetrie.daily_purges",
+    "historique_telemetrie.events_purges",
+    "historique_telemetrie.monthly_purges",
+    "lot_import.etage_raw",
+    "lot_import.type_raw",
+    "membre_cs.user_id",
+    "membre_syndic.user_id",
+    "password_reset_token.expires_at",
+    "password_reset_token.token",
+    "password_reset_token.used",
+    "password_reset_token.user_id",
+    "petite_annonce.negotiable",
+    "presence_mensuelle.user_id",
+    "profil_acces_document.require_cs",
+    "refresh_token.expires_at",
+    "refresh_token.revoked",
+    "refresh_token.token",
+    "refresh_token.user_id",
+    "telecommande.user_id",
+    "telecommande_import.user_locataire_id",
+    "telecommande_import.user_proprietaire_id",
+    "telemetry_event.user_id",
+    "ticket.saisi_pour_user_id",
+    "user_lot.user_id",
+    "utilisateur.communaute_ban_count",
+    "utilisateur.hashed_password",
+    "utilisateur.last_seen_actualites",
+    "utilisateur.onboarding_complete",
+    "utilisateur.onboarding_etape",
+    "vigik.user_id",
+    "vigik_import.appartement_raw",
+    "vigik_import.batiment_raw",
+    "vigik_import.user_locataire_id",
+    "vigik_import.user_proprietaire_id",
+    "vote_idee.user_id",
+    "vote_sondage.user_id",
+    "whatsapp_log.scheduled_id",
+    "whatsapp_scheduled.cron_rule",
+    "whatsapp_scheduled.enabled",
+}
+
 TAG_CONFORME = re.compile(r"[a-zà-ÿ0-9]+(?:-[a-zà-ÿ0-9]+)*")
 
 
@@ -156,6 +236,34 @@ def test_aucune_table_anglaise_nouvelle():
     )
     assert not TABLES_FIGEES - anglaises, (
         f"renommée(s), à retirer de TABLES_FIGEES : {sorted(TABLES_FIGEES - anglaises)}"
+    )
+
+
+def colonnes_anglaises(tables) -> set[str]:
+    """Les `table.colonne` dont un mot est du vocabulaire anglais. PURE."""
+    return {f"{t.name}.{c.name}" for t in tables for c in t.columns if _mots(c.name) & ANGLAIS}
+
+
+def test_le_controle_des_colonnes_sait_refuser():
+    table = sa.Table(
+        "tableau",
+        sa.MetaData(),
+        sa.Column("user_id", sa.Integer),
+        sa.Column("enabled", sa.Boolean),
+        sa.Column("type_lot", sa.String),
+        sa.Column("auteur_id", sa.Integer),
+    )
+    assert colonnes_anglaises([table]) == {"tableau.user_id", "tableau.enabled"}
+
+
+def test_aucune_colonne_anglaise_nouvelle():
+    anglaises = colonnes_anglaises(SQLModel.metadata.tables.values())
+    assert len(anglaises) >= 20, "le relevé des colonnes ne voit rien : contrôle vide"
+    assert not anglaises - COLONNES_FIGEES, (
+        f"colonne(s) au nom anglais : {sorted(anglaises - COLONNES_FIGEES)} — nommer en français"
+    )
+    assert not COLONNES_FIGEES - anglaises, (
+        f"renommée(s), à retirer de COLONNES_FIGEES : {sorted(COLONNES_FIGEES - anglaises)}"
     )
 
 

@@ -26,11 +26,10 @@ from app.main import app
 from app.models.core import RoleUtilisateur
 from app.models.telemetrie import GesteFormulaire, TelemetryEvent
 from app.utils import horloge
+from app.utils.erreurs_navigateur import CONSERVATION_JOURS, purger_releves_du_navigateur
 from app.utils.gestes_formulaire import (
     ACTION_ENVOI,
     ACTION_OUVERTURE,
-    CONSERVATION_JOURS,
-    purger_gestes,
     synthese_gestes,
 )
 from tests.aides_base import moteur_de_test
@@ -118,7 +117,7 @@ def test_la_purge_retire_ce_qui_depasse_la_conservation():
             jour = (aujourd_hui - timedelta(days=age)).isoformat()
             s.add(GesteFormulaire(jour=jour, geste=f"age.j{age}", ouvertures=1))
         s.commit()
-        assert purger_gestes(s, aujourd_hui) == 1
+        assert purger_releves_du_navigateur(s, GesteFormulaire, aujourd_hui) == 1
         restants = sorted(g.geste for g in s.exec(select(GesteFormulaire)).all())
     assert restants == ["age.j0", f"age.j{CONSERVATION_JOURS}"]
 

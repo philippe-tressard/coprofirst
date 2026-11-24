@@ -29,23 +29,20 @@ taux sont pris à la même source.
 
 ## Durée
 
-`CONSERVATION_JOURS`, purgés par l'agrégation quotidienne
-(`telemetry_aggregation`) — ce que dit la politique de confidentialité
+`erreurs_navigateur.CONSERVATION_JOURS` — celle des erreurs, pas une seconde
+valeur —, purgés par l'agrégation quotidienne (`telemetry_aggregation`, par
+`erreurs_navigateur.purger_releves_du_navigateur`) — ce que dit la politique de confidentialité
 (`seed/contenus_legaux.TELEMETRIE_GESTES`).
 """
 
 import re
-from datetime import date, datetime, timedelta
+from datetime import date, datetime
 
 from sqlalchemy import func
-from sqlmodel import Session, delete, select
+from sqlmodel import Session, select
 
 from app.models.telemetrie import GesteFormulaire
 from app.utils import horloge
-
-#  `CONSERVATION_JOURS` : celle des erreurs, et pas une seconde valeur — la
-#  politique et le tableau de bord (`_depuis_detail`) les disent ensemble.
-from app.utils.erreurs_navigateur import CONSERVATION_JOURS
 
 #: Les deux actions d'un geste — celles que `TelemetryEvent.action` prévoyait
 #: (« view | click | submit ») sans qu'aucun écran les envoie. ⚠️ Tenues à la
@@ -106,11 +103,3 @@ def synthese_gestes(session: Session, depuis: date) -> list[dict]:
         }
         for geste, ouvertures, envois in lignes
     ]
-
-
-def purger_gestes(session: Session, aujourd_hui: date) -> int:
-    """Retire les compteurs de plus de `CONSERVATION_JOURS` ; rend leur nombre."""
-    limite = (aujourd_hui - timedelta(days=CONSERVATION_JOURS)).isoformat()
-    resultat = session.exec(delete(GesteFormulaire).where(GesteFormulaire.jour < limite))
-    session.commit()
-    return resultat.rowcount

@@ -1,8 +1,9 @@
 """Les aides des tests de la synthèse d'un contrat — la fixture, un contrat, un document.
 
-Deux fichiers s'en servent : `test_synthese_contrat.py` (le geste, les exemples,
-la consigne) et `test_synthese_contrat_documents.py` (ce qui part au modèle et le
-budget de la requête). Elles vivent ici plutôt que d'être recopiées ; `session`
+Trois fichiers s'en servent : `test_synthese_contrat.py` (le geste, les exemples,
+la consigne), `test_synthese_contrat_documents.py` (ce qui part au modèle et le
+budget de la requête) et `test_encart_provenance.py` (ce que l'encart annonce,
+#2950). Elles vivent ici plutôt que d'être recopiées ; `session`
 est une fixture : un fichier de tests l'IMPORTE pour que pytest la trouve.
 """
 

@@ -37,6 +37,7 @@ from typing import Optional
 from sqlmodel import Session
 
 from app.utils.description_format import (
+    FORMAT_INATTENDU,
     FORMAT_REPONSE,
     MAX_CARACTERES_CONTEXTE,
     MAX_CARACTERES_DESCRIPTION,
@@ -134,7 +135,7 @@ async def retravailler(session: Session, demande: Demande, *, demandeur: int) ->
         #  ⚠️ Le texte du modèle est journalisé, pas recopié à l'écran : il peut
         #  contenir la description qu'on vient d'envoyer.
         logger.warning("Assistant description : %s — %s", exc, reponse.texte[:300])
-        raise ErreurLLM("Le modèle n'a pas répondu dans le format attendu — réessayez.") from exc
+        raise ErreurLLM(FORMAT_INATTENDU) from exc
     titre = lu["titre"] if d.avec_titre else None
     return Proposition(
         titre=titre,

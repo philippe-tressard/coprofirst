@@ -18,23 +18,15 @@ from sqlmodel import Session
 
 from app.models.core import AnnonceHall, RoleUtilisateur
 from app.utils import horloge
-from tests.aides_http import base_http, client_http
-
-
-def _schema(chemin: str, methode: str, code: str = "200") -> str:
-    from app.main import app
-
-    reponse = app.openapi()["paths"][chemin][methode]["responses"][code]
-    schema = reponse["content"]["application/json"]["schema"]
-    return schema.get("$ref") or schema["items"]["$ref"]
+from tests.aides_http import base_http, client_http, schema_servi
 
 
 def test_les_routes_des_affiches_sont_typees_dans_le_contrat():
-    assert _schema("/annonces-hall", "get").endswith("/AnnonceHallRead")
-    assert _schema("/annonces-hall", "post", "201").endswith("/AnnonceHallRead")
-    assert _schema("/annonces-hall/{annonce_id}", "patch").endswith("/AnnonceHallRead")
-    assert _schema("/annonces-hall/sources", "get").endswith("/SourceReprenable")
-    assert _schema("/annonces-hall/depuis/{type_source}/{id_source}", "get").endswith(
+    assert schema_servi("/annonces-hall", "get").endswith("/AnnonceHallRead")
+    assert schema_servi("/annonces-hall", "post", "201").endswith("/AnnonceHallRead")
+    assert schema_servi("/annonces-hall/{annonce_id}", "patch").endswith("/AnnonceHallRead")
+    assert schema_servi("/annonces-hall/sources", "get").endswith("/SourceReprenable")
+    assert schema_servi("/annonces-hall/depuis/{type_source}/{id_source}", "get").endswith(
         "/PrefillAffiche"
     )
 

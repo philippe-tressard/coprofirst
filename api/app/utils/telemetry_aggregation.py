@@ -54,12 +54,11 @@ from app.models.core import (
     TelemetryEvent,
     TelemetryMonthly,
 )
+from app.models.telemetrie import ErreurNavigateur, GesteFormulaire, MesureAffichage
 from app.utils import horloge, telemetrie_canaux
 from app.utils.declenchement import AUTOMATIQUE
 from app.utils.destinataires import site_manager_user_id
-from app.utils.erreurs_navigateur import purger_erreurs
-from app.utils.gestes_formulaire import purger_gestes
-from app.utils.mesures_affichage import purger_mesures
+from app.utils.erreurs_navigateur import purger_releves_du_navigateur
 from app.utils.noeud import noeud_courant
 from app.utils.requete_liee import requete_liee
 from app.utils.retour_comptes import noter_visites
@@ -77,6 +76,12 @@ RETENTION_MONTHLY_JOURS = 3650
 #: Un jour non distingué ne se réagrège que si ses évènements sont TOUS encore
 #: là : la purge est glissante (maintenant − 30 jours), on garde deux jours de marge.
 REAGREGATION_JOURS = RETENTION_EVENEMENTS_JOURS - 2
+#: Les relevés du navigateur purgés chaque nuit : (clé du rapport, modèle, libellé d'erreur).
+RELEVES_DU_NAVIGATEUR = (
+    ("erreurs_navigateur_purgees", ErreurNavigateur, "erreurs navigateur"),
+    ("mesures_affichage_purgees", MesureAffichage, "mesures affichage"),
+    ("gestes_purges", GesteFormulaire, "gestes"),
+)
 
 
 def _paris_now() -> datetime:
@@ -368,30 +373,17 @@ def run_telemetry_aggregation(entry_id: int | None = None) -> dict:
             cutoff=cutoff_daily,
         )
 
-        # ─── 7. Purge : erreurs vues dans le navigateur (#1631) ─────────
-        try:
-            rapport["erreurs_navigateur_purgees"] = purger_erreurs(
-                session, horloge.jour_civil(now_utc)
-            )
-        except Exception as exc:
-            rapport["erreurs"].append(f"purge erreurs navigateur: {exc}")
-            session.rollback()
-
-        # ─── 8. Purge : durées d'affichage des écrans (#1632) ───────────
-        try:
-            rapport["mesures_affichage_purgees"] = purger_mesures(
-                session, horloge.jour_civil(now_utc)
-            )
-        except Exception as exc:
-            rapport["erreurs"].append(f"purge mesures affichage: {exc}")
-            session.rollback()
-
-        # ─── 9. Purge : ouvertures et envois des formulaires (#1633) ────
-        try:
-            rapport["gestes_purges"] = purger_gestes(session, horloge.jour_civil(now_utc))
-        except Exception as exc:
-            rapport["erreurs"].append(f"purge gestes: {exc}")
-            session.rollback()
+        # ─── 7-9. Purge : les relevés du navigateur — erreurs (#1631),
+        #  durées d'affichage (#1632), ouvertures et envois des formulaires
+        #  (#1633). Une purge par relevé : l'échec de l'un n'empêche pas l'autre.
+        for cle, modele, libelle in RELEVES_DU_NAVIGATEUR:
+            try:
+                rapport[cle] = purger_releves_du_navigateur(
+                    session, modele, horloge.jour_civil(now_utc)
+                )
+            except Exception as exc:
+                rapport["erreurs"].append(f"purge {libelle}: {exc}")
+                session.rollback()
 
     # ─── Mise à jour de l'historique ──────────────────────────────────
     duree = round(time.monotonic() - t0, 2)
