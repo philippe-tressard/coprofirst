@@ -23,18 +23,21 @@ from app.models.core import (
     LocationBail,
     RemiseObjet,
     StatutBail,
-    StatutUtilisateur,
     Utilisateur,
 )
-from app.utils.comptes import condition_hors_comptes_techniques, est_compte_technique
 from app.utils.lecture import lire_objet
 from app.utils.limiter import LIMITE_RECHERCHE_DE_PERSONNES, limiter
-from app.utils.recuperer import ou_404
+from app.utils.recuperer import ou_404, ou_rien, present_ou_404
 from app.schemas_nom_servi import NomServi
 
 from .commun import BailCreateMulti, BailOut, BailTerminer, BailUpdate
 from app.utils.acces_bail import adopter_declares, rendre_au_bailleur
-from app.auth.appartenance import exiger_bail_du_bailleur, exiger_lot_du_bailleur
+from app.auth.appartenance import (
+    clause_locataire_designable,
+    est_locataire_designable,
+    exiger_bail_du_bailleur,
+    exiger_lot_du_bailleur,
+)
 
 router = APIRouter()
 
@@ -91,23 +94,33 @@ def supprimer_bail(
 #  `lot_ids`. Une seule garde, une seule construction.
 
 
-def _exiger_locataire(session: Session, locataire_id: Optional[int]) -> None:
-    """Le compte désigné comme locataire existe — **404** sinon (#1535).
+def _exiger_locataire(
+    session: Session, locataire_id: Optional[int], *, deja: Optional[int] = None
+) -> None:
+    """Le compte désigné comme locataire est de ceux que la recherche rendrait — **404** sinon.
 
-    C'est la seule contrainte, et elle est délibérée. Le locataire d'un bail
-    devient porteur des badges remis à CE lot : un identifiant libre ferait du
-    futur compte de ce numéro le porteur des badges, sans que personne l'ait
-    choisi. Au-delà, désigner son locataire est le geste du bailleur — la
-    recherche d'un compte (`search-locataire`) est ouverte à cette fin, et le
-    lot, lui, est déjà le sien (`exiger_lot_du_bailleur`) : il ne confie que
-    ses propres badges.
+    Le locataire d'un bail devient porteur des badges remis à CE lot (#1535). Le
+    bailleur le choisit parmi ce que la recherche lui ouvre (`search-locataire`,
+    ses suggestions) : un compte locataire, jamais un compte technique —
+    `appartenance.est_locataire_designable`, la même règle. Hors de ce périmètre,
+    la réponse est celle d'un compte inexistant (claude-config#656).
+
+    `deja` : le locataire que le bail porte déjà. L'écran de correction le renvoie
+    avec chaque modification ; il a pu y être rattaché par le serveur
+    (`auto_match_service`, `rattachement_bailleur`) ou changer de statut depuis —
+    ce n'est pas une désignation nouvelle, et il reste admis.
     """
-    if locataire_id is not None:
-        ou_404(session, Utilisateur, locataire_id, "Locataire")
+    if locataire_id is None or locataire_id == deja:
+        return
+    compte = ou_rien(session, Utilisateur, locataire_id)
+    designable = compte is not None and est_locataire_designable(session, compte.id)
+    present_ou_404(compte if designable else None, "Locataire introuvable")
 
 
 @router.post("/baux/creer-multi", response_model=List[BailOut], status_code=201)
+@limiter.limit(LIMITE_RECHERCHE_DE_PERSONNES)
 def creer_bail_multi(
+    request: Request,
     data: BailCreateMulti,
     user: Utilisateur = Depends(require_proprietaire),
     session: Session = Depends(get_session),
@@ -171,14 +184,16 @@ def get_bail(
 
 
 @router.patch("/baux/{bail_id}", response_model=BailOut)
+@limiter.limit(LIMITE_RECHERCHE_DE_PERSONNES)
 def update_bail(
+    request: Request,
     bail_id: int,
     data: BailUpdate,
     user: Utilisateur = Depends(require_proprietaire),
     session: Session = Depends(get_session),
 ):
     bail = exiger_bail_du_bailleur(session, bail_id, user)
-    _exiger_locataire(session, data.locataire_id)
+    _exiger_locataire(session, data.locataire_id, deja=bail.locataire_id)
     for k, v in data.model_dump(exclude_unset=True).items():
         setattr(bail, k, v)
     bail.mis_a_jour_le = horloge.maintenant()
@@ -232,13 +247,10 @@ def _info(u: Utilisateur) -> LocataireInfo:
     return lire_objet(LocataireInfo, u, email_masque=adresse_masquee(u.email))
 
 
-def _est_locataire():
-    """Clause SQL « ce compte peut être le locataire d'un bail » (#2153).
-
-    Un compte LOCATAIRE, jamais un compte technique. La recherche portait sur
-    tous les comptes — conseil, administration, syndic, autres copropriétaires.
-    """
-    return (Utilisateur.statut == StatutUtilisateur.locataire) & condition_hors_comptes_techniques()
+#  « Ce compte peut-il être le locataire d'un bail ? » — `appartenance.clause_locataire_designable`
+#  (#2153) : la recherche portait sur tous les comptes — conseil, administration,
+#  syndic, autres copropriétaires. La recherche, ses suggestions et la désignation
+#  au bail (`_exiger_locataire`) lisent la même règle.
 
 
 @router.get("/locataires-suggeres", response_model=List[LocataireInfo])
@@ -258,7 +270,7 @@ def locataires_suggeres(
         return []
     candidats = session.exec(
         select(Utilisateur).where(
-            _est_locataire(),
+            clause_locataire_designable(),
             Utilisateur.nom_proprietaire.isnot(None),  # type: ignore[attr-defined]
         )
     ).all()
@@ -290,15 +302,15 @@ def search_locataire(
     if "@" in q:
         # Recherche exacte par email
         trouve = compte_par_adresse(session, q)
-        ok = trouve and trouve.statut == StatutUtilisateur.locataire
-        results = [trouve] if ok and not est_compte_technique(trouve) else []
+        ok = trouve is not None and est_locataire_designable(session, trouve.id)
+        results = [trouve] if ok else []
     else:
         # Recherche partielle insensible à la casse par nom ou prénom
         pattern = f"%{q.lower()}%"
         results = session.exec(
             select(Utilisateur)
             .where((Utilisateur.nom.ilike(pattern)) | (Utilisateur.prenom.ilike(pattern)))
-            .where(_est_locataire())
+            .where(clause_locataire_designable())
             .limit(10)
         ).all()
     return [_info(u) for u in results]
