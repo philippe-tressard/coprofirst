@@ -12,6 +12,9 @@ import importlib.util
 import pathlib
 from types import ModuleType
 
+from alembic.migration import MigrationContext
+from alembic.operations import Operations
+
 VERSIONS = pathlib.Path(__file__).resolve().parents[1] / "alembic" / "versions"
 
 
@@ -56,3 +59,14 @@ def charger_migration(motif: str, dossier: pathlib.Path | None = None) -> Module
     module = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(module)
     return module
+
+
+def jouer_pas(moteur, pas) -> None:
+    """Un pas de migration (`upgrade`, `downgrade`) dans sa transaction, sur CE moteur.
+
+    Un appel de `moteur_de_test()` ouvre un schéma neuf : la base d'un test n'est
+    qu'à un moteur. Trois tests de migration portaient ce corps (#2950).
+    """
+    with moteur.begin() as conn:
+        with Operations.context(MigrationContext.configure(conn)):
+            pas()

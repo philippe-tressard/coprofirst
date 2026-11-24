@@ -122,6 +122,21 @@ def docstrings(arbre: ast.AST) -> set[int]:
     return vus
 
 
+def empreinte_du_corps(fonction: ast.FunctionDef | ast.AsyncFunctionDef) -> str:
+    """Le corps d'une fonction, docstring écartée, en texte comparable (`ast.dump`).
+
+    Deux fonctions au même corps ont la même empreinte, quels que soient leur nom,
+    leur docstring et leur mise en forme : c'est ce que comparent les contrôles de
+    copies entre fichiers de tests et entre migrations (#2950).
+    """
+    exclues = docstrings(fonction)
+    return "|".join(
+        ast.dump(instruction)
+        for instruction in fonction.body
+        if not (isinstance(instruction, ast.Expr) and id(instruction.value) in exclues)
+    )
+
+
 def chaines_du_code(arbre: ast.AST) -> list[ast.Constant]:
     """Les chaînes littérales d'un arbre, docstrings exclues (l'AST ignore les commentaires)."""
     exclues = docstrings(arbre)

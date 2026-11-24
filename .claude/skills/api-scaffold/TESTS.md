@@ -27,6 +27,9 @@ Les titres et numéros de section sont ceux de toujours : un renvoi se lit au so
   `tests/aides_*.py`, jamais dans un fichier de tests ; seuls `test_*.py`, `aides_*.py` et
   `conftest` vivent dans `tests/` (`test_nommage_modules_de_tests.py`). Une
   `Session(moteur_de_test())` jamais fermée, un patrimoine vidé à la main sont refusés.
+  Au-delà des motifs, deux fonctions de niveau module (fixtures comprises) au corps identique
+  dans deux fichiers de `tests/` échouent — empreinte d'AST, docstring retirée, dès trois
+  instructions (`COPIES_ADMISES`, liste qui ne fait que baisser, #2950).
 - **Aucun état mutable de module de plus** (#1743) : `test_etat_module_par_copropriete.py`
   (conteneur modifié depuis une fonction, `global`, `@lru_cache`) ; un état neuf va en base,
   ou dans `DU_PROCESSUS` avec sa raison ; un état de copropriété passe par `contexte.etat(nom)`,

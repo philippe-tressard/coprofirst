@@ -165,7 +165,11 @@ valeurs, identifiants depuis une constante, ajouter puis retirer) et
 nullable ou avec `server_default`, retirer en deux versions, n'y sont plus recopiés
 ici. Ce qui n'est écrit que là :
 - tester l'existence d'une colonne avant `add_column` par
-  `sa.inspect(conn).get_columns(TABLE)`, jamais par une requête en f-string.
+  `utils/colonnes_presentes.colonnes_presentes(op.get_bind(), TABLE)`, jamais par une requête
+  en f-string ; lire un texte servi par `utils/textes_livres.lire_texte`. Seize migrations
+  recopiaient la première, trois la seconde : `test_textes_livres.py` refuse, au-delà de
+  `DERNIERE_FIGEE`, une migration qui lit `get_columns` elle-même ou recopie le corps d'une aide
+  (empreinte d'AST, #2950).
 - **Le second temps d'un retrait** (`drop_column`, `drop_table`) se prouve sans perte
   SUR LA PRODUCTION avant la fusion (`standards/06` §3, #2937) : jouer sur l'actif la
   requête qui montre que la colonne ne porte rien qui ne soit repris ailleurs —

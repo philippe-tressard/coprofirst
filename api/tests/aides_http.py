@@ -68,3 +68,12 @@ def client_http(moteur, role: RoleUtilisateur | None, **champs) -> tuple[TestCli
         ).id
     http.cookies.set("access_token", creer_jeton_acces(ident, "x"))
     return http, ident
+
+
+def schema_servi(chemin: str, methode: str, code: str = "200") -> str:
+    """La référence (`$ref`) du schéma qu'une route déclare au contrat — l'objet, ou
+    l'élément d'une liste. Écrite une fois pour les tests des « gestes servis »
+    (affiches de hall, délégations), qui la portaient chacun (#2950)."""
+    reponse = app.openapi()["paths"][chemin][methode]["responses"][code]
+    schema = reponse["content"]["application/json"]["schema"]
+    return schema.get("$ref") or schema["items"]["$ref"]

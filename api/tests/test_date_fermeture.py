@@ -17,40 +17,22 @@ import json
 import uuid
 from datetime import date, datetime
 
-import pytest
 import sqlalchemy as sa
-from alembic.migration import MigrationContext
-from alembic.operations import Operations
 from fastapi import BackgroundTasks
-from sqlmodel import Session, SQLModel
+from sqlmodel import Session
 
 from app.database import engine
-from app.models.core import RoleUtilisateur, Ticket, TicketEvolution, Utilisateur
+from app.models.core import Ticket, TicketEvolution, Utilisateur
 from app.routers.tickets.mise_a_jour import update_ticket
 from app.schemas import TicketUpdate
 from app.utils.carnet_entretien import construire_carnet
 from tests import aides_migrations
-from tests.aides_base import compte, moteur_de_test
+from tests.aides_base import moteur_de_test
 from tests.aides_purge import purger_ligne
+from tests.aides_fil import cs  # noqa: F401 — fixture importée par son nom (#2950)
 
 FERMEE_LE = datetime(2026, 9, 20, 23, 30)  # UTC : le 21 septembre à Paris
 JOUR_DE_FERMETURE = date(2026, 9, 21)
-
-
-@pytest.fixture()
-def cs() -> Utilisateur:
-    SQLModel.metadata.create_all(engine)
-    with Session(engine) as session:
-        membre = compte(
-            session,
-            prefixe="fermeture",
-            prenom="Camille",
-            nom="Sorel",
-            role=RoleUtilisateur.conseil_syndical,
-        )
-        yield membre
-        purger_ligne(session, Utilisateur, membre.id)
-        session.commit()
 
 
 def _affaire(session: Session, auteur: Utilisateur, **champs) -> Ticket:
@@ -133,12 +115,6 @@ def test_une_intervention_se_date_au_carnet_de_sa_fermeture(cs):
 # ── La migration 0339 ────────────────────────────────────────────────────────
 
 
-def _jouer(moteur, pas) -> None:
-    with moteur.begin() as conn:
-        with Operations.context(MigrationContext.configure(conn)):
-            pas()
-
-
 def _dates(moteur) -> dict[str, datetime | None]:
     with moteur.connect() as conn:
         lignes = conn.execute(sa.text("SELECT numero, ferme_le FROM ticket")).all()
@@ -199,8 +175,8 @@ def test_la_migration_rend_la_date_relue_dans_le_fil():
         "TK-SANS-TRACE": corrigee,
         "TK-ROUVERTE": corrigee,
     }
-    _jouer(moteur, migration.upgrade)
+    aides_migrations.jouer_pas(moteur, migration.upgrade)
     assert _dates(moteur) == attendu
-    _jouer(moteur, migration.upgrade)  # rejouée : rien de plus
+    aides_migrations.jouer_pas(moteur, migration.upgrade)  # rejouée : rien de plus
     assert _dates(moteur) == attendu
     moteur.dispose()
