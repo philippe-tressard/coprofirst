@@ -55,6 +55,12 @@ VALIDATIONS_DE_L_AUTEUR = {
         "passage du projet à l'AGPL-3.0-or-later (#1726) : les exceptions d'alors, "
         "analysées contre la nouvelle licence"
     ),
+    "24/11/2026": (
+        "psycopg et lightningcss (#3058) : nouvelle analyse — tous deux redistribués sans "
+        "modification dans les images publiques, texte de leur licence livré avec eux — "
+        "puis réponse de l'auteur à la recommandation de valider les deux exceptions : "
+        "« Fait ce que tu préconises »"
+    ),
 }
 
 
@@ -147,7 +153,7 @@ EXCEPTIONS = (
             "(un par système) sont des paquets optionnels, dont un seul est installé."
         ),
         "statut": _compatible(
-            analyse="25/10/2026",
+            analyse="24/11/2026",
             pourquoi="la MPL-2.0 admet la GPL et l'AGPL comme « Secondary Licenses » ; outil de "
             "construction, présent dans node_modules de l'image sans être modifié",
         ),
@@ -164,7 +170,7 @@ EXCEPTIONS = (
             "violée en `IntegrityError` — pg8000, sous BSD, ne le faisait pas."
         ),
         "statut": _compatible(
-            analyse="09/10/2026",
+            analyse="24/11/2026",
             pourquoi="la LGPL-3.0 permet l'usage d'une bibliothèque par une œuvre sous GPLv3 ou "
             "AGPLv3 (§4 et §5 de la LGPL), qui la distribue avec sa licence et son source",
         ),
