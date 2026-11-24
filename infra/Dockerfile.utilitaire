@@ -1,0 +1,19 @@
+#  L'image des CONTENEURS JETABLES des scripts d'exploitation (#2962, 24/11/2026).
+#
+#  Rien ne se construit ici : ce fichier DÉCLARE l'image, pour que trois mécanismes
+#  la voient. Avant lui, les scripts écrivaient `alpine` sans étiquette, et aucun ne
+#  la voyait ; sur les deux nœuds, `alpine:latest` datait de sept mois.
+#
+#  - les scripts lisent l'étiquette ici, par `image_utilitaire`
+#    (`scripts/lib/lib-image-utilitaire.sh`), et ne la recopient jamais ;
+#  - le re-tirage du dimanche (`maintenance.sh`, `rafraichir_images_de_base`) lit ce
+#    `FROM`, et amène les correctifs republiés sous la même étiquette ;
+#  - Dependabot (`docker`, dossier `/infra`) propose la mineure suivante.
+#
+#  Qui s'en sert : la copie de l'état WhatsApp à la bascule et au failover
+#  (`lib-volumes.sh`), la lecture des sauvegardes et des archives par l'export hors
+#  site, le banc des volumes, le durcissement des sudoers. `auto-deploy.sh` s'assure
+#  à chaque passage qu'elle est sur le nœud : la bascule de 02:00 ne la tire pas.
+#
+#  🔒 `api/tests/test_image_utilitaire.py`.
+FROM alpine:3.24

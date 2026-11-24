@@ -187,6 +187,7 @@ cloudflared` tel quel dans une réponse, un ticket ou un journal : masquer d'abo
 ## Risques connus
 - **Build OOM** : `npm run build` peut saturer la RAM du RPi → préférer `--nocache` en cas de build lourd
 - **health-watch failover** → peut créer un split-brain ; toujours vérifier `docker ps` sur les 2 RPi
+- **Un conteneur jetable** (`docker run --rm …`) prend `$(image_utilitaire)` (`scripts/lib/lib-image-utilitaire.sh`), jamais `alpine` nue : l'étiquette se déclare dans `infra/Dockerfile.utilitaire`, que le re-tirage du dimanche et Dependabot lisent (#2962, 🔒 `test_image_utilitaire.py`)
 - **Sauvegardes** : le volume `backups` n'est **pas** répliqué par `bascule.sh` (qui ne
   transfère que les volumes `uploads` et `whatsapp_auth` ; `app_data` n'est transféré par
   aucun script). Le rôle alternant chaque

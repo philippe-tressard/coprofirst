@@ -728,6 +728,7 @@ jobs:
           # Les phases de bascule qui l'emploient ÉCRIVENT — leur seule preuve
           # est le journal du lendemain. La forme, elle, se contrôle ici (#582).
           bash scripts/lib/lib-volumes.sh           --selftest
+          bash scripts/lib/lib-image-utilitaire.sh  --selftest
           bash scripts/exploitation/boot-role-guard.sh   --selftest
           # Le failover (#1997, #2000) : décider, PUIS isoler l'ancien actif sous
           # son verrou de déploiement, PUIS promouvoir — `health-watch.sh

@@ -234,7 +234,7 @@ Conduite :
   `caddy_donnees`, `caddy_configuration`, `caddy_journal`, nés à son compte. Ils
   restent pour le retour à une image d'avant (qui ne s'ouvrirait plus sur des
   volumes rendus à `caddy` — mesuré au banc) ; leur journal d'accès d'avant la MEP
-  s'y lit encore (`docker run --rm -v 5hostachy_caddy_logs:/v:ro alpine tail /v/access.log`).
+  s'y lit encore (`docker run --rm -v 5hostachy_caddy_logs:/v:ro "$(image_utilitaire)" tail /v/access.log`, l'image par `scripts/lib/lib-image-utilitaire.sh`).
 - **S4 sur `hostachy_postgres` seul**, après une livraison qui a touché son
   service : la base n'a pas été RECRÉÉE — `auto-deploy` ne la recrée jamais
   (`--no-recreate`), seules la bascule (promotion, puis reconstruction de

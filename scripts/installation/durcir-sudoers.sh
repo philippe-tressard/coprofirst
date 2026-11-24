@@ -41,11 +41,18 @@ set -uo pipefail
 REPO=$(cd "$(dirname "$0")/../.." && pwd)
 # shellcheck source=../lib/lib-sudoers.sh
 . "$REPO/scripts/lib/lib-sudoers.sh"
+#  L'image du conteneur jetable (#2962) : lue dans `infra/Dockerfile.utilitaire`.
+# shellcheck source=../lib/lib-image-utilitaire.sh
+. "$REPO/scripts/lib/lib-image-utilitaire.sh"
+UTIL=$(image_utilitaire) || UTIL=""
 
 if [ "${1:-}" = "--selftest" ]; then
   sudoers_selftest
   exit $?
 fi
+#  Sans image lisible, les gestes par conteneur jetable lanceraient `docker run` sur
+#  une image vide : on s'arrête avant le premier.
+[ -n "$UTIL" ] || { echo "ERREUR : image utilitaire illisible (infra/Dockerfile.utilitaire) — rien n'est fait." >&2; exit 1; }
 
 TOUS_NOEUDS="192.168.1.222 192.168.1.223"
 
@@ -92,7 +99,7 @@ log() { printf '%s\n' "$*"; }
 lire_regle() {  # $1 = ip
   local sortie
   sortie=$($SSH "$COMPTE@$1" "sudo -n cat $SUDOERS_CIBLE 2>/dev/null \
-    || docker run --rm -v /etc/sudoers.d:/s:ro alpine cat /s/${SUDOERS_CIBLE##*/} 2>/dev/null \
+    || docker run --rm -v /etc/sudoers.d:/s:ro $UTIL cat /s/${SUDOERS_CIBLE##*/} 2>/dev/null \
     || { [ -e $SUDOERS_CIBLE ] && echo __ILLISIBLE__ || echo __ABSENT__; }" 2>/dev/null)
   printf '%s' "${sortie:-__ILLISIBLE__}"
 }
@@ -206,7 +213,7 @@ nettoyer() {
     #  garde-fou invisible, que le premier réarrangement alphabétique aurait
     #  emporté. Le canal docker ne dépend d'aucune des règles en jeu.
     for f in $SUDOERS_HERITES; do
-      $SSH "$COMPTE@$ip" "[ -e /etc/sudoers.d/$f ] &&         docker run --rm -v /etc/sudoers.d:/s alpine rm -f /s/$f && echo '   retiré : $f'" 2>/dev/null
+      $SSH "$COMPTE@$ip" "[ -e /etc/sudoers.d/$f ] &&         docker run --rm -v /etc/sudoers.d:/s $UTIL rm -f /s/$f && echo '   retiré : $f'" 2>/dev/null
     done
     #  🔴 On ne vérifie PAS avec `visudo -c` : il n'est plus NOPASSWD sur un nœud
     #  durci, et son échec se lisait « sudoers cassé » alors qu'il signifiait
@@ -220,7 +227,7 @@ nettoyer() {
       log "   sudo répond encore → l'arbre sudoers est valide"
     else
       log "   🔴 sudo NE RÉPOND PLUS. Retirer le fichier par le canal docker :"
-      log "      ssh $COMPTE@$ip 'docker run --rm -v /etc/sudoers.d:/s alpine rm -f /s/${SUDOERS_CIBLE##*/}'"
+      log "      ssh $COMPTE@$ip 'docker run --rm -v /etc/sudoers.d:/s $UTIL rm -f /s/${SUDOERS_CIBLE##*/}'"
     fi
   done
 }
