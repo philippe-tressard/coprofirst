@@ -23,7 +23,7 @@ import platform
 import shutil
 import socket
 import ssl
-from datetime import datetime, timezone
+from datetime import datetime
 from typing import Optional
 from urllib.parse import urlsplit
 
@@ -45,7 +45,7 @@ from app.registre.contrat import (
     Rapport,
     Sauvegarde,
 )
-from app.utils import installation, taches
+from app.utils import horloge, installation, taches
 from app.utils.plateforme import DEPOT_SOURCE
 from app.utils.stockage import stockage
 
@@ -107,7 +107,7 @@ def _certificat_servi(hote: str, port: int) -> bytes:
 def echeance_certificat(der: bytes) -> datetime:
     """L'échéance d'un certificat, en UTC naïf comme la base — même expiré."""
     fin = x509.load_der_x509_certificate(der).not_valid_after_utc
-    return fin.astimezone(timezone.utc).replace(tzinfo=None)
+    return horloge.utc_naif(fin)
 
 
 def _certificat_expire_le() -> Optional[datetime]:

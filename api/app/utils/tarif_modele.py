@@ -47,7 +47,7 @@ from typing import Optional
 
 from sqlmodel import Session
 
-from app.utils.description_format import ReponseIllisible, lire_objet
+from app.utils.description_format import FORMAT_INATTENDU, ReponseIllisible, lire_objet
 
 logger = logging.getLogger("hostachy.assistant")
 
@@ -202,7 +202,7 @@ async def chercher_et_enregistrer(
         tarif = lire_tarif(reponse.texte)
     except ReponseIllisible as exc:
         logger.warning("Assistant tarif : %s — %s", exc, reponse.texte[:300])
-        raise ErreurLLM("Le modèle n'a pas répondu dans le format attendu — réessayez.") from exc
+        raise ErreurLLM(FORMAT_INATTENDU) from exc
     if all(p is None for p in tarif.prix().values()):
         raise ErreurLLM(
             f"La grille de {cible.fournisseur.libelle} ne donne pas le tarif de « {modele} » : "

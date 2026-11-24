@@ -10,13 +10,18 @@ Ce module porte la règle ; la route vit avec les autres (`registre/routeur.py`)
 
 from __future__ import annotations
 
+import logging
 from datetime import timedelta
+from typing import Optional
 
+from pydantic import ValidationError
 from sqlmodel import Session, delete
 
 from app.registre.contrat import Rapport
 from app.registre.modeles import Installation, RapportInstallation
 from app.utils import horloge
+
+logger = logging.getLogger("hostachy.registre")  # le journal du registre, comme ses voisins
 
 #: Combien de temps un rapport se garde (arbitré le 13/10/2026 avec R3) : assez pour
 #: voir une tendance et les alertes de R4, sans tenir l'historique d'une installation.
@@ -43,3 +48,18 @@ def ranger(session: Session, inst: Installation, rapport: Rapport) -> RapportIns
         )
     )
     return ligne
+
+
+def relire(ligne: Optional[RapportInstallation]) -> Optional[Rapport]:
+    """Un rapport rangé, relu contre le contrat — illisible, il se tait et se journalise.
+
+    La seule lecture (#2949) : les alertes du registre et la fiche d'une
+    installation (`routers/admin/installations`) la recopiaient chacune.
+    """
+    if ligne is None:
+        return None
+    try:
+        return Rapport.model_validate_json(ligne.corps)
+    except ValidationError:
+        logger.warning("registre : rapport %s illisible au contrat en vigueur", ligne.id)
+        return None

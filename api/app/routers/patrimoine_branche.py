@@ -41,7 +41,7 @@ from app.auth.deps import require_admin
 from app.database import get_session
 from app.models.core import Batiment, Utilisateur
 from app.models.perimetre import Perimetre
-from app.routers.patrimoine import PerimetreRead, _noeud, _un
+from app.routers.patrimoine import PARENT_INCONNU, PerimetreRead, _noeud, _un
 from app.utils import horloge
 from app.utils.acces_choix import fixer_acces, types_fixes_par_code
 from app.utils.perimetres import code_par_defaut, invalider_cache, perimetre_du_batiment
@@ -243,7 +243,7 @@ def copier_perimetre(
     for code in dict.fromkeys(c.strip() for c in body.parents if c.strip()):
         parent = par_code.get(code)
         if parent is None:
-            raise HTTPException(422, f"Périmètre parent inconnu : {code}")
+            raise HTTPException(422, f"{PARENT_INCONNU} : {code}")
         if parent.id in exclus:
             raise HTTPException(
                 422, f"« {parent.libelle} » ne peut pas recevoir une copie de ce périmètre."

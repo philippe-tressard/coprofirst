@@ -27,7 +27,7 @@ from app.utils import horloge
 from app.utils.erreurs_navigateur import (
     ACTION_ERREUR,
     CONSERVATION_JOURS,
-    purger_erreurs,
+    purger_releves_du_navigateur,
     synthese_erreurs,
 )
 from tests.aides_base import moteur_de_test
@@ -135,6 +135,6 @@ def test_la_purge_retire_ce_qui_depasse_la_conservation():
                 )
             )
         s.commit()
-        assert purger_erreurs(s, aujourd_hui) == 1
+        assert purger_releves_du_navigateur(s, ErreurNavigateur, aujourd_hui) == 1
         restantes = sorted(e.page for e in s.exec(select(ErreurNavigateur)).all())
     assert restantes == ["/age-0", f"/age-{CONSERVATION_JOURS}"]
