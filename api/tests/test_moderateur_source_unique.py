@@ -133,10 +133,21 @@ def test_le_refus_passe_par_le_predicat():
         None,
     )
     assert fn is not None, "`require_cs_or_admin` a disparu de auth/deps.py"
-    appels = {
-        n.func.id for n in ast.walk(fn) if isinstance(n, ast.Call) and isinstance(n.func, ast.Name)
-    }
-    assert "est_moderateur" in appels, (
-        "`require_cs_or_admin` n'appelle pas `est_moderateur` : la règle « qui "
-        "modère » serait écrite deux fois, une pour dire et une pour refuser"
+
+    #  Depuis #2942, le refus s'écrit UNE fois, `exiger_moderateur(user, motif)`, que
+    #  la dépendance appelle comme les gestes qui gardent leur message : la chaîne est
+    #  suivie — la dépendance appelle la porte, la porte appelle le prédicat.
+    def appels(nom: str) -> set[str]:
+        f = next(n for n in ast.walk(arbre) if isinstance(n, ast.FunctionDef) and n.name == nom)
+        return {
+            n.func.id
+            for n in ast.walk(f)
+            if isinstance(n, ast.Call) and isinstance(n.func, ast.Name)
+        }
+
+    assert "exiger_moderateur" in appels("require_cs_or_admin") and "est_moderateur" in appels(
+        "exiger_moderateur"
+    ), (
+        "`require_cs_or_admin` n'atteint pas `est_moderateur` par `exiger_moderateur` : la "
+        "règle « qui modère » serait écrite deux fois, une pour dire et une pour refuser"
     )
