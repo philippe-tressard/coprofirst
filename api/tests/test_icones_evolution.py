@@ -35,41 +35,27 @@ que c'est lui qu'on reconnaît sans lire.
 
 from __future__ import annotations
 
+import ast
 import re
 from pathlib import Path
 
-from tests.aides_routes_front import decoder_js
+from app.utils import evolutions
+from app.utils.suivi_affaires.releve import MOTIF_NOUVELLE
+from tests.aides_sources import modules_app
+from tests.aides_tables_front import table_plate
 
 _RACINE = Path(__file__).resolve().parents[2]
-_FRONT = _RACINE / "front" / "src" / "lib" / "evolutions.ts"
 _API = _RACINE / "api" / "app" / "routers" / "flux" / "tickets.py"
 
 
 def _icones_front() -> dict[str, str]:
-    """`EVOLUTION_ICONE` de `#lib/evolutions.ts`, lu comme du texte.
+    """`EVOLUTION_ICONE` de `#lib/evolutions.ts`, échappements `\\u{…}` résolus.
 
-    Les échappements `\\u{1F4AC}` sont résolus : le front les écrit ainsi parce
-    qu'un emoji hors BMP survit mal aux allers-retours d'encodage sous Windows
-    (`standards/10`), alors que le Python les écrit littéralement. Comparer les
-    deux formes sans les normaliser ferait échouer ce test sur une différence
-    d'écriture, pas de valeur.
+    Le front les écrit ainsi parce qu'un emoji hors BMP survit mal aux allers-retours
+    d'encodage sous Windows (`standards/10`), alors que le Python les écrit
+    littéralement. La lecture vit dans `aides_tables_front` (#2947).
     """
-    source = _FRONT.read_text(encoding="utf-8")
-    #  ⚠️ La borne est la ligne `};`, PAS la première accolade fermante : les
-    #  valeurs contiennent des échappements `\u{...}`, donc un `\{(.*?)\}` non
-    #  gourmand s'arrête au milieu de la première. Attrapé en exécutant ce test,
-    #  pas en le relisant — troisième motif d'extraction incapable de
-    #  correspondre dans la même journée (cf. `crontab_scripts`, et le `Z` ISO
-    #  du 11/08).
-    bloc = re.search(r"EVOLUTION_ICONE.*?=\s*\{(.*?)^\};", source, re.S | re.M)
-    assert bloc, (
-        "`EVOLUTION_ICONE` est introuvable dans evolutions.ts — ce test "
-        "surveillait une table qui n'existe plus, il ne surveillait donc rien."
-    )
-    table = {}
-    for cle, valeur in re.findall(r"(\w+)\s*:\s*'([^']*)'", bloc.group(1)):
-        table[cle] = decoder_js(valeur)
-    return table
+    return table_plate("evolutions.ts", "EVOLUTION_ICONE")
 
 
 def _icones_api() -> dict[str, str]:
@@ -125,3 +111,130 @@ def test_le_commentaire_porte_la_bulle():
     bulle = "💬"
     assert _icones_front().get("commentaire") == bulle
     assert _icones_api().get("commentaire") == bulle
+
+
+# ── Ce que l'API ÉCRIT, et ce que le front sait rendre (#2947) ─────────────────
+#
+# 🔴 Le test ci-dessus ne compare que les types présents DES DEUX CÔTÉS : un type
+# que l'API écrit et que le front ignore lui échappait. C'était le cas de
+# `relance` (repli silencieux sur l'icône du commentaire) et de `synthese` dans
+# `MOTIFS_EVOLUTION` (repli sur « Du nouveau ») — deux replis justes, mais que
+# rien n'avait décidés. Le socle, `standards/11` §13 : un contrat producteur ⇆
+# consommateur se contrôle dans les deux sens.
+#
+# Le producteur n'a pas de liste : les types sont des chaînes écrites à chaque
+# `TicketEvolution(type=…)`. Ces tests les énumèrent sur l'arbre de `app/`.
+
+#: Les écritures dont le type vient d'une VARIABLE, et la liste qui la borne.
+_TYPES_BORNES = {
+    #  `POST /tickets/{id}/evolutions` : `body.type`, refusé hors de `TYPES_SAISIS`.
+    "routers/tickets/evolutions.py": "TYPES_SAISIS",
+}
+
+#: Les types que l'API écrit et qu'`EVOLUTION_ICONE` ne porte pas — le repli, voulu.
+_SANS_ICONE_PROPRE = {
+    "relance": "une relance au syndic s'inscrit au fil comme une suite (« Relance "
+    "syndic n°N ») : la bulle du commentaire, par `evolutionIcone` (24/11/2026)",
+}
+
+#: Les types que l'API écrit et que `MOTIFS_EVOLUTION` ne porte pas.
+_SANS_MOTIF_PROPRE = {
+    "synthese": "le relevé du suivi ne liste que les affaires OUVERTES, et la synthèse "
+    "s'écrit à la clôture ; une affaire rouverte reçoit d'abord un changement d'état",
+}
+
+
+def _constantes_chaines() -> dict[str, str]:
+    """Les constantes `NOM = "valeur"` des modules de `app/` — pour `type=TYPE_SYNTHESE`."""
+    vues: dict[str, str] = {}
+    for m in modules_app(minimum=100):
+        for n in m.arbre.body:
+            if (
+                isinstance(n, ast.Assign)
+                and len(n.targets) == 1
+                and isinstance(n.targets[0], ast.Name)
+                and isinstance(n.value, ast.Constant)
+                and isinstance(n.value.value, str)
+            ):
+                vues[n.targets[0].id] = n.value.value
+    return vues
+
+
+def _types_produits() -> set[str]:
+    """Chaque type qu'une `TicketEvolution(type=…)` de `app/` peut écrire."""
+    constantes = _constantes_chaines()
+    produits: set[str] = set()
+    inconnus: list[str] = []
+
+    def lire(valeur: ast.expr, module: str, ligne: int) -> None:
+        if isinstance(valeur, ast.Constant) and isinstance(valeur.value, str):
+            produits.add(valeur.value)
+        elif isinstance(valeur, ast.IfExp):
+            lire(valeur.body, module, ligne)
+            lire(valeur.orelse, module, ligne)
+        elif isinstance(valeur, ast.Name) and valeur.id in constantes:
+            produits.add(constantes[valeur.id])
+        elif module in _TYPES_BORNES:
+            produits.update(getattr(evolutions, _TYPES_BORNES[module]))
+        else:
+            inconnus.append(f"{module}:{ligne} — {ast.unparse(valeur)}")
+
+    ecritures = 0
+    for m in modules_app(minimum=100):
+        for n in ast.walk(m.arbre):
+            if (
+                isinstance(n, ast.Call)
+                and isinstance(n.func, ast.Name)
+                and n.func.id == "TicketEvolution"
+            ):
+                for k in n.keywords:
+                    if k.arg == "type":
+                        ecritures += 1
+                        lire(k.value, m.rel, n.lineno)
+    assert ecritures >= 10, f"{ecritures} écriture(s) de `TicketEvolution(type=…)` : portée cassée."
+    assert not inconnus, (
+        "Un type d'évolution vient d'une expression que ce test ne sait pas borner :\n  "
+        + "\n  ".join(inconnus)
+        + "\nLe dire dans `_TYPES_BORNES`, avec la liste qui le borne."
+    )
+    return produits
+
+
+def _couverture(produits: set[str], front: dict[str, str], replis: dict[str, str]) -> list[str]:
+    """Les écarts entre ce qui est produit et ce que la table rend, replis compris."""
+    ecarts = []
+    if manquants := produits - set(front) - set(replis):
+        ecarts.append(f"produits sans entrée ni repli déclaré : {sorted(manquants)}")
+    if morts := set(front) - produits:
+        ecarts.append(f"entrées que l'API ne produit jamais : {sorted(morts)}")
+    if inutiles := set(replis) - (produits - set(front)):
+        ecarts.append(f"replis déclarés qui ne servent plus : {sorted(inutiles)}")
+    return ecarts
+
+
+def test_les_types_ecrits_par_l_api_sont_enumeres():
+    """Le témoin : les cinq types connus au 24/11/2026 sont vus — sinon l'énumération ment."""
+    assert {"commentaire", "etat", "reponse", "relance", "synthese"} <= _types_produits()
+
+
+def test_chaque_type_ecrit_a_son_icone_ou_son_repli_declare():
+    """Un type écrit par l'API sans icône prendrait la bulle sans que personne l'ait décidé."""
+    ecarts = _couverture(_types_produits(), _icones_front(), _SANS_ICONE_PROPRE)
+    assert not ecarts, (
+        "`EVOLUTION_ICONE` et les types que l'API écrit divergent — "
+        + " ; ".join(ecarts)
+        + ". Donner son icône au type, ou déclarer le repli dans `_SANS_ICONE_PROPRE`."
+    )
+
+
+def test_chaque_motif_du_releve_a_son_texte_ou_son_repli_declare():
+    """Un motif servi sans texte se lirait « Du nouveau » sans que personne l'ait décidé."""
+    produits = _types_produits() | {MOTIF_NOUVELLE}
+    ecarts = _couverture(
+        produits, table_plate("reporting.ts", "MOTIFS_EVOLUTION"), _SANS_MOTIF_PROPRE
+    )
+    assert not ecarts, (
+        "`MOTIFS_EVOLUTION` et les motifs que le relevé sert divergent — "
+        + " ; ".join(ecarts)
+        + ". Donner son texte au motif, ou déclarer le repli dans `_SANS_MOTIF_PROPRE`."
+    )

@@ -12,6 +12,7 @@
 	import EnteteAuthentification from '#lib/components/EnteteAuthentification.svelte';
 
 	import { SEPARATEUR } from '#lib/separateurs.ts';
+	import { LIBELLES_STATUT, STATUTS_INSCRIPTION } from '#lib/roles.ts';
 
 	const _siteNom = getSiteNom();
 
@@ -39,14 +40,7 @@
 	let success = false;
 	let loading = false;
 
-	const statuts = [
-		{ value: 'copropriétaire_résident', label: 'Copropriétaire résident' },
-		{ value: 'copropriétaire_bailleur', label: 'Copropriétaire bailleur' },
-		{ value: 'locataire', label: 'Locataire' },
-		{ value: 'syndic', label: 'Syndic' },
-		{ value: 'mandataire', label: 'Mandataire' },
-		{ value: 'aidant', label: 'Aidant (proche)' },
-	];
+	const statuts = STATUTS_INSCRIPTION.map((value) => ({ value, label: LIBELLES_STATUT[value] }));
 
 	$: isProfessional = statut === 'syndic' || statut === 'mandataire';
 	$: isAidant = statut === 'aidant';
