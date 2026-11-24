@@ -1,0 +1,68 @@
+name: Images avant fusion
+
+#  #2963 (23/11/2026) — les images du front, de Caddy et du bridge, construites dès
+#  la PR, sur les deux architectures qu'« Images » publie, sans rien pousser.
+#
+#  Pourquoi : `images.yml` ne construit qu'après la fusion dans `main`. Une montée
+#  proposée par Dependabot (image de base, verrou npm, chaîne Go de Caddy) qui
+#  cassait un Dockerfile passait toute la CI de la PR : l'image ne se publiait pas,
+#  et le nœud se rabattait sur la construction de secours. L'API a son propre
+#  workflow (`image-api.yml`, #2389), qui rejoue en plus la vérification HEIC.
+#
+#  Déclenché par ce qui change ces images : Dockerfile, verrou, contexte ignoré.
+#  🔒 api/tests/test_contexte_images.py : chaque Dockerfile publié par `images.yml`
+#  est construit par un workflow de PR qui suit son Dockerfile et son verrou.
+on:
+  pull_request:
+    branches: [dev, main]
+    paths:
+      - "front/Dockerfile"
+      - "front/.dockerignore"
+      - "front/package.json"
+      - "front/package-lock.json"
+      - "Dockerfile.caddy"
+      - "whatsapp-bridge/Dockerfile"
+      - "whatsapp-bridge/package.json"
+      - "whatsapp-bridge/package-lock.json"
+      - ".github/workflows/images-pr.yml"
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
+
+permissions: {}
+
+jobs:
+  construire:
+    name: Image ${{ matrix.service.nom }} (${{ matrix.plateforme }})
+    runs-on: ${{ matrix.plateforme == 'arm64' && 'ubuntu-24.04-arm' || 'ubuntu-24.04' }}
+    timeout-minutes: 30
+    permissions:
+      contents: read
+    strategy:
+      fail-fast: false
+      matrix:
+        plateforme: [amd64, arm64]
+        #  Les mêmes contextes et fichiers que la matrice d'« Images ».
+        service:
+          - { nom: front, contexte: front, fichier: front/Dockerfile }
+          - { nom: caddy, contexte: ., fichier: Dockerfile.caddy }
+          - { nom: whatsapp-bridge, contexte: whatsapp-bridge, fichier: whatsapp-bridge/Dockerfile }
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+
+      - uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4.4.1
+
+      - name: Construire, sans pousser
+        uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7.4.0
+        env:
+          BUILDKIT_PROGRESS: plain
+        with:
+          context: ${{ matrix.service.contexte }}
+          file: ${{ matrix.service.fichier }}
+          platforms: linux/${{ matrix.plateforme }}
+          push: false
