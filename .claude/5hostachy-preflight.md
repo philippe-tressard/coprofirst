@@ -28,8 +28,8 @@ UNE SEULE RÈGLE RAPPELÉE ICI — la seule dont la violation est IRRÉVERSIBLE 
     interdits — tous, y compris `docker compose` sans liste de services — y sont
     écrits une fois ; les relire avant tout geste sur un nœud ou sur la base.
 
-Les autres règles (INCONNU jamais OK, français exclusif, bump de version, PR
-dev→main) sont dans CLAUDE.md, déjà en contexte. Les recopier ici ne les a pas
+Les autres règles (INCONNU jamais OK, français exclusif, la version posée à la MEP
+par conduire-mep.sh et jamais dans un lot, PR dev→main) sont dans CLAUDE.md, déjà en contexte. Les recopier ici ne les a pas
 fait respecter — c'est mesuré, pas supposé.
 
 CONFORMITÉ : en tête de la 1ʳᵉ réponse impliquant du travail sur 5Hostachy,

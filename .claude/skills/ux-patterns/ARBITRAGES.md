@@ -635,7 +635,7 @@ vers un numéro absent, et un `lint:*` ou un fichier de test de « Tenu par » q
 
 ### n° 85 · en vigueur — Sur un fond sombre, le logo de sa variante sombre
 09/11/2026 (v3.77.0) · #2612 · non retrouvé · non écrit dans `SKILL.md`
-- **Décidé** : l'administration peut téléverser une seconde image, `site_logo_sombre` (`GET /config/logo?variante=sombre`), qui sert partout où le logo se pose sur un fond sombre — l'écran au thème sombre, l'en-tête des courriels, de la fiche arrivant et des affiches de hall, la page de garde et le menu du manuel ; l'onglet, l'icône de l'application et les rapports sur fond blanc gardent le logo. Sans aucun logo, le fond sombre reçoit le dessin neutre « Ivoire » ; un logo téléversé sans sa variante reste lui-même — on ne devine pas le dessin d'une résidence.
+- **Décidé** : l'administration peut téléverser une seconde image, `site_logo_sombre` (`GET /config/logo?variante=sombre`), qui sert partout où le logo se pose sur un fond sombre — l'écran au thème sombre, l'en-tête des courriels, de la fiche arrivant et des affiches de hall, la page de garde et le menu du manuel ; l'onglet, l'icône de l'application et les rapports sur fond blanc gardent le logo. Sans aucun logo, le fond sombre reçoit le dessin neutre « Ivoire » ; un logo téléversé sans sa variante reste lui-même — on ne devine pas le dessin d'une résidence. « Sans exception » : toute surface sombre nouvelle suit la même règle.
 - **Pourquoi** : un logo composé sur fond blanc porte ce fond avec lui ; au thème sombre, on voyait un cadre blanc.
 - **Écarté** : non dit.
 - **Tenu par** : aucun garde-fou nommé.
@@ -643,9 +643,9 @@ vers un numéro absent, et un `lint:*` ou un fichier de test de « Tenu par » q
 
 ### n° 86 · en vigueur — Télémétrie : « sans le gestionnaire », une case, et seulement si elle écarte quelque chose
 03/10/2026 · #1652 · non retrouvé · non écrit dans `SKILL.md`
-- **Décidé** : sur la rangée des vues de la télémétrie, une case à cocher « Sans le gestionnaire du site » écarte ses visites ; le serveur ne la propose que si elle écarte quelque chose (`filtrePropose`, `OngletTelemetrie.svelte`). Livré en v2.99.4, avec la fusion d'Indicateurs et Fréquentation.
+- **Décidé** : sur la rangée des vues de la télémétrie, une case à cocher « Sans le gestionnaire du site » écarte ses visites ; le serveur ne la propose que si elle écarte quelque chose (`filtre_gestionnaire.propose`, lu par `filtrePropose` dans `OngletTelemetrie.svelte`), sinon une ligne le dit (`gestionnaire_designe`) ; sur mobile, elle passe sous la rangée. « Indicateurs » et « Fréquentation » ne font qu'une section, dépliée à l'arrivée. Livré de v2.98.0 à v2.99.4.
 - **Pourquoi** : non retrouvé.
-- **Écarté** : non retrouvé (la forme écartée ne se lit pas dans le code).
+- **Écarté** : deux pastilles « avec / sans » sur la rangée (v2.98.0), remplacées par la case.
 - **Tenu par** : aucun garde-fou nommé.
 - **Historique** : entrée écrite le 23/11/2026 (#2980), d'après le composant.
 
