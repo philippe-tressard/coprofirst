@@ -318,7 +318,10 @@ def main():
         print(f"⚠ #{p['number']} ({p['headRefName']}) vise main sans être Dependabot : à regarder.")
     if '--fermer' in sys.argv:
         for p in cibles:
-            r = subprocess.run(['gh', 'pr', 'close', str(p['number']), '--comment', MOTIF_FERMETURE],
+            #  `--delete-branch` : `delete_branch_on_merge` ne vaut que pour une fusion — sans
+            #  lui, la branche de Dependabot survivait à sa PR (#2978).
+            r = subprocess.run(['gh', 'pr', 'close', str(p['number']), '--delete-branch',
+                                '--comment', MOTIF_FERMETURE],
                                capture_output=True, text=True, encoding='utf-8')
             print(f"#{p['number']} : {'fermée' if r.returncode == 0 else 'ÉCHEC — ' + r.stderr.strip()}")
     elif cibles:
