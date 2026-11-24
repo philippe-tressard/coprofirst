@@ -78,11 +78,13 @@ def test_la_bibliotheque_lit_l_etiquette_dans_le_fichier():
 
 
 def test_le_retirage_du_dimanche_la_nomme():
-    appel = re.search(r"^\s*rafraichir_images_de_base\s+(.+?)\s*$", MAINTENANCE.read_text("utf-8"), re.M)
+    appel = re.search(
+        r"^\s*rafraichir_images_de_base\s+(.+?)\s*$", MAINTENANCE.read_text("utf-8"), re.M
+    )
     assert appel, "plus d'appel à rafraichir_images_de_base dans maintenance.sh"
     res = _bash(
         f"REPO='{RACINE.as_posix()}'; source '{LIB_BASES.as_posix()}'; "
-        f"set -- {appel.group(1)}; images_de_base \"$@\""
+        f'set -- {appel.group(1)}; images_de_base "$@"'
     )
     assert res.returncode == 0, res.stderr
     assert _etiquette_declaree() in res.stdout.split(), (
