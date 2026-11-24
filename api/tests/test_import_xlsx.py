@@ -15,18 +15,15 @@ vides, doublons, noms exclus, accents, et la transaction validée.
 
 import io
 
+#  Un IMPORT, pas un `importorskip` (#2952) : openpyxl est épinglé dans
+#  `requirements.txt` ; s'il disparaît, ces tests doivent échouer, pas sauter.
+import openpyxl
 import pytest
 from sqlmodel import select
 
 from app.models.core import LotImport, TelecommandeImport, VigikImport
 from app.utils import import_lots, import_telecommandes, import_vigiks
 from app.utils.import_xlsx import normaliser
-
-openpyxl = pytest.importorskip(
-    "openpyxl",
-    reason="openpyxl est une dépendance de production (requirements.txt) ; "
-    "son absence rend ces tests INCONNUS, pas verts",
-)
 
 
 def _classeur(lignes: list[list]) -> bytes:

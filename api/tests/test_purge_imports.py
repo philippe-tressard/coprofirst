@@ -28,6 +28,9 @@ recopié la décision au lieu de la constater (`standards/04` §14).
 
 import io
 
+#  Un IMPORT, pas un `importorskip` (#2952) : une dépendance de production
+#  disparue fait échouer ces tests, pas sauter.
+import openpyxl
 import pytest
 from sqlmodel import select
 
@@ -39,12 +42,6 @@ from app.models.core import (
     VigikImport,
 )
 from app.utils import import_lots, import_telecommandes, import_vigiks
-
-openpyxl = pytest.importorskip(
-    "openpyxl",
-    reason="openpyxl est une dépendance de production ; son absence rend ces "
-    "tests INCONNUS, pas verts",
-)
 
 
 def _classeur(lignes: list[list]) -> bytes:

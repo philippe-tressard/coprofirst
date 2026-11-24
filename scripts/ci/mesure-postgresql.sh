@@ -13,6 +13,8 @@
 #    pytest à 0 → 0 ; un test en échec (1) → 1 ;
 #    toute autre fin (interrompu, erreur interne, usage, rien collecté) → ce
 #    code, parce qu'alors la suite n'a PAS tourné — INCONNU, jamais un vert.
+#  En CI (`CI` à 1/true/yes), un test SAUTÉ échoue aussi (`issue_sauts`, #2952) :
+#  le compte attendu y est zéro. Au poste, un saut d'environnement est légitime.
 #
 #  Parallèle par pytest-xdist (#2223), et non plus par tranches de fichiers : une
 #  tranche lente fixait la durée de toute l'étape, et la répartition changeait à
@@ -60,6 +62,20 @@ issue_suite() {
         [ "$rc" -gt "$pire" ] && pire=$rc
     done
     echo "$pire"
+}
+
+# ── PURE : le bilan de pytest et la CI → le code de sortie des sauts (#2952) ──
+#  Un test sauté est un test qui n'a rien mesuré : en CI, où tout est installé
+#  (WeasyPrint, bash, le front), aucun saut n'est légitime — le seul saut
+#  d'environnement que la CI tolérait déjà en échec, `exiger_weasyprint_en_ci`,
+#  en est le modèle. Le bilan seul est lu : un « N skipped » ; le compte de
+#  pytest fait foi, pas la liste des raisons. Hors CI → 0.
+#    $1 = ligne de bilan de pytest, $2 = valeur de `CI`
+issue_sauts() {
+    case "${2:-}" in 1|true|TRUE|True|yes) ;; *) echo 0; return ;; esac
+    local n
+    n=$(printf '%s' "${1:-}" | grep -oE '[0-9]+ skipped' | grep -oE '^[0-9]+')
+    [ "${n:-0}" -gt 0 ] && echo 1 || echo 0
 }
 
 # ── PURE : cœurs, connexions, table des verrous → nombre de workers ─────────
@@ -121,6 +137,12 @@ if [ "${1:-}" = "--selftest" ]; then
     t "table minuscule : jamais moins d'un worker"     "$(workers_suite 28 100 100)"  1
     t "table illisible : la valeur par défaut"         "$(workers_suite 28 100 x)"    12
     t "table absente : la valeur par défaut"           "$(workers_suite 28 100)"      12
+    #  #2952 : en CI, le compte attendu de tests sautés est ZÉRO.
+    t "CI, aucun saut"                   "$(issue_sauts "7545 passed, 735 warnings in 401.2s" true)" 0
+    t "CI, un saut : échec"              "$(issue_sauts "7544 passed, 1 skipped in 400s" true)" 1
+    t "CI, sauts et échecs"              "$(issue_sauts "3 failed, 7540 passed, 2 skipped" 1)" 1
+    t "poste : un saut d'environnement"  "$(issue_sauts "7540 passed, 5 skipped in 400s" "")" 0
+    t "CI, bilan illisible : rien conclu" "$(issue_sauts "" yes)" 0
     #  #2242 : l'assertion et la trace d'un test en échec sont gardées, pas son seul nom.
     rouge=$'.F.
 =========== FAILURES ===========
@@ -188,13 +210,15 @@ echo "Journal pytest : $journal"
 #  `random` réamorcé à chaque test rendrait le même numéro d'affaire à tous.
 python -m pytest tests -n "$WORKERS" --dist load \
     --randomly-seed="$GRAINE" --randomly-dont-reset-seed \
-    -q -p no:cacheprovider --tb=short -rfE -o faulthandler_timeout="$DELAI_PILE_S" > "$journal" 2>&1
+    -q -p no:cacheprovider --tb=short -rfEs -o faulthandler_timeout="$DELAI_PILE_S" > "$journal" 2>&1
 code=$?
 
 bilan=$(grep -hE "^[0-9]+ (passed|failed)|[0-9]+ (passed|failed|error)" "$journal" | tail -1)
 echo "$bilan"
 
 issue=$(issue_suite "$code")
+sauts=$(issue_sauts "$bilan" "${CI:-}")
+issue=$(issue_suite "$issue" "$sauts")
 resume="${GITHUB_STEP_SUMMARY:-/dev/null}"
 {
     echo "## La suite pytest sur PostgreSQL (#1747)"
@@ -214,6 +238,8 @@ resume="${GITHUB_STEP_SUMMARY:-/dev/null}"
 #  L'explication AVANT les noms : le rejeu garde cette sortie dans `rejeu-ci-echecs/` (#2242).
 [ "$code" -ne 0 ] && sections_echecs < "$journal"
 grep -E "^(FAILED|ERROR) " "$journal" | head -60
+#  `-rfEs` : chaque saut dit sa raison. En CI ils font échouer — les nommer.
+[ "$sauts" -ne 0 ] && { echo "Tests SAUTÉS en CI (#2952) — le compte attendu est zéro :"; grep -E "^SKIPPED " "$journal" | head -40; }
 #  Une suite qui n'a pas tourné montre sa fin : l'erreur de collecte ou
 #  d'interruption y est, et nulle part ailleurs.
 [ "$issue" -ge 2 ] && tail -40 "$journal"

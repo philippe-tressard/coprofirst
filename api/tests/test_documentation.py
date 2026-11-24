@@ -250,12 +250,14 @@ def test_blame_ignore_revs_ne_nomme_que_des_commits_de_l_historique():
         return subprocess.run(["git", "-C", str(_RACINE), *args], capture_output=True, text=True)
 
     peu_profond = git("rev-parse", "--is-shallow-repository")
-    if peu_profond.returncode != 0 or peu_profond.stdout.strip() != "false":
-        import pytest
-
-        pytest.skip(
-            "INCONNU : clone partiel ou sans git — l'appartenance à l'historique n'est pas mesurable ici"
-        )
+    #  ÉCHEC, plus un saut (#2952) : la CI clone en profondeur 1, et le rejeu ne joue
+    #  plus pytest — sauté, ce contrôle ne se serait mesuré NULLE PART. Le jour où le
+    #  fichier porte un SHA, le job qui joue la suite doit cloner l'historique.
+    assert peu_profond.returncode == 0 and peu_profond.stdout.strip() == "false", (
+        "INCONNU : clone partiel ou sans git — l'appartenance des SHA de "
+        "`.git-blame-ignore-revs` à l'historique n'est pas mesurable. Donner "
+        "`fetch-depth: 0` à l'`actions/checkout` du job qui joue la suite."
+    )
     absents = [s for s in shas if git("merge-base", "--is-ancestor", s, "HEAD").returncode != 0]
     assert not absents, (
         f"Ces commits ne sont pas dans l'historique de HEAD : {absents}. "
