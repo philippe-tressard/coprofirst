@@ -42,6 +42,7 @@ from app.utils.assiste_ia import (
 from app.utils.lecture import lire_objet
 from app.utils.lecture_pastille.modele import Lecture
 from app.utils.lecture_pastille.objets import lecture_du_ciblage
+from app.utils.masquage import auteur_servi
 from app.utils.nouveaute import est_nouveau
 from app.utils.recuperer import ou_404
 from app.utils.reponses import (
@@ -109,7 +110,9 @@ class IdeeRead(AssisteIASortie, AvecPerimetreLibelle):
     id: int
     titre: str
     description: str
-    auteur_id: Optional[int] = None  # compte supprimé (#1821)
+    #: Servi à l'auteur et à qui modère seulement, `None` sinon (et pour un compte
+    #: supprimé, #1821) : une idée ne dit pas son auteur (`masquage.auteur_servi`).
+    auteur_id: Optional[int] = None
     statut: str
     perimetre_cible: list[str] = []
     public_cible: list[str] = []
@@ -186,6 +189,7 @@ def _enrich(idees: list, user: Utilisateur, session: Session) -> list[dict]:
             archivee=est_archivable("idee", idee, seuil_jours=seuil_jours),
             reponses=reponses,
             nb_reponses=len(reponses),
+            auteur_id=auteur_servi(idee, user),
             nouveau=est_nouveau(idee.cree_le),
             peut_modifier=peut_editer(idee, user),
             peut_supprimer=user.has_role(RoleUtilisateur.admin),

@@ -195,6 +195,11 @@ def _admin_initial(session: Session) -> None:
             mot_de_passe_operateur,
         )
     )
+    #  Exception DÉCLARÉE à « jamais de mot de passe dans un journal » (#2973, arbitrée par
+    #  Philippe le 23/11/2026) : au premier démarrage seulement, dans le journal du conteneur
+    #  — la seule voie par laquelle l'installateur se connecte la première fois. Le
+    #  changement forcé à la première connexion est porté par #3019. Le libellé de cette
+    #  ligne est lu par `scripts/ci/essai-mise-a-jour.sh` et `tests/test_seed.py`.
     logging.getLogger("app.seed").warning(
         "\n"
         + "=" * 60

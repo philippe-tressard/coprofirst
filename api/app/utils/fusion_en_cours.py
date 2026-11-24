@@ -38,7 +38,7 @@ from typing import Iterable, Optional
 from fastapi import HTTPException
 from sqlmodel import Session, col, or_, select
 
-from app.auth.deps import est_moderateur
+from app.auth.deps import exiger_moderateur
 from app.models.affaires_liees import AffaireLiee
 from app.models.core import Utilisateur
 from app.models.tickets import Ticket, TicketEvolution
@@ -123,9 +123,8 @@ def absorbees_par(session: Session, ids: list[int]) -> dict[int, list[Ticket]]:
 # ── Les gestes ────────────────────────────────────────────────────────────
 
 
-def _exiger_conseil(lecteur: Utilisateur) -> None:
-    if not est_moderateur(lecteur):
-        raise HTTPException(403, "Seul le conseil syndical fusionne des affaires")
+#: Fusionner des affaires est un geste du conseil ou de l'admin.
+FUSIONNER = "Seul le conseil syndical fusionne des affaires"
 
 
 def affaires_du_groupe(
@@ -178,7 +177,7 @@ def fusionner(
     fusion refusée pour fuite de lecture (`utils/fusion_conciliation`)."""
     from app.utils.fusion_affaires import fusionner as absorber
 
-    _exiger_conseil(lecteur)
+    exiger_moderateur(lecteur, FUSIONNER)
     principale, *autres = affaires_du_groupe(session, ids, principale_id)
     restantes = {t.id for t in autres}
     absorbees: list[tuple[Ticket, str]] = []
@@ -214,7 +213,7 @@ def fusionner(
 def ecarter(session: Session, ids: list[int], lecteur: Utilisateur) -> list[Ticket]:
     """« Ne pas fusionner » : chaque lien entre ces affaires est écarté, et une
     Suite le dit dans chacune. Sans `commit`."""
-    _exiger_conseil(lecteur)
+    exiger_moderateur(lecteur, FUSIONNER)
     tickets = affaires_du_groupe(session, ids)
     maintenant = horloge.maintenant()
     for lg in _liens_entre(session, [t.id for t in tickets]):

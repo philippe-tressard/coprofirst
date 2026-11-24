@@ -27,7 +27,7 @@ from app.models.core import RoleUtilisateur
 from app.models.jetons import EmailVerificationToken, RefreshToken
 from tests.aides_base import compte, moteur_de_test
 
-CLE = "cle-de-test-des-purges"
+CLE = "cle-de-test-des-purges-de-trente-deux-caracteres"
 ROUTE = "/admin/maintenance/purges"
 
 
