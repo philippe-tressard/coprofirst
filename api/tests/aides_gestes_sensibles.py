@@ -35,6 +35,8 @@ GESTES_SENSIBLES = {
     ("routers/admin/utilisateurs.py", "ban_communaute"): "un bannissement",
     ("routers/auth.py", "refresh"): "un jeton de rafraîchissement rejoué — le seul "
     "signal d'un vol de session, et toutes les sessions du compte viennent de fermer",
+    ("routers/auth.py", "logout"): "une session fermée par son porteur, jetons d'accès "
+    "compris (23/11/2026) — la ligne qui date la fin d'une session",
     ("auth/appartenance.py", "exiger_lot_du_bailleur"): "un bail demandé sur le lot "
     "d'un autre — l'écran ne le propose pas, la requête a été forgée (#1535)",
     #  Le cycle de vie d'un compte (#1548, audit du 02/10/2026) : #1040 avait posé
