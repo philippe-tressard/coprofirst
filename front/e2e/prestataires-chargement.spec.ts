@@ -78,7 +78,7 @@ test('y venir d’un autre écran ne demande rien au serveur de pages', async ({
 	});
 	await expect(page.locator('#presta-1')).toBeVisible();
 	await page
-		.getByRole('tablist')
+		.getByRole('navigation', { name: 'Onglets' })
 		.getByRole('link', { name: /Contrats/ })
 		.click();
 	await expect(page.locator('#contrat-11')).toBeVisible();

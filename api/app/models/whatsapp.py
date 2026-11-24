@@ -42,6 +42,8 @@ class WhatsAppLog(SQLModel, table=True):
     scheduled_id: Optional[int] = Field(default=None, foreign_key="whatsapp_scheduled.id")
     label: str = ""
     message: str
-    statut: str = "envoyé"  # envoyé | échec
+    #  envoyé | échec | incertain | en cours — les constantes `STATUT_*` de
+    #  `utils/whatsapp`, seules écrites ici (🔒 `test_colonnes_etat_fermees.py`).
+    statut: str = "envoyé"
     erreur: Optional[str] = None
     envoye_le: NaiveDatetime = Field(default_factory=horloge.maintenant)

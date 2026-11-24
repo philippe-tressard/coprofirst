@@ -120,6 +120,19 @@ export const STATUTS_DEMANDABLES = [
 	'syndic',
 ] as const;
 
+/**  Les profils OFFERTS à l'inscription, dans l'ordre de la liste déroulante —
+ *   l'aidant compris (il s'inscrit pour un proche), jamais le compte technique.
+ *   Les libellés se lisent dans `LIBELLES_STATUT` : la page les recopiait (#2947,
+ *   🔒 `npm run lint:tables-statuts`, `check-vocabulaire-recopie.mjs`). */
+export const STATUTS_INSCRIPTION = [
+	'copropriétaire_résident',
+	'copropriétaire_bailleur',
+	'locataire',
+	'syndic',
+	'mandataire',
+	'aidant',
+] as const satisfies readonly (keyof typeof ATTRIBUTS_STATUT)[];
+
 /**
  *  Les statuts, ABRÉGÉS — pour un tableau dense (#828).
  *

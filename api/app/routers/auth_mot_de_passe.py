@@ -31,7 +31,7 @@ from app.auth.jwt import verify_password
 from app.database import get_session
 from app.models.core import PasswordResetToken, Utilisateur
 from app.utils.limiter import LIMITE_COURRIEL_DECLENCHE, LIMITE_SECRET_EPROUVE, limiter
-from app.utils.mots_de_passe import poser_mot_de_passe
+from app.utils.mots_de_passe import MOT_DE_PASSE_INCORRECT, poser_mot_de_passe
 from app.utils.mots_de_passe import verifier_robustesse as _check_password_strength
 from app.utils.liens import adresse_du_site, nom_site
 
@@ -61,7 +61,7 @@ def change_password(
     """
     if not verify_password(body.mot_de_passe_actuel, user.hashed_password or ""):
         journaliser_securite("connexion_refusee", cible_id=user.id, detail="mot de passe actuel")
-        raise HTTPException(400, "Mot de passe actuel incorrect.")
+        raise HTTPException(400, MOT_DE_PASSE_INCORRECT)
     poser_mot_de_passe(session, user, body.nouveau_mot_de_passe, jeton_courant=refresh_token)
     #  Acteur ET cible : on agit sur soi-même, et la ligne le dit sans cas
     #  particulier chez l'appelant.

@@ -9,10 +9,10 @@ build/
 venv/
 env/
 *.env
-!env.example
-!_template.env
 
-# Fichiers de donnees locaux (ne pas versionner)
+# Copies de base locales (ne pas versionner). Le moteur qui écrivait ces fichiers
+# est retiré (PostgreSQL seul) ; la règle reste pour une copie d'incident ou une
+# vieille base de poste, qui porterait des données personnelles (C34, #1592, #2979).
 *.db
 
 # Secrets & config locaux
@@ -76,5 +76,6 @@ _fix*.py
 fix*.py
 
 # Donnees d'import (contiennent potentiellement des donnees personnelles)
-import-data/*.xlsx
-import-data/*.csv
+#  Le dossier entier, hors dépôt (`specs/architecture/mode-demo.md`) : deux
+#  extensions seulement laissaient passer un .xls, un .ods ou un export (#2979).
+import-data/

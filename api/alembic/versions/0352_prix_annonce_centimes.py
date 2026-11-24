@@ -21,8 +21,8 @@ from alembic import op
 
 from app.utils.colonnes_presentes import colonnes_presentes
 
-revision = "0351"
-down_revision = "0350"
+revision = "0352"
+down_revision = "0351"
 branch_labels = None
 depends_on = None
 

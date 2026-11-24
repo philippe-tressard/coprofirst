@@ -174,6 +174,14 @@ class ReponseIllisible(ValueError):
     """Le modèle n'a pas rendu le JSON attendu — l'appelant en fait une `ErreurLLM`."""
 
 
+#: Ce que dit l'écran d'une `ReponseIllisible` changée en `ErreurLLM` — écrit une
+#: fois (#2949) : quatre usages le recopiaient (description, fusion, résumé, tarif).
+FORMAT_INATTENDU = "Le modèle n'a pas répondu dans le format attendu — réessayez."
+#: Le même constat quand le détail de la lecture est montré (règlement, synthèse) :
+#: `f"{ILLISIBLE} : {exc}"`.
+ILLISIBLE = "Réponse de l'assistant illisible"
+
+
 def lire_objet(texte: str) -> dict:
     """L'objet JSON que le modèle a rendu — sans rien présumer de ses clés.
 

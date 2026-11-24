@@ -258,7 +258,7 @@ const REPONSES_PAR_DEFAUT: Record<string, unknown> = {
 	//  `JournalEnvoiWhatsApp[]`, `MessagePlanifieWhatsApp[]` : l'onglet WhatsApp.
 	'/api/config/whatsapp-logs': [],
 	'/api/config/whatsapp-scheduled': [],
-	//  `JournalCourriels` : Espace CS › Courriels (#1447).
+	//  `JournalCourriels` : Espace CS › Courriels affaires (#1447).
 	'/api/courriels-affaires': { limite: 20, messages: [] },
 	//  `PropositionsLocation` : « Mes lots » d'un locataire lit ses trois listes.
 	'/api/lots/ma-location/propositions': {

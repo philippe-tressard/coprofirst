@@ -28,7 +28,7 @@ from fastapi import HTTPException
 from sqlmodel import Session
 
 from app.models.reglement import QuestionReglement
-from app.utils.description_format import ReponseIllisible
+from app.utils.description_format import ILLISIBLE, ReponseIllisible
 from app.utils.question_reglement.extraits import en_json, verifier
 from app.utils.question_reglement.format import (
     MAX_CARACTERES_QUESTION,
@@ -92,7 +92,7 @@ async def repondre(session: Session, question: str, auteur_id: Optional[int]) ->
     except ErreurLLM as exc:
         raise HTTPException(400, str(exc))
     except ReponseIllisible as exc:
-        raise HTTPException(400, f"Réponse de l'assistant illisible : {exc}")
+        raise HTTPException(400, f"{ILLISIBLE} : {exc}")
 
     extraits = verifier(texte.contenu, lu["extraits"], texte.debut_ag)
     version = enregistrer_version(session, texte)

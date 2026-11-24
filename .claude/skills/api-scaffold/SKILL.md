@@ -74,7 +74,10 @@ ne charge pas.
 - `__tablename__` = snake_case français ; champs en français snake_case
 - Timestamps : suffixe `_le` → `cree_le`, `mis_a_jour_le`
 - FK : `{modele}_id = Field(default=None, foreign_key="table.id")`
-- Enums : `class MonEnum(str, Enum)` → slugs français lowercase
+- Enums : `class MonEnum(str, Enum)` → slugs français lowercase. Une colonne d'état
+  (`statut`, `etat`, `statut_*`) en texte déclare ses valeurs, lues dans le code, dans
+  `VALEURS_ADMISES` ; les états au vocabulaire en commentaire sont figés (`ETATS_LIBRES`,
+  qui ne fait que baisser) — 🔒 `test_colonnes_etat_fermees.py` (#2954)
 - JSON stocké en `str` → parsé par `@field_validator` dans le schéma Read
 - 🔴 **Pas de colonne `actif` par réflexe.** Un objet qui doit quitter les listes
   se déclare dans `utils/archivage.REGLES` — la règle unique, testée contre les

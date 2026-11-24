@@ -178,6 +178,19 @@ export function fmtJourCourt(d: string | null | undefined, semaine = true): stri
 	});
 }
 
+/**
+ * "5/12" — le jour et le mois en chiffres, sans zéro de tête : l'étiquette d'une frise
+ * étroite (`VueRenouvellementsContrats`). Le jour de Paris, comme tout ce module : la
+ * frise recomposait `getDate()` et `getMonth()`, dans le fuseau de l'appareil (#2944).
+ */
+export function fmtJourMoisChiffres(d: string | Date | null | undefined): string {
+	if (!d) return '—';
+	const date = new Date(d);
+	const jour = date.toLocaleDateString(LOCALE, { day: 'numeric', timeZone: TZ });
+	const mois = date.toLocaleDateString(LOCALE, { month: 'numeric', timeZone: TZ });
+	return `${jour}/${mois}`;
+}
+
 /** "2 avril" (jour + mois long, sans année) */
 export function fmtDayMonth(d: string | null | undefined): string {
 	if (!d) return '—';

@@ -280,8 +280,8 @@
 			135deg,
 			transparent 0,
 			transparent 5px,
-			rgba(255, 255, 255, 0.28) 5px,
-			rgba(255, 255, 255, 0.28) 10px
+			var(--color-hachure-sur-plein) 5px,
+			var(--color-hachure-sur-plein) 10px
 		);
 		border-style: dashed;
 		/*  Un trait BLANC sur l'aplat : `--color-sur-plein`, jamais la surface —

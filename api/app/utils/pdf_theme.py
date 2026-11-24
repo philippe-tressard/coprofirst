@@ -32,6 +32,21 @@ PALETTE_CSS = """\
 }
 """
 
+#: La remise à zéro des documents imprimables : marges et boîtes (#2949 — l'affiche
+#: de hall et la fiche d'arrivée l'écrivaient chacune).
+REMISE_A_ZERO_CSS = "* { box-sizing: border-box; margin: 0; padding: 0; }\n"
+
+
+def document_html(titre: str, css: str, corps: str) -> str:
+    """PURE. Le squelette d'un document imprimable autonome — CSS en ligne, rien à
+    récupérer. Écrit une fois (#2949) : le compte rendu d'un point conseil et le
+    rapport du suivi des affaires le recopiaient."""
+    return (
+        f"<!doctype html><html lang='fr'><head><meta charset='utf-8'><title>{titre}</title>"
+        f"<style>{css}</style></head><body>{corps}</body></html>"
+    )
+
+
 FONT_SERIF = "Georgia, 'Palatino Linotype', 'Book Antiqua', Palatino, serif"
 FONT_SANS = (
     "'Segoe UI', -apple-system, BlinkMacSystemFont, Roboto, 'Helvetica Neue', Arial, sans-serif"

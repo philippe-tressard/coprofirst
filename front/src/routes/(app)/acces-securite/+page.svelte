@@ -20,6 +20,7 @@
 	import { goto } from '$app/navigation';
 	import { onMount } from 'svelte';
 	import { routeOnglet } from '#lib/routes-onglets.ts';
+	import EtatListe from '#lib/components/EtatListe.svelte';
 
 	onMount(() => {
 		//  La cible vient de la TABLE, jamais écrite ici : `lint:pages` refuse une
@@ -28,4 +29,4 @@
 	});
 </script>
 
-<p class="muted">Redirection vers vos accès…</p>
+<EtatListe chargement messageChargement="Redirection vers vos accès…" />

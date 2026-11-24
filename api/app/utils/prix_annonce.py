@@ -1,7 +1,7 @@
 """Le prix d'une petite annonce, en centimes entiers — expansion de #3011.
 
 `PetiteAnnonce.prix` était la seule colonne monétaire en flottant du dépôt (socle
-06 §7). La migration 0351 ajoute `prix_centimes` et la remplit ; ce module est la
+06 §7). La migration 0352 ajoute `prix_centimes` et la remplit ; ce module est la
 SEULE écriture et la seule lecture du prix, pour la durée de l'expansion :
 
 - **écrire** (`poser_prix`) pose les DEUX colonnes, du même montant : la version

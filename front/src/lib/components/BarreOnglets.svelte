@@ -137,7 +137,11 @@
 		{/each}
 	</nav>
 {/if}
-<div class="tabs" role="tablist" aria-label={groupes.length > 1 ? groupeActif?.nom : undefined}>
+<!--  Une rangée de LIENS, donc une navigation (#2943) : elle portait `role="tablist"`
+      sans un seul `role="tab"`, et l'onglet actif ne se disait que par sa couleur.
+      Le `<nav>` est nommé — le groupe ouvert, sinon « Onglets » — pour ne pas se
+      confondre avec le menu, et c'est `Onglet` qui pose `aria-current="page"`. -->
+<nav class="tabs" aria-label={groupes.length > 1 ? groupeActif?.nom : 'Onglets'}>
 	{#each rangee as o (o.id)}
 		<Onglet
 			href={o.route}
@@ -148,7 +152,7 @@
 			{libelle(o)}
 		</Onglet>
 	{/each}
-</div>
+</nav>
 {#if descriptif}
 	<p class="tab-descriptif">{@html safeHtml(descriptif)}</p>
 {/if}

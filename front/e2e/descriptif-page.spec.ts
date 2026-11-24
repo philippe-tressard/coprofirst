@@ -24,11 +24,11 @@ test('Résidence : le descriptif partagé par la page et l’onglet ne s’affic
 	);
 	await page.goto('/residence');
 	//  Cas zéro : l'écran est bien rendu, onglets compris.
-	await expect(page.getByRole('tablist')).toBeVisible();
+	await expect(page.getByRole('navigation', { name: 'Onglets' })).toBeVisible();
 	await expect(page.getByText(PHRASE_RESIDENCE, { exact: true })).toHaveCount(1);
 	//  … et au-dessus des onglets, comme sur tous les autres écrans.
 	const phrase = await page.getByText(PHRASE_RESIDENCE, { exact: true }).boundingBox();
-	const onglets = await page.getByRole('tablist').boundingBox();
+	const onglets = await page.getByRole('navigation', { name: 'Onglets' }).boundingBox();
 	expect(phrase!.y, 'le descriptif de page passe sous les onglets').toBeLessThan(onglets!.y);
 });
 

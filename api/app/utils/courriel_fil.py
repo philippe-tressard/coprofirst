@@ -43,7 +43,7 @@ import hashlib
 import re
 import unicodedata
 from dataclasses import dataclass
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timedelta
 
 from app.utils.courriel_decodage import (
     CLE_ENTETE,
@@ -56,7 +56,7 @@ from app.utils.courriel_decodage import (
     sans_chevrons,
     valeur_d_entete,
 )
-from app.utils.horloge import TZ_PARIS
+from app.utils import horloge
 
 
 class FilIllisible(ValueError):
@@ -177,7 +177,7 @@ def date_citee(texte: str) -> datetime | None:
         nomme = _FUSEAU_NOMME.search(texte, h.end())
         if nomme and nomme[1] in _UNIVERSELS:
             return locale
-        return locale.replace(tzinfo=TZ_PARIS).astimezone(timezone.utc).replace(tzinfo=None)
+        return horloge.de_paris(locale)
     signe, heures, minutes = (f[1], f[2], f[3]) if f[1] else (f[4], f[5], f[6])
     decalage = timedelta(hours=int(heures), minutes=int(minutes or 0))
     return locale - decalage if signe == "+" else locale + decalage

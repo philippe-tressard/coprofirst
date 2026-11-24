@@ -30,7 +30,13 @@ seule page, jamais à l'écran.
 
 from __future__ import annotations
 
-from app.utils.pdf_theme import FONT_LISIBLE, FONT_SERIF, PALETTE_CSS, regle_page
+from app.utils.pdf_theme import (
+    FONT_LISIBLE,
+    FONT_SERIF,
+    PALETTE_CSS,
+    REMISE_A_ZERO_CSS,
+    regle_page,
+)
 
 
 CSS = (
@@ -44,8 +50,8 @@ CSS = (
 }
 """
     + PALETTE_CSS
+    + REMISE_A_ZERO_CSS
     + """\
-* { box-sizing: border-box; margin: 0; padding: 0; }
 body {
   font-family: """
     + FONT_LISIBLE

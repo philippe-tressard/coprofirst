@@ -58,7 +58,7 @@
 		password: '',
 		dossier: 'INBOX',
 		plancher: '2026-09-02',
-		//  Combien de messages l'onglet Espace CS › Courriels en montre (20 par défaut).
+		//  Combien de messages l'onglet Espace CS › Courriels affaires en montre (20 par défaut).
 		affiches: 20 as number | null,
 		//  `domaine = signataire`, une par ligne (#2554) — `utils/courriel_delegation`.
 		delegues: '',
@@ -201,7 +201,7 @@
 				<span class="aide"> Évite de rejouer d'anciens messages à la première relève. </span>
 			</label>
 			<label class="field champ-court">
-				Messages affichés dans Espace CS › Courriels
+				Messages affichés dans Espace CS › Courriels affaires
 				<input type="number" bind:value={imapConfig.affiches} min="1" max="100" placeholder="20" />
 				<span class="aide">Les plus récents ; de 1 à 100.</span>
 			</label>

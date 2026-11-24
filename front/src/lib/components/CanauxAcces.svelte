@@ -17,7 +17,7 @@
 	import PanneauTelemetrie from '#lib/components/PanneauTelemetrie.svelte';
 	import type { PartCanal } from '#lib/api/index.ts';
 	import { basculer } from '#lib/accordeon.ts';
-	import { fmtNombre } from '#lib/utils.ts';
+	import { fmtNombre, fmtPourcent } from '#lib/utils.ts';
 
 	export let canaux: PartCanal[] = [];
 
@@ -62,7 +62,7 @@
 								{/if}
 							</td>
 							<td class="nombre">{fmtNombre(c.vues)}</td>
-							<td class="nombre">{fmtNombre(c.part)} %</td>
+							<td class="nombre">{fmtPourcent(c.part)}</td>
 							{#if avecVisiteurs}
 								<td class="nombre">{c.visiteurs == null ? '—' : fmtNombre(c.visiteurs)}</td>
 							{/if}
@@ -75,7 +75,7 @@
 								>
 									<td>{a.libelle}</td>
 									<td class="nombre">{fmtNombre(a.vues)}</td>
-									<td class="nombre">{fmtNombre(a.part)} % du canal</td>
+									<td class="nombre">{fmtPourcent(a.part)} du canal</td>
 									{#if avecVisiteurs}<td class="nombre"></td>{/if}
 								</tr>
 							{/each}

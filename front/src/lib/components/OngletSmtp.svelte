@@ -295,14 +295,14 @@
 	/>
 
 	<!--  Ce que la relève a fait de chaque message, et pourquoi (#1447) : depuis le
-	      05/10/2026 le journal se lit dans Espace CS › Courriels, où le conseil qui
+	      05/10/2026 le journal se lit dans Espace CS › Courriels affaires, où le conseil qui
 	      transfère les messages le voit — il était réservé à cet écran-ci. -->
 	<SectionFormulaire icone="clipboard-list" titre="Messages relevés">
 		<p class="aide largeur-saisie">
 			Ce que la relève a fait de chaque message{SEPARATEUR.tiret}ajouté à une affaire, refusé ou
 			ignoré, et pourquoi{SEPARATEUR.tiret}se lit dans
-			<a href="/espace-cs/courriels">Espace CS › Courriels</a>. Le nombre de messages affichés se
-			règle ci-dessus.
+			<a href="/espace-cs/courriels">Espace CS › Courriels affaires</a>. Le nombre de messages
+			affichés se règle ci-dessus.
 		</p>
 	</SectionFormulaire>
 

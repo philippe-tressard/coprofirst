@@ -25,14 +25,13 @@ d'autre : l'écran le dit, au lieu d'une erreur.
 
 from __future__ import annotations
 
-import logging
 from collections.abc import Iterator
 from contextlib import contextmanager
 from datetime import datetime
 from typing import Literal, Optional
 
 from fastapi import APIRouter, Depends, HTTPException
-from pydantic import BaseModel, Field, ValidationError
+from pydantic import BaseModel, Field
 from sqlmodel import Session, func, select
 
 from app.auth.deps import require_operateur
@@ -40,6 +39,7 @@ from app.models.core import Utilisateur
 from app.registre import alertes as registre_alertes
 from app.registre import base, canaux, conservation, decisions
 from app.registre.contrat import Rapport
+from app.registre.rapports import relire
 from app.registre.versions import versions_proposees
 from app.registre.modeles import (
     AcceptationConditions,
@@ -54,8 +54,6 @@ from app.utils.lecture import lire_objet
 from app.utils.noms import nom_affiche
 from app.utils.recuperer import present_ou_404
 from app.utils.services import SERVICES, SERVICES_AUTORISABLES
-
-logger = logging.getLogger("hostachy.registre")
 
 router = APIRouter()
 
@@ -242,17 +240,6 @@ def _resume(
     )
 
 
-def _lire_rapport(ligne: Optional[RapportInstallation]) -> Optional[Rapport]:
-    """Le dernier rapport, relu contre le contrat — illisible, il se tait et se journalise."""
-    if ligne is None:
-        return None
-    try:
-        return Rapport.model_validate_json(ligne.corps)
-    except ValidationError:
-        logger.warning("registre : rapport %s illisible au contrat en vigueur", ligne.id)
-        return None
-
-
 def _accordables() -> list[ServiceAccordable]:
     return [ServiceAccordable(code=c, libelle=SERVICES[c].libelle) for c in SERVICES_AUTORISABLES]
 
@@ -374,7 +361,7 @@ def _fiche(session: Session, inst: Installation) -> FicheInstallation:
         contact=ContactLu.model_validate(contact) if contact else None,
         contrats=[ContratAccepte.model_validate(c) for c in contrats],
         decisions=[DecisionLue.model_validate(d) for d in journal],
-        dernier_rapport=_lire_rapport(rapport),
+        dernier_rapport=relire(rapport),
         gestes_possibles=decisions.gestes_possibles(inst),
         services_modifiables=decisions.decidable(inst),
     )

@@ -34,6 +34,7 @@
 	import { createEventDispatcher } from 'svelte';
 	import Icon from '#lib/components/Icon.svelte';
 	import EncartAvertissement from '#lib/components/EncartAvertissement.svelte';
+	import EtatListe from '#lib/components/EtatListe.svelte';
 	import type { ApercuDiffusion } from '#lib/api/index.ts';
 	import { SEPARATEUR } from '#lib/separateurs.ts';
 
@@ -64,7 +65,7 @@
 	<p class="apercu-intro">Voici ce qui partira, tel que les destinataires le recevront.</p>
 
 	{#if chargement}
-		<p class="apercu-attente">Composition du message…</p>
+		<EtatListe chargement messageChargement="Composition du message…" />
 	{:else if canaux.length === 0}
 		<div class="empty-state">
 			<h3>Aucun canal de diffusion coché</h3>
@@ -205,10 +206,6 @@
 		font-size: var(--fs-base);
 		color: var(--color-text-muted);
 		margin: 0 0 1rem;
-	}
-	.apercu-attente {
-		color: var(--color-text-muted);
-		font-size: var(--fs-base);
 	}
 	/*  L'émoji d'en-tête d'un canal, aligné sur l'icône SVG du canal voisin.
 	    Défini ICI : `.ico` n'est pas une classe d'`app.css`, et chaque composant

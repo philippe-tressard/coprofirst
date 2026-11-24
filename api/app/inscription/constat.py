@@ -27,7 +27,7 @@ sans réseau ni disque, cas par cas (`tests/test_inscription_constat.py`).
 from __future__ import annotations
 
 from dataclasses import dataclass
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timedelta
 from typing import Optional
 
 from pydantic import ValidationError
@@ -107,13 +107,6 @@ def bail_valide(
     return signe, ""
 
 
-def _utc_naif(instant: datetime) -> datetime:
-    """L'instant en UTC NAÏF, comme `horloge.maintenant()` — le bail les porte conscients."""
-    if instant.tzinfo is None:
-        return instant
-    return instant.astimezone(timezone.utc).replace(tzinfo=None)
-
-
 def _en_retard(etat: EtatLocal, maintenant: datetime) -> bool:
     if not etat.dernier_renouvellement_le:
         return etat.identifiant is not None
@@ -150,7 +143,7 @@ def constater(
     if signe is None:
         return Constat(LIMITEE, raison, etat.identifiant, renouvellement_en_retard=retard)
     bail = signe.bail
-    echeance = _utc_naif(bail.echeance)
+    echeance = horloge.utc_naif(bail.echeance)  # le bail porte des instants conscients
     commun = dict(
         identifiant=bail.identifiant,
         canal=bail.canal,

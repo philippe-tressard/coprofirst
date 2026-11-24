@@ -25,14 +25,13 @@ from dataclasses import dataclass
 from datetime import datetime
 from typing import Any, Optional
 
-from fastapi import HTTPException
 from sqlmodel import Session, select
 
 from app.auth.deps import est_moderateur
 from app.models.core import STATUTS_TICKET_CLOS, Ticket, TicketEvolution, Utilisateur
 from app.utils import horloge
 from app.utils.etat_affaire import libelle_etat
-from app.utils.evolutions import TYPES_SAISIS
+from app.utils.evolutions import exiger_saisie_valide
 from app.utils.intervenant import appliquer_intervenant
 from app.utils.nature_affaire import est_actualite
 from app.utils import suivi_actualite
@@ -174,11 +173,8 @@ def corriger_suivi(
     `None` quand le Suivi ne change pas ; sinon, ce que l'affaire en a fait —
     🔴 jamais un écrasement silencieux, ni un refus silencieux (#2715).
     """
-    if body.type not in TYPES_SAISIS:
-        raise HTTPException(422, "Type invalide (commentaire ou etat)")
+    exiger_saisie_valide(body.type, body.nouveau_statut)
     if body.type == "etat":
-        if not body.nouveau_statut:
-            raise HTTPException(422, "nouveau_statut requis pour un changement d'état")
         suivi_actualite.refuser_etat(ticket, body.nouveau_statut, est_cs=est_moderateur(user))
     fil = session.exec(
         select(TicketEvolution)

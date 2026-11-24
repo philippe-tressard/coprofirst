@@ -162,10 +162,10 @@ def selftest():
         return '\t'.join([date, rejeu, 'abc1234', 'wt', job, etape, str(duree), verdict, str(fin)])
 
     journal = [
-        ligne('r1', 'test-backend', 'Run pytest', 1500, 'OK', 1600),
+        ligne('r1', 'test-backend', 'Lancer pytest', 1500, 'OK', 1600),
         ligne('r1', 'test-scripts', 'Modularité', 30, 'FAIL', 40),
         ligne('r1', BILAN, 'complet', 1600, 'ROUGE', 1600),
-        ligne('r2', 'test-backend', 'Run pytest', 900, 'OK', 950),
+        ligne('r2', 'test-backend', 'Lancer pytest', 900, 'OK', 950),
         ligne('r2', 'test-scripts', 'Modularité', 20, 'OK', 30),
         ligne('r2', 'build-frontend', 'npm absent', 0, 'INCONNU', 1),
         ligne('r2', BILAN, 'complet', 1000, 'VERT', 1000),
@@ -177,7 +177,7 @@ def selftest():
     cas('part non verte : le rouge et le rejeu SANS BILAN', part_non_verte(rejeux), (1606, 2606))
     cas('sans bilan : verdict dit, durée = dernière fin', verdict_et_duree(rejeux['r3']), ('SANS BILAN', 6))
     top = etapes_les_plus_longues(rejeux)
-    cas('le plus long en tête, médiane de deux mesures', top[0][:5], ('test-backend', 'Run pytest', 1200, 1500, 2))
+    cas('le plus long en tête, médiane de deux mesures', top[0][:5], ('test-backend', 'Lancer pytest', 1200, 1500, 2))
     cas('un INCONNU ne compte pas parmi les durées', [t[1] for t in top].count('npm absent'), 0)
     cas('premier rouge en minutes', premier_rouge(rejeux['r1']), 0.7)
     cas('aucun rouge : None', premier_rouge(rejeux['r2']), None)

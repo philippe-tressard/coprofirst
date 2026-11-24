@@ -18,6 +18,10 @@ from fastapi import HTTPException
 #: à celle-ci par `tests/test_longueur_mot_de_passe_front.py` (#2763).
 LONGUEUR_MIN_MOT_DE_PASSE = 8
 
+#: Le refus d'un mot de passe actuel faux — changer son mot de passe, changer son
+#: adresse : la même épreuve, le même message (#2949).
+MOT_DE_PASSE_INCORRECT = "Mot de passe actuel incorrect."
+
 
 def verifier_robustesse(password: str) -> None:
     """Vérifie la complexité du mot de passe. Lève HTTPException 400 si les critères ne sont pas satisfaits."""
