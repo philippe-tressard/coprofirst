@@ -34,6 +34,7 @@ from sqlmodel import func, select
 from app import contexte
 from app.config import get_settings
 from app.inscription import depot
+from app.registre.canaux import CANAL_URGENCE
 from app.registre.contrat import (
     ISSUES_MISE_A_JOUR,
     VERSION_CONTRAT,
@@ -244,7 +245,7 @@ def construire() -> Rapport:
         version_contrat=VERSION_CONTRAT,
         identite=Identite(
             identifiant=identifiant,
-            canal=bail.get("canal") or "replica",
+            canal=bail.get("canal") or CANAL_URGENCE,  # le défaut du registre (#3009)
             version_logicielle=installation.version_logicielle(),
             derniere_mise_a_jour=_la_plus_grave(issues),
             correctifs_systeme=_pire_correctifs(correctifs),

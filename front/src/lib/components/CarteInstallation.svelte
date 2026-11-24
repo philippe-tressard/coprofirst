@@ -3,7 +3,8 @@
   installation dans la distribution CoproFirst, et l'écart de sa version.
 
   Exigence de l'auteur, 08/10/2026 : « savoir si l'instance est le master
-  (git => main) ou une réplique (git => replica) ».
+  (git => main) ou une réplique ». Une réplique suit la version que son bail lui
+  fait installer (le tag `vX.Y.Z`, #3009) — la branche `replica` est retirée.
 
   - Le rôle vient du SERVEUR (`ROLE_INSTALLATION`), jamais d'une déduction de
     l'écran : un rôle absent s'affiche « Inconnu », jamais « Référence ».

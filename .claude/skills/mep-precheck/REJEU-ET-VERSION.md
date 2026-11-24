@@ -1,4 +1,4 @@
-# mep-precheck — Le rejeu de la CI en détail, version, images publiées, réplique et promotion
+# mep-precheck — Le rejeu de la CI en détail, version, images publiées, réplique et bail
 
 Annexe de `SKILL.md`, chargée à la demande (#2910) : le sommaire est dans `SKILL.md`.
 Les titres et numéros de section sont ceux de toujours : un renvoi se lit au sommaire.
@@ -111,13 +111,10 @@ Ce que le point 16 ci-dessus ne dit pas, et qui sert quand un rejeu ou un job d�
   (release + archive, job `publier-version`) et la purge nocturne retire ce que plus aucune
   vague ne sert (`purge-paquets.yml`, règle de `python3 -I api/app/registre/versions.py
   garder`).
-- **`replica` et la promotion** (#1754) : le workflow « Promotion », lancé par l'auteur (`gh
-  workflow run promotion.yml -f version=X.Y.Z`), avance `replica` vers le tag et publie les
-  notes de version ; `replica` n'a aucun commit propre. Verrouillé par les règles du dépôt :
-  `replica` ni supprimée ni réécrite de force, un tag `v*` ni déplacé ni supprimé. Le geste
-  refuse une version de moins de 7 jours (`RODAGE_JOURS`, `scripts/ci/promotion.sh`) et toute
-  promotion tant qu'une issue `bloque-promotion` est ouverte, sauf `-f urgence=true`. Seule une
-  X.0.0 part seule, la nuit, à J+7. Règles : spec §4.10, règle 5 (#1934).
+- **La branche `replica` et la promotion sont retirées** (#3009, 24/11/2026) : aucune
+  installation ne les lisait plus depuis #2210. Un tag `v*` reste ni déplacé ni supprimé
+  (règle du dépôt) ; les notes de version partent avec chaque tag (`publier-version`).
+  🔒 `test_replica_retiree.py`.
 - **Une réplique s'installe par `deploiement/standard/`** (#1755) : la surcouche
   `compose.images.yml` (`build: !reset`, image publiée à `COPROFIRST_VERSION`) se pose sur le
   `docker-compose.yml` de la racine, seule description des

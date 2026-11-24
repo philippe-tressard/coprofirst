@@ -6,7 +6,7 @@
  *  confondre :
  *  - la référence, service coupé : « Référence — suit main », et « Non vérifié »,
  *    jamais « À jour » — avec où s'active la vérification ;
- *  - une réplique en retard : le retard se dit, sur `replica` ;
+ *  - une réplique en retard : le retard se dit, sur la version de son bail (#3009) ;
  *  - un rôle non déclaré : « Inconnu », jamais « Référence », et ce qu'il manque.
  */
 import { expect, MEMBRE_CS, simulerApi, test } from './aides';
@@ -61,19 +61,21 @@ test('Installation : la référence, vérification coupée, ne se dit jamais « 
 	await carte.screenshot({ path: `test-results/installation-${test.info().project.name}.png` });
 });
 
-test('Installation : une réplique en retard le dit, sur replica', async ({ page }) => {
+test('Installation : une réplique en retard le dit, sur la version de son bail', async ({
+	page,
+}) => {
 	const carte = await ouvrir(page, {
 		...BASE,
 		role: 'replique',
 		libelle: 'Réplique',
-		branche: 'replica',
+		branche: 'v3.124.1',
 		verification_active: true,
 		etat: 'en_retard',
 		retard: 3,
 		detail: '',
 	});
 	await expect(carte.getByText('Réplique', { exact: true })).toBeVisible();
-	await expect(carte.getByText('3 commit(s) de retard sur replica')).toBeVisible();
+	await expect(carte.getByText('3 commit(s) de retard sur v3.124.1')).toBeVisible();
 	await expect(carte.getByText(/s’active dans/)).toHaveCount(0);
 });
 
@@ -117,7 +119,7 @@ const REPLIQUE = {
 	...BASE,
 	role: 'replique',
 	libelle: 'Réplique',
-	branche: 'replica',
+	branche: 'v3.124.1',
 	verification_active: false,
 	etat: 'non_verifie',
 	detail: 'service « Vérification de la version » coupé',

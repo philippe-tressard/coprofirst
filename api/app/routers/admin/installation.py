@@ -13,6 +13,7 @@ from sqlmodel import Session
 
 from app.auth.deps import require_operateur
 from app.database import get_session
+from app.inscription import client, constat
 from app.models.core import Utilisateur
 from app.utils import installation
 from app.utils.config_site import config_site
@@ -24,6 +25,7 @@ router = APIRouter()
 class EtatInstallation(BaseModel):
     role: str  #: reference · replique · inconnu
     libelle: str
+    #: Ce qu'elle suit : `main`, ou le tag de la version de son bail (#3009).
     branche: Optional[str] = None
     empreinte: str = ""
     demarree_le: datetime
@@ -45,14 +47,22 @@ def etat_installation(
     _: Utilisateur = Depends(require_operateur),
 ):
     role = installation.role_installation()
-    libelle, branche = installation.ROLES.get(role, ("Inconnu", None))
+    libelle = installation.ROLES.get(role, "Inconnu")
+    verdict = client.constat_courant() if role == "replique" else None
+    branche = installation.cible_suivie(
+        role, constat.version_a_installer(verdict) if verdict else None
+    )
     empreinte = installation.empreinte()
     active = service_actif(
         config_site(session, cle_actif(SERVICE_VERIF_VERSION)), SERVICE_VERIF_VERSION
     )
-    if branche is None:
+    if role not in installation.ROLES:
         verif = installation.Verification(
             "non_verifie", detail="rôle non déclaré : ROLE_INSTALLATION absent ou mal écrit"
+        )
+    elif branche is None:
+        verif = installation.Verification(
+            "non_verifie", detail=f"aucune version à installer : {verdict.raison}"
         )
     elif not active:
         verif = installation.Verification(

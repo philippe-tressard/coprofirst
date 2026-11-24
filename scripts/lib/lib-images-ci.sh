@@ -12,7 +12,7 @@
 #  commit de `main`, les images des quatre services sous
 #  `ghcr.io/philippe-tressard/coprofirst-<service>:sha-<commit>`. La référence —
 #  les deux RPi — exécute alors EXACTEMENT les octets que les répliques
-#  recevront à la promotion, et cesse de construire : plus de build concurrent,
+#  recevront par leur bail, et cesse de construire : plus de build concurrent,
 #  plus d'image périmée à la bascule, plus de cache de build de 40 Go.
 #
 #  ## Ce qui ne change pas
