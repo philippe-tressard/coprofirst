@@ -74,15 +74,17 @@ export interface Sondage {
 	nouveau: boolean;
 }
 
-/**  Une option sur la FICHE d'un sondage. `nb_votes` et `reponses_libres` sont
- *   ABSENTS — pas à zéro — quand les résultats ne sont pas visibles : « 0 vote » se
- *   lirait « personne n'a voté » (`crud.get_sondage`). */
+/**  Une option sur la FICHE d'un sondage. `nb_votes`, `part` et `reponses_libres`
+ *   sont ABSENTS — pas à zéro — quand les résultats ne sont pas visibles : « 0 vote »
+ *   se lirait « personne n'a voté » (`crud.get_sondage`). `part` est le pour-cent
+ *   des votes, arrondi par l'API (`utils/pourcentages`, #3060). */
 export interface OptionSondage {
 	id: number;
 	libelle: string;
 	ordre: number;
 	champ_libre: boolean;
 	nb_votes?: number;
+	part?: number;
 	reponses_libres?: string[];
 }
 

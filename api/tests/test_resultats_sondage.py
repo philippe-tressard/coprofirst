@@ -145,7 +145,7 @@ def test_nb_votes_est_produit_sous_la_decision():
     mentions = [
         n
         for n in ast.walk(get_sondage)
-        if isinstance(n, ast.Constant) and n.value in ("nb_votes", "reponses_libres")
+        if isinstance(n, ast.Constant) and n.value in ("nb_votes", "part", "reponses_libres")
     ]
     assert mentions, (
         "Ni `nb_votes` ni `reponses_libres` ne sont produits par get_sondage — "

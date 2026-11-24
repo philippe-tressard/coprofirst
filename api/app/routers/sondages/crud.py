@@ -44,6 +44,7 @@ from app.utils.noms import contexte_personne
 from app.utils.assiste_ia import marquer as marquer_assiste_ia
 from app.utils.lecture_pastille.objets import lecture_du_ciblage
 from app.utils.recuperer import ou_404
+from app.utils.pourcentages import part_en_pourcent
 from app.utils.cloche import sonner
 
 router = APIRouter(prefix="/sondages", tags=["sondages"])
@@ -161,6 +162,14 @@ def get_sondage(
         #  « 0 vote » se lirait comme « personne n'a voté », ce qui est une autre
         #  information, et fausse.
         options_out.append(option)
+
+    if resultats_visibles:
+        #  La part de chaque option, en pour cent, se calcule ICI (#3060) : le site
+        #  et les apps la lisent, aucun ne la recompose, et l'arrondi est le même
+        #  partout. Sous la même décision que `nb_votes` : la part révèle autant.
+        total_votes = sum(option["nb_votes"] for option in options_out)
+        for option in options_out:
+            option["part"] = part_en_pourcent(option["nb_votes"], total_votes)
 
     # Enrichissement partagé (nom + bâtiment + rôle, CS mis en avant) — même helper
     # que idées/annonces pour une UX cohérente. CS/admin d'abord, puis chronologique.
