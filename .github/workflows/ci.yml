@@ -112,7 +112,9 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7
         with:
-          python-version: "3.11"
+          #  La version de l'image (`api/Dockerfile`) : pip-audit résout l'arbre sous
+          #  CELLE-CI (#2951). 🔒 `test_version_python_alignee.py`.
+          python-version: "3.12"
 
       - name: Install Ruff
         # ÉPINGLÉ depuis le 24/09/2026 (#1048) : `ruff format --check` compare le
@@ -204,23 +206,22 @@ jobs:
         # n'importait. Ruff respecte `__all__` : les ré-exports voulus des
         # paquets découpés (`admin/`, `flux/`, `tickets/`) ne sont pas touchés.
         #
-        # `alembic/` en est EXCLU volontairement : quatre migrations portent des
-        # imports inutiles, et une migration déjà appliquée ne se modifie jamais
-        # (CLAUDE.md). Les corriger pour satisfaire un linter réécrirait
-        # l'historique du schéma — le remède serait pire que le défaut.
-        # S608 (SQL construit par chaînes) sur `app/` SEULEMENT, depuis le
-        # 19/09/2026 (#1032). Une interpolation légitime — un nom de table,
-        # qu'aucun pilote ne sait lier — se DÉCLARE : `noqa: S608` et sa raison.
+        # S608 (SQL construit par chaînes) depuis le 19/09/2026 (#1032). Une
+        # interpolation légitime — un nom de table, qu'aucun pilote ne sait lier —
+        # se DÉCLARE : `noqa: S608` et sa raison. S608 ne lit pas le DDL.
         #
-        # 🔴 PAS sur `alembic/`, et ce n'est pas un oubli : 23 migrations y
-        # construisent du SQL par f-string, et **une migration appliquée ne se
-        # modifie jamais**. Y ajouter 23 `noqa` serait modifier l'historique du
-        # schéma pour satisfaire un linter — le remède serait pire que le
-        # défaut, comme pour F401 juste au-dessus.
+        # Les DEUX chaînes de migrations (`alembic/`, `alembic_plateforme/`)
+        # passent F401 et S608 depuis #2948 (23/11/2026) : depuis le schéma
+        # initial (0286, retrait de SQLite), aucune ne porte d'import inutile, et
+        # S608 n'y voit que 0294 — un identifiant de constante, déclaré dans
+        # `api/ruff.toml` (une migration appliquée ne se modifie jamais). Les
+        # formes que S608 ne voit pas (variable passée à `execute`, DDL), c'est
+        # `test_migrations.py::test_aucune_fstring_sans_bindparams`.
         #
-        # Ce qui couvre les migrations, c'est `test_migrations.py` :
-        # `test_aucune_NOUVELLE_fstring_sans_bindparams` refuse la 28ᵉ, avec la
-        # liste des 27 d'avant FIGÉE — de l'historique, pas une tolérance.
+        # RUF100 (directive `noqa` inutile) depuis #2951 : un `noqa` qui ne sert
+        # plus ment sur le code qu'il couvre. Les règles NON passées dont la
+        # directive porte une raison sont déclarées `external` (`api/ruff.toml`).
+        # `api/scripts/` est lu avec le jeu d'`app/`.
         #
         # `tests/` depuis le 24/09/2026 (#1048) : la CI n'y passait AUCUNE règle,
         # et `test_verrou_bascule.py` employait `nl` sans le définir. Le message
@@ -252,8 +253,8 @@ jobs:
         # 🔴 E402 reste DEHORS, et c'est une décision : l'ordre des imports y est
         # du comportement. `main.py` pose le correctif UTC avant d'importer les
         # routeurs, `core.py` ré-exporte pour ENREGISTRER les tables (#1157),
-        # des imports tardifs cassent des cycles, et 39 des 70 sont dans des
-        # migrations qu'on ne modifie jamais. Les déplacer pour un linter
+        # des imports tardifs cassent des cycles (57 directives dans `app/` au
+        # 23/11/2026, aucune dans les migrations). Les déplacer pour un linter
         # changerait le démarrage de l'API sans rien corriger.
         # DTZ003 (`datetime.utcnow()`) sur `app/` seulement (#1047, 25/09/2026) :
         # déprécié depuis Python 3.12, l'image de l'API. L'heure passe par
@@ -266,9 +267,9 @@ jobs:
         # l'instant de la base `horloge.maintenant()`. Ruff ne voit que les
         # appels : `default_factory=date.today` est refusé par `test_horloge.py`.
         run: |
-          ruff check api/app/ --select E9,F63,F7,F82,F401,S608,F811,F841,E711,E712,E741,E731,DTZ003,DTZ005,DTZ006,DTZ011,W605
-          ruff check api/alembic/ --select E9,F63,F7,F82,F811,F841,E711,E712,E741,E731,W605
-          ruff check api/tests/ --select E9,F63,F7,F82,F401,F841,E711,E712,E741,E731,W605
+          ruff check api/app/ api/scripts/ --select E9,F63,F7,F82,F401,S608,F811,F841,E711,E712,E741,E731,DTZ003,DTZ005,DTZ006,DTZ011,W605,RUF100
+          ruff check api/alembic/ api/alembic_plateforme/ --select E9,F63,F7,F82,F401,S608,F811,F841,E711,E712,E741,E731,W605,RUF100
+          ruff check api/tests/ --select E9,F63,F7,F82,F401,F841,E711,E712,E741,E731,W605,RUF100
 
       - name: Ruff format (API)
         # Depuis le 24/09/2026 (#1048) : aucun formateur n'était en usage côté
@@ -611,6 +612,9 @@ jobs:
           python scripts/ci/plafonds_jobs.py --selftest
           python scripts/ci/arbre_deja_vert.py --selftest
           bash scripts/ci/apt-ci.sh --selftest
+          # La lecture des routes de `caddy adapt` (claude-config#604) ; le binaire lui-même
+          # est joué par le workflow « Caddyfile », docker n'étant pas au poste.
+          python scripts/ci/caddy_variantes.py --selftest
           python scripts/poste/verifier_migrations_texte.py --selftest
           bash scripts/lib/lib-role.sh              --selftest
           bash scripts/lib/lib-applicatifs.sh       --selftest

@@ -98,8 +98,13 @@ def _regle_weasyprint() -> int:
     if spec is None or spec.origin is None:
         pytest.skip("WeasyPrint absent de cet environnement")
     tokens = Path(spec.origin).parent / "css" / "tokens.py"
-    if not tokens.exists():
-        pytest.skip("La source de WeasyPrint n'a pas la forme attendue")
+    #  Un ÉCHEC, plus un saut (#2952) : WeasyPrint est épinglé et monté par
+    #  Dependabot — le jour où il se réorganise, ce contrôle se réécrit, il ne
+    #  s'abstient pas en silence.
+    assert tokens.exists(), (
+        f"La source de WeasyPrint n'a plus `css/tokens.py` ({tokens}) : réécrire "
+        "ce contrôle pour la nouvelle forme."
+    )
     source = tokens.read_text(encoding="utf-8")
     corps = source[source.index("def parse_color_stop") :]
     corps = corps[: corps.index("\ndef ", 1)]

@@ -1,9 +1,8 @@
 # ── Les fichiers /uploads/* d'une INSTALLATION COMMUNE (#2053) ────────────────
 #
-# À importer dans le bloc de site du Caddyfile, AVANT les blocs `handle /uploads/…`
-# — Caddy applique le premier `handle` qui correspond :
-#
-#     import commune/fichiers.caddy
+# Importé par le `Caddyfile` du dépôt (`import commune/fichiers*.caddy`, avant le
+# `handle /uploads/*`), MONTÉ par la surcouche `compose.commune.yml` : rien à
+# retoucher à la main (claude-config#604).
 #
 # Sur une installation propre à une copropriété (5Hostachy), Caddy sert le volume
 # lui-même, après `forward_auth`. Il ne sert qu'UNE racine : à plusieurs
@@ -13,7 +12,8 @@
 # comme le Caddyfile, `prive/` et `annonces-hall/` (arbitrage du 17/10/2026, spec
 # §4.4).
 #
-# ⚠️ Sur une installation propre, NE PAS l'importer : la route y répond 404.
+# ⚠️ Sur une installation propre, la surcouche n'est pas posée : rien n'est monté,
+# et la route de l'API y répond 404.
 
 handle /uploads/* {
 	# Le même en-tête que le bloc d'origine : aucun cache partagé ne garde un

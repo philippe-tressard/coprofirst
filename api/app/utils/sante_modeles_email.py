@@ -66,7 +66,7 @@ from sqlmodel import Session, select
 #  modèles et le contrat de variables du dépôt posaient la même question avec
 #  leur propre code, et la liste du gabarit était écrite deux fois. Elle vit
 #  désormais dans `utils/email/variables.py`, avec les raisons du regroupement.
-from app.utils.email.variables import (  # noqa: F401  (réexport historique)
+from app.utils.email.variables import (  # réexport historique
     VARIABLES_DU_GABARIT,
     ModeleIllisible,
     variables_de,

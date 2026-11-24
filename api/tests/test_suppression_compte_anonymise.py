@@ -24,7 +24,7 @@ from app.utils.suppression_compte import supprimer_compte
 from tests.aides_affaire import _compte, _corriger, _creer, _suite, session  # noqa: F401
 
 
-def test_l_affaire_de_l_auteur_supprime_reste_et_son_fil_aussi(session):  # noqa: F811
+def test_l_affaire_de_l_auteur_supprime_reste_et_son_fil_aussi(session):
     auteur = _compte(session)
     conseil = _compte(session, role=RoleUtilisateur.conseil_syndical)
     affaire = _creer(session, auteur, categorie="panne")
@@ -60,7 +60,7 @@ def test_l_affaire_de_l_auteur_supprime_reste_et_son_fil_aussi(session):  # noqa
     assert evol_read(anonyme, session).auteur_nom == ANCIEN_RESIDENT
 
 
-def test_l_affaire_anonyme_avance_encore(session):  # noqa: F811
+def test_l_affaire_anonyme_avance_encore(session):
     """Le conseil la fait avancer : « prévenir l'auteur » n'a plus personne à prévenir."""
     auteur = _compte(session)
     conseil = _compte(session, role=RoleUtilisateur.conseil_syndical)
@@ -79,7 +79,7 @@ def test_l_affaire_anonyme_avance_encore(session):  # noqa: F811
     assert session.get(Ticket, affaire_id).titre == "Ascenseur à l'arrêt"
 
 
-def test_un_sondage_vote_et_un_document_restent_et_le_resultat_ne_bouge_pas(session):  # noqa: F811
+def test_un_sondage_vote_et_un_document_restent_et_le_resultat_ne_bouge_pas(session):
     """#1821 : un ancien membre du conseil n'emporte ni ses documents ni ses consultations."""
     from app.models.communaute import OptionSondage, Sondage, VoteSondage
     from app.models.documents import Document
@@ -109,7 +109,7 @@ def test_un_sondage_vote_et_un_document_restent_et_le_resultat_ne_bouge_pas(sess
     assert session.get(Document, doc_id).publie_par_id is None
 
 
-def test_ce_qui_n_appartient_qu_a_la_personne_part_toujours(session):  # noqa: F811
+def test_ce_qui_n_appartient_qu_a_la_personne_part_toujours(session):
     """L'anonymisation ne garde que le contenu collectif : la purge reste une purge."""
     from app.models.core import Notification
 

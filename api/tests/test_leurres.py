@@ -41,7 +41,7 @@ _S6 = _RACINE / "scripts" / "lib" / "lib-audit-acces.sh"
 
 ADRESSE = "secours-leurre@exemple.invalid"
 CLE_LEURRE = "cle-leurre-de-test"
-VRAIE_CLE = "vraie-cle-de-maintenance"
+VRAIE_CLE = "vraie-cle-de-maintenance-de-trente-deux-caracteres"
 
 
 @pytest.fixture()
@@ -108,12 +108,15 @@ def test_la_fausse_cle_se_trahit_avec_le_meme_403(leurres, caplog):
     assert _evenements(caplog) == ["cle_maintenance_leurre"]
 
 
-def test_la_vraie_cle_passe_et_une_cle_fausse_ne_dit_rien(leurres, caplog):
+def test_la_vraie_cle_passe_et_une_cle_fausse_n_est_pas_un_leurre(leurres, caplog):
+    """La vraie clé ne laisse rien ; une clé fausse laisse le REFUS (compté la nuit), pas
+    le leurre — qui dirait un vol. Jusqu'au 23/11/2026 elle ne laissait rien du tout."""
     caplog.set_level(logging.INFO, logger="securite")
     exiger_cle_maintenance(VRAIE_CLE)
+    assert _evenements(caplog) == []
     with pytest.raises(HTTPException):
         exiger_cle_maintenance("autre-chose")
-    assert _evenements(caplog) == []
+    assert _evenements(caplog) == ["cle_maintenance_refusee"]
 
 
 def test_un_leurre_egal_a_la_vraie_cle_ne_ferme_pas_le_canal(monkeypatch):

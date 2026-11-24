@@ -248,28 +248,39 @@ def racine_depot():
     return Path(__file__).resolve().parents[2]
 
 
-def scripts_shell_versionnes() -> list:
-    """Tous les `.sh` du dépôt, où qu'ils soient rangés — plus les hooks git.
+def fichiers_versionnes(motif: str, racine=None) -> list:
+    """Les fichiers du dépôt qui répondent à `motif`, tels que git les voit.
 
-    Ce que git suit ou suivrait (`--others --exclude-standard` : un script neuf
-    est contrôlé avant son premier commit), donc ni `node_modules` ni un fichier
-    ignoré. 🔴 Jusqu'au 14/10/2026 (#1965), la liste se lisait par trois motifs
-    — racine, `scripts/**`, `.githooks/` — et huit scripts y échappaient, dont
-    ceux que chaque réplique exécute (`deploiement/standard/`) et `api/start.sh`.
-    La docstring promettait déjà « où qu'ils soient rangés ».
-    🔒 `test_releve_scripts_complet.py`.
+    Ce que git suit ou suivrait (`--others --exclude-standard` : un fichier neuf
+    est contrôlé avant son premier commit), donc ni `node_modules`, ni un fichier
+    ignoré, ni les copies de travail d'autres sessions rangées sous
+    `.claude/worktrees/` (git ne descend pas dans un dossier qui porte son propre
+    `.git`). 🔴 Un parcours du système de fichiers les lit, lui : le contrôle des
+    consignes jugeait 3 264 fichiers au poste pour 12 en CI (#2939).
     """
     import subprocess
 
-    racine = racine_depot()
+    racine = racine or racine_depot()
     suivis = subprocess.run(
-        ["git", "ls-files", "--cached", "--others", "--exclude-standard", "*.sh"],
+        ["git", "ls-files", "--cached", "--others", "--exclude-standard", motif],
         cwd=racine,
         capture_output=True,
         text=True,
         check=True,
-    ).stdout.split()
-    trouves = [racine / s for s in suivis if (racine / s).is_file()]
+    ).stdout.splitlines()
+    return sorted({racine / s for s in suivis if (racine / s).is_file()})
+
+
+def scripts_shell_versionnes() -> list:
+    """Tous les `.sh` du dépôt, où qu'ils soient rangés — plus les hooks git.
+
+    🔴 Jusqu'au 14/10/2026 (#1965), la liste se lisait par trois motifs — racine,
+    `scripts/**`, `.githooks/` — et huit scripts y échappaient, dont ceux que chaque
+    réplique exécute (`deploiement/standard/`) et `api/start.sh`. La docstring
+    promettait déjà « où qu'ils soient rangés ». 🔒 `test_releve_scripts_complet.py`.
+    """
+    racine = racine_depot()
+    trouves = fichiers_versionnes("*.sh")
     trouves += [p for p in racine.glob(".githooks/*") if p.is_file()]
     return sorted(set(trouves))
 

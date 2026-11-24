@@ -49,7 +49,7 @@ REGLES_SANS_IMAGE = {"postgres"}
 
 
 def _yaml(chemin: Path) -> dict:
-    return yaml.load(chemin.read_text(encoding="utf-8"), Loader=_Lecteur)  # noqa: S506 — SafeLoader
+    return yaml.load(chemin.read_text(encoding="utf-8"), Loader=_Lecteur)  # SafeLoader
 
 
 def _construits() -> set[str]:

@@ -20,7 +20,13 @@
  *  2. chaque support rendu SANS cadre, déclaré ci-dessous avec sa raison,
  *     porte la classe — la déclaration échoue si son élément disparaît ;
  *  3. la classe existe : partagée avec la règle `:root` de `socle.css`, et
- *     posant `color-scheme: light` dans `ilots-clairs.css`.
+ *     posant `color-scheme: light` dans `ilots-clairs.css` ;
+ *  4. 🔒 tout `<iframe>` porte un bac à sable VIDE — `sandbox` ou `sandbox=""`,
+ *     sans aucun jeton d'ouverture (#2945). C'est ce qui rend tenable d'afficher un
+ *     HTML complet (`srcdoc`) SANS l'assainir : l'aperçu doit rester fidèle à ce
+ *     qui partira, et un cadre sans `allow-scripts` ni `allow-same-origin`
+ *     n'exécute rien et ne lit rien de l'application. La règle n'était écrite que
+ *     dans un commentaire d'`ApercuDiffusion.svelte` ; aucun contrôle ne la lisait.
  *
  *  Lancer : node scripts/check-ilots-clairs.mjs [--selftest]
  */
@@ -139,6 +145,19 @@ export function cadresHorsIlot(source) {
 	return fautes;
 }
 
+/**
+ *  Les `<iframe>` d'une source sans bac à sable VIDE : `[ligne]`. `sandbox` nu ou
+ *  `sandbox=""` passe ; une valeur (`"allow-scripts"`), une expression (`{x}`) ou
+ *  l'absence d'attribut sont refusées — un jeton ouvert rend au cadre ce que le
+ *  bac à sable lui retire. PURE.
+ */
+export function cadresSansBacASable(source) {
+	return balisesDuBalisage(source)
+		.filter((b) => b.nom.toLowerCase() === 'iframe' && !b.fermante)
+		.filter((b) => !/\ssandbox(?:\s*=\s*(["'])\s*\1)?(?=[\s/>])/.test(b.texte))
+		.map((b) => ligne(source, b.index));
+}
+
 /** Combien d'`<iframe>` dans le balisage d'une source. PURE. */
 export const compteCadres = (source) =>
 	balisesDuBalisage(source).filter((b) => b.nom.toLowerCase() === 'iframe' && !b.fermante).length;
@@ -225,6 +244,33 @@ if (process.argv.includes('--selftest')) {
 		fautesDefinition(':root {\n}', '.ilot-clair {\n\tbackground: x;\n}').length,
 		2,
 	);
+	cas(
+		'un cadre au bac à sable vide passe, sous ses deux formes',
+		cadresSansBacASable(
+			'<iframe sandbox="" srcdoc={x}></iframe><iframe sandbox title="t"></iframe>',
+		),
+		[],
+	);
+	cas(
+		'un cadre sans bac à sable est refusé',
+		cadresSansBacASable('<iframe srcdoc={x}></iframe>'),
+		[1],
+	);
+	cas(
+		'un bac à sable ouvert est refusé',
+		cadresSansBacASable('<iframe sandbox="allow-scripts" srcdoc={x}></iframe>'),
+		[1],
+	);
+	cas(
+		'un bac à sable calculé est refusé',
+		cadresSansBacASable('<iframe sandbox={s}></iframe>'),
+		[1],
+	);
+	cas(
+		'`data-sandbox` n’est pas `sandbox`',
+		cadresSansBacASable('<iframe data-sandbox="" srcdoc={x}></iframe>'),
+		[1],
+	);
 	console.log(ko ? '== ÉCHECS ==' : '== TOUS OK ==');
 	process.exit(ko);
 }
@@ -238,6 +284,8 @@ for (const chemin of fichiersSources(join(ICI, 'src'), ['.svelte'])) {
 	cadres += compteCadres(source);
 	for (const n of cadresHorsIlot(source))
 		fautes.push(`${rel}:${n} : <iframe> hors d’un îlot clair`);
+	for (const n of cadresSansBacASable(source))
+		fautes.push(`${rel}:${n} : <iframe> sans bac à sable vide (sandbox="")`);
 }
 for (const [chemin, { classe }] of Object.entries(SUPPORTS)) {
 	const verdict = supportEnIlot(lire(chemin), classe);
@@ -251,13 +299,14 @@ if (cadres === 0) {
 	process.exit(2);
 }
 if (fautes.length) {
-	console.error(`\n✗ ${fautes.length} aperçu(s) de support hors d’un îlot clair :\n`);
+	console.error(`\n✗ ${fautes.length} faute(s) d’aperçu de support (îlot clair, bac à sable) :\n`);
 	for (const f of fautes) console.error(`  ${f}`);
 	console.error(
-		'\n  Poser `class="… ilot-clair"` sur le cadre ou sur son enveloppe ; un support rendu sans cadre se déclare dans SUPPORTS.\n',
+		'\n  Poser `class="… ilot-clair"` sur le cadre ou sur son enveloppe ; un support rendu sans cadre se déclare dans SUPPORTS.' +
+			'\n  Un cadre porte `sandbox=""` : aucun jeton d’ouverture (#2945).\n',
 	);
 	process.exit(1);
 }
 console.log(
-	`✓ Îlots clairs : ${cadres} cadre(s) et ${Object.keys(SUPPORTS).length} support(s) déclaré(s), tous en îlot`,
+	`✓ Îlots clairs : ${cadres} cadre(s), tous en îlot et en bac à sable vide, et ${Object.keys(SUPPORTS).length} support(s) déclaré(s)`,
 );
