@@ -88,7 +88,7 @@ def _avertir(session: Session, user: Utilisateur, maintenant: datetime, envoyer:
     }
     try:
         parti = envoyer(session, user, contexte)
-    except Exception as exc:  # un envoi qui lève n'est pas parti
+    except Exception as exc:  # noqa: BLE001 — un envoi qui lève n'est pas parti
         logger.warning("Avertissement de purge non envoyé au compte %s : %s", user.id, exc)
         parti = False
     if not parti:
@@ -119,7 +119,7 @@ def _supprimer(
         averti_jours = (maintenant - user.purge_avertie_le).days
         supprimer_compte(session, user_id)
         session.commit()
-    except Exception as exc:
+    except Exception as exc:  # noqa: BLE001 — un compte en échec n'arrête pas la purge
         session.rollback()
         logger.warning("Compte %s non supprimé par la purge : %s", user_id, exc)
         return False
@@ -146,7 +146,7 @@ def _supprimer_ferme(
         depuis = user.compte_ferme_le or user.cree_le
         supprimer_compte(session, user_id)
         session.commit()
-    except Exception as exc:
+    except Exception as exc:  # noqa: BLE001 — un compte en échec n'arrête pas la purge
         session.rollback()
         logger.warning("Compte %s non supprimé par la purge : %s", user_id, exc)
         return False
@@ -249,7 +249,7 @@ def purger_comptes_inactifs(
             rendu["echecs_suppression"],
             " — SUSPENDUE" if rendu["suspendue"] else "",
         )
-    except Exception as exc:  # pragma: no cover - la tâche ne meurt pas
+    except Exception as exc:  # noqa: BLE001 — la tâche planifiée ne meurt pas  # pragma: no cover
         session.rollback()
         logger.warning("Purge des comptes inactifs non traitée : %s", exc)
     finally:

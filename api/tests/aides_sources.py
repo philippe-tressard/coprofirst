@@ -25,6 +25,7 @@ from __future__ import annotations
 import ast
 import functools
 import pathlib
+import re
 from dataclasses import dataclass
 
 APP = pathlib.Path(__file__).resolve().parents[1] / "app"
@@ -119,6 +120,21 @@ def docstrings(arbre: ast.AST) -> set[int]:
             ):
                 vus.add(id(corps[0].value))
     return vus
+
+
+def empreinte_du_corps(fonction: ast.FunctionDef | ast.AsyncFunctionDef) -> str:
+    """Le corps d'une fonction, docstring écartée, en texte comparable (`ast.dump`).
+
+    Deux fonctions au même corps ont la même empreinte, quels que soient leur nom,
+    leur docstring et leur mise en forme : c'est ce que comparent les contrôles de
+    copies entre fichiers de tests et entre migrations (#2950).
+    """
+    exclues = docstrings(fonction)
+    return "|".join(
+        ast.dump(instruction)
+        for instruction in fonction.body
+        if not (isinstance(instruction, ast.Expr) and id(instruction.value) in exclues)
+    )
 
 
 def chaines_du_code(arbre: ast.AST) -> list[ast.Constant]:
@@ -217,6 +233,17 @@ def operations_montees(routeur, prefixe: str = ""):
         elif getattr(route, "path", None):
             for methode in sorted(getattr(route, "methods", []) or []):
                 yield methode, prefixe + route.path, route
+
+
+def chemin_concret(gabarit: str) -> str:
+    """Le gabarit d'une route, chaque paramètre de chemin valant 1 — ce qu'un balayage appelle."""
+    return re.sub(r"\{[^}]+\}", "1", gabarit)
+
+
+def resout(dependant, appels) -> bool:
+    """FastAPI résout-il l'une de ces dépendances pour cette route, à quelque niveau que ce
+    soit ? Reconnue par l'IDENTITÉ de l'objet, jamais par son nom (`route.dependant`)."""
+    return any(d.call in appels or resout(d, appels) for d in dependant.dependencies)
 
 
 # ─── Un relevé d'appels, écrit une fois (#2912) ──────────────────────────────────

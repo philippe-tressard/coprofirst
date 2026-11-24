@@ -32,6 +32,21 @@ PALETTE_CSS = """\
 }
 """
 
+#: La remise à zéro des documents imprimables : marges et boîtes (#2949 — l'affiche
+#: de hall et la fiche d'arrivée l'écrivaient chacune).
+REMISE_A_ZERO_CSS = "* { box-sizing: border-box; margin: 0; padding: 0; }\n"
+
+
+def document_html(titre: str, css: str, corps: str) -> str:
+    """PURE. Le squelette d'un document imprimable autonome — CSS en ligne, rien à
+    récupérer. Écrit une fois (#2949) : le compte rendu d'un point conseil et le
+    rapport du suivi des affaires le recopiaient."""
+    return (
+        f"<!doctype html><html lang='fr'><head><meta charset='utf-8'><title>{titre}</title>"
+        f"<style>{css}</style></head><body>{corps}</body></html>"
+    )
+
+
 FONT_SERIF = "Georgia, 'Palatino Linotype', 'Book Antiqua', Palatino, serif"
 FONT_SANS = (
     "'Segoe UI', -apple-system, BlinkMacSystemFont, Roboto, 'Helvetica Neue', Arial, sans-serif"
@@ -251,7 +266,7 @@ def _icones() -> dict[str, str]:
     if _icones_cache is None:
         try:
             _icones_cache = json.loads(_CATALOGUE_ICONES.read_text(encoding="utf-8"))
-        except Exception as exc:
+        except Exception as exc:  # noqa: BLE001 — sans ses icônes, le document se rend quand même
             #  Un document sans ses icônes reste lisible ; un document qui ne se
             #  génère pas ne l'est pas. On journalise et on continue sans.
             logger.error("Catalogue d'icônes illisible (%s) — documents rendus sans icône", exc)
@@ -307,7 +322,7 @@ def qr_data_uri(url: str) -> str:
         buf = io.BytesIO()
         img.save(buf, format="PNG")
         return f"data:image/png;base64,{base64.b64encode(buf.getvalue()).decode()}"
-    except Exception:
+    except Exception:  # noqa: BLE001 — sans QR code, le document se rend quand même
         return ""
 
 
@@ -330,7 +345,7 @@ def image_data_uri(image_url: str | None) -> str | None:
     try:
         mime = mimetypes.guess_type(path.name)[0] or "image/jpeg"
         return f"data:{mime};base64,{base64.b64encode(path.read_bytes()).decode()}"
-    except Exception:
+    except Exception:  # noqa: BLE001 — image illisible : le document se rend sans elle
         return None
 
 

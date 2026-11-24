@@ -32,7 +32,7 @@ import asyncio
 import logging
 import re
 from dataclasses import dataclass
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timedelta
 from email.utils import parseaddr, parsedate_to_datetime
 from typing import TYPE_CHECKING
 
@@ -86,9 +86,7 @@ def date_d_envoi(entete: str | None) -> datetime | None:
         return None
     if d is None:
         return None
-    if d.tzinfo is not None:
-        d = d.astimezone(timezone.utc).replace(tzinfo=None)
-    return d
+    return horloge.utc_naif(d)
 
 
 def moment_de_la_suite(envoye_le: datetime | None, maintenant: datetime | None = None) -> datetime:

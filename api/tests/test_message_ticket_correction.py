@@ -12,28 +12,13 @@ from app.models.core import (
 )
 from app.utils.horloge import maintenant
 from tests.aides_http import base_http, client_http
+from tests.aides_affaire import affaire_en_base
 
 
 @pytest.fixture()
 def moteur():
     with base_http() as m:
         yield m
-
-
-def _affaire(moteur, auteur_id: int) -> int:
-    with Session(moteur) as s:
-        t = Ticket(
-            numero=f"TK-{auteur_id:06d}",
-            titre="Porte du hall",
-            description="Elle ne ferme plus.",
-            categorie="panne",
-            auteur_id=auteur_id,
-            cree_le=maintenant(),
-            mis_a_jour_le=maintenant(),
-        )
-        s.add(t)
-        s.commit()
-        return t.id
 
 
 def _clore(moteur, ticket_id: int) -> None:
@@ -64,7 +49,7 @@ def _historique(moteur, ticket_id: int) -> list[str]:
 
 def test_l_auteur_corrige_son_message_et_l_historique_suit(moteur):
     resident, resident_id = client_http(moteur, RoleUtilisateur.propriétaire)
-    ticket_id = _affaire(moteur, resident_id)
+    ticket_id = affaire_en_base(moteur, resident_id)
     msg_id = _ecrire(resident, ticket_id)
 
     r = resident.patch(f"/tickets/{ticket_id}/messages/{msg_id}", json={"contenu": "Réparée ?"})
@@ -76,7 +61,7 @@ def test_l_auteur_corrige_son_message_et_l_historique_suit(moteur):
 
 def test_l_auteur_supprime_son_message_et_son_miroir(moteur):
     resident, resident_id = client_http(moteur, RoleUtilisateur.propriétaire)
-    ticket_id = _affaire(moteur, resident_id)
+    ticket_id = affaire_en_base(moteur, resident_id)
     msg_id = _ecrire(resident, ticket_id)
 
     assert resident.delete(f"/tickets/{ticket_id}/messages/{msg_id}").status_code == 204
@@ -89,7 +74,7 @@ def test_l_auteur_supprime_son_message_et_son_miroir(moteur):
 def test_un_autre_compte_ne_touche_pas_au_message(moteur, geste):
     resident, resident_id = client_http(moteur, RoleUtilisateur.propriétaire)
     cs, _ = client_http(moteur, RoleUtilisateur.conseil_syndical)
-    ticket_id = _affaire(moteur, resident_id)
+    ticket_id = affaire_en_base(moteur, resident_id)
     msg_id = _ecrire(resident, ticket_id)
 
     url = f"/tickets/{ticket_id}/messages/{msg_id}"
@@ -102,7 +87,7 @@ def test_un_autre_compte_ne_touche_pas_au_message(moteur, geste):
 @pytest.mark.parametrize("geste", ["patch", "delete"])
 def test_apres_la_cloture_rien_ne_change(moteur, geste):
     resident, resident_id = client_http(moteur, RoleUtilisateur.propriétaire)
-    ticket_id = _affaire(moteur, resident_id)
+    ticket_id = affaire_en_base(moteur, resident_id)
     msg_id = _ecrire(resident, ticket_id)
     _clore(moteur, ticket_id)
 
@@ -120,7 +105,7 @@ def test_apres_la_cloture_rien_ne_change(moteur, geste):
 
 def test_un_message_d_une_autre_affaire_se_lit_comme_absent(moteur):
     resident, resident_id = client_http(moteur, RoleUtilisateur.propriétaire)
-    ticket_id = _affaire(moteur, resident_id)
+    ticket_id = affaire_en_base(moteur, resident_id)
     msg_id = _ecrire(resident, ticket_id)
     with Session(moteur) as s:
         autre = Ticket(

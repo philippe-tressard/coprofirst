@@ -93,10 +93,10 @@ def _log_email(
         )
         session.add(entry)
         session.commit()
-    except Exception:
+    except Exception:  # noqa: BLE001 — l'historique ne fait jamais échouer l'envoi
         try:
             session.rollback()
-        except Exception:
+        except Exception:  # noqa: BLE001 — le rollback de secours ne lève jamais
             pass
 
 
@@ -194,7 +194,7 @@ async def _envoyer_modele(
         await fm.send_message(MessageSchema(**msg_kwargs))
         _log_email(session, code, trace, "succes", sujet=rendered_subject)
         return True
-    except Exception as exc:
+    except Exception as exc:  # noqa: BLE001 — un envoi raté se journalise et rend False
         #  L'ADRESSE EST MASQUEE (#777) : ces lignes partent dans les alertes du
         #  monitoring et dans les rapports qu'on recopie ailleurs. L'historique
         #  en base, lui, garde l'adresse entiere — il est derriere une session

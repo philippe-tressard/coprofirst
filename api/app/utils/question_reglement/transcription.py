@@ -206,7 +206,7 @@ async def remplir(session: Session, ligne: TranscriptionPV) -> TranscriptionPV:
         ligne.contenu, ligne.statut, ligne.modele = nettoyer(rep.texte), A_RELIRE, cfg.modele
     except (ErreurLLM, ValueError) as exc:
         ligne.statut, ligne.erreur = ECHEC, str(exc)
-    except Exception:  # noqa: BLE001 — une ligne ne reste jamais « en cours »
+    except Exception:  # une ligne ne reste jamais « en cours »
         logger.exception("Transcription du PV %s : échec inattendu", ligne.pv_id)
         session.rollback()
         ligne.statut, ligne.erreur = ECHEC, "La transcription a échoué — réessayez."
@@ -271,7 +271,7 @@ def traiter_file(session: Optional[Session] = None) -> dict[str, int]:
             compte["a_relire"],
             compte["echecs"],
         )
-    except Exception as exc:  # pragma: no cover - la tâche ne meurt pas
+    except Exception as exc:  # noqa: BLE001 — la tâche planifiée ne meurt pas  # pragma: no cover
         logger.warning("Transcription des PV d'AG non traitée : %s", exc)
     finally:
         if propre:

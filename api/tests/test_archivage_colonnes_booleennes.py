@@ -14,19 +14,40 @@ Une colonne booléenne nommée `actif`, `active` ou `archivee` sur une table de
 - un RÉFÉRENTIEL ou un DROIT, déclaré dans `REFERENTIELS` avec son sens : un
   booléen qui n'a rien à voir avec le fait de quitter les listes.
 
-Le relevé se fait sur l'AST : un formateur peut couper `actif: bool = Field(…)`
-sur plusieurs lignes, une recherche de texte le raterait.
+## Lu dans `SQLModel.metadata`, pas dans l'AST des classes (#2954, 24/11/2026)
+
+Le relevé lisait l'AST des classes `table=True` : une colonne héritée d'une base
+qui n'est pas une table (un mixin, comme `AssisteIAMixin`), ou une annotation
+forgée (`bool | None`), lui échappaient. Il lit désormais les colonnes RÉELLES des
+tables enregistrées, de type booléen, et retrouve la classe par le registre de
+SQLModel. Les noms surveillés sont ceux d'une disparition : `actif`, `active`,
+`archivee`, `archive_manuel`, `enabled`, `masque`, `masquee`, `visible` —
+`masque` et `visible` ne nomment aucune colonne aujourd'hui, ils attendent la
+suivante (un nom composé comme `contact_visible` n'est pas surveillé : il dit
+ce qu'on montre d'un objet, pas que l'objet disparaît).
+
+## Et les dates d'archivage
+
+Une colonne non booléenne dont le nom dit l'archivage (`archive_le`,
+`archive_par_id`…) est une seconde façon de disparaître si `REGLES` ne la
+nomme pas : elle se déclare dans `ARCHIVAGES_HORS_REGLES`, avec sa raison.
 """
 
 from __future__ import annotations
 
-import ast
+from collections.abc import Iterable
+from dataclasses import fields
 
-from app.utils.archivage import REGLES
+import sqlalchemy as sa
+from sqlmodel import SQLModel
+
+import app.models  # noqa: F401 — enregistre toutes les tables dans `SQLModel.metadata`
+from app.utils.archivage import REGLES, RegleArchivage
 from tests.aides_archivage import MODELES
-from tests.aides_sources import modules_app
 
-NOMS_BOOLEENS_DE_DISPARITION = frozenset({"actif", "active", "archivee"})
+NOMS_BOOLEENS_DE_DISPARITION = frozenset(
+    {"actif", "active", "archivee", "archive_manuel", "enabled", "masque", "masquee", "visible"}
+)
 
 #: Le sens de chaque colonne qui n'est PAS la décision d'archivage d'un objet de
 #: `REGLES`, par (classe, champ). 🔴 Liste FIGÉE, qui ne fait que BAISSER : un
@@ -71,37 +92,94 @@ REFERENTIELS = {
         "référentiel : un équipement retiré des sélecteurs (#2442) ; les contrats, "
         "affaires et prestataires qui le citent gardent son code et son libellé"
     ),
+    ("WhatsAppScheduled", "enabled"): (
+        "interrupteur d'un message planifié : faux = le planificateur ne l'envoie plus "
+        "(`whatsapp_scheduler`), la ligne et son journal d'envoi restent (#2954)"
+    ),
+}
+
+#: Les colonnes NON booléennes qui disent l'archivage d'un objet hors de `REGLES`,
+#: par (classe, champ) — un second mécanisme assumé, avec sa raison. 🔴 Liste
+#: FIGÉE, qui ne fait que BAISSER ; une entrée dont la colonne n'existe plus en sort.
+ARCHIVAGES_HORS_REGLES = {
+    ("Avis", "archive_le"): (
+        "l'avis se RETIRE par un geste daté, pas par une règle d'ancienneté : `REGLES` "
+        "porte un délai, l'avis n'en a pas (`models/avis.py`, en-tête)"
+    ),
+    ("Avis", "archive_par_id"): (
+        "qui a retiré l'avis : l'auteur peut ressortir ce qu'il a rangé, pas ce que le "
+        "gestionnaire a retiré (`models/avis.py`, en-tête)"
+    ),
 }
 
 #: Le plafond des référentiels. Il ne fait que BAISSER.
 #: Déclarations permanentes : le compte ne baisse que si l'une cesse de servir
 #: (relevé de clôture de la carte #1571, 30/10/2026 — aucune dette à solder).
-PLAFOND_REFERENTIELS = 11
+PLAFOND_REFERENTIELS = 12
 
 
-def colonnes_booleennes_de_disparition(sources: dict[str, str]) -> set[tuple[str, str]]:
-    """Les (classe, champ) des tables qui portent un booléen de disparition.
+def classes_des_tables() -> dict[str, str]:
+    """{nom de table: nom de classe} — lu dans le registre de SQLModel."""
+    return {m.local_table.name: m.class_.__name__ for m in SQLModel._sa_registry.mappers}
 
-    Lu sur l'AST : seule une classe `table=True` est une table (un schéma
-    pydantic a le droit de rendre `archivee`), et l'annotation est lue
-    quelle que soit la façon dont le formateur coupe la ligne.
+
+def colonnes_booleennes_de_disparition(
+    tables: Iterable[sa.Table], classes: dict[str, str]
+) -> set[tuple[str, str]]:
+    """Les (classe, champ) des tables qui portent un booléen de disparition. PURE.
+
+    Les colonnes RÉELLES : héritées d'un mixin comprises, quelle que soit
+    l'annotation écrite ; un schéma pydantic n'est pas une table, il n'y est pas.
     """
-    trouvees: set[tuple[str, str]] = set()
-    for source in sources.values():
-        for classe in ast.walk(ast.parse(source)):
-            if not isinstance(classe, ast.ClassDef):
+    return {
+        (classes.get(t.name, t.name), c.name)
+        for t in tables
+        for c in t.columns
+        if c.name in NOMS_BOOLEENS_DE_DISPARITION and isinstance(c.type, sa.Boolean)
+    }
+
+
+def colonnes_datees_d_archivage(
+    tables: Iterable[sa.Table], classes: dict[str, str]
+) -> set[tuple[str, str]]:
+    """Les (classe, champ) NON booléens dont le nom dit l'archivage. PURE."""
+    return {
+        (classes.get(t.name, t.name), c.name)
+        for t in tables
+        for c in t.columns
+        if "archiv" in c.name and not isinstance(c.type, sa.Boolean)
+    }
+
+
+def champs_nommes_par_les_regles() -> set[tuple[str, str]]:
+    """Chaque (classe, champ) qu'une déclaration de `REGLES` nomme, quel que soit son rôle."""
+    nommes = set()
+    for type_objet, regle in REGLES.items():
+        for f in fields(RegleArchivage):
+            if not f.name.startswith("champ"):
                 continue
-            if not any(k.arg == "table" for k in classe.keywords):
-                continue
-            for ligne in classe.body:
-                if (
-                    isinstance(ligne, ast.AnnAssign)
-                    and isinstance(ligne.target, ast.Name)
-                    and ligne.target.id in NOMS_BOOLEENS_DE_DISPARITION
-                    and ast.unparse(ligne.annotation).replace(" ", "") in ("bool", "Optional[bool]")
-                ):
-                    trouvees.add((classe.name, ligne.target.id))
-    return trouvees
+            valeur = getattr(regle, f.name)
+            for champ in valeur if isinstance(valeur, tuple) else (valeur,):
+                if isinstance(champ, str):
+                    nommes.add((MODELES[type_objet].__name__, champ))
+    return nommes
+
+
+def ecarts_d_archivage_date(trouvees, nommes, declarees) -> list[str]:
+    """Ce qui rend `ARCHIVAGES_HORS_REGLES` faux — vide si chaque colonne est dite. PURE."""
+    hors_regles = trouvees - nommes
+    ecarts = [
+        f"{classe}.{champ} : une date d'archivage ni dans REGLES ni dans "
+        "ARCHIVAGES_HORS_REGLES — une seconde façon de disparaître ; la déclarer dans "
+        "`utils/archivage.REGLES`, ou la justifier ici"
+        for classe, champ in sorted(hors_regles - set(declarees))
+    ]
+    ecarts += [
+        f"{classe}.{champ} : déclarée dans ARCHIVAGES_HORS_REGLES, mais la colonne n'existe "
+        "plus ou REGLES la nomme — retirer l'entrée"
+        for classe, champ in sorted(set(declarees) - hors_regles)
+    ]
+    return ecarts
 
 
 def colonnes_couvertes_par_les_regles() -> set[tuple[str, str]]:
@@ -133,14 +211,21 @@ def ecarts_de_declaration(trouvees, couvertes, referentiels) -> list[str]:
     return ecarts
 
 
-def _sources_des_modeles() -> dict[str, str]:
-    return {m.rel: m.source for m in modules_app("models", minimum=20)}
+def _reel() -> set[tuple[str, str]]:
+    return colonnes_booleennes_de_disparition(
+        SQLModel.metadata.tables.values(), classes_des_tables()
+    )
+
+
+def _table_factice(*colonnes: sa.Column) -> sa.Table:
+    """Une table hors de `SQLModel.metadata` : le cas fautif ne pollue pas le registre."""
+    return sa.Table("tableau", sa.MetaData(), sa.Column("id", sa.Integer), *colonnes)
 
 
 def test_chaque_colonne_booleenne_de_disparition_est_dite():
     """Le contrôle : les colonnes réelles des modèles, confrontées aux deux listes."""
     ecarts = ecarts_de_declaration(
-        colonnes_booleennes_de_disparition(_sources_des_modeles()),
+        _reel(),
         colonnes_couvertes_par_les_regles(),
         REFERENTIELS,
     )
@@ -154,7 +239,7 @@ def test_le_releve_voit_ce_que_regles_declare():
     Le témoin doit SERVIR : si `REGLES` déclare `Prestataire.actif` et que le
     relevé ne le voit pas, c'est le relevé qui est faux.
     """
-    trouvees = colonnes_booleennes_de_disparition(_sources_des_modeles())
+    trouvees = _reel()
     couvertes = colonnes_couvertes_par_les_regles()
     assert len(trouvees) >= 10, f"le relevé ne trouve que {len(trouvees)} colonne(s)"
     assert couvertes, "REGLES ne couvre aucune colonne booléenne : le témoin ne sert pas"
@@ -163,7 +248,7 @@ def test_le_releve_voit_ce_que_regles_declare():
 
 def test_le_controle_refuse_une_colonne_de_plus():
     """Le cas fautif : un booléen de plus non déclaré, une entrée périmée, un double compte."""
-    reel = colonnes_booleennes_de_disparition(_sources_des_modeles())
+    reel = _reel()
     couvertes = colonnes_couvertes_par_les_regles()
     de_plus = reel | {("Neuf", "actif")}
     assert ecarts_de_declaration(de_plus, couvertes, REFERENTIELS) != []
@@ -173,22 +258,45 @@ def test_le_controle_refuse_une_colonne_de_plus():
     assert ecarts_de_declaration(reel, couvertes, double) != []
 
 
-def test_le_releve_lit_l_ast_pas_une_ligne_de_texte():
-    """Une colonne coupée par le formateur est vue ; un schéma non-table ne l'est pas."""
-    source = (
-        "class Tableau(SQLModel, table=True):\n"
-        "    actif: bool = Field(\n"
-        "        default=True,\n"
-        "    )\n"
-        "    archivee: Optional[bool] = None\n"
-        "    ordre: bool = True\n"
-        "class Schema(BaseModel):\n"
-        "    archivee: bool = False\n"
+def test_le_releve_lit_les_colonnes_reelles():
+    """Une colonne booléenne au nom surveillé est vue, quelle que soit son écriture ;
+    un booléen ordinaire ou un nom composé ne l'est pas — et l'héritage compte."""
+    table = _table_factice(
+        sa.Column("actif", sa.Boolean),
+        sa.Column("enabled", sa.Boolean, nullable=True),
+        sa.Column("ordre", sa.Boolean),
+        sa.Column("contact_visible", sa.Boolean),
+        sa.Column("actif_le", sa.DateTime),
     )
-    assert colonnes_booleennes_de_disparition({"x.py": source}) == {
+    assert colonnes_booleennes_de_disparition([table], {"tableau": "Tableau"}) == {
         ("Tableau", "actif"),
-        ("Tableau", "archivee"),
+        ("Tableau", "enabled"),
     }
+    #  Héritage : `PetiteAnnonce` tient `assiste_ia` de `AssisteIAMixin`, qui n'est
+    #  pas une table — l'AST de la classe ne le voyait pas, la table, si.
+    annonce = SQLModel.metadata.tables["petite_annonce"]
+    assert "assiste_ia" in annonce.columns, "le témoin d'héritage a disparu"
+
+
+def test_chaque_date_d_archivage_est_dite():
+    """Le contrôle : une date d'archivage hors de `REGLES` est déclarée, et rien de plus."""
+    trouvees = colonnes_datees_d_archivage(SQLModel.metadata.tables.values(), classes_des_tables())
+    assert ("Avis", "archive_le") in trouvees, "le relevé ne voit pas le témoin : contrôle vide"
+    nommes = champs_nommes_par_les_regles()
+    ecarts = ecarts_d_archivage_date(trouvees, nommes, ARCHIVAGES_HORS_REGLES)
+    assert not ecarts, "\n".join(ecarts)
+    for cle, raison in ARCHIVAGES_HORS_REGLES.items():
+        assert len(raison.strip()) >= 20, f"{cle} : la raison n'est pas écrite"
+
+
+def test_le_controle_des_dates_refuse():
+    """Le cas fautif : une date d'archivage neuve non déclarée, une entrée périmée."""
+    table = _table_factice(sa.Column("archivee_le", sa.DateTime))
+    neuve = colonnes_datees_d_archivage([table], {"tableau": "Tableau"})
+    assert neuve == {("Tableau", "archivee_le")}
+    assert ecarts_d_archivage_date(neuve, set(), {}) != []
+    assert ecarts_d_archivage_date(set(), set(), ARCHIVAGES_HORS_REGLES) != []
+    assert ecarts_d_archivage_date(neuve, neuve, {}) == [], "nommée par REGLES : dite"
 
 
 def test_la_liste_des_referentiels_ne_fait_que_baisser():

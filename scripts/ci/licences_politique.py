@@ -155,7 +155,7 @@ EXCEPTIONS = (
         "statut": _compatible(
             analyse="24/11/2026",
             pourquoi="la MPL-2.0 admet la GPL et l'AGPL comme « Secondary Licenses » ; outil de "
-            "construction, présent dans node_modules de l'image sans être modifié",
+            "construction, utilisé sans modification et retiré de l'image servie (#3061)",
         ),
     },
     {

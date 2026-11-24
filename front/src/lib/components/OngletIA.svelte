@@ -32,6 +32,7 @@
 -->
 <script lang="ts">
 	import EncartDemo from '#lib/components/EncartDemo.svelte';
+	import EtatListe from '#lib/components/EtatListe.svelte';
 	import { messageErreur } from '#lib/erreurs.ts';
 	import { onMount } from 'svelte';
 	import Icon from '#lib/components/Icon.svelte';
@@ -157,12 +158,20 @@
 		valeursSaisies = { ...lues };
 	}
 
+	//  Trois états, et ils ne se confondent pas (#2975) : la liste vide se lisait
+	//  « Lecture des usages… » à jamais quand la lecture avait ÉCHOUÉ.
+	let chargementUsages = true;
+	let erreurUsages = '';
+
 	onMount(async () => {
 		try {
 			usages = await configApi.llmUsages();
 			relireLimites();
 		} catch (e) {
-			toast('error', messageErreur(e, 'Les usages de l’assistant n’ont pas pu être lus'));
+			erreurUsages = messageErreur(e, 'Les usages de l’assistant n’ont pas pu être lus');
+			toast('error', erreurUsages);
+		} finally {
+			chargementUsages = false;
 		}
 	});
 
@@ -294,9 +303,12 @@
 			<strong>ses limites d’appels</strong>, et se teste séparément. Tout s’enregistre avec le
 			bouton en bas de page.
 		</p>
-		{#if usages.length === 0}
-			<p class="aide">Lecture des usages…</p>
-		{/if}
+		<EtatListe
+			chargement={chargementUsages}
+			erreur={erreurUsages}
+			compact
+			messageChargement="Lecture des usages…"
+		/>
 		{#each usages as usage (usage.code)}
 			<BlocUsageIA
 				{usage}

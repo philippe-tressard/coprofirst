@@ -6,7 +6,7 @@ Le disque est une donnée de la PLATEFORME : `utils/sante_plateforme` (#1814).
 import json
 import logging
 import os
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timedelta
 from app.utils import horloge
 
 from sqlmodel import Session, select
@@ -41,9 +41,7 @@ def _heures_depuis(horodatage: str | None) -> float | None:
     except ValueError:
         return None
     #  UTC NAÏF, comme `horloge.maintenant()` : le bridge écrit un ISO en « Z ».
-    if debut.tzinfo is not None:
-        debut = debut.astimezone(timezone.utc).replace(tzinfo=None)
-    return (horloge.maintenant() - debut).total_seconds() / 3600
+    return (horloge.maintenant() - horloge.utc_naif(debut)).total_seconds() / 3600
 
 
 def _check_whatsapp(session: Session) -> list[str]:
@@ -80,7 +78,7 @@ def _check_whatsapp(session: Session) -> list[str]:
             issues.append(probleme)
     except CleBridgeRefusee as exc:  # joignable, mais pas avec cette clé (#1596)
         return [str(exc)]
-    except Exception as exc:
+    except Exception as exc:  # noqa: BLE001 — un bridge injoignable est un problème à signaler
         issues.append(f"Bridge WhatsApp injoignable : {exc}")
         return issues
 
@@ -317,7 +315,7 @@ def _check_db_integrity() -> list[str]:
                 f"Intégrité de la base en défaut (« {verdict} »). "
                 f"Restauration à envisager — voir la skill infra-rpi."
             )
-    except Exception as exc:
+    except Exception as exc:  # noqa: BLE001 — un contrôle qui échoue n'est jamais vert
         # Un contrôle qui ne peut pas s'exécuter n'est jamais vert (standards/04 §1)
         issues.append(f"Intégrité de la base : le contrôle a échoué ({exc}).")
     return issues
@@ -421,7 +419,7 @@ def _send_alert(to: str, issues: list[str], session: Session) -> None:
     try:
         asyncio.run(send_email(code="alerte_systeme", to=to, context=contexte))
         logger.info("Alerte santé envoyée à %s (%d problème(s)).", to, len(issues))
-    except Exception as exc:
+    except Exception as exc:  # noqa: BLE001 — l'alerte ratée se journalise, la tâche continue
         logger.error("Échec envoi alerte santé : %s", exc)
 
 
@@ -493,7 +491,7 @@ def run_health_check() -> None:
             _send_alert(to, issues, session)
         else:
             logger.warning("Alerte santé non envoyée : aucun email admin configuré.")
-    except Exception as exc:
+    except Exception as exc:  # noqa: BLE001 — la tâche planifiée ne meurt pas
         logger.error("Erreur contrôle santé quotidien : %s", exc)
     finally:
         session.close()

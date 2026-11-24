@@ -102,7 +102,7 @@ FAQ_COMPLEMENTAIRE = [
     (
         CATEGORIE_APPLICATION,
         "Pourquoi mes anciennes affaires n'apparaissent plus dans la liste principale ?",
-        "Les affaires résolues ou annulées passent automatiquement dans l'onglet <strong>🗂️ Archives</strong> de la page Affaires, après un délai réglé par l'administrateur de la copropriété. Cela garde la liste principale centrée sur les demandes encore actives, sans rien perdre : tout reste consultable dans les archives.",
+        "Les affaires résolues ou annulées passent automatiquement dans l'onglet <strong>📁 Archives</strong> de la page Affaires, après un délai réglé par l'administrateur de la copropriété. Cela garde la liste principale centrée sur les demandes encore actives, sans rien perdre : tout reste consultable dans les archives.",
         13,
     ),
     (

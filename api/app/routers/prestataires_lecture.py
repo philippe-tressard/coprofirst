@@ -56,7 +56,7 @@ def lire_prestataires(session: Session, prests: list[Prestataire]) -> list[Prest
         if p.contacts_json:
             try:
                 data.contacts = json.loads(p.contacts_json)
-            except Exception:
+            except Exception:  # noqa: BLE001 — un JSON abîmé en base ne casse pas la lecture
                 data.contacts = []
         data.note_moyenne, data.nb_notations = notes.get(p.id, SANS_AVIS)
         data.prochaine_visite = visites.get(p.id)

@@ -239,18 +239,7 @@
 						icone={badgeIconeFin}
 					/>{/if}
 			</span>
-			<svg
-				class="section-chev"
-				width="12"
-				height="8"
-				viewBox="0 0 12 8"
-				fill="none"
-				stroke="currentColor"
-				stroke-width="1.6"
-				aria-hidden="true"
-			>
-				<path d="M1 1l5 5 5-5" />
-			</svg>
+			<span class="section-chev"><Icon name="chevron-down" size={20} /></span>
 		</button>
 	{/if}
 	{#if titre && ouverte && !inactive}
@@ -288,17 +277,7 @@
 					aria-label="Replier la section {titre}"
 					on:click={() => (ouverteParLUtilisateur = false)}
 				>
-					<svg
-						width="12"
-						height="8"
-						viewBox="0 0 12 8"
-						fill="none"
-						stroke="currentColor"
-						stroke-width="1.6"
-						aria-hidden="true"
-					>
-						<path d="M11 7L6 2 1 7" />
-					</svg>
+					<span class="chev-haut"><Icon name="chevron-down" size={20} /></span>
 				</button>
 			{/if}
 		</svelte:element>
@@ -449,9 +428,20 @@
 		font-size: var(--fs-xs);
 		line-height: 1.35;
 	}
+	/*  Le chevron du catalogue (#2975) : à 20 px, son tracé mesure 10 × 5, celui du
+	    `<svg>` 12 × 8 dessiné ici jusqu'au 24/11/2026. Les marges négatives lui rendent
+	    l'emprise de 12 × 8 : l'en-tête replié (17,8 px au bureau) ne grandit pas. Le
+	    chevron montant est le même, retourné — pas une icône de plus au catalogue ; il
+	    garde la couleur de son bouton, qui fonce au survol. */
 	.section-chev {
+		display: inline-flex;
 		flex-shrink: 0;
+		margin: -6px -4px;
 		color: var(--color-text-muted);
+	}
+	.chev-haut {
+		display: inline-flex;
+		transform: rotate(180deg);
 	}
 	/*  Le badge ne suit PAS les petites capitales du titre : c'est une valeur,
 	    pas un intitulé — la lire en majuscules espacées la rendrait illisible. */

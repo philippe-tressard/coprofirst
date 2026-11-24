@@ -69,7 +69,7 @@ jobs:
       - name: Bibliothèques système pour le rendu PDF
         run: bash scripts/ci/bibliotheques-pdf.sh
 
-      - name: Install dependencies
+      - name: Installer les dépendances
         working-directory: api
         run: pip install -r requirements-dev.txt
 

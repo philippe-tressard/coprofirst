@@ -57,6 +57,9 @@ class UserRead(NomServi):
     roles: list[str] = []
     actif: bool
     email_verifie: bool = False
+    #  Le mot de passe est temporaire (#3019) : le site et les apps mènent au changement
+    #  et n'ouvrent rien d'autre — l'API refuse le reste (`auth/mot_de_passe_a_changer`).
+    mot_de_passe_a_changer: bool = False
     onboarding_complete: bool
     onboarding_etape: int
     photo_url: Optional[str] = None
@@ -325,7 +328,7 @@ class TicketRead(SaisiPourSortie, AssisteIASortie, ChampsIntervenant, AffaireSer
         if isinstance(v, str):
             try:
                 return json.loads(v) or None
-            except Exception:
+            except Exception:  # noqa: BLE001 — un JSON abîmé en base ne casse pas la lecture
                 return None
         return v
 
@@ -335,7 +338,7 @@ class TicketRead(SaisiPourSortie, AssisteIASortie, ChampsIntervenant, AffaireSer
         if isinstance(v, str):
             try:
                 return json.loads(v)
-            except Exception:
+            except Exception:  # noqa: BLE001 — un JSON abîmé rend le périmètre par défaut
                 return perimetre_defaut_liste()
         return v
 

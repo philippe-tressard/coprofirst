@@ -40,7 +40,7 @@ from __future__ import annotations
 
 import pytest
 from fastapi import HTTPException
-from sqlmodel import Session, SQLModel
+from sqlmodel import Session
 
 from app.database import engine
 from app.models.core import (
@@ -53,81 +53,22 @@ from app.models.core import (
 from app.routers.annonces import AnnonceCreate, create_annonce, list_annonces
 from app.routers.idees import IdeeCreate, create_idee, list_idees, voter
 from app.utils.visibility import annonce_visible, idee_visible
-from tests.aides_base import compte
-from tests.aides_purge import purger_ligne
-
-
-def _utilisateur(
-    role: RoleUtilisateur, statut: StatutUtilisateur | None, prenom: str
-) -> Utilisateur:
-    """⚠️ Le public cible se décide sur le STATUT, le périmètre sur le rôle.
-
-    Les confondre est l'erreur naturelle : « locataire » est un statut et non un
-    rôle, et `RoleUtilisateur` n'en a pas. C'est `public_cible_visible` qui lit
-    `user.statut` — un test qui n'aurait posé que le rôle aurait vu passer tout
-    le monde et conclu que le ciblage marchait.
-    """
-    SQLModel.metadata.create_all(engine)
-    with Session(engine) as session:
-        return compte(
-            session,
-            prefixe=prenom.lower(),
-            prenom=prenom,
-            nom="Aulnay",
-            role=role,
-            statut=statut,
-        )
-
-
-def _sans_perimetre(modele: type, ident: int) -> None:
-    """Neutralise l'axe GÉOGRAPHIQUE pour n'éprouver que le public cible.
-
-    ⚠️ Ce n'est pas une commodité : `perimetre_visible` lit l'arbre des périmètres
-    en base, et le refuse quand il est illisible — « un contrôle qui ne peut pas
-    s'exécuter renvoie INCONNU, jamais OK » (`standards/04`). Sur une base de test
-    dont la table `perimetre` n'est pas migrée, TOUT est donc invisible, et un
-    test du public cible passerait au vert pour la mauvaise raison : il verrait
-    l'objet caché sans que sa propre règle y soit pour quoi que ce soit.
-
-    Un périmètre vide court-circuite cette lecture. Les deux axes restent testés
-    séparément — celui-ci l'est déjà par `test_annonce_perimetre.py`.
-    """
-    with Session(engine) as session:
-        objet = session.get(modele, ident)
-        objet.perimetre_cible = "[]"
-        session.add(objet)
-        session.commit()
-
-
-def _supprimer(modele: type, ident: int) -> None:
-    with Session(engine) as session:
-        purger_ligne(session, modele, ident)
-        session.commit()
-
-
-@pytest.fixture()
-def locataire() -> Utilisateur:
-    u = _utilisateur(RoleUtilisateur.résident, StatutUtilisateur.locataire, "Lou")
-    yield u
-    _supprimer(Utilisateur, u.id)
+from tests.aides_communaute_cible import (  # noqa: F401 — fixtures importées par leur nom
+    conseiller,
+    locataire,
+    sans_perimetre,
+    supprimer,
+    utilisateur_du_public,
+)
 
 
 @pytest.fixture()
 def coproprietaire() -> Utilisateur:
-    u = _utilisateur(
+    u = utilisateur_du_public(
         RoleUtilisateur.propriétaire, StatutUtilisateur.copropriétaire_résident, "Camille"
     )
     yield u
-    _supprimer(Utilisateur, u.id)
-
-
-@pytest.fixture()
-def conseiller() -> Utilisateur:
-    u = _utilisateur(
-        RoleUtilisateur.conseil_syndical, StatutUtilisateur.copropriétaire_résident, "Charlie"
-    )
-    yield u
-    _supprimer(Utilisateur, u.id)
+    supprimer(Utilisateur, u.id)
 
 
 # ── Petite annonce ────────────────────────────────────────────────────────────
@@ -145,7 +86,7 @@ def test_annonce_ciblee_invisible_hors_public(locataire, coproprietaire):
             session=session,
             user=coproprietaire,
         )
-    _sans_perimetre(PetiteAnnonce, cree["id"])
+    sans_perimetre(PetiteAnnonce, cree["id"])
     try:
         with Session(engine) as session:
             annonce = session.get(PetiteAnnonce, cree["id"])
@@ -154,7 +95,7 @@ def test_annonce_ciblee_invisible_hors_public(locataire, coproprietaire):
             titres = [a["titre"] for a in list_annonces(session=session, user=locataire)]
             assert "Cave à vendre" not in titres
     finally:
-        _supprimer(PetiteAnnonce, cree["id"])
+        supprimer(PetiteAnnonce, cree["id"])
 
 
 def test_annonce_sans_public_cible_reste_visible_de_tous(locataire, coproprietaire):
@@ -165,7 +106,7 @@ def test_annonce_sans_public_cible_reste_visible_de_tous(locataire, coproprietai
             session=session,
             user=coproprietaire,
         )
-    _sans_perimetre(PetiteAnnonce, cree["id"])
+    sans_perimetre(PetiteAnnonce, cree["id"])
     try:
         with Session(engine) as session:
             annonce = session.get(PetiteAnnonce, cree["id"])
@@ -174,7 +115,7 @@ def test_annonce_sans_public_cible_reste_visible_de_tous(locataire, coproprietai
             assert annonce.public_cible is None
             assert annonce_visible(annonce, locataire) is True
     finally:
-        _supprimer(PetiteAnnonce, cree["id"])
+        supprimer(PetiteAnnonce, cree["id"])
 
 
 def test_annonce_ciblee_reste_visible_du_conseil(locataire, coproprietaire, conseiller):
@@ -189,14 +130,14 @@ def test_annonce_ciblee_reste_visible_du_conseil(locataire, coproprietaire, cons
             session=session,
             user=coproprietaire,
         )
-    _sans_perimetre(PetiteAnnonce, cree["id"])
+    sans_perimetre(PetiteAnnonce, cree["id"])
     try:
         with Session(engine) as session:
             annonce = session.get(PetiteAnnonce, cree["id"])
             assert annonce_visible(annonce, conseiller) is True
             assert annonce_visible(annonce, locataire) is False
     finally:
-        _supprimer(PetiteAnnonce, cree["id"])
+        supprimer(PetiteAnnonce, cree["id"])
 
 
 # ── Idée ──────────────────────────────────────────────────────────────────────
@@ -214,7 +155,7 @@ def test_idee_ciblee_invisible_hors_public(locataire, coproprietaire):
             user=coproprietaire,
         )
         idee_id = idee.id
-    _sans_perimetre(Idee, idee_id)
+    sans_perimetre(Idee, idee_id)
     try:
         with Session(engine) as session:
             objet = session.get(Idee, idee_id)
@@ -223,7 +164,7 @@ def test_idee_ciblee_invisible_hors_public(locataire, coproprietaire):
             titres = [i["titre"] for i in list_idees(session=session, user=locataire)]
             assert "Refaire le local vélos" not in titres
     finally:
-        _supprimer(Idee, idee_id)
+        supprimer(Idee, idee_id)
 
 
 def test_voter_sur_une_idee_non_visible_est_refuse(locataire, coproprietaire):
@@ -243,7 +184,7 @@ def test_voter_sur_une_idee_non_visible_est_refuse(locataire, coproprietaire):
             user=coproprietaire,
         )
         idee_id = idee.id
-    _sans_perimetre(Idee, idee_id)
+    sans_perimetre(Idee, idee_id)
     try:
         with Session(engine) as session:
             with pytest.raises(HTTPException) as refus:
@@ -251,7 +192,7 @@ def test_voter_sur_une_idee_non_visible_est_refuse(locataire, coproprietaire):
             #  404 et non 403 : ne pas confirmer l'existence de l'idée.
             assert refus.value.status_code == 404
     finally:
-        _supprimer(Idee, idee_id)
+        supprimer(Idee, idee_id)
 
 
 def test_idee_sans_public_cible_reste_votable(locataire, coproprietaire):
@@ -263,10 +204,10 @@ def test_idee_sans_public_cible_reste_votable(locataire, coproprietaire):
             user=coproprietaire,
         )
         idee_id = idee.id
-    _sans_perimetre(Idee, idee_id)
+    sans_perimetre(Idee, idee_id)
     try:
         with Session(engine) as session:
             resultat = voter(idee_id, session=session, user=locataire)
             assert resultat is not None
     finally:
-        _supprimer(Idee, idee_id)
+        supprimer(Idee, idee_id)

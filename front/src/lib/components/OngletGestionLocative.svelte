@@ -230,14 +230,14 @@
 	      côté. Et c'est `Onglet` qui les rend : `.bail-tabs` était une rangée
 	      d'onglets de plus, avec ses 25 lignes de style et sans les trois marques
 	      de l'onglet actif (`ux-patterns` §4 bis). -->
-	<div class="tabs sous-onglets">
+	<nav class="tabs sous-onglets" aria-label="Baux">
 		<Onglet href={ROUTE_BAUX_ACTIFS} actif={bailTab === 'actif'}>
 			Baux actifs ({bauxActifs.length})
 		</Onglet>
 		<Onglet href={ROUTE_BAUX_ARCHIVES} actif={bailTab === 'archives'}>
 			{TITRE_ARCHIVES} ({bauxTermines.length})
 		</Onglet>
-	</div>
+	</nav>
 
 	{#if bauxLoading}
 		<EtatListe chargement />

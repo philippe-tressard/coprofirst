@@ -20,11 +20,12 @@ from __future__ import annotations
 import pytest
 from fastapi import BackgroundTasks
 
-from app.models.core import ConfigSite, Lot, TypeLien, UserLot
+from app.models.core import Lot, TypeLien, UserLot
 from app.utils.alerte_etage import alerter_divergence_etage
 from app.utils.lots_rattaches import lots_de
 from app.utils.email import send_email
 from tests.aides_base import compte
+from tests.aides_reglages import poser_reglages
 
 GESTIONNAIRE = "gestion@exemple.test"
 
@@ -46,12 +47,6 @@ def _rattacher(session, user, lot, *, actif=True) -> None:
     session.add(
         UserLot(user_id=user.id, lot_id=lot.id, type_lien=TypeLien.propriétaire, actif=actif)
     )
-    session.commit()
-
-
-def _config(session, **valeurs) -> None:
-    for cle, valeur in valeurs.items():
-        session.add(ConfigSite(cle=cle, valeur=valeur))
     session.commit()
 
 
@@ -100,7 +95,7 @@ def test_lots_de_ne_rend_pas_les_lots_d_un_autre(session, resident):
 
 def test_une_saisie_qui_contredit_le_lot_alerte_le_gestionnaire(session, resident):
     _rattacher(session, resident, _lot(session, etage=3))
-    _config(session, site_email=GESTIONNAIRE, site_nom="Résidence Exemple")
+    poser_reglages(session, site_email=GESTIONNAIRE, site_nom="Résidence Exemple")
 
     [tache] = _alerter(session, resident, 1)
 
@@ -117,7 +112,7 @@ def test_une_saisie_qui_contredit_le_lot_alerte_le_gestionnaire(session, residen
 
 def test_le_rez_de_chaussee_se_dit_rdc(session, resident):
     _rattacher(session, resident, _lot(session, etage=0))
-    _config(session, site_email=GESTIONNAIRE)
+    poser_reglages(session, site_email=GESTIONNAIRE)
 
     [tache] = _alerter(session, resident, 2)
 
@@ -129,27 +124,27 @@ def test_le_rez_de_chaussee_se_dit_rdc(session, resident):
 
 def test_une_saisie_identique_au_lot_ne_dit_rien(session, resident):
     _rattacher(session, resident, _lot(session, etage=3))
-    _config(session, site_email=GESTIONNAIRE)
+    poser_reglages(session, site_email=GESTIONNAIRE)
 
     assert _alerter(session, resident, 3) == []
 
 
 def test_une_saisie_absente_n_est_pas_une_divergence(session, resident):
     _rattacher(session, resident, _lot(session, etage=3))
-    _config(session, site_email=GESTIONNAIRE)
+    poser_reglages(session, site_email=GESTIONNAIRE)
 
     assert _alerter(session, resident, None) == []
 
 
 def test_sans_aucun_lot_il_n_y_a_rien_a_contredire(session, resident):
-    _config(session, site_email=GESTIONNAIRE)
+    poser_reglages(session, site_email=GESTIONNAIRE)
 
     assert _alerter(session, resident, 5) == []
 
 
 def test_un_lot_sans_etage_ne_fait_pas_inventer_de_divergence(session, resident):
     _rattacher(session, resident, _lot(session, etage=None))
-    _config(session, site_email=GESTIONNAIRE)
+    poser_reglages(session, site_email=GESTIONNAIRE)
 
     assert _alerter(session, resident, 5) == []
 
@@ -157,7 +152,7 @@ def test_un_lot_sans_etage_ne_fait_pas_inventer_de_divergence(session, resident)
 def test_un_parking_n_est_pas_un_logement(session, resident):
     """Un copropriétaire dont l'unique lot est un parking n'habite pas son lot."""
     _rattacher(session, resident, _lot(session, etage=-1, type_="parking"))
-    _config(session, site_email=GESTIONNAIRE)
+    poser_reglages(session, site_email=GESTIONNAIRE)
 
     assert _alerter(session, resident, 2) == []
 
@@ -165,7 +160,7 @@ def test_un_parking_n_est_pas_un_logement(session, resident):
 def test_deux_logements_on_ne_sait_pas_lequel_il_habite(session, resident):
     _rattacher(session, resident, _lot(session, etage=1, numero="1"))
     _rattacher(session, resident, _lot(session, etage=4, numero="2"))
-    _config(session, site_email=GESTIONNAIRE)
+    poser_reglages(session, site_email=GESTIONNAIRE)
 
     assert _alerter(session, resident, 2) == []
 
@@ -179,7 +174,7 @@ def test_sans_adresse_de_gestionnaire_rien_ne_part(session, resident):
 
 def test_une_adresse_blanche_n_est_pas_un_destinataire(session, resident):
     _rattacher(session, resident, _lot(session, etage=3))
-    _config(session, site_email="   ")
+    poser_reglages(session, site_email="   ")
 
     assert _alerter(session, resident, 1) == []
 
@@ -188,7 +183,7 @@ def test_le_gestionnaire_administrateur_prime_sur_l_adresse_du_site(session, res
     """Le gestionnaire se lit par son compte (un administrateur), à défaut `site_email`."""
     admin = compte(session, prefixe="gest", roles_json="admin")
     _rattacher(session, resident, _lot(session, etage=3))
-    _config(session, site_email=GESTIONNAIRE, site_manager_user_id=str(admin.id))
+    poser_reglages(session, site_email=GESTIONNAIRE, site_manager_user_id=str(admin.id))
 
     [tache] = _alerter(session, resident, 1)
 
@@ -200,7 +195,7 @@ def test_un_gestionnaire_qui_n_est_plus_administrateur_retombe_sur_l_adresse_du_
 ):
     ancien = compte(session, prefixe="ancien", roles_json="résident")
     _rattacher(session, resident, _lot(session, etage=3))
-    _config(session, site_email=GESTIONNAIRE, site_manager_user_id=str(ancien.id))
+    poser_reglages(session, site_email=GESTIONNAIRE, site_manager_user_id=str(ancien.id))
 
     [tache] = _alerter(session, resident, 1)
 

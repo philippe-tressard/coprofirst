@@ -49,7 +49,9 @@ _FRONT = pathlib.Path(__file__).resolve().parents[2] / "front" / "src"
 #: casse, mais telle quelle : un mot ordinaire n'y a pas sa place.
 TERMES_MORTS = {
     "rubrique Gouvernance": "l'écran redirige vers /residence depuis #516 — dire « rubrique Résidence »",
-    "Historique de mes tickets": "renommé « 🗂️ Archives » le 20/08/2026 (#516)",
+    "Historique de mes tickets": "renommé « Archives » le 20/08/2026 (#516)",
+    #  #3002 (24/11/2026) : l'onglet porte `TITRE_ARCHIVES` (`#lib/archives`), 📁 et non 🗂️.
+    "🗂️ Archives": "le titre est « 📁 Archives » (`TITRE_ARCHIVES`, `ICONE_ARCHIVES`)",
     "messagerie": "il n'y a aucune messagerie dans le produit — citer documents ou calendrier",
     "Mon profil > Sécurité": "le bloc s'appelle « Modifier le mot de passe » (#1025)",
     "Admin → Patrimoine": "l'onglet s'appelle « Périmètres » (#1025)",

@@ -57,6 +57,7 @@ from app.utils.config_site import config_site
 from app.utils.journal_securite import journaliser_securite
 from app.utils.liens import adresse_du_site, nom_site
 from app.utils.limiter import compter_tentative_secret
+from app.utils.mots_de_passe import MOT_DE_PASSE_INCORRECT
 
 #: La validité d'un lien de vérification d'adresse — **écrite une seule fois**.
 #:
@@ -68,7 +69,6 @@ from app.utils.limiter import compter_tentative_secret
 VALIDITE_VERIFICATION_EMAIL = timedelta(hours=24)
 
 LIEN_INVALIDE = "Lien de vérification invalide ou expiré."
-MOT_DE_PASSE_INCORRECT = "Mot de passe actuel incorrect."
 ADRESSE_PRISE = "Cette adresse e-mail est déjà utilisée."
 
 

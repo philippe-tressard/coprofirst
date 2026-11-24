@@ -138,7 +138,7 @@ def _integrite() -> str:
     try:
         with contexte.moteur().connect() as connexion:
             return verifier_integrite(connexion)
-    except Exception as exc:
+    except Exception as exc:  # noqa: BLE001 — un contrôle qui échoue le dit dans son verdict
         return f"contrôle d'intégrité en échec : {exc}"
 
 
@@ -218,7 +218,7 @@ def run_backup(history_id: int | None = None):
             _reussie(session, entry, filename, dest)
             return
 
-        except Exception as exc:
+        except Exception as exc:  # noqa: BLE001 — l'échec s'inscrit dans son historique
             entry.statut = StatutSauvegarde.echouee
             entry.message_erreur = str(exc)
             entry.terminee_le = horloge.maintenant()

@@ -173,8 +173,9 @@ qu'il surcharge. C'est pour cela qu'il est ici et non dans le socle.
 		border-left-color: var(--color-primary);
 		/*  L'ombre ne se renforce qu'au survol : au repos, une ombre marquée sur
 		    chaque carte fatigue une liste longue. Au survol elle isole celle
-		    qu'on vise. */
-		box-shadow: 0 4px 14px rgba(30, 58, 95, 0.13);
+		    qu'on vise. Le jeton `--shadow` : elle en était la jumelle à 2 px et un
+		    centième près (#2946), et ne s'assombrissait pas au thème sombre. */
+		box-shadow: var(--shadow);
 	}
 }
 /*  🔴 LE FOND CHANGE AU SURVOL — c'est ce qui dit « cette carte se déplie ».

@@ -20,7 +20,7 @@ import uuid
 import warnings
 from collections.abc import Callable
 
-from sqlmodel import Session, SQLModel
+from sqlmodel import Session, SQLModel, select
 
 from app.dialecte import poser_schema, retirer_schema, schema_jetable, url_dans_schema
 from app.models.core import Utilisateur
@@ -128,3 +128,22 @@ def compte(session: Session, *, prefixe: str = "compte", **champs) -> Utilisateu
     session.commit()
     session.refresh(u)
     return u
+
+
+def auteur_partage(session: Session) -> int:
+    """L'identifiant d'UN auteur, créé au premier appel puis relu par son courriel.
+
+    `Ticket.auteur_id`, `Publication.auteur_id` et `Evenement.auteur_id` sont NOT
+    NULL : un contenu sans auteur ne s'écrit pas. À la différence de `compte`, deux
+    appels rendent le même compte. `test_perimetres_arbre.py` et
+    `test_perimetres_router.py` portaient chacun ce corps (#2950).
+    """
+    existant = session.exec(
+        select(Utilisateur).where(Utilisateur.email == "auteur@test.test")
+    ).first()
+    if existant:
+        return existant.id
+    u = Utilisateur(nom="A", prenom="B", email="auteur@test.test", actif=True)
+    session.add(u)
+    session.commit()
+    return u.id

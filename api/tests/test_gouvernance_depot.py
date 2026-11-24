@@ -56,6 +56,8 @@ import pathlib
 import re
 import sys
 
+import yaml
+
 _RACINE = pathlib.Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(_RACINE / "scripts" / "ci"))
 
@@ -326,4 +328,54 @@ def test_la_gouvernance_est_redigee_en_francais():
         "Des fichiers de gouvernance sont rédigés en anglais, alors que le "
         "projet est intégralement en français :\n"
         + "\n".join(f"  {nom} : {', '.join(mots)}" for nom, mots in fautes.items())
+    )
+
+
+#: Le premier mot d'un nom d'étape anglais : les noms que l'action du marché ou
+#: la documentation de GitHub suggèrent, et qu'on recopie (#2979). « Lint » n'y
+#: est pas : c'est le jargon reçu, écrit tel quel dans les noms de JOBS requis.
+VERBES_ANGLAIS = r"^(Set up|Setup|Install|Run|Build|Checkout|Cache|Upload|Download|Login|Deploy)\b"
+
+
+def noms_d_etapes_anglais(workflow: dict) -> list[str]:
+    """Les noms d'ÉTAPES (jamais de jobs) écrits en anglais d'un workflow lu. PURE.
+
+    Les noms de JOBS sont hors de portée : ce sont les contextes exigés par la
+    protection de `main`, relus par `scripts/ci/arbre_deja_vert.py` — les renommer
+    casserait la fusion.
+    """
+    return [
+        f"{job_id} : {etape['name']}"
+        for job_id, job in (workflow.get("jobs") or {}).items()
+        for etape in job.get("steps") or []
+        if isinstance(etape.get("name"), str)
+        and (
+            re.search(VERBES_ANGLAIS, etape["name"]) or re.search(MOTS_ANGLAIS, etape["name"], re.I)
+        )
+    ]
+
+
+def test_le_controle_des_etapes_sait_REFUSER():
+    workflow = {
+        "jobs": {
+            "j": {
+                "name": "Build SvelteKit",
+                "steps": [{"name": "Set up Python"}, {"name": "Installer Ruff"}, {"uses": "x"}],
+            }
+        }
+    }
+    assert noms_d_etapes_anglais(workflow) == ["j : Set up Python"]
+
+
+def test_les_etapes_des_workflows_sont_nommees_en_francais():
+    chemins = sorted((_RACINE / ".github" / "workflows").glob("*.yml"))
+    assert len(chemins) >= 5, "aucun workflow lu — le contrôle a perdu sa portée"
+    fautes = {
+        c.name: noms
+        for c in chemins
+        if (noms := noms_d_etapes_anglais(yaml.safe_load(c.read_text(encoding="utf-8"))))
+    }
+    assert not fautes, (
+        "Étape(s) de workflow nommée(s) en anglais — le projet est en français "
+        f"(#2979) ; ne pas renommer les JOBS : {fautes}"
     )

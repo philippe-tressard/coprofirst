@@ -33,6 +33,7 @@
  */
 import { contientTousLesMots, replier } from '#lib/texte.ts';
 import { stripHtml } from '#lib/utils.ts';
+import { jourIso } from '#lib/date.ts';
 import { equipement, equipLabel } from '#lib/equipements.ts';
 import type { ContactPrestataire, ContratEntretien, Prestataire } from '#lib/api/index.ts';
 
@@ -421,7 +422,7 @@ export function contratVierge(perimetreDefaut: string[]): FormulaireContratData 
 		numero_contrat: '',
 		//  La date du jour : un contrat se saisit le jour où on le reçoit, et
 		//  corriger une date pré-remplie coûte moins que la saisir.
-		date_debut: new Date().toISOString().slice(0, 10),
+		date_debut: jourIso(),
 		duree_initiale_valeur: '',
 		duree_initiale_unite: 'mois',
 		frequence_type: '',

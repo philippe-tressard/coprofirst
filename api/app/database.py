@@ -88,7 +88,7 @@ def _run_category_migrations():
             """)
             )
             conn.commit()
-        except Exception:
+        except Exception:  # noqa: BLE001 — un alignement de catégories raté ne bloque pas la base
             pass
 
 

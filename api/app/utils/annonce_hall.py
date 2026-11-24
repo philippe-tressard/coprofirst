@@ -32,6 +32,7 @@ from app.utils.pdf_theme import (
     FONT_SANS,
     FONT_SERIF,
     PALETTE_CSS,
+    REMISE_A_ZERO_CSS,
     regle_page,
     html_to_pdf,
     image_data_uri,
@@ -267,7 +268,7 @@ def _css(fmt: str) -> str:
     return f"""\
 {regle_page(taille=g["page_size"], marges="0", numeroter=False)}
 {PALETTE_CSS}\
-* {{ box-sizing: border-box; margin: 0; padding: 0; }}
+{REMISE_A_ZERO_CSS}\
 body {{
   font-family: {FONT_SANS};
   color: var(--ink); background: var(--card); line-height: 1.5;

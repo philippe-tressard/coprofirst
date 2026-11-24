@@ -23,7 +23,7 @@ def parse_photos(raw: Optional[str]) -> list[str]:
     try:
         val = json.loads(raw) if isinstance(raw, str) else raw
         return [str(u) for u in val] if isinstance(val, list) else []
-    except Exception:
+    except Exception:  # noqa: BLE001 — ne lève jamais : une galerie vide au pire
         return []
 
 

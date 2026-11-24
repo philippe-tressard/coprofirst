@@ -3,6 +3,7 @@
 import json
 from app.utils.masquage import auteurs_masques, garder
 from app.utils import horloge
+from app.utils.prix_annonce import poser_prix, prix_centimes, prix_euros
 from typing import List, Optional
 
 from fastapi import APIRouter, Depends, File, HTTPException, Request, UploadFile
@@ -102,6 +103,9 @@ def _enrich(annonce: PetiteAnnonce, user: Utilisateur, session: Session) -> dict
     reponses = _reponses_for(annonce.id, session, user)
     return {
         **annonce.model_dump(),
+        #  Les deux colonnes du prix se lisent par leur règle, jamais brutes (#3011).
+        "prix": prix_euros(annonce),
+        "prix_centimes": prix_centimes(annonce),
         "photos": json.loads(annonce.photos_json),
         #  Le périmètre sort en LISTE de codes, jamais en JSON brut : c'est ce que
         #  `PerimetrePicker` et `perimetreLabel` lisent côté front. Le `or` couvre les
@@ -151,7 +155,7 @@ def _enrich(annonce: PetiteAnnonce, user: Utilisateur, session: Session) -> dict
 def est_gratuite(annonce: PetiteAnnonce) -> bool:
     """Un DON sans prix se lit « Gratuit » — un prix posé, même sur un don, se lit
     tel quel (la règle de la carte, servie depuis #2506)."""
-    return annonce.prix is None and annonce.type_annonce == TypeAnnonce.don
+    return prix_centimes(annonce) is None and annonce.type_annonce == TypeAnnonce.don
 
 
 class AnnonceRead(AvecPerimetreLibelle):
@@ -164,7 +168,10 @@ class AnnonceRead(AvecPerimetreLibelle):
     description: str
     type_annonce: TypeAnnonce
     categorie: CategorieAnnonce
+    #: En euros — servi tel quel aux clients qui le lisent (app iOS 1.0).
     prix: Optional[float] = None
+    #: En centimes entiers (#3011) : le même prix, sans flottant.
+    prix_centimes: Optional[int] = None
     negotiable: bool = False
     #: La colonne brute ; `photos` en est la lecture.
     photos_json: str = "[]"
@@ -281,7 +288,6 @@ def create_annonce(
         description=data.description,
         type_annonce=data.type_annonce,
         categorie=data.categorie,
-        prix=data.prix,
         negotiable=data.negotiable,
         contact_visible=data.contact_visible,
         perimetre_cible=json.dumps(data.perimetre_cible, ensure_ascii=False),
@@ -295,6 +301,7 @@ def create_annonce(
         auteur_id=user.id,
         assiste_ia=data.assiste_ia,
     )
+    poser_prix(annonce, data.prix)
     session.add(annonce)
     session.commit()
     session.refresh(annonce)
@@ -331,6 +338,9 @@ def update_annonce(
             maj[axe] = json.dumps(maj[axe], ensure_ascii=False) if maj[axe] else None
     #  ⚠️ `perimetre_cible` vidé retombe donc sur `None`, que `_enrich` relit
     #  comme `["résidence"]` : le défaut du champ, et non une annonce sans lieu.
+    #  Le prix s'écrit dans ses deux colonnes, euros et centimes (#3011).
+    if "prix" in maj:
+        poser_prix(annonce, maj.pop("prix"))
     for field, value in maj.items():
         setattr(annonce, field, value)
     annonce.mis_a_jour_le = horloge.maintenant()

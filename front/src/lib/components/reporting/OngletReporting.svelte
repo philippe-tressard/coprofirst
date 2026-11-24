@@ -37,7 +37,7 @@
 		type ReleveRenouvellements,
 	} from '#lib/api/index.ts';
 	import { toast } from '#lib/components/Toast.svelte';
-	import { fmtDatetime } from '#lib/date.ts';
+	import { fmtDatetime, jourIso } from '#lib/date.ts';
 	import {
 		REPORT_VUES,
 		VUE_PERIODIQUE,
@@ -96,7 +96,7 @@
 	async function printReporting(title: string) {
 		if (typeof window === 'undefined' || typeof document === 'undefined') return;
 		const titrePrecedent = document.title;
-		const dateStr = new Date().toISOString().slice(0, 10);
+		const dateStr = jourIso();
 		const slug = title
 			.replace(/^Reporting CS — /, '')
 			.replace(/[^\w\dÀ-ÿ]+/g, '-')

@@ -50,12 +50,21 @@ def config_alembic(ini: Path = ALEMBIC_INI) -> Config:
     """
     config = Config(str(ini))
     config.set_main_option("script_location", str(ini.parent / "alembic"))
+    poser_url_de_l_environnement(config)
+    return config
+
+
+def poser_url_de_l_environnement(config: Config) -> None:
+    """`DATABASE_URL`, si elle est posée, remplace l'adresse d'`alembic.ini`.
+
+    La règle, écrite une fois : `config_alembic` (l'API, `start.sh`) et
+    `alembic/env.py` (la ligne de commande) l'appellent (#2949).
+    """
     url = os.environ.get("DATABASE_URL")
     if url:
         #  `%` est l'interpolation d'`alembic.ini` : un mot de passe qui en porte
         #  se double, sinon la configuration lève.
         config.set_main_option("sqlalchemy.url", url.replace("%", "%%"))
-    return config
 
 
 def _lire(url: str | None, ini: Path) -> tuple[set[str], set[str], list[str] | None]:

@@ -29,44 +29,24 @@ from __future__ import annotations
 import json
 import uuid
 
-import pytest
 from fastapi import BackgroundTasks
-from sqlmodel import Session, SQLModel, select
+from sqlmodel import Session, select
 
 from app.database import engine
 from app.models.core import (
-    RoleUtilisateur,
     Ticket,
     TicketEvolution,
-    Utilisateur,
 )
 from app.routers.tickets.evolutions import add_evolution
 from app.schemas import TicketEvolutionCreate, TicketEvolutionUpdate
 
 #  🔴 La purge passe par le code de PRODUCTION : supprimer une ligne sans ce
 #  qui la référence est ce que les clés étrangères refusent (#546).
-from tests.aides_base import compte
+from tests.aides_fil import cs  # noqa: F401 — fixture importée par son nom (#2950)
 from tests.aides_purge import purger_ligne
 
 BAT_2 = ["bat:2"]
 PRECIS = ["bat:2", "cave"]
-
-
-@pytest.fixture()
-def cs() -> Utilisateur:
-    """Un membre du conseil syndical — il suit les dossiers, donc il commente."""
-    SQLModel.metadata.create_all(engine)
-    with Session(engine) as session:
-        membre = compte(
-            session,
-            prefixe="cs",
-            prenom="Camille",
-            nom="Sorel",
-            role=RoleUtilisateur.conseil_syndical,
-        )
-        yield membre
-        purger_ligne(session, Utilisateur, membre.id)
-        session.commit()
 
 
 def _ticket(session: Session, auteur_id: int, perimetre: list[str]) -> Ticket:
