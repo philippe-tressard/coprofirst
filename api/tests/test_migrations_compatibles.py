@@ -113,7 +113,13 @@ CONTRACTIONS: dict[str, tuple[str, str]] = {
 #: `{cible: "JJ/MM/AAAA — requête jouée sur la base servie → résultat"}`. La requête
 #: se joue sur l'actif (`docker exec hostachy_postgres psql …`), donc au poste : une
 #: session cloud ne l'écrit pas. Vide tant qu'aucun retrait n'est en cours.
-PREUVES_SANS_PERTE: dict[str, str] = {}
+PREUVES_SANS_PERTE: dict[str, str] = {
+    #  ⚠️ BROUILLON : à jouer sur l'actif au moment du push, une fois la 0353 en production.
+    "petite_annonce.prix": (
+        "JJ/MM/AAAA — select count(prix) from petite_annonce → À RELEVER (attendu : 0, "
+        "la 0353 l'a vidée après avoir reporté chaque prix dans prix_centimes)"
+    ),
+}
 
 #: La règle de la preuve naît avec #2937 : les retraits d'avant (0308, 0311) sont en
 #: production depuis v3.13 et n'ont pas à la produire après coup. Seuil fixe, jamais
