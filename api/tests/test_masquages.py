@@ -8,7 +8,8 @@ tout, ne masquent pas et ne se masquent pas.
 
 On ne masque que l'auteur d'une publication SIGNÉE qu'on lit
 (`masquage.auteur_lu_par`) : sinon la route répond comme pour un compte absent, et
-ne nomme personne. Une idée ne sert son auteur qu'à lui-même et à qui modère.
+ne nomme personne. Une idée et un sondage ne servent leur auteur qu'à lui-même et
+à qui modère.
 """
 
 from __future__ import annotations
@@ -274,6 +275,23 @@ def test_l_auteur_d_une_idee_ne_se_sert_qu_a_lui_et_a_qui_modere(moteur):
     assert [i["auteur_id"] for i in autre.get("/idees").json()] == [None]
     assert [i["auteur_id"] for i in auteur.get("/idees").json()] == [auteur_id]
     assert [i["auteur_id"] for i in cs.get("/idees").json()] == [auteur_id]
+
+
+def test_l_auteur_d_un_sondage_ne_se_sert_qu_a_lui_et_a_qui_modere(moteur):
+    """Un sondage ne dit pas son auteur : son identifiant ne se sert, en liste comme
+    sur la fiche, qu'à lui (les boutons « modifier », « stopper », « supprimer ») et
+    à qui modère. Ailleurs la clé reste, à `None` : la forme ne change pas.
+
+    L'auteur est ici un ancien conseiller redevenu propriétaire : il reste l'auteur
+    sans modérer, ce qui sépare les deux raisons de recevoir l'identifiant."""
+    auteur, auteur_id = client_http(moteur, RoleUtilisateur.propriétaire)
+    autre, _ = client_http(moteur, RoleUtilisateur.propriétaire)
+    cs, _ = client_http(moteur, RoleUtilisateur.conseil_syndical)
+    (sondage,) = _poser(moteur, Sondage(question="Peinture ?", auteur_id=auteur_id))
+    for http, attendu in ((autre, None), (auteur, auteur_id), (cs, auteur_id)):
+        assert [s["auteur_id"] for s in http.get("/sondages").json()] == [attendu]
+        fiche = http.get(f"/sondages/{sondage}").json()
+        assert "auteur_id" in fiche and fiche["auteur_id"] == attendu
 
 
 def test_le_geste_a_sa_limite_de_debit(moteur):
