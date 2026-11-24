@@ -47,7 +47,7 @@ export const PAGES_ROLES: PageDef[] = [
 				route: '/espace-cs/badges',
 				label: '\u{1F3F7}\uFE0F Badges & télécommandes',
 				descriptif:
-					'Tous les badges Vigik et télécommandes de la copropriété, avec leur porteur et leur lot. Vue de consultation : un badge s’enregistre par l’import du syndic, ou par son porteur.',
+					'Tous les badges Vigik et télécommandes de la copropriété, avec leur porteur et leur lot, à tenir à jour et à exporter.',
 			},
 			{
 				id: 'reporting',
@@ -122,7 +122,7 @@ export const PAGES_ROLES: PageDef[] = [
 				label: 'À traiter',
 				groupe: '👥 Personnes',
 				descriptif:
-					"Ce qui attend un geste de l'administrateur : comptes à valider, commandes d'accès, demandes de modification de profil.",
+					"Ce qui attend un geste de l'administrateur : chaque demande en attente, rangée dans sa file.",
 			},
 			{
 				id: 'utilisateurs',
@@ -153,7 +153,7 @@ export const PAGES_ROLES: PageDef[] = [
 				label: 'Imports',
 				groupe: '📥 Imports',
 				descriptif:
-					'Charger un tableur du syndic — lots et copropriétaires, télécommandes ou badges Vigik — et le rapprocher des lots.',
+					'Charger un tableur du syndic ou du règlement de copropriété, et le rapprocher des lots.',
 			},
 			{
 				id: 'copropriete',
@@ -268,7 +268,8 @@ export const PAGES_ROLES: PageDef[] = [
 				route: '/admin?onglet=maintenance',
 				label: 'Maintenance',
 				groupe: '🛠 Exploitation',
-				descriptif: 'Les tâches automatiques, leur historique et leur déclenchement manuel.',
+				descriptif:
+					"Le suivi technique de l'installation et la garde de ses données — chacun y voit ce que son rôle lui ouvre.",
 				ouvertOperateur: true,
 			},
 			{
