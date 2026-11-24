@@ -24,8 +24,8 @@ introuvables — sessions fermées, liens en attente invalides. C'était déjà 
 des jetons d'accès, signés avec la même clé : une rotation de clé est une
 révocation générale, et c'est ce qu'on attend d'elle.
 
-🔒 `test_jetons_empreinte.py` refuse un jeton écrit ou cherché sans passer par
-`empreinte` — une seule porte, comme le reste de l'authentification.
+🔒 `test_jetons_empreinte.py` refuse un jeton construit, affecté ou cherché sans passer
+par `empreinte` ; ses colonnes se lisent dans le schéma (#2940) — une seule porte.
 """
 
 from __future__ import annotations

@@ -60,7 +60,7 @@ def courriels(monkeypatch) -> list[tuple[str, str, dict]]:
     """Les courriels « envoyés » : (code, destinataire, contexte) — rien ne part."""
     envois: list[tuple[str, str, dict]] = []
 
-    async def _intercepter(code, to, context, *args, **kwargs):  # noqa: ARG001
+    async def _intercepter(code, to, context, *args, **kwargs):
         envois.append((code, to, context))
 
     monkeypatch.setattr("app.utils.email.send_email", _intercepter)

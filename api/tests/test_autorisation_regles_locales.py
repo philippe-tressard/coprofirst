@@ -179,6 +179,61 @@ def test_temoin_le_detecteur_voit_un_refus_recopie():
     assert dependances_locales([forge]) == ["utils/forge.py:10 _require_local()"]
 
 
+def roles_en_chaine(modules) -> list[str]:
+    """Chaque appel `has_role(…)`, méthode ou nu, dont un argument contient une chaîne.
+
+    Lu sur l'arbre syntaxique de tout `app/` (#2940) : la lecture ligne à ligne de
+    `routers/` et de `utils/*.py` laissait, au relevé de l'audit, 17 des 37 appels hors
+    de portée (`auth/`, les sous-paquets de `utils/`) et ne voyait pas un appel coupé sur
+    plusieurs lignes, ni une chaîne entre apostrophes.
+    """
+    fautifs = []
+    for m in modules:
+        for n in ast.walk(m.arbre):
+            if not isinstance(n, ast.Call):
+                continue
+            #  `x.has_role(…)`, ou `has_role(…)` nu — que l'ancienne lecture du texte voyait.
+            appele = n.func.attr if isinstance(n.func, ast.Attribute) else getattr(n.func, "id", "")
+            if appele != "has_role":
+                continue
+            arguments = [*n.args, *(k.value for k in n.keywords)]
+            if any(
+                isinstance(c, ast.Constant) and isinstance(c.value, str)
+                for a in arguments
+                for c in ast.walk(a)
+            ):
+                fautifs.append(f"app/{m.rel}:{n.lineno}: {ast.unparse(n)}")
+    return fautifs
+
+
+def test_temoin_le_detecteur_voit_chaque_role_en_chaine():
+    """Un extrait forgé par forme à refuser, où qu'il vive dans `app/`, et l'enum qui passe."""
+    from tests.aides_sources import Module
+
+    source = "\n".join(
+        (
+            "a = user.has_role('admin')",  # 1 — apostrophes
+            "b = user.has_role(",  # 2 — sur trois lignes
+            '    "conseil_syndical",',
+            ")",
+            "c = user.has_role(RoleUtilisateur.admin, *['syndic'])",  # 5 — dépliée
+            "d = user.has_role(RoleUtilisateur.admin)",  # l'enum
+            "e = has_role('admin')",  # 7 — appel nu
+        )
+    )
+    forges = [
+        Module(chemin=pathlib.Path(rel), rel=rel, source=source)
+        for rel in ("utils/visibility/forge.py", "auth/forge.py")
+    ]
+    attendus = [
+        f"app/{rel}:{ligne}"
+        for rel in ("utils/visibility/forge.py", "auth/forge.py")
+        for ligne in (1, 2, 5, 7)
+    ]
+    vus = [f.split(": ", 1)[0] for f in roles_en_chaine(forges)]
+    assert vus == attendus, f"vus {vus}, attendus {attendus}"
+
+
 def test_controles_de_role_via_l_enum():
     """`has_role()` doit recevoir l'enum `RoleUtilisateur`, pas des chaînes.
 
@@ -186,11 +241,7 @@ def test_controles_de_role_via_l_enum():
     heureusement fail-closed (accès refusé), mais la protection devient illisible
     et le renommage d'un rôle casse le contrôle sans erreur.
     """
-    fautifs = []
-    for f in _fichiers_routers() + sorted((_API_DIR / "app" / "utils").glob("*.py")):
-        for num, ligne in enumerate(f.read_text(encoding="utf-8-sig").splitlines(), 1):
-            if "has_role(" in ligne and '"' in ligne.split("has_role(", 1)[1][:60]:
-                fautifs.append(f"{f.name}:{num}: {ligne.strip()}")
+    fautifs = roles_en_chaine(modules_app(minimum=PLANCHER_APP))
     assert not fautifs, (
         "Contrôle de rôle par chaîne littérale — utiliser `RoleUtilisateur.<role>` :\n"
         + "\n".join(fautifs)

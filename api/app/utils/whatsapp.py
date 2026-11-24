@@ -45,6 +45,14 @@ STATUTS_NON_REJOUABLES = frozenset({STATUT_ENVOYE, STATUT_INCERTAIN, STATUT_EN_C
 #: nombre, qui protège du doublon.
 TIMEOUT_ENVOI = 60
 
+#: Les gestes d'ENVOI du transport (#2977). Seul cet adaptateur les enchaîne ; un
+#: appelant passe par `utils/diffusion`, sauf ceux qui n'ont aucun objet derrière.
+#: Lue par les deux contrôles qui les gardent — les appels (`test_groupe_portes`)
+#: et les imports (`test_diffusion_canal`) : une seule liste, qui ne diverge plus.
+GESTES_D_ENVOI = frozenset(
+    {"envoyer_whatsapp", "envoyer_whatsapp_avec_log", "envoyer_whatsapp_raw"}
+)
+
 
 def _motif_du_bridge(resp) -> str | None:
     """Le champ `error` du corps JSON d'une réponse du bridge, s'il y en a un."""

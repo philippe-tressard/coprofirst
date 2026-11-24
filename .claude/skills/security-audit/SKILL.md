@@ -1,7 +1,7 @@
 ---
 name: security-audit
-description: "Run a complete OWASP Top 10 security audit on the 5Hostachy project (FastAPI + SvelteKit + PostgreSQL). Use when: checking for vulnerabilities, reviewing security posture, before a release, after adding auth/upload/API features, or before touching auth, rights, secrets, tokens, uploads, served files, the security journal or a container (§11: the single security entry points in detail)."
-argument-hint: "Optional: scope the audit (e.g. 'auth only', 'uploads', 'full')"
+description: "Audit de sécurité OWASP Top 10 de 5Hostachy (FastAPI + SvelteKit + PostgreSQL), et les portes uniques de la sécurité (§11). À charger avant de toucher à l'auth, aux droits, aux secrets, au téléversement, aux fichiers servis ou à une exposition publique — et au journal de sécurité, aux jetons, à un conteneur ; avant une version, ou pour un audit."
+argument-hint: "Facultatif : la portée de l'audit (ex. « auth seulement », « téléversement », « complet »)"
 ---
 
 # Security Audit — 5Hostachy (OWASP Top 10)
@@ -20,8 +20,8 @@ Audit de sécurité complet du projet. Exécuter chaque vérification dans l'ord
 ### 1. SQL Injection (A03:2021)
 
 **Rechercher** les requêtes SQL brutes avec interpolation :
-```powershell
-Get-ChildItem -Recurse -Filter "*.py" | Where-Object { $_.FullName -notmatch "__pycache__|alembic" } | Select-String -Pattern "text\(f[`"']|\.format\(|%\s" | Where-Object { $_.Line -match "SELECT|INSERT|UPDATE|DELETE" }
+```bash
+git grep -nE "text\(f[\"']|\.format\(|%\s" -- 'api/app/*.py' | grep -E "SELECT|INSERT|UPDATE|DELETE"
 ```
 
 **Règle** : SQLAlchemy ORM = safe. `text()` avec f-string/format = CRITIQUE.
@@ -30,8 +30,8 @@ Get-ChildItem -Recurse -Filter "*.py" | Where-Object { $_.FullName -notmatch "__
 ### 2. XSS — Cross-Site Scripting (A07:2021)
 
 **Rechercher** les usages de `{@html}` dans Svelte :
-```powershell
-Get-ChildItem -Recurse -Filter "*.svelte" | Select-String -Pattern "@html"
+```bash
+git grep -n "@html" -- 'front/src/*.svelte'
 ```
 
 **Règle** : Tout `{@html}` DOIT passer par une fonction de `#lib/sanitize.ts` — elles sont **trois** (`safeHtml`, `safeRichContent`, `safeDescription`), toutes adossées à DOMPurify. Vérifié en CI par `npm run lint:html` (`CLAUDE.md`, règle front n° 1), qui exige que le nom vienne de l'**import** : une fonction locale homonyme ne prouve rien (#429).
@@ -39,9 +39,8 @@ Get-ChildItem -Recurse -Filter "*.svelte" | Select-String -Pattern "@html"
 **Fix** : `import { safeDescription } from '#lib/sanitize.ts'` → `{@html safeDescription(contenu)}` — et jamais un helper local, fût-il correct : c'est ainsi que trois copies de `safeDescription` ont coexisté.
 **Aperçu fidèle** : un HTML complet montré tel qu'il partira (aperçu d'un courriel, d'une affiche) ne passe pas par `{@html}` mais par un `<iframe srcdoc>` au bac à sable **VIDE** (`sandbox=""`) — sans `allow-scripts` ni `allow-same-origin` : le cadre n'exécute rien et ne lit rien de l'application, ce qui rend tenable de ne pas l'assainir (l'aperçu doit rester fidèle). 🔒 `npm run lint:ilots-clairs` refuse un cadre sans `sandbox` vide — absent, ouvert par un jeton ou calculé (#2945).
 
-Configuration DOMPurify — **lire `front/src/lib/sanitize.ts`**, jamais cette page :
-la liste recopiée ici avait déjà perdu `details` et `summary`, ajoutés le 17/09/2026
-avec les blocs dépliables (#992 ; `open` est volontairement hors `ALLOWED_ATTR`).
+Configuration DOMPurify — **lire `front/src/lib/sanitize.ts`**, jamais cette page (la liste
+recopiée ici avait perdu `details` et `summary`, #992).
 
 ### 3. Téléversement : une seule porte (A01:2021)
 
@@ -55,19 +54,10 @@ plafond de taille, extensions autorisées —, une entrée par famille (lire
 
 #### Ce que l'audit du 19/09/2026 a trouvé (#1026)
 
-Le téléversement avait **trois écritures**, appliquant des règles différentes :
-
-| Chemin | Types | Plafond | Signature |
-|---|---|---|---|
-| documents privés (`utils/fichiers`) | **aucun** | **aucun** | oui |
-| images (`routers/uploads`) | oui | oui | réencodage PIL |
-| documents joints (`routers/uploads`) | oui | oui | oui, **recopiée** |
-
-Et **trois imports de tableur n'avaient aucun contrôle** : ni type, ni taille.
-Ils n'étaient pas dans la portée du test de signature, dont le critère était
-« les endpoints qui **écrivent** sur le disque » — or un import analyse en
-mémoire. La portée était juste, et elle laissait dehors trois chemins par
-lesquels un fichier arbitraire entrait.
+Le téléversement avait **trois écritures** aux règles différentes (documents privés sans type
+ni plafond, une signature recopiée), et **trois imports de tableur sans aucun contrôle** : hors
+de la portée du test de signature, qui ne voyait que les points qui ÉCRIVENT sur le disque. Le
+détail est dans l'en-tête de `test_televersement_source_unique.py`.
 
 ⚠️ **Une duplication de règle de sécurité ne produit aucun signal** : un fichier
 accepté à tort est stocké, servi, et personne ne s'en plaint. C'est pourquoi
@@ -116,7 +106,7 @@ l'usage — la divergence n'arrive que le jour où la source apprend quelque cho
 |---|---|---|
 | `….roles_autorises` lu | `visibility.profil_admet` | `test_profil_acces_source_unique.py` |
 | un élément de `….user_lots` jugé sur `actif` | `deps.est_rattache_au_lot` | `test_appartenance_lot_source_unique.py` |
-| un champ comparé à `user.id` par `auth/appartenance.py`, recomparé ailleurs | le prédicat du module (`peut_defaire_le_versement`…) | `test_appartenance_source_unique.py` |
+| un champ comparé à l'identité du compte courant (quel que soit son nom, `in` compris, #2940) par `auth/appartenance.py`, recomparé ailleurs | le prédicat du module (`peut_defaire_le_versement`…) | `test_appartenance_source_unique.py` |
 
 **Le geste d'audit** : pour une règle neuve, se demander *quelle donnée elle
 lit* (un champ de profil, `actif`, un champ de propriété), puis chercher cette
@@ -127,18 +117,18 @@ rend 403, ou tait un geste permis.
 ### 4. Authentication & Session (A07:2021)
 
 #### Cookies JWT
-```powershell
-Get-ChildItem -Recurse -Filter "*.py" | Select-String -Pattern "secure=|samesite=|httponly="
+```bash
+git grep -nE "secure=|samesite=|httponly=" -- 'api/app/*.py'
 ```
 
-**Vérifier dans `api/app/routers/auth.py`** (`COOKIE_OPTS`) — et non dans le paquet `api/app/auth/`, qui porte les dépendances et le JWT, aucun cookie :
+**Vérifier `auth/session_ouverte.COOKIE_OPTS`** — la seule pose des cookies de session ; `routers/auth.py` n'en pose aucun (#2933) :
 - `secure=settings.cookie_secure` (True en prod, False en dev via `.env`)
 - `samesite="strict"`
 - `httponly=True`
 
 #### SECRET_KEY
-```powershell
-Get-ChildItem -Recurse -Filter "*.py" | Select-String -Pattern "secret_key.*=.*\""
+```bash
+git grep -nE 'secret_key.*=.*"' -- 'api/app/*.py'
 ```
 
 **Vérifier dans `config.py`** :
@@ -146,18 +136,15 @@ Get-ChildItem -Recurse -Filter "*.py" | Select-String -Pattern "secret_key.*=.*\
 - Longueur minimale 32 caractères
 
 #### Password hashing
-```powershell
-Get-ChildItem -Recurse -Filter "*.py" | Select-String -Pattern "bcrypt|passlib|sha256|md5|hashlib|plaintext"
+```bash
+git grep -nE "bcrypt|passlib|sha256|md5|hashlib|plaintext" -- 'api/app/*.py'
 ```
 **Attendu** : bcrypt uniquement (via `passlib` ou `bcrypt` direct).
 
 #### Poser un mot de passe = fermer les sessions qu'il ouvrait
 
-🔴 Deux routes posent un mot de passe — « changer le mien » et « j'ai oublié le
-mien » — et elles ont **divergé** jusqu'au 19/09/2026 : la seconde révoquait les
-sessions actives, la première ne révoquait rien. Un attaquant qui détenait une
-session la conservait sept jours après que la victime avait changé son mot de
-passe (#1027).
+🔴 Les deux routes qui posent un mot de passe ont **divergé** jusqu'au 19/09/2026 : une seule
+révoquait les sessions actives (#1027).
 
 **Le geste s'écrit une fois** : `app/utils/mots_de_passe.poser_mot_de_passe()` —
 hachage, révocation des autres sessions, et la session appelante conservée quand
@@ -171,29 +158,27 @@ Un mot de passe neuf la change ; un rejeu détecté aussi (§7). 🔒 `test_jeto
 
 ### 5. CORS (A05:2021)
 
-```powershell
-Get-ChildItem -Recurse -Filter "*.py" | Select-String -Pattern "CORSMiddleware|allow_origins|allow_methods|allow_credentials"
+```bash
+git grep -nE "CORSMiddleware|allow_origins|allow_methods|allow_credentials" -- 'api/app/*.py'
 ```
 
-**Vérifier dans `main.py`** :
+**Vérifier dans `app/intergiciels.py`** (`CORSMiddleware`, #2933) :
 - `allow_origins` : liste explicite (JAMAIS `["*"]` avec `credentials=True`)
 - `allow_methods` : liste explicite (`["GET", "POST", "PATCH", "PUT", "DELETE", "OPTIONS"]`)
 - `allow_credentials=True` seulement si origins explicites
 
 ### 6. Rate Limiting (A04:2021)
 
-```powershell
-Get-ChildItem -Recurse -Filter "*.py" | Select-String -Pattern "slowapi|RateLimiter|throttle|limiter"
+```bash
+git grep -nE "slowapi|RateLimiter|throttle|limiter" -- 'api/app/*.py'
 ```
 
 **Les limites vivent dans `api/app/utils/limiter.py`**, une constante par
 **intention** — lire le module, jamais une liste recopiée ici. Chaque constante dit pourquoi
 elle vaut ce qu'elle vaut — et c'est là qu'on lit la valeur, pas ici.
 
-🔴 Ce tableau les recopiait, et il a été **faux** : `/auth/change-password` et
-`/auth/verifier-email` n'avaient aucune limite alors que les deux éprouvent un
-secret, et les quatre routes de `auth_profil.py` non plus. Une liste recopiée ne
-dit rien des routes qu'elle omet — c'est précisément ce qui manquait (#1027).
+🔴 Ce tableau les recopiait, et il a été **faux** : une liste recopiée ne dit rien des routes
+qu'elle omet (#1027).
 
 🔒 **Le contrôle qui remplace ce tableau** : `api/tests/test_limites_debit_auth.py`
 relève les routes par ce qu'elles ATTEIGNENT (`aides_sources.routes_qui_atteignent`) :
@@ -256,15 +241,9 @@ comparé par égalité.
 
 ### 8. Secrets & Configuration (A02:2021)
 
-```powershell
-# Secrets hardcodés
-Get-ChildItem -Recurse -Filter "*.py" | Select-String -Pattern "secret_key.*=.*\"|password.*=.*\"|api_key.*=.*\""
-
-# .env dans .gitignore
-Get-Content .gitignore | Select-String -Pattern "\.env"
-
-# .env.example sans vraies valeurs
-if (Test-Path .env.example) { Get-Content .env.example }
+```bash
+git grep -nE 'secret_key.*=.*"|password.*=.*"|api_key.*=.*"' -- 'api/app/*.py'   # secrets écrits en dur
+grep -n '\.env' .gitignore && cat .env.example                                     # .env ignoré, exemple sans valeur
 ```
 
 #### Un secret s'écrit une fois, et jamais dans une URL (#1596, #1598)
@@ -298,16 +277,13 @@ l'historique git la garde (`standards/14`). Trente-trois fichiers en portaient l
   racine). Les deux derniers n'y sont que depuis #1544 : la docstring d'une
   migration recopiait une formule d'appel avec deux noms du syndic. Un dossier
   public qui n'y figure pas n'est **pas** contrôlé — l'ajouter à `PORTEE`.
-- Un nom se cherche et se remplace **sans tenir compte de la casse** : le premier
-  passage (v2.89.2) a laissé deux clés en minuscules et un nom à casse mixte,
-  trouvés à la vérification sur `main`, pas avant.
+- Un nom se cherche et se remplace **sans tenir compte de la casse** (v2.89.2 en avait laissé trois).
 - Ce qu'aucun contrôle ne lit est public aussi : **message de commit, titre et
   corps d'un ticket ou d'une PR**. Y décrire le cas sans le nom (« un
   copropriétaire homonyme d'une banque »).
 - L'attribution légale (licences, SPDX, mentions légales) nomme l'auteur : c'est
   la seule exception, et elle est hors de la portée du contrôle.
-- Historique : arbitré le 01/10/2026 — accepté tel quel, non réécrit (GitHub
-  garde les références des PR ; une réécriture serait incomplète).
+- L'historique git est accepté tel quel, non réécrit (arbitré le 01/10/2026).
 
 #### Exception assumée : l'identifiant SSH d'exploitation et les IP du LAN (#1581)
 
@@ -387,6 +363,14 @@ refuse la copie.
   émet : toute fonction de `app/` qui appelle `journaliser_securite` y est déclarée, et l'inverse ;
   le relevé des écritures sur un compte lit tout `app/`, portes d'écriture et écritures sans ligne
   déclarées ; refuse un code absent de `_NIVEAUX`, et la donnée personnelle chez les appelants).
+  **Exception déclarée** (#2973, arbitrée par Philippe le 23/11/2026) : au premier démarrage, le
+  seed écrit dans le journal du CONTENEUR les mots de passe temporaires des deux comptes initiaux
+  — la seule voie de la première connexion ; leur changement forcé : #3019.
+- **Portes de lecture et de refus** — le cookie d'accès ne se lit qu'à `auth/deps.py`
+  (🔒 `test_lecture_jeton_acces_source_unique.py`) ; « un externe ne contribue pas » s'écrit
+  `deps.exiger_non_externe` (🔒 `test_refus_externe_source_unique.py`) ; « quels bâtiments sont
+  les siens », `utils/mes_batiments.batiments_de_l_utilisateur` (🔒 `test_regle_acces_source_unique.py`) ;
+  le profil d'accès d'un document, `visibility.profil_admet` (🔒 `test_profil_acces_source_unique.py`).
 - **HTML d'un utilisateur côté serveur** (#2150) : `utils/html_sur` (`nh3`, liste blanche de
   `#lib/sanitize.ts`). Le corps d'un courriel s'échappe ; un champ riche y entre par
   `html_riche(…)` ou `| safe`, redéfini pour assainir. 🔒 `test_html_sur.py` (charge hostile

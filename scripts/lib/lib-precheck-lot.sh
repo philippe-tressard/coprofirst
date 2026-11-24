@@ -64,7 +64,8 @@ if [ -f "$GIT_DEPOT/reecriture-dev" ] && [ "$AMONT" = "present" ]; then
   #  vides et sha tronqués s'y traitent, et aucun de ces défauts ne lève.
   DECL0A=$(lire_declaration_reecriture "$GIT_DEPOT/reecriture-dev" | sed -n 1p)
   DECL0A_SHAS=$(lire_declaration_reecriture "$GIT_DEPOT/reecriture-dev" | sed -n 2p)
-  MANQUANTS0A=$(git rev-list "HEAD..origin/$BRANCHE" 2>/dev/null | cut -c1-7 | tr '
+  #  Sha COMPLETS : la déclaration se compare par préfixe, à toute longueur (#2967).
+  MANQUANTS0A=$(git rev-list "HEAD..origin/$BRANCHE" 2>/dev/null | tr '
 ' ' ')
   #  Un fichier touché par un commit retiré et que HEAD n'a pas réécrit depuis
   #  la base commune : son apport serait PERDU. La mesure vit dans
@@ -74,11 +75,11 @@ if [ -f "$GIT_DEPOT/reecriture-dev" ] && [ "$AMONT" = "present" ]; then
     DECL0A_SHAS=""; MANQUANTS0A=""
   fi
 fi
-REECR0A=$(verdict_reecriture "${DECL0A:-}" "${HEAD_COURT0A:-$(git rev-parse --short HEAD 2>/dev/null)}"                              "${DECL0A_SHAS:-}" "${MANQUANTS0A:-}" "${NON_RECOUVERTS:-}")
+REECR0A=$(verdict_reecriture "${DECL0A:-}" "${HEAD_COURT0A:-$(git rev-parse HEAD 2>/dev/null)}"                              "${DECL0A_SHAS:-}" "${MANQUANTS0A:-}" "${NON_RECOUVERTS:-}")
 case "$REECR0A" in
   oui) DETAIL0A="retard=$RETARD commit(s) RETIRÉ(S) volontairement et déclaré(s) — rien de perdu (fichiers tous réécrits par HEAD)" ;;
   inconnu) DETAIL0A="$DETAIL0A — déclaration de réécriture incomplète" ;;
-  *) [ -n "$DECL0A$DECL0A_SHAS" ] && DETAIL0A="$DETAIL0A — déclaration de réécriture REFUSÉE${NON_RECOUVERTS:+ (perdrait :${NON_RECOUVERTS})}" ;;
+  *) [ -n "$DECL0A$DECL0A_SHAS" ] && DETAIL0A="$DETAIL0A — déclaration de réécriture REFUSÉE ($(raison_refus_reecriture "${DECL0A:-}" "$(git rev-parse HEAD 2>/dev/null)" "${DECL0A_SHAS:-}" "${MANQUANTS0A:-}" "${NON_RECOUVERTS:-}"))" ;;
 esac
 rapporter 0a "$(verdict_clone "${RETARD:-}" "$IDENT" "$AMONT" "$REECR0A")" "Clone à jour sur origin/$BRANCHE" "$DETAIL0A"
 
@@ -213,7 +214,7 @@ rapporter 0g "$V0G" "Rang du bump conforme à ce que le lot apporte" "$D0G"
 #
 #      Format attendu de `.git/pr-brief.md` — première ligne `commit: <sha>`,
 #      puis le titre en `# …`, puis le corps :
-#          commit: 6055161
+#          commit: 6055161     (un sha de HEAD, court ou complet : comparé par préfixe)
 #          # feat(admin): …
 #          ### Ce qui change
 #          …
@@ -225,10 +226,10 @@ else
   BRIEF_SHA=""; BRIEF_CORPS=""
 fi
 HEAD_COURT=$(git rev-parse --short HEAD 2>/dev/null)
-V0F=$(verdict_brief "${BRIEF_SHA:-}" "${HEAD_COURT:-?}" "${BRIEF_CORPS:-}")
+V0F=$(verdict_brief "${BRIEF_SHA:-}" "$(git rev-parse HEAD 2>/dev/null || echo ?)" "${BRIEF_CORPS:-}")
 case "$V0F" in
   OK)      D0F="$(sed -n 2p "$BRIEF" | cut -c1-60)…" ;;
-  FAIL)    if [ -n "$BRIEF_SHA" ] && [ "$BRIEF_SHA" != "$HEAD_COURT" ]; then
+  FAIL)    if [ -n "$BRIEF_SHA" ] && [ "$(memes_hachages "$BRIEF_SHA" "$(git rev-parse HEAD)")" != oui ]; then
              D0F="brief écrit pour $BRIEF_SHA, or c'est $HEAD_COURT qui part"
            else D0F="descriptif trop court ($BRIEF_CORPS ligne(s)) — un titre n'est pas un descriptif"; fi ;;
   *)       D0F="aucun $BRIEF — rédiger titre et descriptif AVANT de pousser" ;;

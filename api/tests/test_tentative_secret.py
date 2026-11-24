@@ -33,7 +33,7 @@ def admin_et_cible(monkeypatch):
     """Un administrateur connecté (par la vraie authentification, à travers slowapi),
     et le compte qu'il corrige ; aucun courriel ne part."""
 
-    async def _intercepter(*args, **kwargs):  # noqa: ARG001
+    async def _intercepter(*args, **kwargs):
         return None
 
     monkeypatch.setattr("app.utils.email.send_email", _intercepter)

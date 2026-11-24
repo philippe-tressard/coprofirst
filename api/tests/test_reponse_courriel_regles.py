@@ -68,7 +68,7 @@ def _transfert_du_syndic(adresse_syndic: str) -> str:
 # ── Le syndic fait avancer le dossier ─────────────────────────────────────────
 
 
-def test_une_reponse_du_SYNDIC_passe_l_affaire_ouverte_chez_le_syndic(scene):  # noqa: F811
+def test_une_reponse_du_SYNDIC_passe_l_affaire_ouverte_chez_le_syndic(scene):
     session, ticket, syndic, _cs = scene
     assert (
         traiter(
@@ -86,7 +86,7 @@ def test_une_reponse_du_SYNDIC_passe_l_affaire_ouverte_chez_le_syndic(scene):  #
     assert ticket.statut == StatutTicket.en_cours
 
 
-def test_une_affaire_deja_AVANCEE_ne_change_pas_d_etat(scene):  # noqa: F811
+def test_une_affaire_deja_AVANCEE_ne_change_pas_d_etat(scene):
     """« s'il est encore à l'état initial OUVERT » — une affaire en AG y reste."""
     session, ticket, syndic, _cs = scene
     ticket.statut = StatutTicket.en_ag
@@ -105,7 +105,7 @@ def test_une_affaire_deja_AVANCEE_ne_change_pas_d_etat(scene):  # noqa: F811
     assert ticket.statut == StatutTicket.en_ag
 
 
-def test_une_reponse_du_CONSEIL_ne_change_pas_l_etat(scene):  # noqa: F811
+def test_une_reponse_du_CONSEIL_ne_change_pas_l_etat(scene):
     session, ticket, _syndic, cs = scene
     traiter(
         session,
@@ -123,7 +123,7 @@ def test_une_reponse_du_CONSEIL_ne_change_pas_l_etat(scene):  # noqa: F811
 # ── Le transfert d'un message du syndic ───────────────────────────────────────
 
 
-def test_un_TRANSFERT_du_syndic_par_le_conseil_porte_le_message_du_syndic(scene):  # noqa: F811
+def test_un_TRANSFERT_du_syndic_par_le_conseil_porte_le_message_du_syndic(scene):
     session, ticket, syndic, cs = scene
     entetes = dict(_entetes_reponse(ticket.jeton_courriel, de=cs.email))
     entetes["Subject"] = f"TR : Affaire #{ticket.numero} — Fuite"
@@ -141,7 +141,7 @@ def test_un_TRANSFERT_du_syndic_par_le_conseil_porte_le_message_du_syndic(scene)
     assert (evol.type, evol.nouveau_statut) == ("etat", "en_cours")
 
 
-def test_le_transfert_d_un_message_d_un_TIERS_verse_le_message_du_tiers(scene):  # noqa: F811
+def test_le_transfert_d_un_message_d_un_TIERS_verse_le_message_du_tiers(scene):
     """🔴 Changé le 29/09/2026 : c'était la NOTE du conseil qui entrait. Le conseil
     transfère désormais les échanges reçus dans sa boîte pour qu'ils rejoignent
     l'affaire — c'est le message du tiers que le fil doit garder."""
@@ -170,7 +170,7 @@ def test_une_REPONSE_a_un_transfert_n_est_pas_un_transfert():
 # ── Un merci du conseil n'entre pas ───────────────────────────────────────────
 
 
-def test_un_simple_MERCI_du_conseil_n_entre_pas(scene, monkeypatch):  # noqa: F811
+def test_un_simple_MERCI_du_conseil_n_entre_pas(scene, monkeypatch):
     session, ticket, _syndic, cs = scene
     monkeypatch.setattr(llm, "demander", _modele(""))
     assert (
@@ -186,7 +186,7 @@ def test_un_simple_MERCI_du_conseil_n_entre_pas(scene, monkeypatch):  # noqa: F8
     assert _evolutions(session, ticket) == []
 
 
-def test_le_SYNDIC_entre_meme_quand_l_assistant_le_juge_vide(scene, monkeypatch):  # noqa: F811
+def test_le_SYNDIC_entre_meme_quand_l_assistant_le_juge_vide(scene, monkeypatch):
     """Une réponse sollicitée n'est jamais écartée par l'assistant."""
     session, ticket, syndic, _cs = scene
     monkeypatch.setattr(llm, "demander", _modele(""))
@@ -203,7 +203,7 @@ def test_le_SYNDIC_entre_meme_quand_l_assistant_le_juge_vide(scene, monkeypatch)
 # ── Une affaire close ne reçoit plus rien ─────────────────────────────────────
 
 
-def test_une_affaire_CLOSE_ne_recoit_plus_rien_ni_alerte(scene):  # noqa: F811
+def test_une_affaire_CLOSE_ne_recoit_plus_rien_ni_alerte(scene):
     session, ticket, syndic, cs = scene
     ticket.statut = StatutTicket.résolu
     session.add(ticket)

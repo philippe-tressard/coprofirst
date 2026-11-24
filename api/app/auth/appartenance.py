@@ -33,8 +33,9 @@ C'est ce que `standards/03` §1 demande : une règle d'autorisation ne vit pas c
 un routeur. Le lieu ne supprime pas la divergence — il la rend **visible**, et
 c'est la seule chose qui empêche la troisième règle d'être écrite au hasard.
 
-🔒 `api/tests/test_appartenance_source_unique.py` refuse qu'une comparaison entre
-un champ d'objet et `user.id` gouverne une levée HTTP hors de `auth/`.
+🔒 `api/tests/test_appartenance_source_unique.py` refuse qu'une comparaison
+(`==`, `!=`, `in`, `not in`) à l'identité du compte courant — reconnu par son type ou
+sa dépendance d'auth, quel que soit son nom — gouverne une levée HTTP hors de `auth/` (#2940).
 
 ## Deux questions, deux fonctions — ne pas les remélanger
 

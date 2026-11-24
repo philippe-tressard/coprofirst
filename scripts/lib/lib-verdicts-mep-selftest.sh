@@ -89,12 +89,16 @@ feat(b) : deux"
   #  La forme prime sur le fait dans un seul sens : deux bumps restent un échec
   #  même si la version finit par changer — c'est le défaut d'origine (#297).
   t "deux bumps malgré version changée"  FAIL    verdict_bumps 2 2.52.1 2.53.0
-  t "brief du lot, corps fourni"         OK      verdict_brief abc123 abc123 40
-  t "brief pile à la borne"              OK      verdict_brief abc123 abc123 5
-  t "brief réduit à un titre"            FAIL    verdict_brief abc123 abc123 2
-  t "brief du lot PRÉCÉDENT"             FAIL    verdict_brief vieux1 abc123 40
-  t "aucun brief"                        INCONNU verdict_brief "" abc123 40
-  t "compte de lignes illisible"         INCONNU verdict_brief abc123 abc123 ""
+  t "brief du lot, corps fourni"         OK      verdict_brief abc1234 abc1234 40
+  t "brief pile à la borne"              OK      verdict_brief abc1234 abc1234 5
+  t "brief réduit à un titre"            FAIL    verdict_brief abc1234 abc1234 2
+  t "brief du lot PRÉCÉDENT"             FAIL    verdict_brief 0ld1234 abc1234 40
+  #  Un sha court se compare par préfixe : `--short` rend 7, puis 8 (#2967).
+  t "même commit, brief 7, HEAD 8"       OK      verdict_brief 6055161 6055161a 40
+  t "même commit, HEAD complet"          OK      verdict_brief 6055161 6055161a9f3e2c1d0b8a7f6e5d4c3b2a1f0e9d8c 40
+  t "brief de 6 : on ne conclut pas"     FAIL    verdict_brief 605516 6055161a 40
+  t "aucun brief"                        INCONNU verdict_brief "" abc1234 40
+  t "compte de lignes illisible"         INCONNU verdict_brief abc1234 abc1234 ""
   t "zéro erreur"                        OK      verdict_compte 0 0
   t "erreurs présentes"                  FAIL    verdict_compte 3 0
   t "compte non mesuré"                  INCONNU verdict_compte "" 0
@@ -165,6 +169,18 @@ feat(b) : deux"
   t "déclarée, concordante, recouverte"   oui     verdict_reecriture 601477b 601477b "137cab0" "137cab0" ""
   #  Datée par le commit : une déclaration du lot précédent ne vaut plus.
   t "déclarée pour un AUTRE commit"       non     verdict_reecriture abc1234 601477b "137cab0" "137cab0" ""
+  #  Sha courts de longueurs différentes : même commit (#2967).
+  t "commit 7 contre HEAD 8"              oui     verdict_reecriture 601477b 601477bc "137cab0" "137cab0" ""
+  t "retiré déclaré 8, manquant complet"  oui     verdict_reecriture 601477b 601477b "137cab0f" "137cab0f9e8d7c6b5a4f3e2d1c0b9a8f7e6d5c4b3a" ""
+  t "retiré déclaré 8, diverge au 8e"     non     verdict_reecriture 601477b 601477b "137cab0e" "137cab0f9e8d7c6b5a4f3e2d1c0b9a8f7e6d5c4b3a" ""
+  #  Un préfixe, jamais une sous-chaîne : « 37cab0f » n'est pas « 137cab0f… ».
+  t "retiré déclaré, sous-chaîne seule"   non     verdict_reecriture 601477b 601477b "37cab0f" "137cab0f9e8d7c6b5a4f3e2d1c0b9a8f7e6d5c4b3a" ""
+  #  Le message de 0a nomme la cause (#2967) ; vide quand la déclaration tient.
+  t "raison : autre commit"               "écrite pour abc1234, or HEAD est 601477bc" raison_refus_reecriture abc1234 601477bc "137cab0" "137cab0" ""
+  t "raison : compte"                     "déclare 1 commit(s) retiré(s), il en manque 2" raison_refus_reecriture 601477b 601477b "137cab0" "137cab0 999aaaa" ""
+  t "raison : sha inconnu"                "37cab0f ne désigne aucun commit manquant" raison_refus_reecriture 601477b 601477b "37cab0f" "137cab0f" ""
+  t "raison : perte"                      "perdrait : api/app/main.py" raison_refus_reecriture 601477b 601477b "137cab0" "137cab0" " api/app/main.py"
+  t "raison : aucune, 7 contre 8"         ""      raison_refus_reecriture 601477b 601477bc "137cab0f" "137cab0f9e" ""
   #  🔴 Le cœur du garde-fou : un fichier non réécrit par HEAD serait PERDU.
   t "un fichier ne serait pas recouvert"  non     verdict_reecriture 601477b 601477b "137cab0" "137cab0" "api/app/main.py"
   #  La dérogation ne survit pas à son objet — dans les deux sens.
