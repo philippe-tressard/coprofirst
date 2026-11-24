@@ -16,6 +16,7 @@ contenus différents :
 
 from __future__ import annotations
 
+import errno
 import os
 
 import pytest
@@ -110,14 +111,21 @@ def test_un_lien_vers_une_autre_racine_ne_sert_rien(fichiers, tmp_path):
 
     a = contexte.par_identifiant("essai-a").racine_fichiers
     b = contexte.par_identifiant("essai-b").racine_fichiers
-    lien = a / "photos" / "vers-b.txt"
+    #  Dans un dossier SERVI (celui du témoin) : ailleurs, le 404 viendrait du refus
+    #  d'un dossier inconnu (claude-config#637), et le test ne jugerait plus le lien.
+    lien = a / "fichiers" / "vers-b.txt"
+    lien.parent.mkdir(parents=True, exist_ok=True)
     try:
         os.symlink(b / CLE, lien)
-    except OSError:
+    except OSError as e:
+        if e.errno not in (errno.EPERM, errno.EACCES):
+            raise
         pytest.skip("créer un lien demande un privilège sur ce poste")
     jeton, _ = fichiers["temoins"]["a"]
+    #  Témoin : sans le lien, le même dossier sert bien le fichier de A.
+    assert sous(_client(), f"/uploads/{CLE}", "a", jeton).status_code == 200
     try:
-        assert sous(_client(), "/uploads/photos/vers-b.txt", "a", jeton).status_code == 404
+        assert sous(_client(), "/uploads/fichiers/vers-b.txt", "a", jeton).status_code == 404
     finally:
         lien.unlink()
 
