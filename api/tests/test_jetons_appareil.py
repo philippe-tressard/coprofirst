@@ -18,8 +18,6 @@ Une portée neuve sans son émission ici fait échouer `test_chaque_portee_est_b
 
 from __future__ import annotations
 
-import re
-
 import pytest
 from fastapi.testclient import TestClient
 
@@ -28,7 +26,7 @@ from app.auth.jetons_appareil import PORTEES, route_ouverte
 from app.main import app
 from tests.aides_appareils import jeton_d_ecran, jeton_de_montre
 from tests.aides_http import base_http
-from tests.aides_sources import operations_montees
+from tests.aides_sources import chemin_concret, operations_montees, resout
 
 #: Le cas zéro du balayage — un ordre de grandeur, pas une valeur figée.
 MINIMUM_OPERATIONS = 300
@@ -50,10 +48,6 @@ def _operations() -> list[tuple[str, str]]:
     return sorted({(m, c) for m, c, _r in operations_montees(app) if m != "HEAD"})
 
 
-def _concret(gabarit: str) -> str:
-    return re.sub(r"\{[^}]+\}", "1", gabarit)
-
-
 def test_chaque_portee_est_balayee():
     assert set(EMISSIONS) == set(PORTEES), (
         "une portée sans émission ici n'est pas balayée : ajouter son parcours à EMISSIONS"
@@ -69,7 +63,7 @@ def test_un_jeton_d_appareil_n_ouvre_que_les_routes_de_sa_portee(moteur, portee)
     assert len(operations) > MINIMUM_OPERATIONS, f"{len(operations)} opérations — cas zéro"
     ouvertes, ecarts = set(), []
     for methode, gabarit in operations:
-        chemin = _concret(gabarit)
+        chemin = chemin_concret(gabarit)
         avec = appareil.request(methode, chemin)
         if route_ouverte(portee, methode, chemin):
             ouvertes.add((methode, gabarit))
@@ -123,11 +117,7 @@ def test_la_table_est_fermee_par_defaut():
 
 
 def _lit_un_jeton_d_appareil(dependant) -> bool:
-    return any(
-        d.call in (deps.lecteur_de_la_cloche, deps.ecran_appaire, deps._JETON_APPAREIL)
-        or _lit_un_jeton_d_appareil(d)
-        for d in dependant.dependencies
-    )
+    return resout(dependant, (deps.lecteur_de_la_cloche, deps.ecran_appaire, deps._JETON_APPAREIL))
 
 
 def test_les_deux_sens_du_cablage():

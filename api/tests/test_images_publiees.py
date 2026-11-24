@@ -166,7 +166,10 @@ def test_auto_deploy_et_la_bascule_obtiennent_sans_construire_eux_memes():
         if "obtenir_images" in ligne and not ligne.lstrip().startswith("#")
     ]
     assert len(appels) == 3, appels
-    assert all(a == "rc=0; obtenir_images --quiet || rc=$?" for a in appels), appels
+    #  Un préfixe d'environnement est admis (`OBTENIR_TIRAGE_SEUL=…`, #3033) : ce
+    #  qui compte est que chaque appel capture son code.
+    forme = re.compile(r"rc=0; (OBTENIR_[A-Z_]+=\S+ )?obtenir_images --quiet \|\| rc=\$\?")
+    assert all(forme.fullmatch(a) for a in appels), appels
 
 
 def test_chaque_version_taguee_est_publiee_apres_ses_images():

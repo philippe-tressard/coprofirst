@@ -2,8 +2,9 @@
 
 Ce dossier décrit une **installation CoproFirst** à partir des images publiées,
 sans rien construire sur la machine. C'est l'installation d'une **réplique** :
-elle suit les versions promues sur la branche `replica`
-(`specs/architecture/multi-coproprietes.md` §4.10).
+elle reçoit la version que porte son **bail**, signé par la référence — son canal
+et sa vague se décident là-bas (*La mise à jour automatique*, plus bas ;
+`api/app/registre/canaux.py`). La branche `replica` n'en décide plus depuis #2210.
 
 > 5Hostachy, la résidence où le produit est né, en est la **référence** : ses deux
 > Raspberry Pi suivent `main` et portent leur propre outillage de haute
@@ -32,7 +33,7 @@ Le filet, ce sont le retour à la version précédente et une sauvegarde copiée
 
 ## Les fichiers
 
-Chaque version promue publie, dans ses notes de version (onglet *Releases* du
+Chaque version taguée publie, dans ses notes de version (onglet *Releases* du
 dépôt), l'archive `coprofirst-deploiement-X.Y.Z.tar.gz`. Elle contient,
 **dans l'état exact de cette version** :
 
@@ -84,12 +85,18 @@ dépôt), l'archive `coprofirst-deploiement-X.Y.Z.tar.gz`. Elle contient,
    contrat : `docs/contrat-sous-traitance-modele.md`). Vides, ces pages disent
    « À RENSEIGNER », et l'onglet *Pages légales* de chaque copropriété le signale.
    Une fois l'installation démarrée, l'**opérateur** l'inscrit au registre de la
-   référence dans *Administration › Maintenance › Inscription au registre*
+   référence dans *Administration › Exploitation › Installation*, carte
+   *Inscription au registre*
    (contact de l'administrateur, conditions à accepter) ; la clé et l'état
-   d'inscription vivent dans le volume `app_data`. L'état affiché — limitée,
-   active, suspendue — n'est encore que **constaté**, sauf pour les **services** :
-   une réplique n'allume que ceux que la référence lui accorde dans son bail
-   (Administration › Services les grise sinon, avec la raison).
+   d'inscription vivent dans le volume `app_data`. Tant que l'inscription n'est
+   pas validée, ou quand son bail est échu, l'installation est en **mode limité** :
+   **5 comptes actifs** au plus — les deux comptes techniques créés au démarrage
+   ne comptent pas, aucun compte existant n'est touché, le sixième est refusé.
+   Une réplique n'allume que les **services** que la référence lui accorde dans
+   son bail (Administration › Services › Services les grise sinon, avec la raison).
+   **Suspendue** par la référence, elle passe en **lecture seule**, l'export de
+   chaque copropriété restant ouvert à son administrateur. `REGISTRE_CONSTAT=true`
+   (`.env`) ramène le plafond et la lecture seule à un simple constat.
 3. Ajouter **la version à installer** dans `.env` :
    ```
    COPROFIRST_VERSION=2.119.1
@@ -116,13 +123,17 @@ dépôt), l'archive `coprofirst-deploiement-X.Y.Z.tar.gz`. Elle contient,
    docker compose logs api | grep -A5 "ADMIN INITIAL"
    ```
    Les changer dès la première connexion, puis régler l'identité de la résidence
-   (nom, adresse, logo) dans l'administration. *Administration › Maintenance* dit
-   « Réplique — suit replica » : la surcouche pose ce rôle d'office. Pour y voir si
-   la version est à jour, activer le service *Vérification de la version*.
+   (nom, adresse, logo) dans l'administration.
+   *Administration › Exploitation › Installation* dit « Réplique » : la surcouche
+   pose ce rôle d'office. La branche
+   que l'écran affiche à côté (`replica`) ne décide pas de la version reçue : c'est
+   le bail (*La mise à jour automatique*, plus bas). Pour y voir si la version est
+   à jour, activer le service *Vérification de la version*.
 
 ## Mettre à jour
 
-Changer `COPROFIRST_VERSION` dans `.env` pour la version promue suivante, puis :
+Changer `COPROFIRST_VERSION` dans `.env` pour une version publiée (onglet
+*Releases*) — de préférence celle que porte le bail —, puis :
 
 ```bash
 docker compose -f docker-compose.yml -f deploiement/standard/compose.images.yml pull
@@ -246,7 +257,8 @@ ne repart pas, la restaure.
 Les données vivent dans des volumes Docker : `pg_data` (la base), `app_data`
 (l'identité de l'installation), `uploads` (les fichiers), `whatsapp_auth`, et
 `backups`, où l'application range ses sauvegardes
-planifiées (Administration › Sauvegarde). Copier ces archives **hors de la
+planifiées (Administration › Exploitation › Maintenance, tâche « Sauvegarde
+quotidienne »). Copier ces archives **hors de la
 machine** : une sauvegarde qui vit à côté de ce qu'elle protège disparaît avec.
 
 Caddy, lui, ne garde rien qui se sauvegarde : son journal d'accès (7 jours) et sa

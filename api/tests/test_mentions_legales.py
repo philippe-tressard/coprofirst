@@ -20,7 +20,7 @@ un lecteur qui l'a vu, pas un contrôle.
 ## Ce que ce fichier tient
 
 1. **Le gabarit se déclare comme tel.** `DEFAULT_LEGAL` reste générique — le seed
-   porte le PRODUIT, réutilisable sous licence MIT, et y écrire un nom d'éditeur
+   porte le PRODUIT, que tout autre déploiement reçoit, et y écrire un nom d'éditeur
    l'imposerait à tout autre déploiement. Mais il doit dire « À RENSEIGNER »,
    jamais faire semblant.
 

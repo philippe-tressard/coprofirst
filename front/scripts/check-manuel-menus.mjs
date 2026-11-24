@@ -61,22 +61,22 @@ const MANUEL = `${RACINE}../docs/manuel-utilisateur.html`;
 const NAV = `${RACINE}src/lib/components/Nav.svelte`;
 
 /**
- * Le public de chaque route, DÉDUIT de `Nav.svelte`.
- *
- * ⚠️ Table tenue à la main **côté attendu seulement**, et c'est assumé : traduire
- * une expression JavaScript en catégorie de public n'est pas mécanisable. Ce qui
- * l'est — et que le contrôle fait — c'est vérifier qu'aucune route n'a de règle
- * spéciale dans `Nav.svelte` sans figurer ici : une sixième restriction ajoutée
- * là-bas fait échouer ce fichier.
+ * Le public de chaque route : l'`acces` que sa page DÉCLARE (`pages.ts`,
+ * `pages-roles.ts`), le même que le serveur confronte à `acces_menu` (#2969).
+ * Il ne se déduit plus de `Nav.svelte`, qui ne raisonne plus sur aucun rôle : la
+ * table tenue à la main que ce fichier portait (et son « tous » par défaut, qui
+ * cachait que le syndic n'avait aucune entrée, #2905) a disparu.
  */
-const PUBLIC_ATTENDU = {
-	'/prestataires': 'cs',
-	'/espace-cs': 'cs',
-	'/admin': 'admin',
-	'/delegations': 'cs-ou-aidant',
-	'/sondages': 'resident',
-};
-const PUBLIC_PAR_DEFAUT = 'tous';
+function publicsDeclares() {
+	const publics = new Map();
+	for (const bloc of blocsDePages()) {
+		const href = bloc.match(/^\t\thref: '([^']+)',$/m);
+		if (!href) continue;
+		const acces = bloc.match(/^\t\tacces: '([^']+)',$/m);
+		publics.set(href[1], acces ? acces[1] : null);
+	}
+	return publics;
+}
 
 const manuel = readFileSync(MANUEL, 'utf8');
 //  🔴 DEUX fichiers depuis le 12/09/2026 (#928) : les pages réservées à un rôle
@@ -88,6 +88,7 @@ const pages = FICHIERS_PAGES.map((f) => readFileSync(f, 'utf8')).join('');
 const nav = readFileSync(NAV, 'utf8');
 
 const erreurs = [];
+const PUBLICS = publicsDeclares();
 
 // ── Les routes du site ──────────────────────────────────────────────────────
 const routes = new Set([...pages.matchAll(/^\t\thref: '([^']+)',$/gm)].map((m) => m[1]));
@@ -117,11 +118,13 @@ for (const route of routes) {
 		erreurs.push(`le menu ${route} existe dans pages.ts et le manuel ne le cite pas`);
 		continue;
 	}
-	const attendu = PUBLIC_ATTENDU[route] ?? PUBLIC_PAR_DEFAUT;
-	if (cartes.get(route) !== attendu) {
+	const attendu = PUBLICS.get(route);
+	if (!attendu) {
+		erreurs.push(`le menu ${route} : sa page ne déclare pas son public (\`acces\`)`);
+	} else if (cartes.get(route) !== attendu) {
 		erreurs.push(
 			`le menu ${route} : le manuel annonce « ${cartes.get(route)} », ` +
-				`Nav.svelte applique « ${attendu} »`,
+				`sa page déclare « ${attendu} »`,
 		);
 	}
 }
@@ -133,15 +136,21 @@ for (const [route] of cartes) {
 	}
 }
 
-// ── Une restriction ajoutée dans Nav.svelte sans être déclarée ici ──────────
-//  C'est le contrôle qui empêche cette table de se périmer en silence.
-for (const m of nav.matchAll(/if \(href === '([^']+)'\)/g)) {
-	if (!(m[1] in PUBLIC_ATTENDU)) {
-		erreurs.push(
-			`Nav.svelte restreint ${m[1]}, et PUBLIC_ATTENDU l'ignore — ` +
-				'le manuel annoncerait « tous » à tort',
-		);
-	}
+// ── Nav.svelte ne raisonne sur aucun rôle ni statut (#2969) ─────────────────
+//  Le menu LIT `acces_menu` ; une branche `href === '/x'`, ou un rôle, ou un
+//  statut écrit en littéral, referait la copie que les apps avaient recopiée.
+const LITTERAUX_INTERDITS =
+	/href === '|'(propriétaire|résident|externe|conseil_syndical|admin|operateur|syndic|mandataire|aidant|locataire|admin_technique)'/g;
+for (const m of nav.matchAll(LITTERAUX_INTERDITS)) {
+	erreurs.push(
+		`Nav.svelte écrit « ${m[0]} » : qui voit quelle entrée se lit dans \`acces_menu\` ` +
+			'(#lib/acces-menu), jamais dans un rôle ou un statut',
+	);
+}
+if (!/pageAuMenu\(/.test(nav)) {
+	erreurs.push(
+		'Nav.svelte ne filtre plus le menu par `pageAuMenu` — le contrôle ne mesure plus rien',
+	);
 }
 
 // ── Les DEUX MAQUETTES du menu (04/09/2026) ────────────────────────────────
@@ -274,5 +283,5 @@ if (erreurs.length > 0) {
 
 console.log(
 	`✓ Manuel : ${cartes.size} écran(s) annoncé(s), ${routes.size} route(s) du site — ` +
-		'tous cités, et le public annoncé est celui que Nav.svelte applique.',
+		'tous cités, et le public annoncé est celui que sa page déclare.',
 );

@@ -38,6 +38,7 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 30
     permissions:
+      issues: write  # l'alerte d'échec ouvre un ticket (#2988)
       contents: write   # supprimer les releases périmées (le tag reste)
       packages: write   # supprimer les versions d'images périmées
     steps:
@@ -55,3 +56,12 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           SUPPRIMER: ${{ (github.event_name == 'schedule' || inputs.supprimer) && 'oui' || 'non' }}
         run: bash scripts/ci/purge-paquets.sh
+
+      #  Un rouge de `main` ou d'un passage planifié ouvre (ou complète) un ticket
+      #  (#2988, `scripts/ci/signaler_echec_ci.py`) : le dernier pas du job, ou
+      #  l'avant-dernier devant la marque « arbre jugé vert », qui ne pose qu'un vert.
+      - name: Alerte d'échec
+        if: failure()
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: python3 "${GITHUB_WORKSPACE:-$(git rev-parse --show-toplevel)}/scripts/ci/signaler_echec_ci.py" --signaler

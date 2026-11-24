@@ -4,7 +4,7 @@
 **Copyright** © 2024-2026 Philippe TRESSARD
 **Licence** : GNU Affero General Public License, version 3 ou (à votre choix)
 toute version ultérieure — `AGPL-3.0-or-later` (texte officiel : [`LICENSE`](LICENSE))
-**Site** : <https://5hostachy.fr>
+**Site** : <https://coprofirst.fr>
 
 ---
 
@@ -96,15 +96,12 @@ L'attribution de ces fichiers est déclarée dans `REUSE.toml`, et contrôlée p
 
 ### Composants sous licence non permissive
 
-- **`libsignal` (GPL-3.0)**, tiré par `baileys`, est utilisé dans le **service
-  de messagerie `whatsapp-bridge/`**. Ce service s'exécute dans un **conteneur
-  distinct** de l'API et de l'interface, avec lesquels il communique
-  **uniquement par HTTP**. Les binaires de `libvips` (LGPL-3.0-or-later),
-  embarqués par `sharp`, vivent dans le même conteneur.
-- Côté API : `certifi` (MPL-2.0) et `pyphen` (GPL 2.0+ / LGPL 2.1+ / MPL 1.1,
-  selon son propre fichier de licence), tous deux utilisés sans modification.
-
-Leur compatibilité avec l'AGPL-3.0-or-later a été analysée le 08/10/2026 et
-**validée par l'auteur** ; le motif de chacune est écrit dans
-`scripts/ci/licences_politique.py`. Ce fichier constate où ces composants sont
-employés et comment ; il ne constitue pas un avis juridique.
+Une dépendance dont la licence n'est pas dite permissive n'entre que comme
+**exception déclarée**, une à une, avec son motif, l'endroit où elle s'exécute et
+le statut de sa compatibilité avec l'AGPL-3.0-or-later. Leur liste à jour est la
+section « Exceptions déclarées » de [`docs/licences-tierces.md`](docs/licences-tierces.md),
+suivie des bibliothèques système des images ; elle n'est pas recopiée ici, pour ne
+pas se périmer au premier composant ajouté. Elle est tirée de
+`scripts/ci/licences_politique.py`, et l'intégration continue échoue sur toute
+dépendance de `front/`, `whatsapp-bridge/` ou `api/` dont la licence n'est ni
+admise ni déclarée. Ce fichier ne constitue pas un avis juridique.

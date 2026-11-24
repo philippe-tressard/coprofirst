@@ -131,13 +131,16 @@ for (const [chemin, quoi] of [
 }
 const source = SOURCES.map((chemin) => readFileSync(chemin, 'utf8')).join('\n');
 const store = readFileSync(STORE, 'utf8');
+//  `perimetreLabel` est parti le 11/11/2026 (#2633) : le lieu est servi. L'ancre
+//  passait encore par sous-chaîne, grâce à `perimetreLabelUn` (#2913) — d'où le
+//  nom exact, suivi de sa parenthèse.
 const attendus = [
-	'perimetreLabel',
+	'perimetreLabelUn',
 	'definirPerimetres',
 	'estPerimetreParDefaut',
 	'perimetreDuBatiment',
 ];
-const manquants = attendus.filter((f) => !source.includes(`export function ${f}`));
+const manquants = attendus.filter((f) => !source.includes(`export function ${f}(`));
 if (manquants.length > 0) {
 	console.error(
 		`✗ Cas zéro : le paquet lib/perimetres n'exporte plus ${manquants.join(', ')}. ` +
