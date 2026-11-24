@@ -84,8 +84,8 @@ HOTE_COMMUN_ESSAI="essai.test"
 #    déclaration vide est refusée (« Aucune copropriété déclarée »), d'où une
 #    première copropriété écrite, jamais créée par l'outil ;
 #  - B : ajoutée par `creer-copropriete.sh`, sa base et son secret neufs.
-#  Pose HOTE_A, HOTE_B, MDP_A (l'administrateur initial de l'installation, devenu
-#  celui de A : $1).
+#  Pose HOTE_A, HOTE_B, MDP_A : le mot de passe de l'administrateur initial de
+#  l'installation, devenu celui de A ($1), une fois changé (il est temporaire).
 installer_commune() {
     local log adresse
     #  Pas d'apostrophe dans le message de `:?` : bash l'y lit comme un début de
@@ -111,6 +111,17 @@ JSON
     adresse=$(sed -n 's/.*Copropriété essai-b déclarée : *//p' "$log" | tail -1 | tr -d '\r ')
     [ -n "$adresse" ] || { echo "::error::adresse de essai-b introuvable dans la sortie"; return 1; }
     HOTE_B=$(hote_de "$adresse")
+    #  Le mot de passe initial est TEMPORAIRE (#3019) : tant qu'il tient, toute route
+    #  rend 403 sauf son changement. L'hébergeur le change d'abord ; l'essai aussi.
+    local jarre="$TRAVAIL/jeton-initial.txt" neuf code
+    neuf="Essai-$(openssl rand -hex 12)"
+    code_sous "$HOTE_A" /api/auth/login /dev/null -c "$jarre" -X POST -H 'Content-Type: application/json' \
+        -d "{\"email\":\"admin@localhost\",\"password\":\"$MDP_A\"}" >/dev/null
+    code=$(code_sous "$HOTE_A" /api/auth/change-password "$TRAVAIL/changement.json" -b "$jarre" -X POST \
+        -H 'Content-Type: application/json' \
+        -d "{\"mot_de_passe_actuel\":\"$MDP_A\",\"nouveau_mot_de_passe\":\"$neuf\"}")
+    [ "$code" = 204 ] || { echo "::error::mot de passe initial de A non changé : HTTP $code ($(head -c 200 "$TRAVAIL/changement.json" 2>/dev/null))"; return 1; }
+    MDP_A="$neuf"
     #  Le runner résout les noms de l'essai, comme un navigateur : la sonde de version
     #  lit le site par son adresse. Une machine jetable seulement (CI).
     if [ "${GITHUB_ACTIONS:-}" = true ]; then

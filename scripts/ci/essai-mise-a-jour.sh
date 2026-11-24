@@ -123,7 +123,7 @@ if [ "$MODE" = commune ]; then
     installer_commune "$MDP_ADMIN" || exit 1
     #  L'hôte commun ne sert aucune copropriété (421) : le témoin se connecte sous
     #  l'hôte de A, la copropriété de l'installation.
-    HOTE_TEMOIN="$HOTE_A"
+    HOTE_TEMOIN="$HOTE_A"; MDP_ADMIN="$MDP_A"  # changé par installer_commune
     AVANT=$(constater_commune avant | tee /dev/stderr | tail -1)
     [ "$AVANT" = OK ] || { echo "::error::installation commune AVANT la mise à jour : $AVANT"; exit 1; }
 fi
