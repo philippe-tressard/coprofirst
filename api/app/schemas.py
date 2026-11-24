@@ -11,7 +11,7 @@ from app.utils.perimetres import perimetre_defaut_liste
 #  `liste_depuis_json` et `ListeJson` vivent dans `schemas_communs.py` depuis le
 #  19/08/2026 : `schemas_tickets` en a besoin et ne peut pas importer ce
 #  fichier-ci, qui l’importe. Ré-exportés, donc rien à changer ailleurs.
-from app.schemas_communs import (  # noqa: F401
+from app.schemas_communs import (
     AffaireLieeLue,
     ChampsIntervenant,
     ChampsIntervenantEntree,
@@ -98,6 +98,10 @@ class UserRead(NomServi):
     #  (`auth/deps.est_moderateur`, #2633) : le site et l'app LISENT ce champ, aucun
     #  client ne recompose le rôle. Défaut FERMÉ hors de `from_orm_with_roles`.
     est_moderateur: bool = False
+    #  Les PUBLICS du menu auxquels ce compte appartient (`utils/acces_menu`, #2969) :
+    #  une page s'y montre si son `acces` (`front/src/lib/pages.ts`) en est. Le site
+    #  et les apps LISENT ce champ ; aucun client ne recompose la règle. Fermé par défaut.
+    acces_menu: list[str] = []
     last_seen_actualites: Optional[datetime] = None
     #  Les délégations ACTIVES où ce compte est l'aidant — c'est ce qui ouvre la page
     #  Délégations à l'aidant (`Nav.svelte`). Typées depuis #2525 : des `dict` au contrat.
@@ -126,6 +130,7 @@ class UserRead(NomServi):
     ) -> "UserRead":
         from app.auth.deps import est_moderateur
         from app.auth.operateur import roles_effectifs
+        from app.utils.acces_menu import acces_du_menu
         from app.utils.communaute import ban_en_cours, motif_de_refus
         from app.utils.saisie_affaire import mode_effectif
 
@@ -140,6 +145,7 @@ class UserRead(NomServi):
             data.batiment_nom = batiment_nom
         if delegations_aidant is not None:
             data.delegations_aidant = delegations_aidant
+        data.acces_menu = acces_du_menu(u, data.roles or [], bool(data.delegations_aidant))
         return data
 
 
@@ -389,7 +395,7 @@ class TicketUpdate(SaisiPourEntree, AssisteIACorrection, ChampsIntervenantEntree
 #  Les schémas du fil d’un ticket vivent dans `schemas_tickets.py` depuis le
 #  19/08/2026 (modularité, rang 1). Ré-exportés : les routeurs appelants ne
 #  changent pas d’import.
-from app.schemas_tickets import (  # noqa: E402,F401
+from app.schemas_tickets import (  # noqa: E402
     TicketEvolutionCreate as TicketEvolutionCreate,
     TicketEvolutionRead as TicketEvolutionRead,
     TicketEvolutionUpdate as TicketEvolutionUpdate,
@@ -401,11 +407,11 @@ from app.schemas_tickets import (  # noqa: E402,F401
 #  « Actualité » (#1091, lot 4), elle se lit et s'écrit par `schemas_tickets`.
 
 #  La synthèse d'une affaire close (#1643) — fiche de l'affaire et carnet.
-from app.schemas_synthese import SyntheseLue as SyntheseLue  # noqa: E402,F401
-from app.schemas_synthese import EtapeMoyenne as EtapeMoyenne  # noqa: E402,F401
-from app.schemas_synthese import ExerciceLu as ExerciceLu  # noqa: E402,F401
-from app.schemas_synthese import ResumeAffaires as ResumeAffaires  # noqa: E402,F401
+from app.schemas_synthese import SyntheseLue as SyntheseLue  # noqa: E402
+from app.schemas_synthese import EtapeMoyenne as EtapeMoyenne  # noqa: E402
+from app.schemas_synthese import ExerciceLu as ExerciceLu  # noqa: E402
+from app.schemas_synthese import ResumeAffaires as ResumeAffaires  # noqa: E402
 
 #  Les réponses de la Communauté (#2506) — idées, annonces, sondages.
-from app.schemas_communaute import MessageRead as MessageRead  # noqa: E402,F401
-from app.schemas_communaute import ReponseCommunauteRead as ReponseCommunauteRead  # noqa: E402,F401
+from app.schemas_communaute import MessageRead as MessageRead  # noqa: E402
+from app.schemas_communaute import ReponseCommunauteRead as ReponseCommunauteRead  # noqa: E402

@@ -59,6 +59,7 @@
 import { readFileSync, existsSync, readdirSync } from 'node:fs';
 import { join } from 'node:path';
 import { pathToFileURL } from 'node:url';
+import { buildDeCetteSource, CODE_INCONNU } from './lib-build-a-jour.mjs';
 
 const RACINE = new URL('..', import.meta.url).pathname.replace(/^\/([A-Za-z]:)/, '$1');
 
@@ -231,6 +232,11 @@ function modeCI(client) {
 		return 1;
 	}
 
+	//  Le build local d'une AUTRE version n'accuse pas l'extracteur : il est
+	//  périmé, et c'est INCONNU (#2976). `--client` lit un build d'ailleurs.
+	const manifeste = join(RACINE, '.svelte-kit', 'output', 'client', '.vite', 'manifest.json');
+	if (!client && !buildDeCetteSource(manifeste, 'lint:version-servie')) return CODE_INCONNU;
+
 	const trouve = versionDansChunks(chunks);
 	if (!trouve) {
 		console.error(
@@ -244,7 +250,8 @@ function modeCI(client) {
 	if (trouve.version !== attendue) {
 		console.error(
 			`✗ L'extracteur lit ${trouve.version} (dans ${trouve.chunk}) là où package.json dit ${attendue}.\n` +
-				"  Il capture autre chose que la version du paquet — la version d'une dépendance, sans doute.",
+				"  Le build est celui de cette source : l'extracteur capture autre chose que la\n" +
+				"  version du paquet — la version d'une dépendance, sans doute.",
 		);
 		return 1;
 	}

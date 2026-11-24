@@ -17,3 +17,12 @@ execnet==2.1.2
 #  L'ordre des tests est TIRÉ AU SORT, graine affichée (#2223) : une dépendance à
 #  l'ordre sort au lot qui l'écrit, plus sur celui d'un autre. MIT.
 pytest-randomly==5.1.0
+#  Importés DIRECTEMENT par les tests, et qui n'arrivaient que par transitivité
+#  (#2955, 23/11/2026) — le même trou que #1048 côté production. Épinglés à la
+#  version résolue ce jour-là : aucun changement.
+#  `yaml` lit `docker-compose.yml` et les workflows (neuf fichiers). MIT.
+PyYAML==6.0.4
+#  `starlette` (quatre fichiers : `UploadFile`, `Request`) est le socle de
+#  `fastapi`, qui en borne la version : une montée MAJEURE de l'un se fait avec
+#  l'autre, dans la même PR. BSD-3-Clause.
+starlette==1.10.0

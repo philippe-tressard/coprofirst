@@ -237,7 +237,7 @@ def test_le_statut_ne_se_decide_pas_sur_la_sortie_du_modele():
 
 
 @pytest.mark.parametrize("cas", CORPUS[:2], ids=lambda c: c.code)
-def test_un_courriel_piege_n_ecrit_que_le_texte_recu(scene, monkeypatch, prompt_admin, cas):  # noqa: F811
+def test_un_courriel_piege_n_ecrit_que_le_texte_recu(scene, monkeypatch, prompt_admin, cas):
     """De la relève au fil : la Suite porte le texte reçu, la charge jamais, et le
     statut est celui qu'aurait donné la même réponse sans assistant."""
     session, ticket, syndic, _cs = scene

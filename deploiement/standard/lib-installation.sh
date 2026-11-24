@@ -1,7 +1,8 @@
 #!/bin/bash
 # =============================================================================
 #  lib-installation.sh — Les gestes communs des scripts d'une INSTALLATION
-#  CoproFirst : lire `.env`, journaliser, sonder la santé, rendre compte.
+#  CoproFirst : lire `.env`, la pile compose, journaliser, sonder la santé,
+#  rendre compte.
 #
 #  Sourcée par `mise-a-jour.sh` (la mise à jour nocturne d'une réplique, #1756),
 #  par `deploiement/demo/reinitialiser.sh` (la remise à zéro nocturne de la
@@ -22,6 +23,19 @@ SANTE_MAX_S=${SANTE_MAX_S:-180}
 journal() { echo "$(date '+%F %T') $*"; }
 
 lire_env() { sed -n "s/^$1=//p" .env 2>/dev/null | tail -1 | tr -d '"'"'"'\r'; }
+
+#  La pile compose de l'installation, dans `COMPOSE` — seule écriture de la commande
+#  (claude-config#604). Une installation COMMUNE (`COPROPRIETES_FICHIER` posé) y
+#  ajoute sa surcouche : le front sert l'hôte demandé, et Caddy reçoit la garde des
+#  pages et le relais des fichiers vers l'API (`commune/compose.commune.yml`). Sans
+#  elle, une mise à jour recréait la pile d'une installation propre.
+#  🔒 `api/tests/test_pile_compose_installation.py` (les deux variantes, aucune copie).
+definir_compose() {
+    COMPOSE=(docker compose -f docker-compose.yml -f deploiement/standard/compose.images.yml)
+    if [ -n "$(lire_env COPROPRIETES_FICHIER)" ]; then
+        COMPOSE+=(-f deploiement/standard/commune/compose.commune.yml)
+    fi
+}
 
 #  Le moteur que `.env` désigne, par l'URL de sa base → postgresql|inconnu.
 #  🔒 COPIE DÉCLARÉE de `scripts/lib/lib-replication.sh` : l'archive d'une

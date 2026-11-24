@@ -9,7 +9,7 @@ Ce qui la garde, dans l'ordre :
    404, comme une route inconnue. Le nom dédié ne désigne aucune copropriété : le
    préfixe `/plateforme/` échappe à leur résolution (`contexte.PREFIXE_PLATEFORME`).
 2. **Débit plafonné** par adresse (`LIMITE_INSCRIPTION_INSTALLATION`), **taille
-   plafonnée** (`TAILLE_MAX`), et un **plafond d'inscriptions en attente** : le
+   plafonnée** (`gardes.TAILLE_MAX`), et un **plafond d'inscriptions en attente** : le
    registre ne se remplit pas de demandes que personne n'a validées.
 3. **Signée** par la clé de l'installation, sur les octets REÇUS : la demande
    prouve qu'elle vient de qui détient la clé privée — et la même clé, plus tard,
@@ -33,18 +33,16 @@ from uuid import uuid4
 
 from fastapi import APIRouter, Depends, HTTPException, Request
 from fastapi.responses import JSONResponse
-from pydantic import ValidationError
 from sqlalchemy.exc import SQLAlchemyError
 from sqlmodel import Session, func, select
 
 from app.config import get_settings
 from app.contexte import nom_d_hote
 from app.registre import baux, canaux, conditions, rapports, signature
+from app.registre.gardes import exiger_signature, lire_contrat
 from app.registre.decisions import consigner
 from app.registre.base import get_session_plateforme, registre_actif
 from app.registre.contrat import (
-    EN_TETE_SIGNATURE,
-    VERSION_CONTRAT,
     BailSigne,
     DemandeBail,
     DemandeInscription,
@@ -68,9 +66,6 @@ logger = logging.getLogger("hostachy.registre")
 
 router = APIRouter(prefix="/plateforme", tags=["plateforme"])
 
-#: Une demande d'inscription pèse moins d'un kilo-octet ; au-delà de 16, ce n'en est pas une.
-TAILLE_MAX = 16 * 1024
-
 #: Au-delà, le registre refuse de nouvelles inscriptions jusqu'à ce que l'opérateur
 #: en ait validé ou refusé : un remplissage ne peut pas l'engorger.
 PLAFOND_EN_ATTENTE = 50
@@ -89,24 +84,14 @@ def servi_ici(request: Request) -> None:
 async def _lire_signee(request: Request, schema):
     """La demande que portent les octets reçus, SIGNÉE par la clé qu'elle déclare.
 
-    Taille, contrat, version et signature — les gardes communes à tout envoi
-    d'une installation ; le refus dit lequel a manqué, jamais ce qu'il a lu.
+    Les gardes communes à tout envoi d'une installation, appelées dans `gardes`.
+    Deux envois n'y passent pas, et c'est voulu : le RAPPORT vérifie la clé
+    ENREGISTRÉE de l'installation, pas celle qu'il déclare (`recevoir_rapport`) ;
+    le RELAIS croit le bail avant la signature (`relais.relayer`).
     """
     corps = await request.body()
-    if len(corps) > TAILLE_MAX:
-        raise HTTPException(413, "Demande trop volumineuse.")
-    try:
-        demande = schema.model_validate_json(corps)
-    except ValidationError:
-        raise HTTPException(
-            422, "Demande illisible : elle ne suit pas le contrat de données."
-        ) from None
-    if demande.version_contrat != VERSION_CONTRAT:
-        raise HTTPException(400, f"Version du contrat de données attendue : {VERSION_CONTRAT}.")
-    if not signature.cle_publique_valide(demande.cle_publique) or not signature.verifier(
-        demande.cle_publique, corps, request.headers.get(EN_TETE_SIGNATURE, "")
-    ):
-        raise HTTPException(401, "Signature de l'installation absente ou invalide.")
+    demande = lire_contrat(corps, schema)
+    exiger_signature(demande.cle_publique, corps, request)
     return demande
 
 
@@ -283,16 +268,7 @@ async def renouveler_bail(request: Request, session: Session = Depends(get_sessi
 async def recevoir_rapport(request: Request, session: Session = Depends(get_session_plateforme)):
     """Le rapport nocturne d'une installation inscrite, signé par SA clé (R3)."""
     corps = await request.body()
-    if len(corps) > TAILLE_MAX:
-        raise HTTPException(413, "Rapport trop volumineux.")
-    try:
-        rapport = Rapport.model_validate_json(corps)
-    except ValidationError:
-        raise HTTPException(
-            422, "Rapport illisible : il ne suit pas le contrat de données."
-        ) from None
-    if rapport.version_contrat != VERSION_CONTRAT:
-        raise HTTPException(400, f"Version du contrat de données attendue : {VERSION_CONTRAT}.")
+    rapport = lire_contrat(corps, Rapport, "rapport")
     try:
         inst = present_ou_404(
             session.exec(
@@ -305,10 +281,7 @@ async def recevoir_rapport(request: Request, session: Session = Depends(get_sess
             ).first(),
             INCONNUE,
         )
-        if not signature.verifier(
-            inst.cle_publique, corps, request.headers.get(EN_TETE_SIGNATURE, "")
-        ):
-            raise HTTPException(401, "Signature de l'installation absente ou invalide.")
+        exiger_signature(inst.cle_publique, corps, request)
         rapports.ranger(session, inst, rapport)
         session.commit()
     except SQLAlchemyError as exc:

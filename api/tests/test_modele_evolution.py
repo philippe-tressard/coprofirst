@@ -144,14 +144,14 @@ def test_un_insert_qui_ne_nomme_pas_assiste_ia_passe_sur_une_base_neuve(session,
 
     session.execute(
         text(
-            f"INSERT INTO {table} ({cle}, type, auteur_id, cree_le, fichiers_urls) "  # noqa: S608
+            f"INSERT INTO {table} ({cle}, type, auteur_id, cree_le, fichiers_urls) "
             "VALUES (1, 'commentaire', :a, '2026-10-02 10:00:00', '[]')"
         ),
         {"a": auteur.id},
     )
     session.commit()
 
-    assert session.execute(text(f"SELECT assiste_ia FROM {table}")).scalar() == 0  # noqa: S608
+    assert session.execute(text(f"SELECT assiste_ia FROM {table}")).scalar() == 0
 
 
 def test_les_tables_sont_enregistrees_aupres_de_sqlmodel():

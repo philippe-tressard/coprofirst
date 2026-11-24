@@ -58,9 +58,9 @@ dépôt), l'archive `coprofirst-deploiement-X.Y.Z.tar.gz`. Elle contient,
 | `deploiement/standard/postgresql/pg_hba.conf` | qui peut se connecter à PostgreSQL : l'API seule |
 | `deploiement/standard/commune/LISEZMOI.md` | une installation **commune** à plusieurs copropriétés : adresses, déclaration, nom de domaine |
 | `deploiement/standard/commune/coproprietes.exemple.json` | le gabarit de la déclaration des copropriétés d'une installation commune |
-| `deploiement/standard/commune/garde-des-pages.caddy` | la garde des pages d'une installation commune, à importer dans le `Caddyfile` |
-| `deploiement/standard/commune/fichiers.caddy` | les fichiers `/uploads/*` d'une installation commune, relayés à l'API, à importer dans le `Caddyfile` |
-| `deploiement/standard/commune/compose.commune.yml` | la surcouche d'une installation commune : le front sert l'hôte demandé |
+| `deploiement/standard/commune/garde-des-pages.caddy` | la garde des pages d'une installation commune, montée par sa surcouche, que le `Caddyfile` importe |
+| `deploiement/standard/commune/fichiers.caddy` | les fichiers `/uploads/*` d'une installation commune, relayés à l'API, montés par sa surcouche, que le `Caddyfile` importe |
+| `deploiement/standard/commune/compose.commune.yml` | la surcouche d'une installation commune : le front sert l'hôte demandé, Caddy reçoit les deux fragments ci-dessus ; posée par `definir_compose` (`lib-installation.sh`) dès que `COPROPRIETES_FICHIER` est dans `.env` |
 | `deploiement/standard/commune/creer-copropriete.sh` | ajouter une copropriété à une installation commune : base, rôle, secret, dossier, déclaration |
 | `LICENSE` | AGPL-3.0-or-later |
 
@@ -86,10 +86,15 @@ dépôt), l'archive `coprofirst-deploiement-X.Y.Z.tar.gz`. Elle contient,
    Une fois l'installation démarrée, l'**opérateur** l'inscrit au registre de la
    référence dans *Administration › Maintenance › Inscription au registre*
    (contact de l'administrateur, conditions à accepter) ; la clé et l'état
-   d'inscription vivent dans le volume `app_data`. L'état affiché — limitée,
-   active, suspendue — n'est encore que **constaté**, sauf pour les **services** :
-   une réplique n'allume que ceux que la référence lui accorde dans son bail
-   (Administration › Services les grise sinon, avec la raison).
+   d'inscription vivent dans le volume `app_data`. Tant que l'inscription n'est
+   pas validée, ou quand son bail est échu, l'installation est en **mode limité** :
+   **5 comptes actifs** au plus — les deux comptes techniques créés au démarrage
+   ne comptent pas, aucun compte existant n'est touché, le sixième est refusé.
+   Une réplique n'allume que les **services** que la référence lui accorde dans
+   son bail (Administration › Services les grise sinon, avec la raison).
+   **Suspendue** par la référence, elle passe en **lecture seule**, l'export de
+   chaque copropriété restant ouvert à son administrateur. `REGISTRE_CONSTAT=true`
+   (`.env`) ramène le plafond et la lecture seule à un simple constat.
 3. Ajouter **la version à installer** dans `.env` :
    ```
    COPROFIRST_VERSION=2.119.1

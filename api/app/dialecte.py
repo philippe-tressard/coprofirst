@@ -115,11 +115,13 @@ def poser_schema(url) -> str:
         with admin.connect() as c:
             heure = _heure_du_serveur(c)
             nom = f"t_{heure:{_FORMAT_HEURE_SCHEMA}}_{uuid.uuid4().hex[:12]}"
-            c.execute(text(f'CREATE SCHEMA "{nom}"'))  # noqa: S608 — identifiant généré ici
+            #  DDL interpolé (identifiant généré ici) — S608 ne le lit pas (#2951).
+            c.execute(text(f'CREATE SCHEMA "{nom}"'))
             #  Un COMMENT ne prend pas de paramètre lié : le littéral n'est fait que d'un
             #  entier et d'un nom d'hôte réduit à [A-Za-z0-9._-] (`_hote`).
             createur = f"createur={os.getpid()}@{_hote()}"
-            c.execute(text(f"COMMENT ON SCHEMA \"{nom}\" IS '{createur}'"))  # noqa: S608
+            #  DDL interpolé (nom et créateur générés ici) — S608 ne le lit pas (#2951).
+            c.execute(text(f"COMMENT ON SCHEMA \"{nom}\" IS '{createur}'"))
     finally:
         admin.dispose()
     return nom
@@ -181,7 +183,8 @@ def _retirer_schema_en_lots(c, nom: str) -> None:
         .all()
     )
     for instruction in instructions_de_retrait(nom, tables):
-        c.execute(text(instruction))  # noqa: S608 — identifiants relus au catalogue
+        #  DDL interpolé (identifiants relus au catalogue) — S608 ne le lit pas (#2951).
+        c.execute(text(instruction))
 
 
 def retirer_schema(url, nom: str) -> None:

@@ -11,8 +11,10 @@ Il ne reste ici que ce qu'un hook seul peut apporter : des DÉCLENCHEURS liés �
 une action concrète, et non à une intention.
 
 ┌─ AVANT CETTE ACTION ──────────────→ CHARGER / LANCER ─────────────────────┐
-│ `git push` sur dev ou main          bash scripts/poste/precheck-mep.sh   (le hook        │
-│   = tu t'apprêtes à déployer          pre-push le refuse sans sa trace)    │
+│ ouvrir la PR d'un lot                bash scripts/poste/rejouer-ci.sh      │
+│ lancer conduire-mep.sh (déployer)    bash scripts/poste/precheck-mep.sh    │
+│   — ordre : CLAUDE.md, « Ordre       après la CI verte de la PR            │
+│   d'un lot »                         + .claude/skills/mep-precheck         │
 │ écrire dans front/src/**             .claude/skills/ux-patterns            │
 │                                      + svelte-patterns                     │
 │ écrire dans api/** (modèle, route…)  .claude/skills/api-scaffold           │
@@ -23,13 +25,13 @@ une action concrète, et non à une intention.
 │ avant tout commit                    skill globale `avant-commit`          │
 └───────────────────────────────────────────────────────────────────────────┘
 
-UN SEUL INTERDIT RAPPELÉ ICI — le seul dont la violation est IRRÉVERSIBLE :
-  • Jamais deux primaires PostgreSQL, ni une base absente démarrée sur un nœud
-    qui prend la main (elle naîtrait primaire VIDE) : passer par lib-promotion.sh
-    et reconstruire-replique.sh. Jamais `docker volume rm 5hostachy_pg_data`.
+UNE SEULE RÈGLE RAPPELÉE ICI — la seule dont la violation est IRRÉVERSIBLE :
+  • la « Règle d'or des données » de CLAUDE.md, en tête (déjà en contexte). Ses
+    interdits — tous, y compris `docker compose` sans liste de services — y sont
+    écrits une fois ; les relire avant tout geste sur un nœud ou sur la base.
 
-Les autres règles (INCONNU jamais OK, français exclusif, bump de version, PR
-dev→main) sont dans CLAUDE.md, déjà en contexte. Les recopier ici ne les a pas
+Les autres règles (INCONNU jamais OK, français exclusif, la version posée à la MEP
+par conduire-mep.sh et jamais dans un lot, PR dev→main) sont dans CLAUDE.md, déjà en contexte. Les recopier ici ne les a pas
 fait respecter — c'est mesuré, pas supposé.
 
 CONFORMITÉ : en tête de la 1ʳᵉ réponse impliquant du travail sur 5Hostachy,

@@ -22,7 +22,9 @@ from __future__ import annotations
 import ast
 from pathlib import Path
 
+from app.utils.whatsapp import GESTES_D_ENVOI
 from tests.aides_sources import PLANCHER_APP, Module, modules_app
+from tests.aides_transport import SANS_OBJET
 
 
 def _app() -> tuple[Module, ...]:
@@ -102,16 +104,14 @@ def test_le_controle_attrape_un_appel_direct():
 
 # ── Sous `diffuser` : les gestes bruts du transport ─────────────────────────
 
-GESTES_BRUTS = {"envoyer_whatsapp_raw", "envoyer_whatsapp", "envoyer_whatsapp_avec_log"}
+#: Une seule liste, tenue par l'adaptateur (#2977).
+GESTES_BRUTS = GESTES_D_ENVOI
 
 #: L'adaptateur, qui les définit et les enchaîne.
 ADAPTATEUR = "utils/whatsapp.py"
 
-#: Appelants d'un geste brut sans objet derrière — donc sans réserve à lire.
-SANS_OBJET = {
-    "utils/whatsapp_scheduler.py": "les messages programmés, saisis par l'administrateur",
-    "routers/config.py": "le message de test, saisi par l'administrateur",
-}
+#: Appelants d'un geste brut sans objet derrière — donc sans réserve à lire :
+#: `aides_transport.SANS_OBJET`, lue aussi par `test_diffusion_canal`.
 
 
 def appels_bruts(modules) -> set[str]:

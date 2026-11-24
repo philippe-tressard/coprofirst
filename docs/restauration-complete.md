@@ -29,7 +29,7 @@ section [Les deux nœuds perdus](#les-deux-nœuds-perdus) en fin de page.
 | **Matériel** | Raspberry Pi 5 — **Raspberry Pi OS Lite 64 bits** (Debian 13 « trixie », comme les deux nœuds au 13/10/2026) |
 | **L'autre nœud** | En service et **actif** (`cat /opt/5hostachy/.active` y donne son propre nom) : il porte le primaire PostgreSQL et le `.env` |
 | **Réseau** | IP fixe `192.168.1.222` (rpi1) ou `192.168.1.223` (rpi2) — `infra/postgresql/pg_hba.conf` n'admet la réplication que depuis ces deux adresses |
-| **Poste** | Accès SSH par clé ed25519 aux deux nœuds (Git Bash) |
+| **Poste** | Accès SSH par clé ed25519 aux deux nœuds (Terminal sur le Mac, Git Bash sous Windows) |
 | **GitHub** | Dépôt `philippe-tressard/coprofirst` (branche `main`) |
 | **Jeton Cloudflare** | Jeton du tunnel (gestionnaire de mots de passe, ou tableau de bord Cloudflare) |
 
@@ -243,7 +243,9 @@ Les **fichiers** (`uploads`) et l'état WhatsApp arrivent avec la bascule suivan
 ## Étape 10 — Tunnel Cloudflare, installé et ARRÊTÉ
 
 ```bash
-sudo bash /opt/5hostachy/scripts/installation/install-cloudflared.sh <JETON_DU_TUNNEL>
+sudo bash /opt/5hostachy/scripts/installation/install-cloudflared.sh
+# Le jeton se colle à l'invite, sans écho — jamais en argument : il resterait dans
+# l'historique et dans la trace de sudo (le script refuse un argument).
 # Le script démarre le tunnel. Sur un STANDBY, l'arrêter aussitôt : il enverrait du
 # trafic public vers un nœud sans application. La bascule le démarrera.
 sudo systemctl disable --now cloudflared

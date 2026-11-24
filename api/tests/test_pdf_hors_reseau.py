@@ -37,7 +37,7 @@ def serveur_temoin():
     recues: list[str] = []
 
     class _Gestionnaire(BaseHTTPRequestHandler):
-        def do_GET(self):  # noqa: N802 — nom imposé par http.server
+        def do_GET(self):  # nom imposé par http.server
             recues.append(self.path)
             self.send_response(200)
             self.send_header("Content-Type", "image/png")

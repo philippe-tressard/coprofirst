@@ -155,7 +155,7 @@ test('le syndic refuse un membre sans téléphone, et n’envoie rien', async ({
 test('les téléphones du syndic s’éditent sans perdre le focus, et le retrait ôte la bonne ligne', async ({
 	page,
 }) => {
-	//  La boucle est clée par l'INDEX (`lint:each-key`, #1571) : une clé tirée de la
+	//  La boucle est clée par l'INDEX (`svelte/require-each-key`, #1571) : une clé tirée de la
 	//  valeur recréerait le champ à chaque caractère, et le focus partirait.
 	await ouvrir(page);
 	const syndic = section(page, 'Syndic');

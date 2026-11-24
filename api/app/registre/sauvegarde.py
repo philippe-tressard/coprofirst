@@ -151,7 +151,7 @@ def probleme_copie_hors_site() -> list[str]:
         return [
             "Aucune copie hors site de la base « plateforme » (registre) n'a été "
             "rapportée : elle n'existe que sur les deux nœuds. Lancer "
-            "export-hors-site.cmd depuis le poste."
+            "export-hors-site depuis le poste (.command sur le Mac, .cmd sous Windows)."
         ]
     problemes = []
     if integrite != "ok":

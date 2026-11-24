@@ -43,6 +43,7 @@
 import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { gzipSync } from 'node:zlib';
+import { buildDeCetteSource, CODE_INCONNU } from './lib-build-a-jour.mjs';
 
 const CLIENT = new URL('../.svelte-kit/output/client', import.meta.url).pathname.replace(
 	/^\/([A-Za-z]:)/,
@@ -300,6 +301,8 @@ if (!existsSync(chemin)) {
 	);
 	process.exit(1);
 }
+//  Le build d'une autre version ne se juge pas en silence (#2976).
+if (!buildDeCetteSource(chemin, 'lint:poids-ouverture')) process.exit(CODE_INCONNU);
 const manifeste = JSON.parse(readFileSync(chemin, 'utf8'));
 const cache = new Map();
 const contenuDe = (f) => {

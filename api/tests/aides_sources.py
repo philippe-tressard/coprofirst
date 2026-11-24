@@ -217,3 +217,129 @@ def operations_montees(routeur, prefixe: str = ""):
         elif getattr(route, "path", None):
             for methode in sorted(getattr(route, "methods", []) or []):
                 yield methode, prefixe + route.path, route
+
+
+# ─── Un relevé d'appels, écrit une fois (#2912) ──────────────────────────────────
+#
+# « Cette fonction ATTEINT-elle une porte ? » — elle l'appelle, ou appelle une
+# fonction de `app/` qui l'appelle, résolue par les IMPORTS de son module, jamais par
+# son nom seul. Seul un appel compte (`ast.Call`) : un commentaire n'est pas dans
+# l'AST, et un import qu'on n'appelle pas n'appelle rien. Né pour les points de
+# réception de fichier (`test_signature_fichiers.py`) ; les garde-fous qui suivent un
+# appel jusqu'à sa porte l'emploient au lieu d'une sous-chaîne dans un texte.
+
+_METHODES_HTTP = {"get", "post", "put", "patch", "delete"}
+
+
+def _index(modules) -> dict[str, Module]:
+    if modules is None:
+        modules = modules_app(minimum=PLANCHER_APP)
+    return modules if isinstance(modules, dict) else {m.rel: m for m in modules}
+
+
+def _module_de(nom_module: str, index) -> str | None:
+    """`app.utils.fichiers` → `utils/fichiers.py` (ou le `__init__.py` d'un paquet)."""
+    if not nom_module.startswith("app."):
+        return None
+    base = nom_module[4:].replace(".", "/")
+    for rel in (f"{base}.py", f"{base}/__init__.py"):
+        if rel in index:
+            return rel
+    return None
+
+
+def _portee_des_noms(module: Module, index) -> dict[str, tuple[str, str]]:
+    """Les noms visibles dans `module` : nom → (module où le chercher, nom là-bas).
+
+    Un nom de MODULE (`from app.utils import fichiers`) rend `(module, "")` : ce sont
+    ses attributs qu'on appelle. Une fonction du module masque un import homonyme.
+    """
+    noms: dict[str, tuple[str, str]] = {}
+    paquet = module.rel.rsplit("/", 1)[0].split("/") if "/" in module.rel else []
+    for noeud in ast.walk(module.arbre):
+        if isinstance(noeud, ast.Import):
+            for alias in noeud.names:
+                cible = _module_de(alias.name, index)
+                if cible and alias.asname:  # `import app.utils.fichiers as fichiers`
+                    noms[alias.asname] = (cible, "")
+        elif isinstance(noeud, ast.ImportFrom):
+            source = noeud.module or ""
+            if noeud.level:  # relatif : `from .commun import x` dans `routers/tickets/`
+                parents = paquet[: len(paquet) - (noeud.level - 1)]
+                source = "app." + ".".join(p for p in [*parents, *source.split(".")] if p)
+            for alias in noeud.names:
+                sous_module = _module_de(f"{source}.{alias.name}", index)
+                cible = _module_de(source, index)
+                if sous_module:
+                    noms[alias.asname or alias.name] = (sous_module, "")
+                elif cible:
+                    noms[alias.asname or alias.name] = (cible, alias.name)
+    for noeud in module.arbre.body:
+        if isinstance(noeud, (ast.FunctionDef, ast.AsyncFunctionDef)):
+            noms[noeud.name] = (module.rel, noeud.name)
+    return noms
+
+
+def _fonction(index, rel: str, nom: str):
+    module = index.get(rel)
+    for noeud in module.arbre.body if module else ():
+        if isinstance(noeud, (ast.FunctionDef, ast.AsyncFunctionDef)) and noeud.name == nom:
+            return module, noeud
+    return module, None
+
+
+def atteint(rel: str, nom: str, cibles: set[str], *, modules=None, profondeur: int = 5) -> bool:
+    """La fonction `nom` de `app/<rel>` APPELLE-t-elle une cible, elle ou une fonction
+    de `app/` qu'elle appelle, à `profondeur` appels au plus ?
+
+    `modules` : un index forgé (`{rel: Module}` ou une suite de `Module`) pour les
+    témoins ; par défaut, tout `app/`.
+    """
+    index = _index(modules)
+    vus, a_voir = set(), [(rel, nom, 0)]
+    while a_voir:
+        rel, nom, niveau = a_voir.pop()
+        if (rel, nom) in vus or niveau > profondeur:
+            continue
+        vus.add((rel, nom))
+        module, fonction = _fonction(index, rel, nom)
+        if fonction is None:
+            continue
+        portee = _portee_des_noms(module, index)
+        for appel in (n for n in ast.walk(fonction) if isinstance(n, ast.Call)):
+            f = appel.func
+            if isinstance(f, ast.Name):
+                if f.id in cibles:
+                    return True
+                if f.id in portee:
+                    a_voir.append((*portee[f.id], niveau + 1))
+            elif isinstance(f, ast.Attribute) and isinstance(f.value, ast.Name):
+                cible = portee.get(f.value.id)
+                if cible and cible[1] == "":  # `fichiers.verifier_fichier_recu(…)`
+                    if f.attr in cibles:
+                        return True
+                    a_voir.append((cible[0], f.attr, niveau + 1))
+    return False
+
+
+def _est_une_route(fonction) -> bool:
+    """Décorée par `@<routeur>.get|post|put|patch|delete(…)`."""
+    return any(
+        isinstance(d, ast.Call)
+        and isinstance(d.func, ast.Attribute)
+        and d.func.attr in _METHODES_HTTP
+        for d in fonction.decorator_list
+    )
+
+
+def routes_qui_atteignent(cibles: set[str], *, modules=None) -> list[tuple[str, str]]:
+    """(module relatif à `app/`, fonction) des routes DÉCORÉES qui atteignent une cible."""
+    index = _index(modules)
+    return sorted(
+        (module.rel, noeud.name)
+        for module in index.values()
+        for noeud in module.arbre.body
+        if isinstance(noeud, (ast.FunctionDef, ast.AsyncFunctionDef))
+        and _est_une_route(noeud)
+        and atteint(module.rel, noeud.name, cibles, modules=index)
+    )

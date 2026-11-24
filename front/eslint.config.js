@@ -271,17 +271,12 @@ export default defineConfig(
 			// réutilise les nœuds par POSITION, et un élément retiré au milieu d'une
 			// liste emporte l'état de son voisin. Classe de bug réelle.
 			//
-			// 🔴 LE COMPTE N'EST PLUS ÉCRIT ICI, ET C'EST VOULU. Il l'était — « 160 »
-			// — et il est resté à 160 pendant que quatre lots le ramenaient à 57 :
-			// trois PR successives avaient corrigé le code sans rouvrir ce
-			// commentaire. Un chiffre recopié dérive au premier lot, et celui-ci
-			// avait l'autorité d'une configuration.
-			//
-			// Le compte vit dans `scripts/check-each-key.mjs` (`npm run lint:each-key`),
-			// qui le MESURE à chaque exécution et refuse aussi bien un dépassement
-			// qu'un plafond devenu périmé — donc il ne peut pas mentir dans un sens
-			// ni dans l'autre. La règle se rallume ici quand ce plafond atteint zéro.
-			'svelte/require-each-key': 'off',
+			// ✅ EN SERVICE depuis le 23/11/2026 (#2976). La dette (160 au relevé) a
+			// été soldée sous un plafond décroissant, clos à zéro le 30/10/2026
+			// (#1571) ; la règle restait coupée, et le commentaire promettait de la
+			// rallumer « quand ce plafond atteint zéro ». Le plafond (`lint:each-key`)
+			// est retiré avec : deux contrôles du même fait divergent.
+			'svelte/require-each-key': 'error',
 
 			// ✅ EN SERVICE depuis le 29/08/2026 (#549). Elles étaient coupées au
 			// motif qu'« aucune n'est un défaut avéré » — le relevé les avait lues
@@ -306,18 +301,15 @@ export default defineConfig(
 			'svelte/no-immutable-reactive-statements': 'error',
 			'svelte/infinite-reactive-loop': 'error',
 			//
-			//  🔴 `no-reactive-functions` ne peut PAS être réactivée aujourd'hui, et ce
-			//  n'est plus une question de dette : elle FAIT TOMBER ESLINT 10.
-			//  Mesuré le 29/08/2026 en tentant de relever son compte —
-			//
-			//      TypeError: source.isSpaceBetweenTokens is not a function
-			//      Occurred while linting …/PerimetrePicker.svelte:99
-			//      Rule: "svelte/no-reactive-functions"
-			//
-			//  Son correcteur automatique appelle une API retirée d'ESLint 10.
-			//  → À réactiver quand `eslint-plugin-svelte` aura corrigé son `fix()`.
-			//  ⚠️ Tant que ce bug tient, la réactiver rendrait la CI rouge par CRASH,
-			//  pas par violation : un échec qu'on lirait comme une panne d'outillage.
+			//  🔴 `no-reactive-functions` reste COUPÉE, par décision (#2976).
+			//  Elle faisait tomber ESLint 10 (29/08/2026 : `source.isSpaceBetweenTokens
+			//  is not a function`) ; remesurée le 23/11/2026 (ESLint 10.15, greffon
+			//  3.24.1), elle ne tombe plus et rend 8 signalements dans 7 composants.
+			//  Ce sont tous l'idiome VOULU du dépôt : `$: f = (x) => …` qui ferme sur un
+			//  état réactif, pour que le gabarit qui appelle `f(x)` se redessine quand
+			//  cet état change (`ListeTickets.svelte`, `modeDe`, dit pourquoi). Écrits
+			//  `function`, ils figeraient l'affichage : la règle désigne ici un défaut
+			//  qui n'en est pas un. À relire avec le passage aux runes (`$derived`).
 			'svelte/no-reactive-functions': 'off',
 
 			// ── ESLint 10 : `no-useless-assignment` ne connaît pas `$:` ──────────

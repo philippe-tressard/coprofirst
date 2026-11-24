@@ -118,7 +118,9 @@ def lire_exceptions() -> dict:
 def principal() -> None:
     dependances = mesurer()
     exceptions = lire_exceptions()
-    aujourdhui = datetime.date.today().isoformat()
+    #  Le jour UTC, celui de l'exécuteur de la CI — pas `date.today()`, le jour du
+    #  conteneur (DTZ011, `api/scripts/` lu par Ruff depuis #2951).
+    aujourdhui = datetime.datetime.now(datetime.timezone.utc).date().isoformat()
 
     #  🔴 CAS ZÉRO — un `requirements.txt` vide, ou un audit qui n'aurait lu
     #  aucun paquet, rendrait « aucune vulnérabilité » sans avoir rien examiné.
