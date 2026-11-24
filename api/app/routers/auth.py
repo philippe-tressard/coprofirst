@@ -31,7 +31,12 @@ from app.auth.adresse_compte import compte_par_adresse
 from app.auth.session_ouverte import ouvrir_session
 from app.auth.deps import get_current_user
 from app.auth.empreinte_jeton import empreinte
-from app.auth.jetons_rafraichissement import est_rejoue, fermer_apres_rejeu, remplacer
+from app.auth.jetons_rafraichissement import (
+    est_rejoue,
+    fermer_apres_rejeu,
+    fermer_session,
+    remplacer,
+)
 from app import contexte
 from app.config import get_settings
 from app.database import get_session
@@ -271,14 +276,14 @@ def refresh(
     if not user or not user.actif:
         raise HTTPException(401, "Utilisateur invalide.")
 
-    # Rotation : révoquer l'ancien token, émettre un nouveau
-    remplacer(session, stored, maintenant)
+    #  Rotation : révoquer l'ancien jeton, en émettre un neuf — de la MÊME session.
+    session_id = remplacer(session, stored, maintenant)
     #  🔴 Un résident resté connecté ne repasse JAMAIS par `login` : c'est cet
     #  échange — au plus un toutes les deux heures, jamais à chaque requête — qui
     #  dit qu'il est là (`ouvrir_session` marque l'activité). Sans lui, la purge des
     #  comptes inactifs (#1580) l'aurait cru parti depuis sa dernière saisie de mot
     #  de passe.
-    ouvrir_session(session, user, response, maintenant)
+    ouvrir_session(session, user, response, maintenant, session_id)
     return {"message": "Token rafraîchi"}
 
 
@@ -290,14 +295,16 @@ def logout(
     refresh_token: str | None = Cookie(default=None),
     session: Session = Depends(get_session),
 ):
-    if refresh_token:
-        stored = session.exec(
-            select(RefreshToken).where(RefreshToken.token == empreinte(refresh_token))
-        ).first()
-        if stored:
-            stored.revoked = True
-            session.add(stored)
-            session.commit()
+    """Ferme la session présentée, jetons d'accès compris — pas les autres sessions du
+    compte, ni ses montres ni ses appareils push (arbitré le 23/11/2026) :
+    `auth/jetons_rafraichissement.fermer_session`."""
+    fermee = fermer_session(session, refresh_token) if refresh_token else None
+    if fermee is not None:
+        session.commit()
+        compte, revoques = fermee
+        journaliser_securite(
+            "session_fermee", acteur_id=compte, cible_id=compte, detail=f"jetons={revoques}"
+        )
     response.delete_cookie("access_token")
     response.delete_cookie("refresh_token")
     return {"message": "Déconnecté"}

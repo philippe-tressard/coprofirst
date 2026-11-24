@@ -172,8 +172,13 @@ def test_la_purge_garde_les_jetons_echanges_jusqu_a_leur_expiration(utilisateur)
 #  comportement ne regarde les purges qu'il ne connaît pas.
 
 
+#  Révoquer aussi (23/11/2026) : la déconnexion écrivait `stored.revoked = True`
+#  dans son routeur. Ce que ferme une révocation — un jeton, une session, un
+#  compte — se décide dans le module, pas chez l'appelant.
+
+
 def _ecarts(source: str) -> list[str]:
-    """Une suppression de jetons, ou un échange marqué, hors du module de la règle."""
+    """Une suppression, un échange marqué ou une révocation hors du module de la règle."""
     ecarts = []
     for n in ast.walk(ast.parse(source)):
         if (
@@ -188,10 +193,23 @@ def _ecarts(source: str) -> list[str]:
             and "delete from refresh_token" in " ".join(n.value.lower().split())
         ):
             ecarts.append(f"ligne {n.lineno} : DELETE FROM refresh_token")
-        if isinstance(n, (ast.Assign, ast.AugAssign)):
+        if (
+            isinstance(n, ast.Constant)
+            and isinstance(n.value, str)
+            and "update refresh_token" in " ".join(n.value.lower().split())
+        ):
+            ecarts.append(f"ligne {n.lineno} : UPDATE refresh_token")
+        if isinstance(n, (ast.Assign, ast.AugAssign, ast.AnnAssign)):
             cibles = n.targets if isinstance(n, ast.Assign) else [n.target]
-            if any(isinstance(c, ast.Attribute) and c.attr == "remplace_le" for c in cibles):
-                ecarts.append(f"ligne {n.lineno} : remplace_le écrit")
+            for c in cibles:
+                if isinstance(c, ast.Attribute) and c.attr in ("remplace_le", "revoked"):
+                    ecarts.append(f"ligne {n.lineno} : {c.attr} écrit")
+        if (
+            isinstance(n, ast.Call)
+            and getattr(n.func, "attr", None) == "values"
+            and any(k.arg == "revoked" for k in n.keywords)
+        ):
+            ecarts.append(f"ligne {n.lineno} : .values(revoked=…)")
     return ecarts
 
 
@@ -200,17 +218,21 @@ def test_le_controle_voit_ce_qu_il_doit_refuser():
     assert len(_ecarts("s.exec(delete(RefreshToken).where(x))")) == 1
     assert len(_ecarts('_supprimer("DELETE FROM  refresh_token WHERE revoked = 1")')) == 1
     assert len(_ecarts("jeton.remplace_le = maintenant")) == 1
-    assert _ecarts("session.delete(jeton)\njeton.revoked = True") == []
+    assert len(_ecarts("stored.revoked = True")) == 1
+    assert len(_ecarts("s.exec(update(RefreshToken).values(revoked=True))")) == 1
+    assert len(_ecarts('s.exec(text("UPDATE  refresh_token SET revoked = true"))')) == 1
+    #  Lire n'est pas écrire.
+    assert _ecarts("session.delete(jeton)\nif jeton.revoked:\n    pass") == []
 
 
-def test_purge_et_echange_ne_s_ecrivent_que_dans_le_module_de_la_regle():
+def test_purge_echange_et_revocation_ne_s_ecrivent_que_dans_le_module_de_la_regle():
     fichiers = modules_app()
     assert len(fichiers) > 100, "le contrôle ne voit presque rien : sa portée a changé"
     ecarts = [
         f"app/{m.rel} — {e}" for m in fichiers if m.chemin != MODULE for e in _ecarts(m.source)
     ]
     assert not ecarts, (
-        "Les jetons de rafraîchissement se purgent et s'échangent par "
+        "Les jetons de rafraîchissement se purgent, s'échangent et se révoquent par "
         "`app/auth/jetons_rafraichissement.py`, pas ailleurs :\n"
         + "\n".join(f"  • {e}" for e in ecarts)
     )

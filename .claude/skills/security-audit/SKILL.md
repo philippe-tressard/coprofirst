@@ -37,6 +37,7 @@ Get-ChildItem -Recurse -Filter "*.svelte" | Select-String -Pattern "@html"
 **Règle** : Tout `{@html}` DOIT passer par une fonction de `#lib/sanitize.ts` — elles sont **trois** (`safeHtml`, `safeRichContent`, `safeDescription`), toutes adossées à DOMPurify. Vérifié en CI par `npm run lint:html` (`CLAUDE.md`, règle front n° 1), qui exige que le nom vienne de l'**import** : une fonction locale homonyme ne prouve rien (#429).
 **Exceptions** : déclarées dans `front/scripts/check-html.mjs` (`EXCEPTIONS`), avec leur raison — et le contrôle **échoue** si l'une cesse de servir. Ne pas les recopier ici : cette ligne n'en nommait qu'une sur deux, et un audit qui la suivait signalait la seconde comme un écart qui n'en était pas un (#1051).
 **Fix** : `import { safeDescription } from '#lib/sanitize.ts'` → `{@html safeDescription(contenu)}` — et jamais un helper local, fût-il correct : c'est ainsi que trois copies de `safeDescription` ont coexisté.
+**Aperçu fidèle** : un HTML complet montré tel qu'il partira (aperçu d'un courriel, d'une affiche) ne passe pas par `{@html}` mais par un `<iframe srcdoc>` au bac à sable **VIDE** (`sandbox=""`) — sans `allow-scripts` ni `allow-same-origin` : le cadre n'exécute rien et ne lit rien de l'application, ce qui rend tenable de ne pas l'assainir (l'aperçu doit rester fidèle). 🔒 `npm run lint:ilots-clairs` refuse un cadre sans `sandbox` vide — absent, ouvert par un jeton ou calculé (#2945).
 
 Configuration DOMPurify — **lire `front/src/lib/sanitize.ts`**, jamais cette page :
 la liste recopiée ici avait déjà perdu `details` et `summary`, ajoutés le 17/09/2026
@@ -47,8 +48,8 @@ avec les blocs dépliables (#992 ; `open` est volontairement hors `ALLOWED_ATTR`
 🔴 **Le geste ne se réécrit pas, il s'appelle.** Un fichier reçu s'écrit sur
 disque par `utils/fichiers.enregistrer_fichier_recu`, et nulle part ailleurs.
 Les règles vivent dans `FAMILLES` du même module — liste blanche de types,
-plafond de taille, extensions autorisées —, une entrée par famille :
-`image`, `document`, `document_prive`, `tableur`.
+plafond de taille, extensions autorisées —, une entrée par famille (lire
+`FAMILLES`, jamais une liste recopiée ici).
 
 **Un routeur nomme une famille**, il ne redéfinit pas ce qu'il accepte.
 
@@ -77,7 +78,7 @@ cette question se mesure par des contrôles, et non en relisant les routeurs.
 | Contrôle | Ce qu'il refuse |
 |---|---|
 | `test_televersement_source_unique.py` | une écriture de fichier reçu hors du module ; une liste MIME ou un plafond redéclaré dans un routeur ; une famille qui oublie l'une des trois règles |
-| `test_signature_fichiers.py` | un point de réception qui n'appelle pas la règle — **les sept**, imports de tableur compris |
+| `test_signature_fichiers.py` | un point de réception — toute route déclarée dont un paramètre est un `UploadFile`, relevée sur les routes, jamais une liste — qui n'APPELLE pas la règle, directement ou par une aide résolue par ses imports (`aides_sources.atteint`) ; un nom en commentaire ou un import non appelé ne suffit pas (#2912) |
 | `test_pieces_jointes.py` | une divergence entre ce que le front propose et ce que le serveur accepte |
 
 Le PDF d'affiche de hall est la **seule** écriture déclarée hors du module :
@@ -113,7 +114,7 @@ l'usage — la divergence n'arrive que le jour où la source apprend quelque cho
 
 | Contenu qui trahit une copie | Source | Contrôle |
 |---|---|---|
-| `….roles_autorises` lu | `visibility.profil_admet` | `test_autorisation.py` |
+| `….roles_autorises` lu | `visibility.profil_admet` | `test_profil_acces_source_unique.py` |
 | un élément de `….user_lots` jugé sur `actif` | `deps.est_rattache_au_lot` | `test_appartenance_lot_source_unique.py` |
 | un champ comparé à `user.id` par `auth/appartenance.py`, recomparé ailleurs | le prédicat du module (`peut_defaire_le_versement`…) | `test_appartenance_source_unique.py` |
 
@@ -186,8 +187,7 @@ Get-ChildItem -Recurse -Filter "*.py" | Select-String -Pattern "slowapi|RateLimi
 ```
 
 **Les limites vivent dans `api/app/utils/limiter.py`**, une constante par
-**intention** (secret éprouvé, courriel déclenché, session, contrôle de fichier,
-lecture authentifiée, collecte d'audience, données personnelles, lecture publique). Chaque constante dit pourquoi
+**intention** — lire le module, jamais une liste recopiée ici. Chaque constante dit pourquoi
 elle vaut ce qu'elle vaut — et c'est là qu'on lit la valeur, pas ici.
 
 🔴 Ce tableau les recopiait, et il a été **faux** : `/auth/change-password` et
@@ -196,7 +196,12 @@ secret, et les quatre routes de `auth_profil.py` non plus. Une liste recopiée n
 dit rien des routes qu'elle omet — c'est précisément ce qui manquait (#1027).
 
 🔒 **Le contrôle qui remplace ce tableau** : `api/tests/test_limites_debit_auth.py`
-exige que **toute** route d'un module `auth*.py` porte un `@limiter.limit`, que sa
+relève les routes par ce qu'elles ATTEIGNENT (`aides_sources.routes_qui_atteignent`) :
+`verify_password` → `LIMITE_SECRET_EPROUVE`, `exiger_cle_maintenance` → `LIMITE_CLE_PARTAGEE`,
+plus toute route d'un module `auth*.py` (audit du 23/11/2026 : la portée était un nom de
+fichier). Une route qui n'éprouve le secret que dans un cas compte la TENTATIVE
+(`utils/limiter.compter_tentative_secret`), jamais l'enregistrement (🔒 `test_tentative_secret.py`).
+Il exige que sa
 valeur vienne d'une constante de `utils.limiter`, que le décorateur soit **sous**
 celui de la route (au-dessus, il n'a aucun effet, en silence) et que la fonction
 reçoive une `request` (sans elle, slowapi lève au premier visiteur, pas au
@@ -229,12 +234,21 @@ prudent.
    Un jeton fermé par une déconnexion ou un mot de passe posé ne déclenche rien.
    La règle, la purge qui garde les jetons échangés et le délai vivent dans
    `app/auth/jetons_rafraichissement.py` — 🔒 `test_jeton_rejoue.py` éprouve les
-   trois révocations et refuse une purge ou un échange écrits ailleurs.
+   trois révocations et refuse une purge, un échange ou une révocation (`.revoked`)
+   écrits ailleurs.
 
 5. **Le jeton en base est une EMPREINTE** (`auth/empreinte_jeton`, #1389) : le
    cookie porte le brut, `refresh_token.token` son HMAC. Vaut aussi pour les
    jetons de mot de passe oublié et de vérification d'adresse. 🔒
    `test_jetons_empreinte.py` refuse une écriture ou une recherche en clair.
+
+6. **La déconnexion ferme la session présentée, jetons d'accès compris** (arbitré le
+   23/11/2026) — et rien d'autre : ni les autres sessions du compte, ni ses montres,
+   ni ses appareils push. Une session est `refresh_token.session_id`, tirée à la
+   connexion et recopiée par chaque rotation ; le jeton d'accès la porte (`sid`) et
+   `_get_current_user` le refuse dès qu'elle n'a plus de jeton valable
+   (`fermer_session`, `session_encore_ouverte`). Un jeton d'accès sans `sid` (émis
+   avant) expire seul. Journal : `session_fermee`. 🔒 `test_deconnexion_session.py`.
 
 Une **clé partagée** (`MAINTENANCE_KEY`) se compare par `hmac.compare_digest`, en
 octets — jamais `==` : 🔒 `test_cle_maintenance.py` refuse un réglage secret
@@ -321,13 +335,9 @@ s'écrit dans les scripts d'exploitation, pas dans l'application.
 
 ### 9. Dépendances vulnérables (A06:2021)
 
-```powershell
-# Python
-pip audit --requirement api/requirements.txt
-
-# Node.js
-cd front; npm audit
-```
+Les deux portes que la CI joue, chacune avec ses exceptions déclarées (`audit-exceptions.json`, qui
+échouent si l'une cesse de servir) : `cd api && python scripts/check_audit_python.py` et
+`cd front && npm run lint:audit` (#2933 — `pip audit` n'existe pas, et un audit nu ignore les exceptions).
 
 ### 10. Headers de sécurité (A05:2021)
 
@@ -367,15 +377,16 @@ refuse la copie.
   l'inscription, avec `nouvelle_adresse`), avis à l'ancienne, qui reste celle du compte
   jusqu'au clic, journal. 🔒 `test_changement_adresse.py` (refuse aussi `x.email = …` hors de
   la confirmation du lien).
-- **Journal de sécurité** (#1040, #1548) : tout geste de `GESTES_SENSIBLES` (connexion refusée,
-  mot de passe changé ou réinitialisé, rôle ajouté ou retiré, bannissement, jeton rejoué,
-  changement d'adresse, cycle de vie d'un compte, délégation) appelle
-  `utils/journal_securite.journaliser_securite`, jamais un `logger` local. **Jamais de donnée
-  personnelle dans une ligne de journal** — un identifiant, jamais une adresse, un mot de
-  passe ou un jeton, même tronqué (#777). Niveau `WARNING`, jamais `ERROR` : le point 6 du
-  pré-check compte les `ERROR`/`CRITICAL` (`MOTIF_ERREURS_API`). 🔒 `test_journal_securite.py`
-  (confronte `GESTES_SENSIBLES` à ce que les routeurs écrivent, refuse un code absent de
-  `_NIVEAUX`, et la donnée personnelle chez la fonction et ses appelants).
+- **Journal de sécurité** (#1040, #1548, #2941) : tout geste de `GESTES_SENSIBLES` (la table,
+  avec la raison de chacun, `api/tests/aides_gestes_sensibles.py`) appelle
+  `utils/journal_securite.journaliser_securite`, jamais un `logger` local ; l'export complet de
+  la copropriété laisse sa ligne. **Jamais de donnée personnelle dans une ligne de journal** — un
+  identifiant, jamais une adresse, un mot de passe ou un jeton, même tronqué (#777). Niveau
+  `WARNING`, jamais `ERROR` : le point 6 du pré-check compte les `ERROR`/`CRITICAL`
+  (`MOTIF_ERREURS_API`). 🔒 `test_journal_securite.py` (la table se vérifie contre ce que le CODE
+  émet : toute fonction de `app/` qui appelle `journaliser_securite` y est déclarée, et l'inverse ;
+  le relevé des écritures sur un compte lit tout `app/`, portes d'écriture et écritures sans ligne
+  déclarées ; refuse un code absent de `_NIVEAUX`, et la donnée personnelle chez les appelants).
 - **HTML d'un utilisateur côté serveur** (#2150) : `utils/html_sur` (`nh3`, liste blanche de
   `#lib/sanitize.ts`). Le corps d'un courriel s'échappe ; un champ riche y entre par
   `html_riche(…)` ou `| safe`, redéfini pour assainir. 🔒 `test_html_sur.py` (charge hostile
@@ -401,6 +412,11 @@ refuse la copie.
   par tous : liste blanche, ni auteur ni destinataires). Ouvrir une route à un appareil = une
   ligne de la table. 🔒 `test_jetons_appareil.py` (toutes les routes × chaque portée, les deux
   sens du câblage, la porte relue), `test_ecrans.py` (ce qui est reçu), `test_jetons_montre.py`.
+- **La signature d'une INSTALLATION** (registre, #2953) : ni session ni jeton d'appareil — les
+  envois qu'une installation signe (inscription, bail, rapport, notification relayée) passent
+  par `registre/gardes` : `lire_contrat` (taille, contrat, version) puis `exiger_signature`, dans
+  l'ordre que chaque point spécifie. 🔒 `test_signature_registre_source_unique.py` (appelants de
+  `signature.verifier` déclarés, chaque route de `app/registre/` atteint la porte).
 - **Leurres** (#2365) : registre `utils/leurres` (`ROUTES_LEURRES`, `EVENEMENTS_LEURRES`) ;
   leurs VALEURS (`LEURRE_ADRESSE`, `LEURRE_CLE_MAINTENANCE`) ne vivent que dans le `.env` du
   nœud, jamais dans le dépôt. Une connexion leurre rend le refus ordinaire et journalise
@@ -450,6 +466,8 @@ refuse la copie.
   appelée que par `enregistrer_fichier_recu` et les fichiers produits déclarés
   (`ECRIVAINS_DU_STOCKAGE`). Le service reste à Caddy. 🔒 `test_cle_des_fichiers.py`,
   `test_stockage_source_unique.py`, `test_televersement_source_unique.py`.
+- **Un compte que le client désigne** (#2861) : une route ouverte aux résidents qui le lit pose une question de visibilité (`masquage.auteur_lu_par`) ou se déclare ; sinon, la réponse d'un compte absent. 🔒 `test_compte_designe_par_le_client.py`.
+- **Le locataire d'un bail** (claude-config#656) : `creer-multi` et `PATCH /baux/{id}` n'acceptent qu'un compte que la recherche ouverte au bailleur rendrait — `auth/appartenance.est_locataire_designable` (et sa clause, `clause_locataire_designable`, que la recherche et ses suggestions lisent) ; hors de ce périmètre, la réponse d'un compte absent. Le locataire déjà porté par le bail reste admis à la correction. Limite : `LIMITE_RECHERCHE_DE_PERSONNES`. 🔒 `test_bail_lot_du_bailleur.py`, `test_compte_designe_par_le_client.py`, `test_limites_debit_auth.py`.
 
 #### Les dépendances d'auth : ce qui n'est pas fondu, et pourquoi
 Les règles d'appartenance d'`auth/appartenance.py` ne sont pas réunies en une fonction : le
@@ -459,6 +477,18 @@ trois règles ; ce qu'elles gagnent est un lieu. 🔒 `test_appartenance_source_
 délégation est en lecture seule depuis #1534 (`utils/delegations_actives`) ; `get_acting_user`
 n'avait jamais été prise par une route. 🔒 `test_autorisation.py` refuse une dépendance qu'aucune
 route ne prend ; `npm run lint:en-tetes-lus`, un en-tête posé par le front qu'aucune route ne lit.
+
+#### La portée : les routes MONTÉES, trois dispenses (#2911, #2942)
+`test_autorisation.py` lit les routes que l'application MONTE et les dépendances que FastAPI
+leur résout, reconnues par l'objet de `deps.py` — pas le texte d'`app/routers/` : douze routes
+(registre, installation commune, sonde, deux `__init__.py`) lui échappaient. Une route sans
+dépendance est publique (`_PUBLICS_ASSUMES`), à clé partagée (`_AUTHENTIFIES_PAR_CLE`) ou signée
+par une installation (`_AUTHENTIFIES_PAR_SIGNATURE`), chaque dispense justifiée et vérifiée
+dans les deux sens. Le REFUS « réservé au conseil » s'écrit `deps.exiger_moderateur(user, motif)`
+ou la dépendance `require_cs_or_admin` ; toute autre fonction qui lève 401/403 hors d'`auth/` et
+d'`utils/visibility/` se déclare dans `REFUS_DECLARES` avec la règle centrale qu'elle appelle
+(🔒 `test_autorisation_regles_locales.py`). Les renvois des modules d'`auth/` et de ces tests
+mènent à du code qui existe (🔒 `test_renvois_securite.py`).
 
 ## Rapport d'audit
 
