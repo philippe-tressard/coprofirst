@@ -27,15 +27,20 @@ le dépôt de son app une étiquette `vX.Y.Z` ; une étiquette sans entrée ici 
 `SORTIES`) fait échouer la CI : `api/scripts/check_versions_en_circulation.py`, qui
 vérifie aussi que chaque contrat figé est bien la référence de son plancher.
 
-## Quand une version sort (#2970)
+## Quand une version sort (#2970, #2994)
 
-Aucune mesure ne dit aujourd'hui qu'une version n'est plus employée : la télémétrie
-par canal (#2726) ne retient pas la version de l'app, et le serveur n'impose aucune
-version minimale. Une version de PRODUCTION ne sort donc pas. Seule une version de
-TEST sort, quand sa piste ne la distribue plus (testeurs passés à la suivante) : une
-entrée dans `SORTIES`, datée, avec sa preuve — comme `preuve` à l'ajout. Le jour où
-une mesure existera (version de l'app dans le lot d'audience, ou version minimale
-servie par `GET /config`), elle deviendra la preuve admise pour la production.
+Une version ne sort que par une entrée de `SORTIES`, datée, avec sa preuve — comme
+`preuve` à l'ajout —, et pour l'un des deux motifs de `versions_minimales.MOTIFS` :
+
+- une version de TEST, quand sa piste ne la distribue plus (testeurs passés à la
+  suivante) ;
+- une version de PRODUCTION, quand elle est sous la version minimale que le serveur
+  SERT à son app (`GET /config`, `versions_minimales`) depuis au moins
+  `DELAI_SORTIE_JOURS`, et qu'elle lisait cette version minimale (elle invitait à la
+  mise à jour). Tranché le 24/11/2026 par délégation, l'option la plus sûre : aucune
+  donnée nouvelle n'est collectée (ni version d'app dans la télémétrie, ni chaîne
+  User-Agent, `utils/canaux_audience`). Une version qui ne lit pas la version
+  minimale — l'iOS 1.0 et 1.1, l'Android 0.8.173 — ne sort donc jamais.
 
 Une dérogation se DÉCLARE, datée, avec sa raison et son échéance — jamais à la main
 dans une PR. Une dérogation qui ne sert plus, ou échue, fait échouer le contrôle.
@@ -70,6 +75,8 @@ class VersionPubliee:
     preuve: str  #: où se lit ce plancher
     etiquette: str  #: l'étiquette `vX.Y.Z` qui la marque dans le dépôt de l'app
     canal: str  #: le magasin et la piste qui la distribuent
+    #: Elle lit `version_minimale_<app>` de `GET /config` et invite à la mise à jour.
+    lit_version_minimale: bool = False
 
     @property
     def nom(self) -> str:
@@ -86,6 +93,8 @@ class VersionSortie:
     etiquette: str
     le: str  #: « JJ/MM/AAAA »
     preuve: str  #: ce qui montre qu'elle n'est plus distribuée ni employée
+    motif: str  #: l'un de `versions_minimales.MOTIFS`
+    lisait_version_minimale: bool = False  #: recopié de son entrée en circulation
 
 
 EN_CIRCULATION: tuple[VersionPubliee, ...] = (

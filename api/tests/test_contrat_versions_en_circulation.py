@@ -85,7 +85,7 @@ def test_une_declaration_sans_etiquette_et_un_doublon_sont_refuses():
 
 def test_une_version_sortie_n_est_plus_reclamee():
     v = circ.EN_CIRCULATION[0]
-    sortie = circ.VersionSortie(v.app, v.etiquette, "23/11/2026", "essai")
+    sortie = circ.VersionSortie(v.app, v.etiquette, "23/11/2026", "essai", "piste de test fermée")
     reste = tuple(x for x in circ.EN_CIRCULATION if x is not v)
     lues = {app: [x.etiquette for x in circ.EN_CIRCULATION if x.app == app] for app in circ.APPS}
     assert circ.etiquettes_non_declarees(lues, reste, (sortie,)) == []
