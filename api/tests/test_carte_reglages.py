@@ -281,6 +281,16 @@ def chemins_d_admin_inconnus(texte: str, ranges: set[tuple[str, str]]) -> list[s
     return inconnus
 
 
+def _onglets_ranges() -> set[tuple[str, str]]:
+    """(groupe, onglet) de chaque onglet d'Admin, lus par `ecrans_ranges` — une seule
+    lecture de la table des pages, jamais une seconde (#2927)."""
+    return {
+        (morceaux[1], morceaux[2])
+        for e in ecrans_ranges()
+        if e.startswith("Admin › ") and len(morceaux := e.split(" › ")) == 3
+    }
+
+
 def _textes_qui_renvoient():
     for chemin, suffixes in _TEXTES_QUI_RENVOIENT:
         racine = _RACINE / chemin
