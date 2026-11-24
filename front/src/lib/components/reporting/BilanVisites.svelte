@@ -12,6 +12,7 @@
 -->
 <script lang="ts">
 	import { onMount } from 'svelte';
+	import { anneeDe } from '#lib/date.ts';
 	import { tickets as ticketsApi, type EtatVisite, type VisitePeriodique } from '#lib/api/index.ts';
 	import { messageErreur } from '#lib/erreurs.ts';
 	import { COMPTEURS_VISITE } from '#lib/entretien-periodique.ts';
@@ -19,7 +20,7 @@
 
 	/** Lu par le parent (`bind:visites`) — ne pas écrire depuis l'extérieur. */
 	export let visites: VisitePeriodique[] = [];
-	let exercice = new Date().getFullYear();
+	let exercice = anneeDe();
 	let chargement = true;
 	let erreur = '';
 

@@ -18,6 +18,7 @@
 <script lang="ts">
 	import pkg from '../../../package.json';
 	import { PUBLIC_INSTANCE_ID } from '$app/env/public';
+	import { anneeDe } from '#lib/date.ts';
 	import Icon from '#lib/components/Icon.svelte';
 	import LogoResidence from '#lib/components/LogoResidence.svelte';
 	import { configStore, siteNomStore } from '#lib/stores/pageConfig.ts';
@@ -40,7 +41,7 @@
 	const serveur = PUBLIC_INSTANCE_ID || '';
 	const version = `v${pkg.version}`;
 	const build = [version, empreinte, import.meta.env.VITE_BUILD_DATE].filter(Boolean).join(' · ');
-	const anneeCourante = new Date().getFullYear();
+	const anneeCourante = anneeDe();
 
 	$: siteUrl = $configStore['site_url'] ?? '';
 	$: nom = [reglage.prefixeNom, $siteNomStore].filter(Boolean).join(' ');

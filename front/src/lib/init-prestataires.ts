@@ -35,6 +35,8 @@
  * `node scripts/check-init-prestataires.mjs --selftest`.
  */
 
+import { anneeDe, moisDe } from './date.ts';
+
 /**
  * Au-delà, on ne pré-remplit pas : une maintenance mensuelle ferait douze cartes
  * dans une colonne qui en compte déjà.
@@ -191,11 +193,8 @@ export interface VisiteExistante {
 export function clesDesAffaires(affaires: VisiteExistante[], exercice: number): Set<string> {
 	return new Set(
 		affaires
-			.filter(
-				(a) =>
-					a.categorie === 'entretien' && !!a.debut && new Date(a.debut).getFullYear() === exercice,
-			)
-			.map((a) => clePlanifiee(a.titre, new Date(a.debut as string).getMonth())),
+			.filter((a) => a.categorie === 'entretien' && !!a.debut && anneeDe(a.debut) === exercice)
+			.map((a) => clePlanifiee(a.titre, moisDe(a.debut as string))),
 	);
 }
 

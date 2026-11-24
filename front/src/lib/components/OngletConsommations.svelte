@@ -25,7 +25,7 @@
 -->
 <script lang="ts">
 	import { fmtNombre, nombreOuNull } from '#lib/utils.ts';
-	import { jourIso } from '#lib/date.ts';
+	import { anneeDe, jourIso } from '#lib/date.ts';
 	import {
 		prestataires as prestApi,
 		type CompteurConfig,
@@ -83,7 +83,7 @@
 	$: relevesByYear = (() => {
 		const map = new Map<number, ReleveCompteur[]>();
 		for (const r of releves) {
-			const yr = new Date(r.date_releve).getFullYear();
+			const yr = anneeDe(r.date_releve);
 			if (!map.has(yr)) map.set(yr, []);
 			map.get(yr)!.push(r);
 		}
