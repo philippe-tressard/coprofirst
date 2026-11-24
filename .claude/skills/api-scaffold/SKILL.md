@@ -74,7 +74,10 @@ ne charge pas.
 - `__tablename__` = snake_case français ; champs en français snake_case
 - Timestamps : suffixe `_le` → `cree_le`, `mis_a_jour_le`
 - FK : `{modele}_id = Field(default=None, foreign_key="table.id")`
-- Enums : `class MonEnum(str, Enum)` → slugs français lowercase
+- Enums : `class MonEnum(str, Enum)` → slugs français lowercase. Une colonne d'état
+  (`statut`, `etat`, `statut_*`) en texte déclare ses valeurs, lues dans le code, dans
+  `VALEURS_ADMISES` ; les états au vocabulaire en commentaire sont figés (`ETATS_LIBRES`,
+  qui ne fait que baisser) — 🔒 `test_colonnes_etat_fermees.py` (#2954)
 - JSON stocké en `str` → parsé par `@field_validator` dans le schéma Read
 - 🔴 **Pas de colonne `actif` par réflexe.** Un objet qui doit quitter les listes
   se déclare dans `utils/archivage.REGLES` — la règle unique, testée contre les
@@ -383,8 +386,11 @@ Venu de `CLAUDE.md` (#2709). Chaque règle nomme sa porte et le test qui la tien
   `maintenant.date()` (faux d'un jour entre 0 h et 2 h, #1565). 🔒 `test_horloge.py`
   (`default_factory` compris), Ruff `DTZ005/011`.
 - **Archiver, pas une colonne `actif`** : les objets qui quittent les listes se déclarent dans
-  `utils/archivage.REGLES`. 🔒 `test_archivage_colonnes_booleennes.py` (toute colonne
-  `actif`/`active`/`archivee` couverte par `REGLES` ou déclarée référentiel, #1568).
+  `utils/archivage.REGLES`. 🔒 `test_archivage_colonnes_booleennes.py`, qui lit
+  `SQLModel.metadata` (colonnes héritées comprises) : tout booléen `actif`/`active`/`archivee`/
+  `archive_manuel`/`enabled`/`masque`/`visible` couvert par `REGLES` ou déclaré référentiel,
+  toute date d'archivage (`archive_le`…) nommée par `REGLES` ou déclarée dans
+  `ARCHIVAGES_HORS_REGLES` — l'avis s'y retire par un geste daté (#1568, #2954).
 - Deux tables qui portent le même objet (Vigik/Télécommande et leurs stagings) : une classe de
   base non-table (`models/acces._ObjetAcces`). Un import xlsx déclare son `_traiter_rows` et
   nomme ses importeurs par `import_xlsx.importeurs`.
@@ -442,9 +448,9 @@ routeur vit à côté de lui. `schemas_communs.py` n'importe RIEN du projet (cyc
 `schemas_tickets`).
 
 ### Nommage, contrat, tables publiées
-- Français, tables, routes et tags compris. Les noms anglais existants sont **figés
-  définitivement** (`TABLES_FIGEES`, `ROUTES_FIGEES` de `test_nommage_francais.py`, décision du
-  30/10/2026, #2314) ; un nom figé renommé sort de la liste. Tag OpenAPI en minuscules à
+- Français, tables, colonnes, routes et tags compris. Les noms anglais existants sont **figés
+  définitivement** (`TABLES_FIGEES`, `COLONNES_FIGEES`, `ROUTES_FIGEES` de
+  `test_nommage_francais.py`, décision du 30/10/2026, #2314 ; colonnes depuis #2954) ; un nom figé renommé sort de la liste. Tag OpenAPI en minuscules à
   tirets (`carnet-entretien`), préfixe de routeur au pluriel (#1056).
 - **Le contrat de l'API ne recule pas sans annonce** (#2456) : l'app iOS génère son client
   depuis `openapi.json`, joint à chaque release (`scripts/ci/lib-contrat-version.sh`), jamais
