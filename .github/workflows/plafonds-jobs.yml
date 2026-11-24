@@ -55,3 +55,12 @@ jobs:
           GITHUB_TOKEN: ${{ github.token }}
           GH_TOKEN: ${{ github.token }}
         run: python scripts/ci/plafonds_jobs.py --rapport
+
+      #  Un rouge de `main` ou d'un passage planifié ouvre (ou complète) un ticket
+      #  (#2988, `scripts/ci/signaler_echec_ci.py`) : le dernier pas du job, ou
+      #  l'avant-dernier devant la marque « arbre jugé vert », qui ne pose qu'un vert.
+      - name: Alerte d'échec
+        if: failure()
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: python3 "$GITHUB_WORKSPACE/scripts/ci/signaler_echec_ci.py" --signaler

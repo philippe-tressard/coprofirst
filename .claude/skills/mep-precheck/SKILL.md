@@ -759,6 +759,9 @@ Ce que le point 16 ci-dessus ne dit pas, et qui sert quand un rejeu ou un job d�
 ### La CI GitHub
 - Un check requis **annulé** par GitHub bloque une PR sans un mot :
   `bash scripts/ci/relancer-annules.sh <n° de PR>`.
+- **Un rouge de `main` ou d'un passage planifié ouvre un ticket** « CI rouge : <workflow> » (#2988,
+  `scripts/ci/signaler_echec_ci.py`, dernier pas `if: failure()` de chaque job ; 🔒 `test_alerte_echec_ci.py`).
+  Il se ferme à la main, avec le passage revenu au vert qui le prouve.
 - **Un arbre déjà jugé vert ne se rejoue pas** (#2632) : le job `arbre` saute un job requis
   quand une exécution précédente le prouve (même workflow, même dépôt, job `success` joué,
   arbre recalculé égal à `HEAD^{tree}`, base d'alors ancêtre de la tête). L'artefact
