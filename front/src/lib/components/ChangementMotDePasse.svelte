@@ -11,6 +11,10 @@
   robustesse, Verr. Maj. — appartient à `ChampMotDePasse.svelte`, partagé avec
   les trois écrans d'authentification. Il ne reste ici que ce qui est propre au
   profil : l'enchaînement des trois champs, la validation croisée et l'appel.
+
+  Depuis #3019, l'écran du mot de passe temporaire le reprend tel quel : `integre`
+  le pose dans la carte de la page (ni carte ni titre à lui), `apresChangement` dit
+  ce qui suit un changement réussi — un geste en prop, pas en `on:` (Svelte 4).
 -->
 <script lang="ts">
 	import ChampMotDePasse from './ChampMotDePasse.svelte';
@@ -18,6 +22,11 @@
 	import { auth as authApi } from '#lib/api/index.ts';
 	import { messageErreur } from '#lib/erreurs.ts';
 	import { toast } from './Toast.svelte';
+
+	/** Posé dans la carte d'une page : ni carte ni titre propres. */
+	export let integre = false;
+	/** Ce qui suit un changement réussi ; sans lui, un toast et les champs vidés. */
+	export let apresChangement: (() => void | Promise<void>) | null = null;
 
 	let pwdActuel = '';
 	let pwdNouv = '';
@@ -58,6 +67,7 @@
 			pwdNouv = '';
 			pwdConf = '';
 			toast('success', 'Mot de passe modifié');
+			if (apresChangement) await apresChangement();
 		} catch (e) {
 			toast('error', messageErreur(e));
 		} finally {
@@ -66,11 +76,13 @@
 	}
 </script>
 
-<section class="card carte-mot-de-passe">
-	<h2 class="section-title">Modifier le mot de passe</h2>
-	<p class="section-aide">
-		Il vous faut votre mot de passe actuel, puis le nouveau saisi deux fois.
-	</p>
+<section class:card={!integre} class="carte-mot-de-passe">
+	{#if !integre}
+		<h2 class="section-title">Modifier le mot de passe</h2>
+		<p class="section-aide">
+			Il vous faut votre mot de passe actuel, puis le nouveau saisi deux fois.
+		</p>
+	{/if}
 
 	<form on:submit|preventDefault={changePassword}>
 		<ChampMotDePasse

@@ -200,7 +200,10 @@ FICHIERS_RACINE_EXPLOITATION = ("CLAUDE.md", "boot-role-guard.sh")
 #: 45 avec l'audit de sécurité nocturne (30/10/2026) : `lib-audit-comptes.sh` déclare
 #: le compte d'exploitation admis avec un shell et dans les groupes docker/sudo ;
 #: les autotests de `lib-audit-persistance.sh` et `lib-audit-conteneurs.sh` le citent.
-FICHIERS_EXPLOITATION_ATTENDUS = 45
+#: 47 avec la découpe d'`infra-rpi` en annexes (#2910) : `CRONS-ET-STANDBY.md` et
+#: `SAUVEGARDES-ET-VERDICTS.md` portent les crontabs et la copie hors site, sorties de
+#: `SKILL.md` qui les citait déjà — le même texte, en trois fichiers.
+FICHIERS_EXPLOITATION_ATTENDUS = 47
 
 
 def _fichiers_avec_identifiants_exploitation() -> list[str]:

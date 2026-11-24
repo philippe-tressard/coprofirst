@@ -11,8 +11,9 @@ name: CI
 #
 #  La protection de branche exige les checks de l'événement `pull_request` : c'est
 #  donc celui-là qu'il faut garder. Le run `push` sur `dev` ne servait à rien que
-#  personne d'autre ne fasse déjà — `scripts/poste/rejouer-ci.sh` rejoue les mêmes
-#  commandes AVANT le push (point 16 du pré-check, obligatoire).
+#  personne d'autre ne fasse déjà — `scripts/poste/rejouer-ci.sh` rejoue les étapes
+#  rapides AVANT le push, et le point 16 du pré-check exige la CI de la PR verte sur
+#  le même arbre pour les lentes (pytest, navigateur : #2571).
 #
 #  Le point 0c du pré-check continue de fonctionner : `gh run list --branch dev`
 #  remonte aussi les exécutions `pull_request`, dont la branche de tête est `dev`.
@@ -78,6 +79,7 @@ jobs:
     timeout-minutes: 5
     #  Lister les artefacts du dépôt : la seule lecture que ce job ajoute.
     permissions:
+      issues: write  # l'alerte d'échec ouvre un ticket (#2988)
       contents: read
       actions: read
     outputs:
@@ -100,11 +102,23 @@ jobs:
             python3 scripts/ci/arbre_deja_vert.py chercher
 
   # ── Backend: lint Python avec Ruff ───────────────────────────
+
+      #  Un rouge de `main` ou d'un passage planifié ouvre (ou complète) un ticket
+      #  (#2988, `scripts/ci/signaler_echec_ci.py`) : le dernier pas du job, ou
+      #  l'avant-dernier devant la marque « arbre jugé vert », qui ne pose qu'un vert.
+      - name: Alerte d'échec
+        if: failure()
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: python3 "${GITHUB_WORKSPACE:-$(git rev-parse --show-toplevel)}/scripts/ci/signaler_echec_ci.py" --signaler
   lint-backend:
     name: Lint Python (Ruff)
     needs: arbre
     if: ${{ !cancelled() && needs.arbre.outputs['lint-backend'] != 'oui' }}
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      issues: write  # l'alerte d'échec ouvre un ticket (#2988)
     timeout-minutes: 15
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
@@ -294,6 +308,16 @@ jobs:
         # déclaré dans l'en-tête de `scripts/ci/clones_python.py`.
         run: python scripts/ci/clones_python.py
 
+      #  Un rouge de `main` ou d'un passage planifié ouvre (ou complète) un ticket
+      #  (#2988, `scripts/ci/signaler_echec_ci.py`) : le dernier pas du job, ou
+      #  l'avant-dernier devant la marque « arbre jugé vert », qui ne pose qu'un vert.
+      - name: Alerte d'échec
+        if: failure()
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: python3 "${GITHUB_WORKSPACE:-$(git rev-parse --show-toplevel)}/scripts/ci/signaler_echec_ci.py" --signaler
+
+
       #  La marque de l'arbre jugé vert (#2632) : la dernière étape, donc posée
       #  seulement si toutes les autres ont réussi.
       - name: Marque « arbre jugé vert »
@@ -313,6 +337,9 @@ jobs:
     needs: arbre
     if: ${{ !cancelled() && needs.arbre.outputs['test-backend'] != 'oui' }}
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      issues: write  # l'alerte d'échec ouvre un ticket (#2988)
     timeout-minutes: 30
     services:
       postgres:
@@ -355,6 +382,15 @@ jobs:
         # tests changeaient de moteur d'un run à l'autre sans que le dépôt bouge.
         run: pip install -r requirements-dev.txt
 
+      # Les versions DISTRIBUÉES des apps (#2919) : chaque étiquette `vX.Y.Z` de
+      # coprofirst-ios et coprofirst-android a son entrée dans
+      # `app/contrat/circulation.py`, et chaque contrat figé est la référence de
+      # son plancher. Réseau (dépôts publics, étiquette du plancher) : sans lui,
+      # INCONNU (2), jamais vert. Ici parce que l'app s'importe dans ce job.
+      - name: Versions publiées des apps déclarées (contrat figé)
+        working-directory: api
+        run: python scripts/check_versions_en_circulation.py
+
       # Licences des dépendances tierces (#1542, 02/10/2026) — front, bridge et
       # API. Ici parce que c'est le seul job où les distributions de l'API sont
       # installées. Le détail (liste blanche, exceptions, document comparé) :
@@ -374,6 +410,16 @@ jobs:
         run: bash ../scripts/ci/mesure-postgresql.sh
         env:
           SECRET_KEY: "ci-secret-key-placeholder-0123456789abcdef"
+
+      #  Un rouge de `main` ou d'un passage planifié ouvre (ou complète) un ticket
+      #  (#2988, `scripts/ci/signaler_echec_ci.py`) : le dernier pas du job, ou
+      #  l'avant-dernier devant la marque « arbre jugé vert », qui ne pose qu'un vert.
+      - name: Alerte d'échec
+        if: failure()
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: python3 "${GITHUB_WORKSPACE:-$(git rev-parse --show-toplevel)}/scripts/ci/signaler_echec_ci.py" --signaler
+
 
       #  La marque de l'arbre jugé vert (#2632) : la dernière étape, donc posée
       #  seulement si toutes les autres ont réussi.
@@ -402,6 +448,9 @@ jobs:
     needs: arbre
     if: ${{ !cancelled() && needs.arbre.outputs['test-scripts'] != 'oui' }}
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      issues: write  # l'alerte d'échec ouvre un ticket (#2988)
     timeout-minutes: 15
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
@@ -612,6 +661,8 @@ jobs:
           python scripts/ci/plafonds_jobs.py --selftest
           python scripts/ci/arbre_deja_vert.py --selftest
           bash scripts/ci/apt-ci.sh --selftest
+          # L'alerte d'échec (#2988) : décision et envoi, gh simulé.
+          python scripts/ci/signaler_echec_ci.py --selftest
           # La lecture des routes de `caddy adapt` (claude-config#604) ; le binaire lui-même
           # est joué par le workflow « Caddyfile », docker n'étant pas au poste.
           python scripts/ci/caddy_variantes.py --selftest
@@ -984,6 +1035,16 @@ jobs:
           done < <(git ls-files -s -- '*.sh' '.githooks/*')
           exit $st
 
+      #  Un rouge de `main` ou d'un passage planifié ouvre (ou complète) un ticket
+      #  (#2988, `scripts/ci/signaler_echec_ci.py`) : le dernier pas du job, ou
+      #  l'avant-dernier devant la marque « arbre jugé vert », qui ne pose qu'un vert.
+      - name: Alerte d'échec
+        if: failure()
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: python3 "${GITHUB_WORKSPACE:-$(git rev-parse --show-toplevel)}/scripts/ci/signaler_echec_ci.py" --signaler
+
+
       #  La marque de l'arbre jugé vert (#2632) : la dernière étape, donc posée
       #  seulement si toutes les autres ont réussi.
       - name: Marque « arbre jugé vert »
@@ -1003,6 +1064,9 @@ jobs:
     needs: arbre
     if: ${{ !cancelled() && needs.arbre.outputs['build-frontend'] != 'oui' }}
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      issues: write  # l'alerte d'échec ouvre un ticket (#2988)
     timeout-minutes: 15
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
@@ -1032,6 +1096,13 @@ jobs:
         run: |
           npm ci --omit=dev --ignore-scripts
           npm test
+
+      # Vulnérabilités des dépendances du BRIDGE (#2962) : la mécanique du front —
+      # seuil `low`, exceptions nominatives (`whatsapp-bridge/audit-exceptions.json`
+      # s'il en faut une). Il n'avait que Trivy, la nuit, aux seuils CRITICAL et HIGH.
+      - name: Vulnérabilités des dépendances du bridge WhatsApp
+        working-directory: whatsapp-bridge
+        run: node ../front/scripts/check-audit.mjs --dossier .
 
       # Vulnérabilités connues des dépendances. Le 17/08/2026, `npm audit` en local
       # en relevait QUATRE dont une haute, quand le bandeau GitHub n'en annonçait
@@ -2792,6 +2863,16 @@ jobs:
         working-directory: front
         run: node scripts/check-section-lue.mjs --selftest
 
+      #  Un rouge de `main` ou d'un passage planifié ouvre (ou complète) un ticket
+      #  (#2988, `scripts/ci/signaler_echec_ci.py`) : le dernier pas du job, ou
+      #  l'avant-dernier devant la marque « arbre jugé vert », qui ne pose qu'un vert.
+      - name: Alerte d'échec
+        if: failure()
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: python3 "${GITHUB_WORKSPACE:-$(git rev-parse --show-toplevel)}/scripts/ci/signaler_echec_ci.py" --signaler
+
+
       #  La marque de l'arbre jugé vert (#2632) : la dernière étape, donc posée
       #  seulement si toutes les autres ont réussi.
       - name: Marque « arbre jugé vert »
@@ -2849,6 +2930,9 @@ jobs:
     needs: arbre
     if: ${{ !cancelled() && needs.arbre.outputs['e2e-frontend'] != 'oui' }}
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      issues: write  # l'alerte d'échec ouvre un ticket (#2988)
     #  Un plafond par tranche, et non celui de la suite entière (40 min, #2576) :
     #  une tranche joue le quart des tests. L'installation peut à elle seule
     #  prendre 12 min sur un miroir lent (#1865), d'où la marge.
@@ -3012,11 +3096,23 @@ jobs:
   #  sans lui, une tranche rouge SAUTERAIT ce job — et GitHub compte un check
   #  requis sauté comme un succès. Toute tranche autre que `success` (rouge,
   #  annulée, sautée) le rend rouge.
+
+      #  Un rouge de `main` ou d'un passage planifié ouvre (ou complète) un ticket
+      #  (#2988, `scripts/ci/signaler_echec_ci.py`) : le dernier pas du job, ou
+      #  l'avant-dernier devant la marque « arbre jugé vert », qui ne pose qu'un vert.
+      - name: Alerte d'échec
+        if: failure()
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: python3 "${GITHUB_WORKSPACE:-$(git rev-parse --show-toplevel)}/scripts/ci/signaler_echec_ci.py" --signaler
   e2e-verdict:
     name: Tests de navigateur (Playwright)
     needs: [arbre, e2e-frontend]
     if: always()
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      issues: write  # l'alerte d'échec ouvre un ticket (#2988)
     timeout-minutes: 5
     env:
       RESULTAT_TRANCHES: ${{ needs.e2e-frontend.result }}
@@ -3038,6 +3134,23 @@ jobs:
           [ "$RESULTAT_TRANCHES" = success ] || { echo "✗ Au moins une tranche n'est pas verte : la lire ci-dessus."; exit 1; }
           #  Ce job n'a pas de checkout : la marque téléverse ce fichier-ci.
           echo "$GITHUB_RUN_ID" > "$RUNNER_TEMP/arbre-vert.txt"
+
+      #  Ce job ne récupère pas le dépôt : l'alerte d'échec en extrait son seul script.
+      - name: Script de l'alerte d'échec
+        if: failure()
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          sparse-checkout: scripts/ci/signaler_echec_ci.py
+          sparse-checkout-cone-mode: false
+      #  Un rouge de `main` ou d'un passage planifié ouvre (ou complète) un ticket
+      #  (#2988, `scripts/ci/signaler_echec_ci.py`) : le dernier pas du job, ou
+      #  l'avant-dernier devant la marque « arbre jugé vert », qui ne pose qu'un vert.
+      - name: Alerte d'échec
+        if: failure()
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: python3 "${GITHUB_WORKSPACE:-$(git rev-parse --show-toplevel)}/scripts/ci/signaler_echec_ci.py" --signaler
+
 
       - name: Marque « arbre jugé vert »
         if: needs.arbre.outputs.arbre != '' && needs.e2e-frontend.result == 'success'

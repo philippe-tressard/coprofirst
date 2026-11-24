@@ -440,7 +440,8 @@ refuse la copie.
   `utils/visibility/fichiers.exiger_fichier_lisible`, appelée par `/auth/verifier-acces`
   (`forward_auth` de Caddy) et par la route de l'installation commune. Le fichier se lit si
   l'un des objets qui le citent (`PORTEURS`) se lit par son prédicat ; sans porteur, par son
-  auteur seul (`FichierRecu`) ; avatars, résidence et logo par toute session (`TOUTE_SESSION`).
+  auteur seul (`FichierRecu`) ; avatars, résidence et logo par toute session (`TOUTE_SESSION`) ;
+  un dossier hors de `DOSSIERS_SERVIS` (la racine comprise) : refusé à tous (claude-config#637).
   Une colonne qui cite un fichier se nomme dans `photos.COLONNES_DE_FICHIERS` et a son porteur.
   🔒 `test_acces_fichiers_porteur.py`.
 - **Un fichier se situe par `utils/stockage`** (#1748) : `stockage()` — `chemin(clé)`,

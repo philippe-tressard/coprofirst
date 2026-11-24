@@ -188,10 +188,11 @@ def _jour(valeur) -> Optional[date]:
 def _codes_de(valeur: Optional[str]) -> list[str]:
     """Le périmètre d'une ligne, quelle que soit la forme de sa colonne.
 
-    `Ticket` et `ContratEntretien` portent un tableau JSON, `Evenement` une
-    chaîne simple (`"résidence"`, `"bat:3"`). Une seule lecture pour les trois :
-    trois lectures auraient divergé sur le JSON illisible, et c'est toujours la
-    troisième qui oublie le `try`.
+    `Ticket` et `ContratEntretien` portent un tableau JSON ; une chaîne simple
+    (`"résidence"`, `"bat:3"`) reste lue, forme que portait `Evenement` avant que
+    le carnet ne le quitte (#1092). Une seule lecture pour les deux sources :
+    deux lectures auraient divergé sur le JSON illisible, et c'est toujours la
+    seconde qui oublie le `try`.
     """
     if not valeur:
         return []

@@ -5,6 +5,7 @@
 	import { messageErreur } from '#lib/erreurs.ts';
 	import { setUser } from '#lib/stores/auth.ts';
 	import { destinationApresConnexion } from '#lib/redirection.ts';
+	import { menerAuChangement } from '#lib/mot-de-passe-temporaire.ts';
 	import {
 		loadSiteConfig,
 		configStore,
@@ -57,7 +58,9 @@
 		try {
 			const user = await authApi.login(email, password);
 			setUser(user);
-			goto(destinationApresConnexion());
+			//  Un mot de passe temporaire (#3019) se change avant d'entrer.
+			if (user.mot_de_passe_a_changer) menerAuChangement();
+			else goto(destinationApresConnexion());
 		} catch (e) {
 			const msg = messageErreur(e, 'Erreur de connexion');
 			if (msg.includes('rifier votre adresse') || msg.includes('email')) {

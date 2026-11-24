@@ -38,6 +38,8 @@ from __future__ import annotations
 import re
 from pathlib import Path
 
+from tests.aides_routes_front import decoder_js
+
 _RACINE = Path(__file__).resolve().parents[2]
 _FRONT = _RACINE / "front" / "src" / "lib" / "evolutions.ts"
 _API = _RACINE / "api" / "app" / "routers" / "flux" / "tickets.py"
@@ -66,7 +68,7 @@ def _icones_front() -> dict[str, str]:
     )
     table = {}
     for cle, valeur in re.findall(r"(\w+)\s*:\s*'([^']*)'", bloc.group(1)):
-        table[cle] = re.sub(r"\\u\{([0-9A-Fa-f]+)\}", lambda m: chr(int(m.group(1), 16)), valeur)
+        table[cle] = decoder_js(valeur)
     return table
 
 

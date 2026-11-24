@@ -202,3 +202,47 @@ def test_les_deux_portes_appellent_la_regle():
     for porte in ("routers/auth.py", "installation_commune/fichiers.py"):
         source = (app / porte).read_text(encoding="utf-8")
         assert "exiger_fichier_lisible(session, user," in source, f"{porte} ne juge pas le fichier"
+
+
+#: Des clés hors des dossiers que le code écrit : un dossier inventé, la racine du
+#: volume (des fichiers d'avant le 03/08/2026 y restent, cités par rien), une
+#: casse voisine d'un dossier réel.
+CLES_HORS_DOSSIERS = ("inconnu/x.pdf", "a1b2c3_PV_ancien.PDF", "Fichiers/x.jpg")
+
+
+@pytest.mark.parametrize("cle", CLES_HORS_DOSSIERS)
+def test_un_dossier_inconnu_n_est_servi_a_personne(session, cle):
+    """Refusé par défaut (claude-config#637, arbitrage du 23/11/2026) : la règle 4
+    — repli sur le conseil — ne vaut que pour un dossier que le code écrit."""
+    admin = compte(session, prefixe="admin", roles_json=RoleUtilisateur.admin.value)
+    assert not regle.fichier_lisible(session, admin, cle)
+    #  Même cité par un objet que l'admin lit : la clé ne désigne rien de servi.
+    _affaire(session, admin, cle)
+    assert not regle.fichier_lisible(session, admin, cle)
+
+
+@pytest.mark.parametrize("dossier", sorted(photos.DOSSIERS_DES_PIECES_JOINTES))
+def test_un_dossier_connu_garde_le_repli_sur_le_conseil(session, dossier):
+    """Témoin : la règle 4 tient pour chaque dossier de pièces jointes."""
+    conseil = compte(session, prefixe="cs", roles_json=RoleUtilisateur.conseil_syndical.value)
+    assert regle.fichier_lisible(session, conseil, _cle(dossier))
+
+
+def test_chaque_dossier_ecrit_par_un_televersement_est_connu():
+    """Un dossier neuf qu'un routeur écrirait sans l'inscrire serait refusé à tous :
+    il s'inscrit dans `photos.DOSSIERS_DES_PIECES_JOINTES` ou `TOUTE_SESSION`."""
+    import re
+    from pathlib import Path
+
+    from app.utils import logo
+
+    routeurs = Path(regle.__file__).resolve().parents[2] / "routers"
+    ecrits = {
+        m
+        for f in routeurs.glob("*.py")
+        for m in re.findall(r'_save_image\(\s*file,\s*"([\w-]+)"', f.read_text(encoding="utf-8"))
+    }
+    assert {"avatars", "fichiers"} <= ecrits, ecrits  # cas zéro
+    ecrits.add(logo.DOSSIER)
+    inconnus = sorted(ecrits - regle.DOSSIERS_SERVIS)
+    assert not inconnus, f"dossiers écrits mais refusés à tous : {inconnus}"

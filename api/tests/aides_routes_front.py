@@ -237,6 +237,56 @@ def _onglet_de_la_route(route: str) -> str | None:
     return None
 
 
+def decoder_js(texte: str) -> str:
+    """`'\\u{1F4D2}'` et `'\\uFE0F'` → le caractère : le front écrit ses pictogrammes
+    échappés, le Python en clair (`test_echappements_source`). Comparer sans décoder
+    échouerait sur une différence d'écriture, pas de valeur."""
+    return re.sub(
+        r"\\u\{([0-9A-Fa-f]+)\}|\\u([0-9A-Fa-f]{4})",
+        lambda m: chr(int(m.group(1) or m.group(2), 16)),
+        texte,
+    )
+
+
+#  Un champ de la table écrit en littéral, seul sur sa ligne, entre apostrophes ou entre
+#  guillemets (Prettier les choisit quand la valeur porte une apostrophe) —
+#  `label: TITRE_ARCHIVES` (une constante) n'est pas lu : il n'a pas de texte dans la table.
+_MOTIF_CHAMP_PAGE = re.compile(
+    r"""^\s*(nom|navLabel|label|groupe): (?:'((?:[^'\\]|\\.)*)'|"((?:[^"\\]|\\.)*)"),?\s*$""",
+    re.M,
+)
+
+
+def ecrans_ranges() -> set[str]:
+    """Chaque écran que la table des pages range, sous les noms que le front lui donne.
+
+    « Page › onglet », ou « Page › groupe › onglet » quand l'onglet a un groupe
+    (l'administration). La page se nomme par son `nom` (en-tête, recherche) ou son
+    `navLabel` (menu) : « Ma résidence » et « Admin » sont tous deux des noms du front.
+    Une page sans onglet se nomme seule ; une page à onglets, jamais : elle n'est
+    pas un écran, chacun de ses onglets l'est. Libellés échappements décodés.
+    """
+    pages: list[tuple[list[str], list[list[str | None]]]] = []
+    for champ, apostrophes, guillemets in _MOTIF_CHAMP_PAGE.findall(_pages_ts()):
+        valeur = decoder_js(apostrophes or guillemets)
+        if champ == "nom":
+            pages.append(([valeur], []))
+        elif champ == "navLabel":
+            pages[-1][0].append(valeur)
+        elif champ == "label":
+            pages[-1][1].append([valeur, None])
+        else:
+            pages[-1][1][-1][1] = valeur
+    ecrans: set[str] = set()
+    for noms, onglets in pages:
+        for nom in noms:
+            if not onglets:
+                ecrans.add(nom)
+            for label, groupe in onglets:
+                ecrans.add(f"{nom} › {groupe} › {label}" if groupe else f"{nom} › {label}")
+    return ecrans
+
+
 # Les pages à onglets branchent leur contenu sur `onglet === '…'` ou `activeTab === '…'`.
 _MOTIF_BRANCHE_ONGLET = re.compile(r"(?:onglet|activeTab)\s*===\s*'([\w]+)'")
 

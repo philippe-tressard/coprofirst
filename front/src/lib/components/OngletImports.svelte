@@ -1,5 +1,5 @@
 <!--
-  L'onglet **Imports** de l'administration : un tableur du syndic, trois sources.
+  L'onglet **Imports** de l'administration : un tableur, quatre sources.
 
   ## Pourquoi un onglet et non trois (#2062, maquette validée le 21/10/2026)
 

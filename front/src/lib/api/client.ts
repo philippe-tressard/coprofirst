@@ -9,6 +9,7 @@
 
 import { urlDeConnexion } from '#lib/redirection.ts';
 import { detailLisible } from '#lib/detail-erreur.ts';
+import { estRefusMotDePasseTemporaire, menerAuChangement } from '#lib/mot-de-passe-temporaire.ts';
 import { codeHttp, signalerErreur } from '#lib/telemetry.ts';
 
 export const BASE = '/api';
@@ -153,13 +154,18 @@ async function echecApi(
 	repli: string,
 ): Promise<ApiError> {
 	let rawDetail = repli;
+	let detail: unknown;
 	try {
 		//  🔴 Une LISTE de validation (422) s'affichait en JSON brut dans le toast
 		//  (#1327) : `detailLisible` en garde les messages.
-		rawDetail = detailLisible((await res.json()).detail, repli);
+		detail = (await res.json()).detail;
+		rawDetail = detailLisible(detail, repli);
 	} catch {
 		/* le corps n'est pas du JSON : on garde le libellé par défaut */
 	}
+	//  Un mot de passe temporaire ne sert qu'à en changer (#3019) : où que le refus
+	//  arrive, il mène à l'écran du changement.
+	if (res.status === 403 && estRefusMotDePasseTemporaire(detail)) menerAuChangement();
 
 	if (res.status >= 500) {
 		// Erreur serveur : ne pas exposer le détail technique à l'utilisateur
