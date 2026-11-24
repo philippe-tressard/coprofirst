@@ -169,3 +169,73 @@ def test_le_lien_badge_prix_est_encore_appele():
         "été retiré, retirer aussi son résolveur dans #lib/faq et la "
         "vérification du test précédent"
     )
+
+
+#: Ce qui ne vaut que pour UNE résidence, et n'a donc pas sa place dans une FAQ
+#: livrée à toute installation (#2926, 23/11/2026). Chaque motif porte le fait
+#: local qu'il a attrapé : la FAQ d'origine avait été écrite pour la première
+#: copropriété servie.
+FAITS_LOCAUX = {
+    #  « urgences électricité : 09 72 67 50 00 » : le dépannage d'un seul département.
+    r"\b0\d(?:[ .]?\d{2}){4}\b": "un numéro de téléphone — il ne vaut que pour une région",
+    #  « de 8h à 12h et de 14h à 19h » : les horaires d'un règlement intérieur.
+    r"\b\d{1,2}\s?h(?:\s?\d{2})?\b": "un horaire — il se lit dans le règlement de la résidence",
+    #  « à l'entrée du parking, côté est » : l'emplacement des conteneurs à verre.
+    r"\bcôté (?:est|ouest|nord|sud)\b|\bsitués? à l'entrée\b": "un emplacement physique",
+    #  « Une étude de faisabilité est en cours » : un projet d'une copropriété.
+    r"\best en cours\b": "un projet en cours — il n'existe pas ailleurs",
+}
+
+
+def _textes_livres() -> list[tuple[str, str]]:
+    """(question, texte) de chaque entrée livrée : la question ET sa réponse."""
+    return [(q, f"{q} {r}") for _, q, r, _ in (*FAQ_INITIALE, *FAQ_COMPLEMENTAIRE)]
+
+
+def test_la_faq_livree_ne_porte_aucun_fait_propre_a_une_residence():
+    """Le défaut exact : conteneurs, horaires, étude en cours, numéro d'un département."""
+    textes = _textes_livres()
+    assert len(textes) > 15, f"{len(textes)} entrées lues dans le seed : INCONNU"
+    fautes = [
+        f"  « {question[:60]} » — {raison} : « {trouve.group(0)} »"
+        for question, texte in textes
+        for motif, raison in FAITS_LOCAUX.items()
+        for trouve in re.finditer(motif, re.sub(r"<[^>]+>", " ", texte), re.I)
+    ]
+    assert not fautes, (
+        "La FAQ livrée à toute installation porte des faits d'une seule résidence :\n"
+        + "\n".join(fautes)
+        + "\n\nUne réponse livrée vaut partout, ou dit où la règle locale se lit."
+    )
+
+
+def test_les_motifs_de_fait_local_attrapent_la_faq_d_origine():
+    """Cas témoins (`standards/04` §2) : chaque motif refuse le texte qu'il vise."""
+    origine = (
+        "Les conteneurs à verre (vert) sont situés à l'entrée du parking, côté est. "
+        "Une étude de faisabilité est en cours pour l'installation de bornes IRVE. "
+        "Les travaux bruyants sont autorisés du lundi au vendredi de 8h à 12h. "
+        "urgences électricité : 09 72 67 50 00"
+    )
+    for motif in FAITS_LOCAUX:
+        assert re.search(motif, origine, re.I), f"le motif {motif!r} ne refuse plus son témoin"
+    assert not any(re.search(m, "SAMU : 15 | Pompiers : 18 | 112", re.I) for m in FAITS_LOCAUX)
+
+
+def test_la_faq_prete_le_delai_d_archivage_a_qui_le_regle():
+    """« Un délai fixé par le conseil syndical » : seul l'administrateur l'écrit.
+
+    Le réglage vit dans l'onglet Fonctionnement de `PUT /config`, réservé à
+    l'administrateur ; le test le lit dans la liste blanche, il ne le recopie pas.
+    """
+    from app.utils.reglages import PAR_ONGLET
+
+    assert "archivage_delai_jours" in PAR_ONGLET["fonctionnement"], (
+        "le délai d'archivage a changé d'onglet : relire la réponse de la FAQ qui le cite"
+    )
+    reponses = [r for _, q, r, _ in FAQ_COMPLEMENTAIRE if "Archives" in r and "délai" in r]
+    assert len(reponses) == 1, f"{len(reponses)} réponse(s) sur le délai d'archivage : INCONNU"
+    assert "administrateur" in reponses[0], (
+        "la FAQ prête le délai d'archivage à un autre rôle que l'administrateur"
+    )
+    assert "conseil syndical" not in reponses[0]
