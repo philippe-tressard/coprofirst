@@ -21,7 +21,7 @@ from pathlib import Path
 
 import yaml
 
-from tests.conftest import scripts_shell_versionnes
+from tests.conftest import fichiers_versionnes, scripts_shell_versionnes
 
 RACINE = Path(__file__).resolve().parents[2]
 MODULE = RACINE / "scripts" / "lib" / "lib-applicatifs.sh"
@@ -178,8 +178,32 @@ BLOC_DE_CODE = re.compile(r"```.*?```", re.DOTALL)
 CODE_EN_LIGNE = re.compile(r"`([^`]+)`")
 
 
-def _consignes() -> list[Path]:
-    trouves = [RACINE / "CLAUDE.md", *sorted((RACINE / ".claude").rglob("*.md"))]
+#: Les documents où une session lit une commande pour la recopier : les consignes, et
+#: tout document versionné — procédures d'exploitation (`docs/`), notices
+#: d'installation (`deploiement/`), README (#2939). Lus par git, jamais par le système
+#: de fichiers : au poste, `.claude/worktrees/` porte des milliers de `.md` d'autres
+#: sessions, dans un état qui n'est pas celui du lot jugé.
+MOTIF_DES_DOCUMENTS = "*.md"
+
+#: Les démarrages complets QUE L'ON GARDE dans un document : `{document: (nombre,
+#: raison)}`. La règle d'or vaut pour un nœud de production ; un poste de
+#: développement n'a ni réplique ni primaire à protéger. Une entrée dont le compte
+#: change fait échouer : la table ne fait que baisser.
+DOCUMENTS_SANS_LISTE = {
+    "README.md": (1, "poste de développement : la pile locale, aucune base de production"),
+    "docs/redondance-rpi5.md": (
+        1,
+        "procédure « site HS » à réécrire par #2918 (en cours) — l'entrée tombe avec lui",
+    ),
+    "specs/architecture/stack.md": (
+        1,
+        "spécification d'origine, à un seul nœud : son installation est périmée (#2989)",
+    ),
+}
+
+
+def _consignes(racine: Path = RACINE) -> list[Path]:
+    trouves = fichiers_versionnes(MOTIF_DES_DOCUMENTS, racine)
     assert len(trouves) >= 8, "la portée des consignes a changé : le contrôle ne mesure plus rien"
     return trouves
 
@@ -204,16 +228,71 @@ def _commandes_sans_liste(texte: str) -> list[str]:
 def test_aucune_consigne_ne_donne_un_compose_sans_liste():
     """La procédure « Site HS » de `CLAUDE.md` et d'`infra-rpi` lançait un `up -d` nu
     (#2706), et le rollback de `mep-precheck` aussi : la règle d'or doit être juste
-    là où on la lit en urgence."""
-    fautes = [
-        f"{p.relative_to(RACINE).as_posix()} : {c}"
+    là où on la lit en urgence — consignes ET documents d'exploitation (#2939)."""
+    comptes = {
+        p.relative_to(RACINE).as_posix(): _commandes_sans_liste(p.read_text(encoding="utf-8"))
         for p in _consignes()
-        for c in _commandes_sans_liste(p.read_text(encoding="utf-8"))
+    }
+    fautes = [
+        f"{doc} : {c}"
+        for doc, commandes in comptes.items()
+        if doc not in DOCUMENTS_SANS_LISTE
+        for c in commandes
     ]
     assert not fautes, (
         "une consigne donne un `docker compose up|stop|down` sans liste — nommer les "
         f"services (`$SERVICES_DU_NOEUD`, `$SERVICES_APPLICATIFS`) : {fautes}"
     )
+    ecarts = {
+        doc: (len(comptes.get(doc, [])), attendu)
+        for doc, (attendu, _raison) in DOCUMENTS_SANS_LISTE.items()
+        if len(comptes.get(doc, [])) != attendu
+    }
+    assert not ecarts, (
+        "DOCUMENTS_SANS_LISTE ne dit plus le dépôt — {document: (trouvés, déclarés)} : "
+        f"{ecarts}. Retirer l'entrée qui ne sert plus, ou nommer les services."
+    )
+
+
+def test_chaque_demarrage_garde_porte_sa_raison():
+    assert all(raison.strip() for _n, raison in DOCUMENTS_SANS_LISTE.values())
+
+
+def test_les_documents_se_lisent_par_git_pas_par_le_disque(tmp_path):
+    """Cas zéro (#2939) : la copie de travail d'une autre session n'est pas lue,
+    un document neuf pas encore committé l'est."""
+    import subprocess
+
+    def git(*args):
+        subprocess.run(["git", *args], cwd=tmp_path, check=True, capture_output=True)
+
+    git("init", "-q")
+    for i in range(8):
+        (tmp_path / f"doc{i}.md").write_text("x", encoding="utf-8")
+    (tmp_path / "CLAUDE.md").write_text("x", encoding="utf-8")
+    git("add", "-A")
+    git("-c", "user.name=essai", "-c", "user.email=essai@exemple.test", "commit", "-q", "-m", "x")
+    (tmp_path / "neuf.md").write_text("x", encoding="utf-8")
+    #  Une copie de travail rangée comme celles des sessions, et un document que
+    #  cette autre session n'a pas encore committé.
+    git("worktree", "add", "-q", ".claude/worktrees/autre-session")
+    copie = tmp_path / ".claude" / "worktrees" / "autre-session"
+    (copie / "CLAUDE.md").write_text("docker compose up -d", encoding="utf-8")
+    (copie / "brouillon.md").write_text("docker compose up -d", encoding="utf-8")
+
+    lus = {p.relative_to(tmp_path).as_posix() for p in _consignes(tmp_path)}
+
+    assert "neuf.md" in lus and "CLAUDE.md" in lus
+    assert not [p for p in lus if p.startswith(".claude/worktrees/")], lus
+
+
+def test_la_portee_est_celle_de_git_et_couvre_les_documents():
+    lus = {p.relative_to(RACINE).as_posix() for p in _consignes()}
+    assert not [p for p in lus if "/worktrees/" in p or "node_modules" in p]
+    for attendu in ("CLAUDE.md", "README.md", "docs/redondance-rpi5.md"):
+        assert attendu in lus, f"{attendu} n'est plus lu"
+    assert any(p.startswith(".claude/skills/") for p in lus)
+    assert any(p.startswith("deploiement/") for p in lus)
 
 
 def test_le_motif_des_consignes_distingue_la_commande_de_la_mention():

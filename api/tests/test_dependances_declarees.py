@@ -7,11 +7,19 @@ ceux-là pouvait donc changer leur version, voire les retirer, sans que le fichi
 des dépendances bouge d'une ligne. Le dépôt épinglait tout, sauf ce dont il se
 servait le plus.
 
-Ce contrôle lit les `import` de `app/` et `alembic/` (le code qui tourne en
-production), rattache chaque module tiers à sa distribution par les métadonnées
-installées — `PIL` vient de `Pillow`, `jwt` de `PyJWT` : un nom de module n'est
-pas un nom de paquet — et exige que cette distribution soit écrite dans
-`requirements.txt`.
+Ce contrôle lit les `import` de chaque ENVIRONNEMENT, rattache chaque module tiers
+à sa distribution par les métadonnées installées — `PIL` vient de `Pillow`, `jwt`
+de `PyJWT` : un nom de module n'est pas un nom de paquet — et exige que cette
+distribution soit écrite dans le fichier de dépendances de cet environnement :
+
+- la production (`app/`, `alembic/`, `alembic_plateforme/`, `scripts/`) →
+  `requirements.txt` ;
+- les tests (`tests/`) → `requirements-dev.txt`, qui inclut le premier.
+
+🔴 Jusqu'au 23/11/2026 il ne lisait que `app/` et `alembic/` (#2955) : `yaml`
+(neuf fichiers de tests) et `starlette` (quatre) n'étaient déclarés nulle part et
+n'arrivaient que par `uvicorn[standard]` et `fastapi` ; la chaîne
+`alembic_plateforme/` et `scripts/` échappaient aussi.
 
 ⚠️ Le sens inverse — un paquet déclaré que rien n'importe — ne se contrôle pas
 ainsi : `python-dotenv` n'est jamais importé et sert pourtant (il lit le `.env`
@@ -27,11 +35,24 @@ import re
 import sys
 from importlib.metadata import packages_distributions
 
+import pytest
+
 from tests.aides_sources import modules_app
 
 RACINE = pathlib.Path(__file__).resolve().parents[1]
 REQUIREMENTS = RACINE / "requirements.txt"
-PORTEE = ("app", "alembic")
+
+#: Chaque environnement : les dossiers de `api/` qu'il exécute, et le fichier qui
+#: déclare ce qu'il installe.
+ENVIRONNEMENTS = {
+    "production": (("app", "alembic", "alembic_plateforme", "scripts"), REQUIREMENTS),
+    "tests": (("tests",), RACINE / "requirements-dev.txt"),
+}
+PORTEE = ENVIRONNEMENTS["production"][0]
+
+#: Les modules du DÉPÔT que les tests chargent par leur chemin (`scripts/ci/*.py`,
+#: posés sur `sys.path`) : ils ne viennent d'aucune distribution.
+MODULES_DU_DEPOT = frozenset(p.stem for p in (RACINE.parent / "scripts").rglob("*.py"))
 
 
 def _normaliser(nom: str) -> str:
@@ -39,31 +60,43 @@ def _normaliser(nom: str) -> str:
     return re.sub(r"[-_.]+", "-", nom).lower()
 
 
-def _declarees() -> set[str]:
+def _declarees(fichier: pathlib.Path = REQUIREMENTS) -> set[str]:
+    """Les distributions d'un fichier de dépendances, `-r` suivi."""
     noms = set()
-    for ligne in REQUIREMENTS.read_text(encoding="utf-8").splitlines():
+    for ligne in fichier.read_text(encoding="utf-8").splitlines():
         ligne = ligne.split("#", 1)[0].strip()
+        if ligne.startswith("-r "):
+            noms |= _declarees(fichier.parent / ligne[3:].strip())
+            continue
         if not ligne or ligne.startswith("-"):
             continue
         noms.add(_normaliser(re.split(r"[\[=<>~!;\s]", ligne, maxsplit=1)[0]))
     return noms
 
 
-def _arbres():
-    """(chemin relatif à `api/`, arbre) de chaque module de `PORTEE`.
+def _arbres(portee: tuple[str, ...] = PORTEE):
+    """(chemin relatif à `api/`, arbre) de chaque module d'une portée.
 
-    `app/` vient de l'aide partagée ; `alembic/` n'a pas d'aide, et se lit ici.
+    `app/` vient de l'aide partagée ; les autres dossiers n'en ont pas, et se lisent ici.
     """
-    for module in modules_app():
-        yield f"app/{module.rel}", module.arbre
-    for chemin in (RACINE / "alembic").rglob("*.py"):
-        yield chemin.relative_to(RACINE).as_posix(), ast.parse(chemin.read_text(encoding="utf-8"))
+    for dossier in portee:
+        if dossier == "app":
+            for module in modules_app():
+                yield f"app/{module.rel}", module.arbre
+            continue
+        fichiers = [p for p in (RACINE / dossier).rglob("*.py") if "__pycache__" not in p.parts]
+        assert fichiers, f"`api/{dossier}/` ne rend aucun module : la portée a bougé"
+        for chemin in fichiers:
+            yield (
+                chemin.relative_to(RACINE).as_posix(),
+                ast.parse(chemin.read_text(encoding="utf-8")),
+            )
 
 
-def _modules_tiers() -> dict[str, set[str]]:
-    """Module de premier niveau → fichiers qui l'importent, hors stdlib et `app`."""
+def _modules_tiers(portee: tuple[str, ...] = PORTEE) -> dict[str, set[str]]:
+    """Module de premier niveau → fichiers qui l'importent, hors stdlib et code du dépôt."""
     trouves: dict[str, set[str]] = {}
-    for rel, arbre in _arbres():
+    for rel, arbre in _arbres(portee):
         for noeud in ast.walk(arbre):
             if isinstance(noeud, ast.Import):
                 noms = [a.name for a in noeud.names]
@@ -73,26 +106,18 @@ def _modules_tiers() -> dict[str, set[str]]:
                 continue
             for nom in noms:
                 tete = nom.split(".")[0]
-                if tete in sys.stdlib_module_names or tete == "app":
+                if tete in sys.stdlib_module_names or tete in {"app", "tests"} | MODULES_DU_DEPOT:
                     continue
                 trouves.setdefault(tete, set()).add(rel)
     return trouves
 
 
-def test_cas_zero_le_parcours_voit_les_imports_et_le_fichier():
-    """Sans quoi le contrôle ne verrait rien, et ne refuserait donc rien."""
-    modules = _modules_tiers()
-    assert {"fastapi", "sqlmodel", "pydantic"} <= modules.keys(), (
-        f"le parcours de {PORTEE} ne voit plus les imports : {sorted(modules)}"
-    )
-    assert {"fastapi", "sqlmodel"} <= _declarees(), "`requirements.txt` n'est plus lu"
-
-
-def test_tout_module_tiers_importe_vient_d_une_dependance_declaree():
-    declarees = _declarees()
-    distributions = packages_distributions()
+def non_declares(
+    modules: dict[str, set[str]], declarees: set[str], distributions
+) -> dict[str, str]:
+    """Module importé → pourquoi il n'est pas couvert par `declarees`. PURE."""
     fautifs = {}
-    for module, fichiers in sorted(_modules_tiers().items()):
+    for module, fichiers in sorted(modules.items()):
         candidates = {_normaliser(d) for d in distributions.get(module, [])}
         if not candidates:
             fautifs[module] = f"module introuvable dans l'environnement — {sorted(fichiers)[:3]}"
@@ -100,12 +125,52 @@ def test_tout_module_tiers_importe_vient_d_une_dependance_declaree():
             fautifs[module] = (
                 f"vient de {sorted(candidates)}, non déclaré — importé par {sorted(fichiers)[:3]}"
             )
+    return fautifs
+
+
+def test_cas_zero_le_parcours_voit_les_imports_et_le_fichier():
+    """Sans quoi le contrôle ne verrait rien, et ne refuserait donc rien."""
+    modules = _modules_tiers(PORTEE)
+    assert {"fastapi", "sqlmodel", "pydantic"} <= modules.keys(), (
+        f"le parcours de {PORTEE} ne voit plus les imports : {sorted(modules)}"
+    )
+    assert {"fastapi", "sqlmodel"} <= _declarees(), "`requirements.txt` n'est plus lu"
+
+
+@pytest.mark.parametrize("environnement", sorted(ENVIRONNEMENTS))
+def test_tout_module_tiers_importe_vient_d_une_dependance_declaree(environnement):
+    portee, fichier = ENVIRONNEMENTS[environnement]
+    fautifs = non_declares(_modules_tiers(portee), _declarees(fichier), packages_distributions())
     assert not fautifs, (
-        "Des modules importés par le code ne sont pas déclarés dans requirements.txt :\n  "
+        f"Des modules importés par {portee} ne sont pas déclarés dans {fichier.name} :\n  "
         + "\n  ".join(f"{m} : {raison}" for m, raison in fautifs.items())
         + "\nLes déclarer et les épingler — une dépendance transitive peut changer "
         "de version, ou disparaître, au gré d'une autre."
     )
+
+
+@pytest.mark.parametrize("environnement", sorted(ENVIRONNEMENTS))
+def test_cas_zero_chaque_environnement_est_lu(environnement):
+    portee, fichier = ENVIRONNEMENTS[environnement]
+    assert _modules_tiers(portee), f"aucun import tiers vu dans {portee} : le parcours est aveugle"
+    assert {"fastapi", "sqlmodel"} <= _declarees(fichier), f"`{fichier.name}` n'est plus lu"
+
+
+def test_temoin_le_cas_fautif_de_2955_est_refuse():
+    """`yaml` importé par les tests, `PyYAML` absent : refusé ; déclaré : admis."""
+    modules = {"yaml": {"tests/aides_compose.py"}, "fastapi": {"tests/conftest.py"}}
+    distributions = {"yaml": ["PyYAML"], "fastapi": ["fastapi"]}
+
+    assert list(non_declares(modules, {"fastapi"}, distributions)) == ["yaml"]
+    assert non_declares(modules, {"fastapi", "pyyaml"}, distributions) == {}
+    assert list(non_declares({"inconnu": {"x.py"}}, set(), {})) == ["inconnu"]
+
+
+def test_temoin_un_fichier_inclus_par_r_est_lu(tmp_path):
+    (tmp_path / "base.txt").write_text("fastapi==1.0\n", encoding="utf-8")
+    (tmp_path / "dev.txt").write_text("-r base.txt\npytest==9.0  # tests\n", encoding="utf-8")
+
+    assert _declarees(tmp_path / "dev.txt") == {"fastapi", "pytest"}
 
 
 # ── Les dépendances LATENTES : chargées à l'exécution, sans `import` (#1570) ──

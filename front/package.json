@@ -1,6 +1,6 @@
 {
 	"name": "hostachy-front",
-	"version": "3.123.1",
+	"version": "3.123.2",
 	"private": true,
 	"imports": {
 		"#lib": "./src/lib/index.js",
@@ -84,7 +84,6 @@
 		"lint:version-servie": "node scripts/check-version-servie.mjs",
 		"lint:poids-ouverture": "node scripts/check-poids-ouverture.mjs --selftest && node scripts/check-poids-ouverture.mjs",
 		"lint:largeur-saisie": "node scripts/check-largeur-saisie.mjs",
-		"lint:each-key": "node scripts/check-each-key.mjs",
 		"lint:classe-relayee": "node scripts/check-classe-relayee.mjs",
 		"lint:cadre-geste": "node scripts/check-cadre-geste.mjs",
 		"lint:manuel-menus": "node scripts/check-manuel-menus.mjs",

@@ -39,7 +39,7 @@ def _titres_du_fil(session, user) -> set[str]:
     return {carte.titre for carte in flux_tickets.collecter(ctx)}
 
 
-def test_une_affaire_archivee_quitte_le_fil(session):  # noqa: F811
+def test_une_affaire_archivee_quitte_le_fil(session):
     cs = _compte(session, role=RoleUtilisateur.conseil_syndical)
     gardee = _affaire(session, cs, "Rendez-vous avec Conseil Syndical")
     archivee = _affaire(session, cs, "Rép. : Rendez-vous avec Conseil Syndical")
@@ -59,7 +59,7 @@ def test_une_affaire_archivee_quitte_le_fil(session):  # noqa: F811
     assert gardee.titre in titres
 
 
-def test_une_affaire_resolue_recemment_reste_au_fil(session):  # noqa: F811
+def test_une_affaire_resolue_recemment_reste_au_fil(session):
     """La règle n'est pas « fermée = retirée » : « Résolu » s'archive trente jours plus tard."""
     cs = _compte(session, role=RoleUtilisateur.conseil_syndical)
     resolue = _affaire(session, cs, "Porte du hall réparée")
@@ -67,7 +67,7 @@ def test_une_affaire_resolue_recemment_reste_au_fil(session):  # noqa: F811
     assert resolue.titre in _titres_du_fil(session, cs)
 
 
-def test_une_affaire_absorbee_par_une_fusion_quitte_le_fil(session):  # noqa: F811
+def test_une_affaire_absorbee_par_une_fusion_quitte_le_fil(session):
     """Fermée avec sa principale (#1704), une absorbée n'attend pas ses trente jours :
     c'est la principale qui la raconte, et le fil dirait « Résolu » deux fois."""
     cs = _compte(session, role=RoleUtilisateur.conseil_syndical)

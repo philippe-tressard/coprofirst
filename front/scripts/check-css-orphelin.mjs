@@ -252,7 +252,7 @@ const aveugles = tous.filter((f) => {
 
 /**
  *  Le nombre de fichiers que ce contrôle ne peut PAS mesurer. Il ne peut que
- *  DÉCROÎTRE — comme le plafond de `lint:each-key`.
+ *  DÉCROÎTRE — comme le plafond de `lint:each-key` jusqu'à ce qu'il atteigne zéro (#1571).
  *
  *  🔴 C'est ce qui transforme un constat en garde-fou. Sans plafond, le contrôle
  *  annonçait sa portée et personne n'était tenu par le chiffre : une classe

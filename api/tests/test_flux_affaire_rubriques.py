@@ -68,7 +68,7 @@ def _synthese(session, ticket: Ticket, statut: str) -> None:
     session.commit()
 
 
-def test_la_carte_de_resolution_porte_le_texte_de_cloture(session):  # noqa: F811
+def test_la_carte_de_resolution_porte_le_texte_de_cloture(session):
     cs = _compte(session, role=RoleUtilisateur.conseil_syndical)
     ticket = _affaire_resolue(session, cs)
     carte = _carte(session, cs, ticket.id)
@@ -77,7 +77,7 @@ def test_la_carte_de_resolution_porte_le_texte_de_cloture(session):  # noqa: F81
     assert carte.meta["evol_auteur"], "la dernière mise à jour nomme qui l'a écrite"
 
 
-def test_chaque_rubrique_porte_ses_propres_pieces(session):  # noqa: F811
+def test_chaque_rubrique_porte_ses_propres_pieces(session):
     cs = _compte(session, role=RoleUtilisateur.conseil_syndical)
     carte = _carte(session, cs, _affaire_resolue(session, cs).id)
     assert carte.meta["evol_pieces"] == {
@@ -89,7 +89,7 @@ def test_chaque_rubrique_porte_ses_propres_pieces(session):  # noqa: F811
     assert carte.meta["demande"]["le"], "la demande dit sa date"
 
 
-def test_une_suite_sans_piece_ne_prend_pas_celles_de_la_demande(session):  # noqa: F811
+def test_une_suite_sans_piece_ne_prend_pas_celles_de_la_demande(session):
     """Le repli sur l'affaire reste pour la VIGNETTE pliée, jamais pour la rubrique."""
     cs = _compte(session, role=RoleUtilisateur.conseil_syndical)
     ticket = session.get(Ticket, _creer(session, cs, categorie="panne").id)
@@ -104,7 +104,7 @@ def test_une_suite_sans_piece_ne_prend_pas_celles_de_la_demande(session):  # noq
     )
 
 
-def test_la_synthese_validee_rejoint_la_carte_sans_la_dater(session):  # noqa: F811
+def test_la_synthese_validee_rejoint_la_carte_sans_la_dater(session):
     cs = _compte(session, role=RoleUtilisateur.conseil_syndical)
     resident = _compte(session)
     ticket = _affaire_resolue(session, cs)
@@ -118,7 +118,7 @@ def test_la_synthese_validee_rejoint_la_carte_sans_la_dater(session):  # noqa: F
     assert apres.date == avant.date, "la validation ne fait pas remonter la carte (15/10/2026)"
 
 
-def test_un_brouillon_ne_se_lit_qu_au_conseil(session):  # noqa: F811
+def test_un_brouillon_ne_se_lit_qu_au_conseil(session):
     cs = _compte(session, role=RoleUtilisateur.conseil_syndical)
     resident = _compte(session)
     ticket = _affaire_resolue(session, cs)
@@ -127,7 +127,7 @@ def test_un_brouillon_ne_se_lit_qu_au_conseil(session):  # noqa: F811
     assert "synthese" not in _carte(session, resident, ticket.id).meta
 
 
-def test_une_affaire_rouverte_ne_montre_plus_sa_synthese(session):  # noqa: F811
+def test_une_affaire_rouverte_ne_montre_plus_sa_synthese(session):
     cs = _compte(session, role=RoleUtilisateur.conseil_syndical)
     ticket = _affaire_resolue(session, cs)
     _synthese(session, ticket, VALIDEE)

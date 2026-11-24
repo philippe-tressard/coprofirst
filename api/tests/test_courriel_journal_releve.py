@@ -51,7 +51,7 @@ def _purger(session: Session, adresse: str) -> None:
     session.commit()
 
 
-def test_chacun_des_QUATRE_verdicts_laisse_sa_ligne(scene):  # noqa: F811
+def test_chacun_des_QUATRE_verdicts_laisse_sa_ligne(scene):
     session, ticket, syndic, _cs = scene
     relance = RelanceCourriel(jeton=nouveau_jeton(), tickets_json=json.dumps([ticket.id]))
     session.add(relance)
@@ -104,7 +104,7 @@ def test_chacun_des_QUATRE_verdicts_laisse_sa_ligne(scene):  # noqa: F811
         session.commit()
 
 
-def test_les_IGNORE_disent_POURQUOI_et_pas_tous_la_meme_chose(scene):  # noqa: F811
+def test_les_IGNORE_disent_POURQUOI_et_pas_tous_la_meme_chose(scene):
     """Les trois silences du 28/09 : sans rapport, jeton inconnu, affaire close."""
     session, ticket, syndic, _cs = scene
     try:

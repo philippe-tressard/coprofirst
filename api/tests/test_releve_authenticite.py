@@ -55,7 +55,7 @@ class _BoiteUnMessage:
 
 
 @pytest.fixture()
-def boite(monkeypatch, imap_actif):  # noqa: F811
+def boite(monkeypatch, imap_actif):
     b = _BoiteUnMessage()
     monkeypatch.setattr(courriel_boite.imaplib, "IMAP4_SSL", lambda *_a, **_k: b)
     return b
@@ -88,7 +88,7 @@ def test_la_releve_verifie_les_OCTETS_recus_et_transmet_le_verdict(boite, monkey
     assert boite.acquittes == [b"1"]
 
 
-def test_un_DNS_injoignable_laisse_le_message_NON_LU(boite, journal, monkeypatch):  # noqa: F811
+def test_un_DNS_injoignable_laisse_le_message_NON_LU(boite, journal, monkeypatch):
     def verifier(_brut, _from, **_options):
         raise VerificationReportee("DNS injoignable (Timeout)")
 

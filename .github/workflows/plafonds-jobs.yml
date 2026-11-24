@@ -41,7 +41,9 @@ jobs:
 
       - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7
         with:
-          python-version: "3.11"
+          #  La version de l'image (`api/Dockerfile`) : pip-audit résout l'arbre sous
+          #  CELLE-CI (#2951). 🔒 `test_version_python_alignee.py`.
+          python-version: "3.12"
 
       - name: Le contrôle se juge lui-même
         run: python scripts/ci/plafonds_jobs.py --selftest

@@ -48,7 +48,7 @@ SANS_AUTEUR = {
     "prestataires.py": "une échéance de contrat, pas un dépôt",
     "annuaire.py": "l'arrivée d'un résident — l'objet EST la personne",
     "points_conseil.py": "un compte rendu validé par les présents d'une réunion, pas un dépôt",
-    "epingles.py": "il reprend les cartes des autres collecteurs, avec leur meta",
+    "epingles.py": "il COMPTE les épingles (`GET /flux/epingles`), il ne rend aucune carte",
     "commun.py": "le socle partagé, il ne rend aucune carte",
     "schemas.py": "des déclarations",
     "periode.py": "il range les cartes des autres collecteurs à leur jour (#2834), sans en créer",
