@@ -3,8 +3,7 @@
 Extrait de `email.py` le 11/08/2026. Voir `gabarit.py` pour la règle de partage.
 """
 
-import re as _re
-
+from app.utils.en_tete_fichier import en_tete_fichier
 from app.utils.fichiers import nom_lisible
 
 
@@ -35,14 +34,9 @@ def _preparer_pieces_jointes(paths: list[str]) -> list[dict]:
     """
     prets: list[dict] = []
     for chemin in paths:
-        # Le nom vient de `nom_stocke`, donc déjà réduit à [A-Za-z0-9_.-] ; on
-        # neutralise malgré tout guillemets et sauts de ligne, qui casseraient
-        # l'en-tête pour les fichiers plus anciens, aux noms non assainis.
-        affiche = _re.sub(r'["\r\n]', "_", nom_lisible(chemin))
-        prets.append(
-            {
-                "file": chemin,
-                "headers": {"Content-Disposition": f'attachment; filename="{affiche}"'},
-            }
-        )
+        # Le nom vient de `nom_stocke`, donc déjà réduit à [A-Za-z0-9_.-] ; la
+        # porte neutralise malgré tout guillemets et sauts de ligne, qui
+        # casseraient l'en-tête pour les fichiers plus anciens, aux noms non
+        # assainis, et donne un repli ASCII à un nom accentué (#2985).
+        prets.append({"file": chemin, "headers": en_tete_fichier(nom_lisible(chemin))})
     return prets

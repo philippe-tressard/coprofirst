@@ -7,6 +7,7 @@ from sqlmodel import Session
 from app.auth.jetons_appareil import JetonLu, jeton_lu, noter_lecture, route_ouverte
 from app.auth.jetons_rafraichissement import session_encore_ouverte
 from app.auth.jwt import decode_token, empreinte_du_compte
+from app.auth.mot_de_passe_a_changer import chemin_demande, exiger_mot_de_passe_change
 from app.database import get_session
 from app.utils import horloge
 from app.utils.nature_affaire import est_actualite
@@ -56,8 +57,11 @@ def _get_current_user(
     return user
 
 
-def get_current_user(user: Utilisateur = Depends(_get_current_user)) -> Utilisateur:
-    return user
+def get_current_user(
+    request: Request, user: Utilisateur = Depends(_get_current_user)
+) -> Utilisateur:
+    #  Un mot de passe temporaire ne sert qu'à en changer (#3019) : la règle vit à côté.
+    return exiger_mot_de_passe_change(user, request)
 
 
 #: Le jeton d'un APPAREIL appairé — montre, écran de hall (#2770, #2771) —, présenté en
@@ -69,14 +73,6 @@ _JETON_APPAREIL = HTTPBearer(
     description="Le jeton d'un appareil appairé (montre, écran de hall) : une portée, "
     "et seulement les routes qu'elle ouvre.",
 )
-
-
-def _chemin_demande(request: Request) -> str:
-    """Le chemin DEMANDÉ, tel que l'API le sert — pas celui que déclare le routeur, que
-    l'inclusion d'un routeur dans un autre raccourcit."""
-    chemin = request.scope.get("path", "")
-    racine = request.scope.get("root_path", "")
-    return chemin[len(racine) :] if racine and chemin.startswith(racine) else chemin
 
 
 def _appareil_autorise(
@@ -96,7 +92,7 @@ def _appareil_autorise(
     lu = jeton_lu(session, identifiants.credentials, maintenant) if identifiants else None
     if lu is None:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Non authentifié")
-    if not route_ouverte(lu.portee, request.method, _chemin_demande(request)):
+    if not route_ouverte(lu.portee, request.method, chemin_demande(request)):
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN, detail="Hors de la portée de cet appareil"
         )
@@ -117,7 +113,7 @@ def lecteur_de_la_cloche(
     et son sujet est le compte.
     """
     if access_token:
-        return _get_current_user(access_token, session)
+        return exiger_mot_de_passe_change(_get_current_user(access_token, session), request)
     sujet = _appareil_autorise(request, identifiants, session).sujet
     if not isinstance(sujet, Utilisateur):  # défaut fermé, si la table s'égarait
         raise HTTPException(

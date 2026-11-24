@@ -1,6 +1,6 @@
 ---
 name: mep-precheck
-description: "MEP 5Hostachy : lancer `bash scripts/poste/rejouer-ci.sh` puis `bash scripts/poste/precheck-mep.sh` (tous les points s'exécutent), lire ses verdicts, dérouler le post-check P1-P12 (dont la clôture des tickets, après vérification en production, puis le retrait de la copie de travail du lot), rollback. Use when: AVANT tout `git push` sur dev ou main, avant de remettre une PR, après un merge vers main, pour diagnostiquer un déploiement qui n'a pas eu lieu ou vérifier qu'un correctif est réellement servi. L'histoire des incidents qui ont fait naître chaque contrôle est dans HISTORIQUE.md, à ouvrir seulement pour diagnostiquer."
+description: "MEP 5Hostachy — l'ordre d'un lot (rejeu `bash scripts/poste/rejouer-ci.sh`, push de la branche, PR vers `dev`, CI verte, pré-check `bash scripts/poste/precheck-mep.sh`, puis `bash scripts/poste/conduire-mep.sh`), lecture des verdicts du pré-check (tous les points s'exécutent), version et images publiées, post-check P1-P12 (dont la clôture des tickets après vérification en production, puis le retrait de la copie de travail du lot), retour arrière. À charger : avant d'ouvrir la PR d'un lot, avant le pré-check et `conduire-mep.sh`, après une fusion vers `main`, pour diagnostiquer un déploiement qui n'a pas eu lieu ou vérifier qu'un correctif est réellement servi. L'histoire des incidents qui ont fait naître chaque contrôle est dans HISTORIQUE.md, à ouvrir seulement pour diagnostiquer."
 argument-hint: "Décrire le lot à déployer ou le point à vérifier (ex. « pré-check avant MEP v2.31.3 », « post-check après merge »)"
 ---
 
@@ -32,11 +32,13 @@ avec une ligne fausse — « MEP : `MaJ-Hostachy.sh` sur le RPi actif », alors 
 MEP est faite par `auto-deploy.sh` et que `MaJ-Hostachy.sh` est la **reprise en
 main** (claude-config#122, 23/09/2026).
 
-## Trois règles qui priment sur la liste des contrôles
+## Trois règles qui priment sur la liste des contrôles — ce qu'elles valent ici
 
-Issues de l'incident du 26/07/2026 (cf. « Rétrospective » en fin de section). Un
-contrôle mal conçu est plus dangereux qu'un contrôle absent, parce qu'il produit
-de la confiance.
+Les règles s'énoncent dans `CLAUDE.md` (« Git & MEP ») et le socle (`standards/04`
+§1-2, `standards/09`), seules écritures (#2972). Voici leur instanciation : ce que
+l'incident du 26/07/2026 a montré sur ce dépôt (cf. « Rétrospective » en fin de
+section). Un contrôle mal conçu est plus dangereux qu'un contrôle absent, parce
+qu'il produit de la confiance.
 
 1. **Un contrôle qui ne peut pas s'exécuter renvoie INCONNU, jamais OK.**
    `sudo` en SSH non interactif échoue en demandant un mot de passe ; `… | grep -c`
@@ -59,9 +61,9 @@ de la confiance.
 | # | Vérification | Commande | Attendu |
 |---|---|---|---|
 | 0a | Clone à jour | `git fetch origin && git merge --ff-only origin/dev` | Fast-forward propre (cf. section ci-dessus) |
-| 0b | Modes des fichiers exécutables versionnés | **Automatisé** : job CI `test-scripts` (étape « Bits d'exécution versionnés ») | `100755` sur tout ce qui doit s'exécuter, `100644` sur les modules sourcés `lib-*.sh` |
+| modes | Modes des fichiers exécutables versionnés | **Automatisé** : job CI `test-scripts` (étape « Bits d'exécution versionnés ») | `100755` sur tout ce qui doit s'exécuter, `100644` sur les modules sourcés `lib-*.sh` |
 
-**0b** — pourquoi un clone Windows avale `chmod +x` : `standards/08` §3.
+**Modes** (sans numéro : `0b` est la modularité, au script) — pourquoi un clone Windows avale `chmod +x` : `standards/08` §3.
 Remédiation : `git update-index --chmod=+x <fichier>`.
 
 ## Étape 0 bis — exigences sans exception (avant le pré-check)
@@ -76,11 +78,11 @@ règles reste un mauvais déploiement.
 
 | # | Exigence | Vérification | Automatisé par |
 |---|---|---|---|
-| 0c | **Autorisation centralisée, aucun passe-droit** | Toute règle de sécurité dans `app/auth/deps.py` · tout endpoint porte une dépendance · exceptions publiques énumérées et justifiées · `has_role(RoleUtilisateur.…)` jamais `user.role` ni chaîne · exposition publique en **liste blanche** | `api/tests/test_autorisation.py` (5 tests, CI) |
-| 0d | **Factorisation** | Aucun code spécifique ne réimplémente une bibliothèque partagée (dates, montants, alertes, thème PDF, destinataires) | `test_dates_fr.py` · `npm run lint:dates` · `npm run lint:notifications` — le reste par relecture |
-| 0e | **Documentation à jour** | README (et ses badges) · manuel utilisateur · `specs/` reflètent l'état livré | `api/tests/test_documentation.py` pour la partie mécanique ; le fond reste à relire |
+| E1 | **Autorisation centralisée, aucun passe-droit** | Les dépendances d'auth dans `app/auth/deps.py`, les règles d'appartenance dans `app/auth/appartenance.py` (`CLAUDE.md`, « Dépendances d'auth ») · tout endpoint porte une dépendance · exceptions publiques énumérées et justifiées · `has_role(RoleUtilisateur.…)` jamais `user.role` ni chaîne · exposition publique en **liste blanche** | `api/tests/test_autorisation.py` (CI) |
+| E2 | **Factorisation** | Aucun code spécifique ne réimplémente une bibliothèque partagée (dates, montants, alertes, thème PDF, destinataires) | `test_dates_fr.py` · `npm run lint:dates` · `npm run lint:notifications` — le reste par relecture |
+| E3 | **Documentation à jour** | README (et ses badges) · manuel utilisateur · `specs/` reflètent l'état livré | `api/tests/test_documentation.py` pour la partie mécanique ; le fond reste à relire |
 
-**0c — pourquoi cette exigence a besoin d'un test et non d'une consigne** (principe :
+**E1 — pourquoi cette exigence a besoin d'un test et non d'une consigne** (principe :
 `standards/03-securite.md` §1 ; ici, son instanciation). L'audit du
 26/07/2026 a trouvé l'exigence globalement respectée — 276 endpoints, aucun contrôle
 sur `user.role`, tout par `has_role()` — et pourtant **trois dérives installées sans
@@ -101,7 +103,7 @@ Le point commun : **aucune n'était visible sans rouvrir le fichier concerné**.
 exigence, même « critique et prioritaire », ne se maintient pas par la consigne — la
 consigne était là. Elle se maintient par un contrôle qui échoue.
 
-**0e — pourquoi.** La synchronisation du manuel entre `docs/` et `front/static/`
+**E3 — pourquoi.** La synchronisation du manuel entre `docs/` et `front/static/`
 n'était qu'une case à cocher : elle a tenu, mais une case ne résiste pas à une
 session pressée, et les résidents auraient lu une version périmée. Les badges du
 README avaient connu la dérive inverse, réelle : Python annoncé « 3.10+ » pour une
@@ -119,12 +121,15 @@ bash scripts/poste/precheck-mep.sh          # à la racine du dépôt
 **Ne pas dérouler la grille à la main.** Elle l'a été trop souvent de mémoire, en
 sous-ensemble : trois lots sont partis sans aucun pré-check les 07 et 08/08/2026,
 et deux contrôles improvisés ont rendu des faux verts. Le script mesure, écrit sa
-trace dans `.git/precheck-mep.ok`, et `.githooks/pre-push` refuse le push sans
-elle.
+trace dans `.git/precheck-mep.ok`, et `.githooks/pre-push` refuse sans elle un push
+À LA MAIN sur `dev` ou `main` — le chemin nominal n'en fait plus : `conduire-mep.sh`
+pousse la version sous `SKIP_PRECHECK=1`.
 
-**Fusionner la PR EST la mise en production** : `auto-deploy.sh` déploie
-`origin/main` toutes les 5 minutes. Le pré-check se passe donc **avant le push sur
-`dev`**, pas après la fusion.
+**Fusionner vers `main` EST la mise en production** : `auto-deploy.sh` déploie
+`origin/main` toutes les 5 minutes. Le pré-check se passe donc **avant
+`conduire-mep.sh`**, jamais après la fusion — et après la CI verte de la PR du lot,
+que le point 16 lit. L'ordre d'un lot s'écrit une fois, dans `CLAUDE.md` (« Ordre d'un
+lot ») ; cette skill dit ce que chaque point y lit (#2908).
 
 🔴 **Depuis le 28/08/2026, c'est Claude qui crée et fusionne la PR, et qui conduit
 la MEP** — l'utilisateur n'intervient plus. Le pré-check ne s'allège pas pour
@@ -189,8 +194,9 @@ de travail :**
    réalité qu'une **création** de branche. La recréer par un push simple, sous
    `SKIP_PRECHECK=1` : le sha de squash n'a jamais été pré-checké, et le hook
    refuserait un commit que la CI de la PR vient de valider.
-3. **La fusion n'est pas le déploiement.** `auto-deploy.sh` fait le `git pull`
-   **puis** le build : entre les deux, les points **12** et **18** échouent
+3. **La fusion n'est pas le déploiement** (`CLAUDE.md`, « Git & MEP »).
+   `auto-deploy.sh` met le code à jour **puis** tire les images de la CI (il ne
+   construit qu'en secours) : entre les deux, les points **12** et **18** échouent
    légitimement — le code est à jour, l'image ne l'est pas encore. Attendre la
    ligne `Déployé: <sha>` dans `/var/log/hostachy-deploy.log` sur l'**actif**.
    Le `git log` du nœud passe au vert **avant** que l'image soit bâtie : s'y fier
@@ -295,10 +301,6 @@ AUTOUR d'un verdict faux est un contrôle qu'on finit par ne plus lire.
   ancêtre de HEAD, et son échec bloquait le lot qui le remplace. Une déclaration
   refusée par 0a ne dépasse rien (`ascendance_0c`, `lib-reecriture.sh`).
 
-  ⚠️ **Deux contrôles différents portent le nom « 0c »** : celui-ci, exécuté par
-  le script, et l'exigence d'**autorisation centralisée** de l'étape 0 bis
-  ci-dessus, qui est vérifiée par `test_autorisation.py`. La collision est
-  historique ; à renommer un jour, en attendant lire le contexte.
 - **6** → il compte les `ERROR`/`CRITICAL` de la dernière heure sur l'API de
   production. Depuis le 19/08/2026 (#502), un lot peut **déclarer la signature de
   l'erreur qu'il corrige**, dans `.git/erreur-corrigee` — même forme datée que le
@@ -355,8 +357,8 @@ AUTOUR d'un verdict faux est un contrôle qu'on finit par ne plus lire.
   déclaration du lot précédent est refusée), et elle **ne survit pas à son
   objet** (déclarer un commit qui ne manque pas, ou en oublier un, refuse aussi).
 
-- **0f** → le lot doit porter son titre et son descriptif de PR **avant** le push,
-  dans `.git/pr-brief.md` : première ligne `commit: <sha court de HEAD>`, deuxième
+- **0f** → le lot doit porter son titre et son descriptif de PR dans
+  `.git/pr-brief.md`, rédigés avant d'ouvrir la PR : première ligne `commit: <sha court de HEAD>`, deuxième
   ligne le titre en `# …`, puis le corps (5 lignes minimum). Un brief rédigé pour
   un autre commit **échoue** — sinon il décrirait le lot précédent. Ajouté le
   11/08/2026 après deux oublis dans la même journée, le second juste après
@@ -382,8 +384,8 @@ AUTOUR d'un verdict faux est un contrôle qu'on finit par ne plus lire.
   (pytest, tests de navigateur) sont **confiées à la CI de la PR**, et la trace le dit
   (`MODE=rapide`). Sur une telle trace, le point lit par `gh` les checks de la PR ouverte
   pour la branche : même arbre et tous verts → OK ; un check rouge → FAIL ; en cours, PR
-  absente, autre arbre ou `gh` muet → INCONNU. L'ordre d'un lot est donc : rejeu, pousser,
-  ouvrir la PR, attendre sa CI, **puis** le pré-check. `--complet` joue tout au poste.
+  absente, autre arbre ou `gh` muet → INCONNU. C'est pourquoi le pré-check vient **après**
+  la CI de la PR (l'ordre : `CLAUDE.md`, « Ordre d'un lot »). `--complet` joue tout au poste.
 
   ```bash
   bash scripts/poste/rejouer-ci.sh
@@ -439,389 +441,18 @@ AUTOUR d'un verdict faux est un contrôle qu'on finit par ne plus lire.
 
 ### Avant même le script — l'étape 0 bis
 
-Les exigences 0c à 0e, hors machines, sont au tableau de l'**étape 0 bis** plus
+Les exigences E1 à E3, hors machines, sont au tableau de l'**étape 0 bis** plus
 haut, et nulle part ailleurs : ce fichier en portait une seconde copie, qui avait
 recompté « deux » au-dessus de trois lignes (#122).
 
 **Protocole si anomalie** : diagnostiquer → proposer un plan → corriger après
 validation → relancer le script → livrer seulement si tout est vert.
 
-## Post-check obligatoire après MEP
+## Sommaire — les annexes
 
-La MEP se termine par ces contrôles, pas par le merge. Un merge déclenche
-`auto-deploy.sh` dans les 5 min ; **il n'y a aucune notification de fin de
-déploiement**, donc rien ne garantit spontanément que le code est réellement servi.
-Attendre le tick, puis :
+Cette skill passait 800 lignes (#2910). L'ordre, l'étape 0 et le pré-check restent ici ; le post-check, le rejeu et la version sont en annexe, chargée à la demande. L'histoire des contrôles : HISTORIQUE.md.
 
-| # | Vérification | Commande | Attendu |
-|---|---|---|---|
-| P1 | Le déploiement a eu lieu **et est terminé** | `precheck-mep.sh --post-mep` (lit l'actif) | Ligne `Déployé: <hash>` avec le hash attendu — ou, actif issu d'une bascule, marqueur d'images = hash et conteneur API sur le manifeste de l'image étiquetée (#1474, #1684) |
-| P2 | Site debout | `curl -s -o /dev/null -w '%{http_code}' https://5hostachy.fr/api/health` | 200 |
-| P3 | Version servie = version bumpée | Voir « P3 » ci-dessous — l'ancienne commande ne pouvait **pas** fonctionner | La version de `front/package.json`, ou `INCONNU` (jamais vide) |
-| P3b | Version publiée par l'API = version bumpée | `GET /api/config`, clé `version_logicielle` (#2833) : ce que les apps lisent pour juger « au moins vX.Y.Z » | La release de l'image de l'API, ou `INCONNU` (clé absente, mesure impossible) |
-| P3c, P3d | Les fichiers d'association des apps (`apple-app-site-association`, `assetlinks.json`), sur la production (P3c) et la démo (P3d) | `--post-mep` : chaque hôte jugé contre SA version (`GET /config`, puis le tag `v<version>`), #2860 | 200, `application/json`, sans redirection, identique au fichier de sa version ; version illisible → INCONNU |
-| P4 | Image du service touché reconstruite | Point 12 (`--post-mep` le rejoue) : images bâties avec le commit du service, conteneur sur le manifeste de l'image étiquetée | Les deux faits vrais pour chaque service |
-| P5 | Migrations appliquées | `docker logs hostachy_api --since 10m \| grep -iE 'alembic\|revision'` | Pas d'erreur ; head atteint |
-| P6 | Aucune régression visible en logs | `docker logs hostachy_api --since 10m \| grep -cE "<MOTIF_ERREURS_API>"` — le motif se lit dans `precheck-mep.sh`, jamais recopié : il compte aussi les erreurs de bibliothèque sans niveau (#1066) | 0 |
-| P7 | **Le correctif est effectivement observable** | Vérifier le comportement corrigé sur le site réel | Le bug ne se reproduit plus |
-| P8 | Redondance intacte après MEP | Point 2 (rôle cohérent sur les 2 nœuds) | Inchangé et cohérent |
-| P9 | Parité du standby | Point 10 | HEAD identiques, **ou** noter que le standby s'alignera seul au prochain passage d'`auto-deploy` (≤ 5 min, #448) |
-| P10 | **Bilan mémoire du lot** — 🟡 priorité 3 | Relire les activités de la PR : qu'a-t-on appris qui n'est écrit nulle part ? Voir « P10 » | Chaque leçon est **écrite** (socle ou banque projet), ou explicitement écartée |
-| P11 | **Clore les tickets du lot** — après P7, jamais avant | `gh issue close <n> --comment "…"` avec la preuve observée | Chaque ticket du lot est clos **ou** dit ce qu'il attend encore |
-| P12 | **Retirer la copie de travail du lot** — en dernier | Depuis le clone principal : `bash scripts/poste/retirer-worktree.sh ../5hostachy-<lot>` — voir « P12 » | `RETIRÉE`, ou `GARDÉE` avec son motif, traité ou dit dans le compte rendu |
-
-> **⏱ Attendre la BONNE condition (constaté le 26/07/2026, en utilisant ce
-> post-check pour la première fois).** Ne pas attendre que `HEAD` change : dans
-> `auto-deploy.sh`, `git reset --hard` a lieu **au début**, avant `docker compose
-> build`. Un post-check déclenché sur le changement de HEAD s'exécute donc pendant
-> le build et voit des images encore anciennes et pas de ligne `Déployé` — j'ai
-> conclu à tort à un déploiement partiel. La condition de fin est la ligne
-> **`Déployé: <hash>`** :
-> ```bash
-> until ssh <actif> "grep -q 'Déployé: <hash>' /var/log/hostachy-deploy.log"; do sleep 20; done
-> ```
-
-**P3 — l'ancienne commande renvoyait toujours du vide (corrigé le 03/08/2026).**
-`curl -s https://5hostachy.fr/ | grep -oE '[0-9]+\.[0-9]+\.[0-9]+'` ne pouvait pas
-marcher : la racine **redirige vers `/auth/connexion`**, et le pied de page versionné
-vit dans le layout `(app)`, donc derrière l'authentification. Le `grep` ne trouvait
-rien et rendait la main sans un mot — un `$(…)` vide qu'on lit comme « rien à
-signaler ». C'est la règle 1 (« une sortie vide n'est pas un vert ») dans le
-post-check lui-même.
-
-La version **est** publique : Vite intègre `front/package.json` dans le chunk du
-layout `(app)`. On l'y lit sans authentification et sans rien exposer de nouveau —
-c'est aussi le seul point de mesure qui reflète ce qu'un **navigateur reçoit
-vraiment**, là où lire `package.json` dans le conteneur ne décrirait que l'image.
-
-```bash
-node front/scripts/check-version-servie.mjs --site https://5hostachy.fr
-```
-
-La version sur la sortie standard (code 0), ou `INCONNU: <raison>` et **code 2**.
-Jamais une sortie vide — c'est la règle 1 de cette skill.
-
-🔴 **Le script ne vit plus dans ce fichier, et c'est la leçon du 30/08/2026.**
-
-Il y a été recopié deux fois, avec deux ancrages successifs, et les deux se sont
-périmés en silence :
-
-| Ancrage | Périmé par | Constaté |
-|---|---|---|
-| `[0-9]+\.[0-9]+\.[0-9]+` sur la racine | la racine redirige vers `/auth/connexion` | 03/08/2026 |
-| `"hostachy-front",VAR="x.y.z"` | Rollup élague l'import JSON : le **nom du paquet** a disparu du bundle, qui ne porte plus que `const fn="3.20.0",hn={version:fn}` | 30/08/2026, MEP v3.20.0 |
-| `{version:"x.y.z"}` entre **guillemets** | Rolldown (Vite 8) écrit ses chaînes en gabarits à **accents graves** : `` var e=`hostachy-front`,t=`3.13.9`,n={name:e,version:t,…`` | 24/10/2026, essai Vite 8 (#2205) — lu en essai, avant toute MEP |
-
-Le second avait été choisi *parce que* le nom « survit à la minification,
-contrairement aux noms de variables ». C'était vrai, et insuffisant : ce n'est pas
-la minification qui l'a effacé, c'est l'élagage.
-
-⚠️ **Le défaut n'est pas l'ancrage, c'est qu'aucun contrôle ne regardait s'il
-marchait encore.** Le premier à l'apprendre était le post-check, en production,
-une fois la MEP faite — trop tard pour que cela serve. Un script recopié dans une
-documentation ne s'exécute que le jour où l'on en a besoin.
-
-**L'extracteur est donc versionné**, et la CI l'exerce à chaque PR sur le build
-local (`npm run lint:version-servie`, job `build-frontend`) : il doit y retrouver
-exactement la version de `package.json`. La prochaine évolution de la chaîne
-d'outils échouera **là**, avant la MEP.
-
-C'est `standards/04` §2 retourné contre le contrôle lui-même — *ce qui est
-critique ne se vérifie pas seulement en MEP* — et la règle que #498 énonce pour
-l'aperçu des e-mails : **la fonction qui vérifie doit être celle qui sert.**
-
-Le module rend `null` plutôt qu'une version quand deux formes du bundle
-**divergent** : `package.json` peut être partiellement élagué et la version d'une
-dépendance traîner dans le même chunk. Trancher au hasard entre deux candidates,
-c'est mentir une fois sur deux. Son `--selftest` couvre les deux formes, les deux
-cas ambigus et le renvoi arrière qui les distingue.
-
-⚠️ **P3 mesure le serveur, pas le client.** Un onglet PWA resté ouvert peut servir
-l'ancienne version depuis son cache — c'est ce qui s'est produit le 26/07/2026, le
-pied de page bloqué en v2.22.8 après la MEP v2.23.0, alors que P3 était vert. Le
-bandeau de mise à jour (v2.24.0) couvre ce cas, et `api/tests/test_pwa_maj.py` le
-verrouille.
-
-> 🔒 **Pourquoi ne pas exposer la version dans `/api/health`** (question posée le
-> 03/08/2026). L'endpoint est public et porte déjà un champ `version`, mais figé à
-> `"0.2.0"` — une constante (`API_VERSION`, `main.py`) sans aucun rapport avec
-> l'application. Le rendre exact donnerait un P3 en une ligne, au
-> prix d'une **divulgation publique de la version déployée** que rien n'impose
-> aujourd'hui. Décision : on ne l'a pas fait, et elle reste vraie. Lire le bundle
-> coûte trois requêtes et n'expose rien de plus qu'aujourd'hui.
-
-**P7 — pourquoi :** c'est le seul contrôle qui teste ce que la MEP était censée
-apporter. Le 26/07, le bug du mois en anglais n'a été trouvé par **aucun** contrôle
-automatique ou manuel : il a été vu à l'œil sur un document. Les points P1–P6
-confirment qu'on a déployé *quelque chose*, jamais qu'on a déployé *ce qu'il
-fallait*. Pour un correctif de rendu, ouvrir le document concerné (fiche arrivant,
-annonce de hall) et regarder.
-
-> **🌐 Le comportement se vérifie dans un navigateur, sur une route imbriquée
-> (constaté le 26/07/2026, v2.24.0 → v2.24.1).** La v2.24.0 ajoutait un bandeau
-> « nouvelle version disponible » à la PWA. P1–P6 étaient **tous verts** — image
-> reconstruite, version 2.24.0 dans le conteneur, hash du commit et code du bandeau
-> présents dans le bundle servi — et la fonctionnalité était morte : elle avait de
-> surcroît **cassé l'existant**, plus aucun service worker n'était enregistré, donc
-> plus de cache hors ligne. Cause : `vite-plugin-pwa` hérite du `base` de Vite, vide
-> sous SvelteKit, et génère `new Workbox('./sw.js', { scope: './' })` ; ce chemin
-> **relatif** est résolu depuis la page courante, donc `/auth/sw.js` → 404 sur toute
-> route autre que la racine. Trois règles en sortent :
-> - **Tester ailleurs qu'à la racine.** Un chemin relatif, un cookie de portée, une
->   règle Caddy fonctionnent souvent sur `/` et nulle part ailleurs.
-> - **Les artefacts ne prouvent rien sur le comportement.** Bundle, `sw.js`, image
->   Docker, version du conteneur : tout était correct pendant que la fonctionnalité
->   ne s'exécutait pas. Ouvrir la page et regarder l'état réel
->   (`navigator.serviceWorker.getRegistrations()`, console, requêtes réseau).
-> - **Un composant qui reprend un mécanisme fourni par un plugin hérite de ses
->   valeurs par défaut.** Ici `injectRegister` masquait le défaut depuis toujours ;
->   le reprendre à la main l'a exposé. Quand on remplace un mécanisme automatique,
->   vérifier ce qu'il faisait *en plus* de ce qu'on voulait.
->
-> Et brancher les callbacks d'erreur (`onRegisterError` ici) : l'échec n'a produit
-> **aucun log**, ni côté serveur ni côté navigateur. Ce qui échoue en silence ne se
-> découvre qu'à P7, ou jamais.
-
-> **🧪 Une vérification locale ne vaut que pour le chemin d'erreur qu'elle emprunte
-> (26/07/2026, v2.26.0 → v2.26.1).** La conservation du lien d'origine à travers
-> l'authentification a été vérifiée dans un navigateur, sur le build de production
-> servi en local : elle marchait. En production, elle ne marchait pas. En local il
-> n'y a **pas de backend** : `auth.me()` échoue en **erreur réseau** et c'est la
-> garde du layout qui redirige ; en production l'API répond **401**, et c'est
-> `#lib/api.ts` qui redirige en premier — un troisième chemin, non corrigé. Avant de
-> conclure d'un test local, se demander **quel chemin de code il a réellement
-> exercé**, et si la production en emprunte un autre (API absente vs 401/403,
-> cookies, HTTPS, service worker, reverse proxy). Quand un même effet a plusieurs
-> points de déclenchement, les chercher tous — ici, un test qui interdit toute
-> redirection en dur vers `/auth/connexion` dans `front/src` aurait trouvé le
-> troisième du premier coup, là où la relecture en avait vu deux.
-
-**P11 — clore les tickets, et surtout pas par mot-clé GitHub (11/08/2026).**
-Écrire `Closes #299` dans le corps d'une PR fait fermer le ticket **au merge**.
-C'est la mauvaise date : ce soir-là, #299 aurait été clos pendant qu'une
-régression était en vol — quatre colonnes disparues de l'écran, trouvées par
-l'utilisateur *après* la fusion. Et le matin même, un merge avait livré un
-`check-reliability.sh` incapable de démarrer. **Fusionner n'est pas déployer,
-déployer n'est pas vérifier.**
-
-Un ticket se ferme quand le comportement qu'il décrit est **observé corrigé en
-production** — donc après P7, et avec la preuve dans le commentaire :
-
-```bash
-gh issue close 299 --comment "Vérifié en production après la MEP v2.52.2 : <ce qui a été observé, et comment>."
-```
-
-Un ticket dont la vérification est **différée** (elle dépend d'un événement à
-venir : un passage hebdomadaire, une bascule) **reste ouvert**, et reçoit un
-commentaire disant ce qu'il attend et à quelle date. Le fermer « parce que le
-code est livré » revient à confondre le correctif et sa preuve.
-
-Le corps de la PR continue de **nommer** les tickets en français (« Ferme #299 »)
-— c'est de la lisibilité pour le relecteur, pas un mécanisme. À ne pas confondre :
-le français n'est pas reconnu par GitHub, donc cette mention ne ferme rien, et
-c'est très bien ainsi. Les tickets **ouverts** par le lot se listent aussi, pour
-qu'un relecteur voie ce qui a été découvert sans être traité.
-
-**Rollback si P1–P6 échoue :** le retour arrière classique est de ramener l'actif
-au commit précédent (`git reset --hard <commit-précédent>`), puis
-`. scripts/lib/lib-applicatifs.sh && docker compose build $SERVICES_APPLICATIFS && docker compose up -d $SERVICES_APPLICATIFS`
-— l'application seule, la base ne se relance pas (#2706).
-
-Ce retour au code précédent tient **sans restaurer la base** parce que les
-migrations sont compatibles sur une version (#1757, `test_migrations_compatibles.py`) :
-l'ancien code lit et écrit le schéma que la version fautive a migré.
-
-🔴 **Mais ce geste ne se lance pas de sa propre initiative.** Le hook global
-`garde-git-destructif.py` le **refuse** depuis l'outil Bash — y compris glissé dans
-un `ssh … '… && git reset --hard …'` —, parce que rien n'en défait l'effet et qu'il
-a déjà détruit du travail non committé. **L'accord de Philippe se demande**, dans
-la conversation, avant le geste ; sans lui, on ne cherche pas à contourner le
-hook. La voie qui ne détruit rien : une PR `revert` vers `main`, qui suit le cycle
-normal (CI, fusion, `auto-deploy.sh`) — plus lente, et c'est le prix d'un geste que
-personne ne peut défaire.
-
-**P10 — bilan mémoire du lot (🟡 priorité 3, ajouté le 03/08/2026).** Une MEP réussie
-n'est pas une MEP close : ce qui a été appris pendant le lot disparaît si personne ne
-l'écrit. Ce point est le **dernier** du post-check, et le seul qui ne regarde pas la
-production — il regarde le lot.
-
-Ce point **ne bloque pas** la MEP (priorité 3, après la sécurité et la fiabilité des
-contrôles) : il la **termine**. Une leçon écartée doit l'être explicitement, pas par
-omission.
-
-Relire les activités de la PR — pas le diff, les **surprises** — et se poser les
-quatre questions dans cet ordre :
-
-1. **Un défaut a-t-il été trouvé par l'utilisateur plutôt que par un contrôle ?**
-   C'est le signal le plus fort : le contrôle manquant est la vraie leçon, pas le
-   défaut. → charger la skill globale `retrospective-incident`.
-2. **Cela pouvait-il arriver sur un autre projet ?** Si oui, ça monte dans le socle
-   `~/.claude/standards/`, et **nulle part ailleurs** (règle de placement,
-   `~/.claude/CLAUDE.md` §1). Une pratique générique recopiée dans un projet est déjà
-   une divergence.
-3. **Sinon, est-ce propre à 5Hostachy ?** → banque `~/.claude/projects/C--Dev-5hostachy/memory/`,
-   un fichier = un fait, plus une ligne dans `MEMORY.md`.
-4. **Une mémoire existante est-elle devenue fausse ?** Une mémoire périmée est pire
-   qu'une mémoire absente : elle est citée avec assurance. La corriger ou la
-   supprimer — ne jamais empiler une exception par-dessus.
-
-Vérifier aussi que la documentation *visible* a suivi : manuel utilisateur mis à jour
-(il ne porte plus de version ni de date à bumper depuis le 23/10/2026 —
-`test_le_manuel_ne_porte_pas_de_numero_de_version` en refuse le retour), `specs/` si un
-contrat d'API a changé.
-
-**Pourquoi ce point existe :** sur le lot des pièces jointes (03/08/2026), quatre
-constats n'auraient été écrits nulle part sans un rappel explicite — la version du
-manuel jamais bumpée, les fins de ligne cassées par `sed -i` puis « réparées » d'une
-façon qui ne restaure pas un fichier mixte, les endpoints devenus orphelins, et le
-drapeau `fichiers` des e-mails calculé sur l'intention plutôt que sur la pièce jointe
-réelle. Trois d'entre eux ont été soulevés **par l'utilisateur**, pas par le
-processus : c'est exactement la question 1.
-
-**P12 — retirer la copie de travail du lot (#1890, 13/10/2026).** Chaque lot
-travaille dans sa copie à soi, et aucun ne la retirait : **134** s'étaient
-accumulées en deux semaines. La copie se retire une fois la MEP vérifiée — la
-branche reste, rien ne se perd. Le script refuse ce qui perdrait quelque chose
-(modification non committée, commits sur aucune branche), retire d'abord les
-**jonctions** vers le clone principal (sinon le retrait vide ses
-`node_modules`, `standards/13` §10), et refuse le répertoire courant de
-l'appelant : sous Windows, un répertoire tenu ouvert fait échouer le retrait **à
-moitié** (`.git` parti, fichiers restés). Le lancer donc **depuis le clone
-principal**, jamais depuis la copie elle-même. `GARDÉE` sort en code 1 avec son
-motif. Le stock d'une session qui n'a pas fini proprement :
-`bash scripts/poste/retirer-worktree.sh --inactifs` (24 h par défaut ; `--voir`
-liste sans retirer).
-
-
-
-## Le rejeu et la CI — le détail (venu de `CLAUDE.md`, #2709)
-
-Ce que le point 16 ci-dessus ne dit pas, et qui sert quand un rejeu ou un job déraille.
-
-### Le poste
-- **macOS : les outils GNU par une seule porte** (#2419). Chaque script de `scripts/poste/`
-  appelle `poste_gnu_poser` (`lib-poste-gnu.sh`), qui met en tête du PATH les `gnubin` de
-  Homebrew et son `bash` (celui d'Apple est un 3.2). Sans eux, le pré-vol refuse et le
-  pré-check rend INCONNU : `brew install coreutils findutils gnu-sed grep bash`. Ce qui n'a pas
-  d'homonyme GNU a sa branche `Darwin` (`ci_ps_bsd_lire`, `sysctl vm.loadavg`). 🔒 L'autotest
-  de la porte exige que chaque script du poste l'appelle.
-- **Le catalogue de la base des tests se mesure** au pré-vol (#2399) : relations, tuples morts,
-  place par ligne, temps d'un DDL témoin ; au-delà d'un seuil, `VACUUM FULL` du catalogue
-  d'office, puis refus s'il reste gonflé ; illisible → INCONNU (`ci_catalogue_verdict`,
-  `lib-ci-base.sh`).
-- **Dépendances du poste ≠ celles du lot → INCONNU** (#1417) : la ligne `ENV … dépendances`
-  donne l'écart et la commande (`scripts/poste/verifier-dependances-poste.py`). Un lot qui
-  monte des dépendances Python se mesure dans un venv en tête de PATH (`--venv`, ou à la main :
-  `requirements-dev.txt` + chaque outil que `ci.yml` installe hors requirements, à ses
-  versions) — jamais dans le Python du poste, que partagent les sessions. Le rejeu n'expose
-  pas l'interpréteur du venv (`ci_script_a_exposer`, #2112).
-- Sur un poste chargé, les e2e passent à un seul worker (`E2E_WORKERS`, règle
-  `ci_workers_e2e`, #1665) ; pytest se borne par `PYTEST_WORKERS`, sinon `workers_suite`
-  (cœurs, `max_connections`, table des verrous — `max_locks_per_transaction` × connexions ÷
-  `VERROUS_PAR_WORKER`).
-- Un `front/node_modules` en **jonction** vers le clone principal partage le cache de Vite :
-  e2e INCONNU, avec la commande qui répare (`rmdir` de la jonction puis `npm ci`, #1722,
-  `ci_node_modules_etat`).
-
-### Le rejeu qui déraille
-- **Gel** (#2270) : une étape au-delà de 4 × sa durée mesurée (20 min au moins) et muette
-  depuis 15 min est arrêtée, INCONNU, avec `pg_stat_activity` et la pile des tests bloqués
-  (`lib-ci-gel.sh`, `faulthandler_timeout`).
-- **Mort du rejeu** : l'arbre de processus se retrouve par la fermeture des ppid
-  (`lib-ci-arbre.sh`) ; sortir, arrêter une étape ou la mort du lanceur tuent tout l'arbre ;
-  le pré-vol tue les restes d'un rejeu mort (`REJEU_ORPHELINS=signaler` pour seulement les
-  nommer) et retire les schémas de test abandonnés (créateur mort, ou inconnu et de plus d'une
-  heure ; jamais celui d'une connexion ouverte).
-- **E2E relancé une fois sur une cause propre au poste** (« Failed to fetch dynamically
-  imported module », #1809 ; `net::ERR_NO_BUFFER_SPACE`, #1989 — liste dans `ci_cause_relance`,
-  plafond dans `ci_relance_e2e`, `lib-ci-e2e.sh`) : vert, l'étape reste OK, le point 16 reprend
-  `RELANCES=`, chaque relance s'inscrit dans `rejeu-e2e-relances.log`. Un rechargement de Vite
-  (#1421) n'y ouvre jamais droit.
-- **Le verrou** ne se retire que par son propriétaire ; un verrou au pid mort se reprend seul
-  (#1808) — ne jamais l'effacer à la main. `bash scripts/poste/file-rejeu.sh` réordonne la file
-  (`devant`, `retirer`, `purger`) et reprend un verrou orphelin (`reprendre "<motif>"`,
-  journalisé). Règles : `scripts/lib/lib-ci-verrou.sh`.
-- **Le verrou du poste** (#2765) : son verrou pris, le rejeu prend son rang au verrou commun
-  des tâches lourdes (`~/.claude/bin/verrou_poste.py`, claude-config#552) et attend qu'un
-  `xcodebuild` ou un Gradle finisse ; `etat-rejeu.sh` dit qui le tient (ligne `Poste`). Absent
-  (CI, autre machine), le rejeu tourne et le dit INCONNU. Ordre des deux verrous et pourquoi :
-  `scripts/lib/lib-ci-verrou-poste.sh`.
-- Lentes et rapides se départagent par la durée **mesurée** au rejeu précédent
-  (`rejeu-ci-durees.tsv`), jamais par une liste ; couloirs côte à côte : `REJEU_PARALLELE`
-  (défaut : cœurs libres / 4, au plus 8 ; `1` = en série) ; `--tout` joue tout. La trace
-  (`.git/rejeu-ci.ok`) dit son mode (`MODE=rapide`, `CONFIEES=`) ; son format s'écrit et se lit
-  dans `lib-depot.sh` (`verdict_suite_complete`). Les sauts du poste se comptent par le crochet
-  de `api/tests/conftest.py` (`tests/aides_rejeu.py`, `ci_resumer_sauts`).
-- Chaque rejeu écrit une ligne par étape dans `rejeu-durees.log` (répertoire git commun) ;
-  règles d'orchestration et exceptions de couloir : `scripts/lib/lib-ci-orchestration.sh`,
-  pré-vol : `lib-ci-prevol.sh`.
-
-### La CI GitHub
-- Un check requis **annulé** par GitHub bloque une PR sans un mot :
-  `bash scripts/ci/relancer-annules.sh <n° de PR>`.
-- **Un arbre déjà jugé vert ne se rejoue pas** (#2632) : le job `arbre` saute un job requis
-  quand une exécution précédente le prouve (même workflow, même dépôt, job `success` joué,
-  arbre recalculé égal à `HEAD^{tree}`, base d'alors ancêtre de la tête). L'artefact
-  `arbre-vert-<job>-<arbre>` n'est qu'un index ; dans le doute, le job joue. Un job requis neuf
-  passe par lui. 🔒 `test_ci_arbre_deja_vert.py`, règles : `scripts/ci/arbre_deja_vert.py`.
-- **CodeQL juge dès la PR vers `dev`** (#2571) : `codeql-avant-dev.yml` ne bloque que les
-  alertes NEUVES face à `main` (`scripts/ci/codeql_nouvelles_alertes.py`) ; pas un check
-  requis. 🔒 `test_codeql_avant_dev.py`.
-- **apt de la CI : `scripts/ci/apt-ci.sh`** (#2694) — `installer <paquets>` ou `executer --
-  <commande>` ; un miroir que le résolveur ne connaît plus prend un repli déclaré (adresse en
-  DNS-sur-HTTPS posée dans `/etc/hosts` le temps de la commande), sinon « panne de miroir ».
-  Aucun `apt-get` ni `--with-deps` ailleurs ; `bash scripts/ci/apt-ci.sh --selftest`.
-- **La CI se rejoue à l'identique** (#1584) : tout `pip install` s'épingle
-  (`test_ci_installations_epinglees.py`), chaque `uses:` par SHA avec sa version en commentaire
-  (`test_ci_actions_epinglees.py`). Un workflow se mesure comme du code (500 lignes) ; `ci.yml`
-  seul est admis au-dessus (`EXCEPTIONS_PLAFOND` de `scripts-ci-modularite.sh`, #1547). Le
-  `timeout-minutes` d'un job tient sa durée mesurée : `plafonds-jobs.yml` le confronte chaque
-  semaine au p95 (`scripts/ci/plafonds_jobs.py`, #2576). L'image de Caddy porte une mineure
-  explicite (`FROM caddy:2.11`, `test_image_caddy_epinglee.py`) ; Python et Node flottent.
-- **Ce que Trivy voit dans une image** (#2377) : une image Node d'exécution n'emporte pas npm
-  (`test_images_sans_npm.py`), une étape Alpine fait `apk upgrade`, Caddy est recompilé depuis
-  sa source tant que le binaire officiel retarde (`Dockerfile.caddy` dit quand y revenir). Le
-  juge : la veille nocturne (`scripts/ci/veille-securite.sh`).
-
-## Version, images, réplique — le détail (venu de `CLAUDE.md`, #2709)
-
-- La version vit dans `front/package.json` (pied de page, contrôlé par **P3**) **et** dans
-  `front/package-lock.json`, en tête et à `packages[""]` (`npm run lint:lock`).
-- **Chaque commit de `main` publie ses images** (#1753) : `images.yml` publie les images
-  signées des quatre services sur `ghcr.io/philippe-tressard/coprofirst-*` (amd64 et arm64),
-  étiquetées `sha-<commit>` ; une version bumpée reçoit le tag git `vX.Y.Z`
-  (`scripts/ci/tag-version.sh`, jamais à la main) et l'étiquette `X.Y.Z`.
-  🔒 `test_images_publiees.py`.
-- **La référence TIRE ces images** (#1758) : `auto-deploy.sh` et la bascule passent par
-  `obtenir_images` (`scripts/lib/lib-images-ci.sh`) ; tant qu'elles ne sont pas publiées, le
-  journal dit « en attente des images de la CI », et au-delà de 30 min le nœud construit en
-  secours et alerte. `Déployé:` arrive donc après la CI « Images », une quinzaine de minutes.
-- **Une réplique suit son BAIL** (#2210) : canal Urgence ou une version choisie ; vagues
-  (Urgence, Pilote, Standard, Fixe) et règle dans `registre/versions` et `registre/canaux`,
-  réglées par l'opérateur dans Admin › Installations. Chaque version taguée est publiée
-  (release + archive, job `publier-version`) et la purge nocturne retire ce que plus aucune
-  vague ne sert (`purge-paquets.yml`, règle de `python3 -I api/app/registre/versions.py
-  garder`).
-- **`replica` et la promotion** (#1754) : le workflow « Promotion », lancé par l'auteur (`gh
-  workflow run promotion.yml -f version=X.Y.Z`), avance `replica` vers le tag et publie les
-  notes de version ; `replica` n'a aucun commit propre. Verrouillé par les règles du dépôt :
-  `replica` ni supprimée ni réécrite de force, un tag `v*` ni déplacé ni supprimé. Le geste
-  refuse une version de moins de 7 jours (`RODAGE_JOURS`, `scripts/ci/promotion.sh`) et toute
-  promotion tant qu'une issue `bloque-promotion` est ouverte, sauf `-f urgence=true`. Seule une
-  X.0.0 part seule, la nuit, à J+7. Règles : spec §4.10, règle 5 (#1934).
-- **Une réplique s'installe par `deploiement/standard/`** (#1755) : la surcouche
-  `compose.images.yml` (`build: !reset`, image publiée à `COPROFIRST_VERSION`) se pose sur le
-  `docker-compose.yml` de la racine, seule description des
-  services ; mode d'emploi dans son `LISEZMOI.md`. Le contenu de `front/static/` ne nomme jamais
-  la résidence (`npm run lint:nom-residence`).
-- **Une réplique se met à jour seule chaque nuit** (#1756) : `deploiement/standard/mise-a-jour.sh`
-  — sauvegarde vérifiée avant tout geste, retour à l'image précédente puis à la sauvegarde si
-  la santé reste KO, rapport `mise_a_jour` (`utils/sante_mise_a_jour`). Le retour tient parce
-  que `start.sh` saute les migrations d'une base en avance sur le code (`utils/revision_base`).
-- **Le rôle de l'installation** (#1761) : `ROLE_INSTALLATION` (`reference` sur les deux RPi —
-  l'ancien `maitre` n'est plus lu depuis #1892 —,
-  `replique` posé par `compose.images.yml`) se lit dans `utils/installation` seul ; absent →
-  « Inconnu ». Le bloc Installation d'Admin › Maintenance le montre, avec l'écart au dépôt si le
-  service « Vérification de la version » est activé (coupé par défaut).
-- Un onglet PWA resté ouvert peut servir une version en cache : le bandeau de mise à jour
-  existe pour ça (`test_pwa_maj.py`).
+| Annexe | Ce qu'elle porte |
+|---|---|
+| `POSTCHECK.md` | Post-check P1 à P12 après la MEP : déploiement constaté, version servie, clôture des tickets, retour arrière |
+| `REJEU-ET-VERSION.md` | Le rejeu de la CI en détail, version, images publiées, réplique et promotion |

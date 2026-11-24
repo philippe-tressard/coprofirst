@@ -1,3 +1,5 @@
+import type { AccesMenu } from '#lib/acces-menu.ts';
+
 //  Formes de données échangées avec l'API. Rassemblées ici depuis trois
 //  endroits différents de l'ancien `api.ts`, où elles étaient intercalées
 //  entre les clients — donc introuvables autrement qu'au grep.
@@ -9,6 +11,8 @@ export interface User {
 	nom_affiche: string;
 	/** Modère-t-il — CS ou admin ? Servi par `auth/deps.est_moderateur` (#2633), lu par `estModerateur`. */
 	est_moderateur: boolean;
+	/** Les publics du menu de ce compte — servis par `utils/acces_menu` (#2969), lus par `pageAuMenu`. */
+	acces_menu: AccesMenu[];
 	email: string;
 	telephone?: string | null;
 	societe?: string | null;
@@ -17,6 +21,8 @@ export interface User {
 	role: string;
 	roles: string[]; // multi-rôles cumulables
 	actif: boolean;
+	/** Mot de passe TEMPORAIRE (#3019) : l'écran mène au changement, l'API refuse le reste. */
+	mot_de_passe_a_changer?: boolean;
 	opt_out_telemetrie?: boolean;
 	// Modération de la Communauté. Ces champs étaient absents de l'interface
 	// alors que `UserRead` les renvoie et que la page Sondages s'en sert pour

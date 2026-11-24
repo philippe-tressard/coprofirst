@@ -37,7 +37,7 @@ test('délégations : le CS reçoit la liste des résidents délégables', async
 });
 
 test('fiche d’un sondage : un gestionnaire est renvoyé au tableau de bord', async ({ page }) => {
-	const SYNDIC = { ...MEMBRE_CS, statut: 'syndic', role: 'résident', roles: ['résident'] };
+	const SYNDIC = { ...MEMBRE_CS, statut: 'syndic', role: 'externe', roles: ['externe'] };
 	await ouvrir(page, '/sondages/1', SYNDIC, (c) =>
 		c === '/api/sondages/1' ? { id: 1, question: 'Témoin', options: [] } : undefined,
 	);

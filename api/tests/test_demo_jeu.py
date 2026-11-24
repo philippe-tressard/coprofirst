@@ -116,6 +116,17 @@ def test_les_comptes_publics_existent_avec_leurs_roles(s):
         assert u.roles_json == p.roles_json
 
 
+def test_aucun_compte_de_la_demo_n_a_un_mot_de_passe_a_changer(s):
+    """Le chargement que `deploiement/demo/reinitialiser.sh` rejoue chaque nuit
+    (`python -m app.demo.charger`) ne laisse AUCUN compte au mot de passe temporaire
+    (#3019) : les comptes publics servent aux relecteurs des magasins, dans les apps,
+    et la démo ferme le changement de mot de passe — un compte marqué y serait enfermé.
+    Le seed marque les deux comptes techniques ; le chargement les libère."""
+    marques = [u.email for u in s.exec(select(Utilisateur)).all() if u.mot_de_passe_a_changer]
+    assert marques == [], f"comptes de la démo au mot de passe temporaire : {marques}"
+    assert s.exec(select(func.count()).select_from(Utilisateur)).one() > len(PERSONNAGES)
+
+
 def test_les_administrateurs_sont_ceux_du_seed(s):
     """Ni un compte public, ni un habitant (D8 #1932) : les deux comptes techniques
     d'une installation standard (#1985). L'administrateur, que l'auteur peut confier
