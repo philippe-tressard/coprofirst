@@ -4,6 +4,7 @@
 	import BoutonNouveau from '#lib/components/BoutonNouveau.svelte';
 	import FiltresAffaires from '#lib/components/FiltresAffaires.svelte';
 	import EtatListe from '#lib/components/EtatListe.svelte';
+	import { anneeDe } from '#lib/date.ts';
 	import { onMount } from 'svelte';
 	import { marquerDonneesAffichees } from '#lib/telemetry.ts';
 	import { goto } from '$app/navigation';
@@ -123,7 +124,7 @@
 						//  On DÉSIGNE l'année ; le composant l'ouvre. Cette page posait
 						//  auparavant l'état interne du groupement, ce qui l'obligeait
 						//  à en porter sa propre copie.
-						anneeVisee = new Date(target.mis_a_jour_le ?? target.cree_le).getFullYear();
+						anneeVisee = anneeDe(target.mis_a_jour_le ?? target.cree_le);
 					}
 					await affaires.deplier(target);
 					revelerCible(`ticket-${target.id}`);
@@ -166,8 +167,10 @@
 	$: correspondances = new Map(($moteur.resultats ?? []).map((r) => [r.ticket_id, r]));
 
 	// Historique : tickets clôturés depuis plus de 7 jours, limité à 3 ans, groupés par année décroissante
+	//  Un INSTANT, pas une date du calendrier : son fuseau ne change rien, il se
+	//  calcule en UTC (#3059).
 	const THREE_YEARS_AGO = new Date();
-	THREE_YEARS_AGO.setFullYear(THREE_YEARS_AGO.getFullYear() - 3);
+	THREE_YEARS_AGO.setUTCFullYear(THREE_YEARS_AGO.getUTCFullYear() - 3);
 
 	$: historyTickets = $ticketList
 		.filter((t) => estArchive(t) && new Date(t.mis_a_jour_le ?? t.cree_le) >= THREE_YEARS_AGO)

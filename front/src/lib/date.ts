@@ -160,6 +160,33 @@ export function jourIso(d: string | Date = new Date()): string {
 }
 
 /**
+ * L'ANNÉE de Paris d'un instant ; sans argument, l'année en cours. Jamais
+ * `getFullYear()`, qui lit le fuseau de l'APPAREIL : le 31 décembre à 23 h 30 UTC
+ * est déjà l'année suivante à Paris, et un appareil réglé hors de France range
+ * une archive ou une échéance dans la mauvaise année (#3059). `NaN` pour une
+ * date invalide, comme `getFullYear()`.
+ */
+export function anneeDe(d: string | Date = new Date()): number {
+	return partieDeParis(d, 0, 4);
+}
+
+/**
+ * Le MOIS de Paris d'un instant, de 0 (janvier) à 11 — l'indice de `getMonth()`,
+ * qu'il remplace pour la même raison que `anneeDe` : la position sur une frise,
+ * la clé d'une visite planifiée. `NaN` pour une date invalide.
+ */
+export function moisDe(d: string | Date = new Date()): number {
+	return partieDeParis(d, 5, 7) - 1;
+}
+
+/** Un morceau de `jourIso` en nombre — `NaN` plutôt que l'exception d'`Intl` sur une date invalide. */
+function partieDeParis(d: string | Date, debut: number, fin: number): number {
+	const date = new Date(d);
+	if (Number.isNaN(date.getTime())) return NaN;
+	return Number(jourIso(date).slice(debut, fin));
+}
+
+/**
  * "mar. 17 nov." — le jour d'un rendez-vous dans une colonne étroite (la
  * vignette d'échéance de la gouttière). L'année ne s'ajoute que si elle n'est
  * pas celle en cours : "ven. 15 janv. 2027". `semaine: false` retire le jour de
