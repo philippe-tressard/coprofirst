@@ -117,6 +117,22 @@ def test_un_lien_vers_une_autre_racine_ne_sert_rien(fichiers, tmp_path):
         lien.unlink()
 
 
+def test_sur_une_installation_commune_caddy_ne_sert_aucun_fichier_lui_meme(fichiers):
+    """Le sens fermé (claude-config#604) : `/auth/verifier-acces`, que le `forward_auth`
+    du bloc `/uploads/*` interroge avant de servir SA racine unique, refuse tout sur
+    une installation commune — même le fichier que l'API, elle, sert à cette session."""
+    client = _client()
+    jeton, _ = fichiers["temoins"]["a"]
+    temoin = sous(client, f"/uploads/{CLE}", "a", jeton)
+    assert temoin.status_code == 200, "témoin : la session lit ce fichier par l'API"
+    reponse = client.get(
+        "/auth/verifier-acces",
+        headers={"host": HOTES["a"], "X-Forwarded-Uri": f"/uploads/{CLE}"},
+        cookies={"access_token": jeton},
+    )
+    assert reponse.status_code == 404, reponse.text
+
+
 def test_une_installation_propre_laisse_le_service_a_caddy(fichiers, monkeypatch):
     """Témoin : la route existe, mais ne sert rien hors d'une installation commune —
     même à une session valide."""

@@ -184,6 +184,15 @@
 		}
 	}
 
+	# Installation COMMUNE à plusieurs copropriétés (claude-config#604) : la surcouche
+	# `deploiement/standard/commune/compose.commune.yml` monte ce fragment, qui RELAIE
+	# `/uploads/*` à l'API. Caddy réunit les deux `handle /uploads/*` (même matcher) en
+	# une route : le relais, écrit avant, répond, et le service de la racine n'est
+	# jamais atteint — constaté par une vraie requête. Un motif sans fichier n'importe
+	# rien : sur une installation propre (5Hostachy), rien n'est monté, rien ne change.
+	# 🔒 api/tests/test_surcouche_commune_caddy.py, workflow « Caddyfile ».
+	import commune/fichiers*.caddy
+
 	# Annonces de hall — jamais servies en direct (accès via /api/annonces-hall/{id}/pdf,
 	# réservé au CS et à l'admin). Doit précéder le handle /uploads/* ci-dessous.
 	handle /uploads/annonces-hall/* {
@@ -305,8 +314,10 @@
 		reverse_proxy front:3000
 	}
 
-	# Frontend SvelteKit (SSR)
+	# Frontend SvelteKit (SSR). La garde des pages d'une installation commune y est
+	# montée par la même surcouche (rien sur une installation propre).
 	handle {
+		import commune/garde-des-pages*.caddy
 		reverse_proxy front:3000
 	}
 
