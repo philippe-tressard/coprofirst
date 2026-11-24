@@ -105,7 +105,7 @@ from app.utils.reponse_courriel import (
     suite_mise_en_forme,
 )
 from app.utils.valeurs import valeur
-from app.utils.versement_transfert import etat_avant, ouvrir_versement
+from app.utils.versement_transfert import etat_avant, motif_affaire_close, ouvrir_versement
 
 #: Ce que dit la notification quand l'objet annonce un transfert que le corps ne
 #: porte pas : c'est la forme du message qui manque, pas l'affaire.
@@ -221,7 +221,7 @@ def verser(
     ticket = designe or (_affaire_du_fil(session, cle) if creer else None)
     if ticket is not None and valeur(ticket.statut) in STATUTS_TICKET_CLOS:
         if designe is not None:
-            motif = f"l'affaire #{ticket.numero} est close : elle ne reçoit plus rien"
+            motif = motif_affaire_close(ticket.numero)
             _prevenir(session, qui, ticket, "Transfert non versé", motif)
             return IGNORE, motif, ticket
         ticket = None  # le fil suivait une affaire close : il en ouvre une autre

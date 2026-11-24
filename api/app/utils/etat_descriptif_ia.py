@@ -52,6 +52,10 @@ logger = logging.getLogger("hostachy.assistant")
 #: Le code de l'usage — lu par `llm_usages`.
 USAGE_LECTURE_ETAT_DESCRIPTIF = "lecture_etat_descriptif"
 
+#: Le refus d'une lecture sans règlement : dit par la route AVANT d'ouvrir la
+#: tâche, et par la tâche si le règlement a disparu entre-temps (#2949).
+AUCUN_REGLEMENT = "Aucun règlement n'est versé (Ma résidence › Règlement)."
+
 #: Le prompt D'ORIGINE — l'administration peut le reprendre (Admin › Assistant IA) ;
 #: le FORMAT ci-dessous, lui, s'ajoute toujours : sans lui, la réponse ne se lit pas.
 CONSIGNE = """Tu es un clerc de notaire qui transcrit l'état descriptif de division d'un \
@@ -194,7 +198,7 @@ async def lire_le_reglement(session: Session, demandeur: Optional[int]) -> tuple
 
     texte = assembler(session)
     if texte is None:
-        raise ErreurLLM("Aucun règlement n'est versé (Ma résidence › Règlement).")
+        raise ErreurLLM(AUCUN_REGLEMENT)
     cfg = config_llm(session, USAGE_LECTURE_ETAT_DESCRIPTIF)
     reponse = await demander(
         session,

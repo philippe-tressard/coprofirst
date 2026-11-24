@@ -30,7 +30,7 @@ from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException
 from sqlmodel import Session
 
 from app.auth.deps import est_moderateur, get_current_user, peut_commenter, peut_editer
-from app.auth.gestes_affaire import categorie_permise, peut_modifier
+from app.auth.gestes_affaire import CATEGORIE_RESERVEE, categorie_permise, peut_modifier
 from app.database import get_session
 from app.models.core import (
     STATUTS_TICKET_CLOS,
@@ -189,7 +189,7 @@ def update_ticket(
         ticket.categorie
     )
     if vers_reservee and not categorie_permise(body.categorie, user):
-        raise HTTPException(403, "Cette catégorie est réservée au conseil syndical")
+        raise HTTPException(403, CATEGORIE_RESERVEE)
     #  🔴 Jugé sur la catégorie FINALE, jamais sur celle d'avant : l'écran qui
     #  fait d'une actualité une Étude & travaux envoie « Ouvert » avec la
     #  nouvelle catégorie, et ce PATCH légitime répondait 422 (29/09/2026,

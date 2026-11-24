@@ -66,6 +66,7 @@ from app.utils import courriel_pieces_jointes
 from app.utils.courriel_journal import journaliser_releve
 from app.utils.demo import exiger_hors_demo
 from app.utils.courriel_transfert import compte_a_l_adresse, decider_transfert
+from app.utils.versement_transfert import motif_affaire_close
 from app.utils.courriel_relance import reponse_a_une_relance, relance_de
 from app.utils.echecs_repetes import CompteurEchecs
 from app.utils.courriel_ingestion import (
@@ -250,7 +251,7 @@ def _decider(session, entetes, corps, recu_le, plancher, authentification, piece
 
     #  Une affaire close ne reçoit plus rien, pas même une alerte (28/09/2026).
     if valeur(ticket.statut) in STATUTS_TICKET_CLOS:
-        return IGNORE, f"l'affaire #{ticket.numero} est close : elle ne reçoit plus rien", ticket
+        return IGNORE, motif_affaire_close(ticket.numero), ticket
     if verdict.decision == REFUSE:
         _prevenir_le_cs(session, ticket, verdict)
         return REFUSE, verdict.motif, ticket

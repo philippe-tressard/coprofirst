@@ -106,7 +106,7 @@ def _appeler_permis() -> None:
     if installation.est_reference():
         raise RegistreInjoignable("la référence ne s'inscrit pas à son propre registre")
     if essai_admis():
-        raise RegistreInjoignable("installation d'essai : la référence n'est pas appelée")
+        raise RegistreInjoignable(constat.ESSAI_SANS_REFERENCE)
 
 
 #: Le préfixe sous lequel le `Caddyfile` d'une installation CoproFirst confie une

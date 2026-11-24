@@ -431,7 +431,7 @@ async def _appeler(
     except httpx.TimeoutException as exc:
         raise ErreurLLM(f"Pas de réponse après {cfg.delai_s} s.") from exc
     except httpx.HTTPError as exc:
-        raise ErreurLLM("Le service n'a pas pu être joint.") from exc
+        raise ErreurLLM(SERVICE_INJOIGNABLE) from exc
 
     duree = time.monotonic() - debut
     if reponse.status_code == 401 or reponse.status_code == 403:
@@ -477,7 +477,7 @@ async def _appeler(
 #  Le catalogue des modèles vit dans `llm_modeles.py` depuis le 27/09/2026 : ce
 #  module franchissait 500 lignes en recevant le journal des appels (#1383). Il
 #  reste exporté d'ici — la porte d'entrée ne change pas (voir `__all__`).
-from app.utils.llm_modeles import modeles_disponibles  # noqa: E402
+from app.utils.llm_modeles import SERVICE_INJOIGNABLE, modeles_disponibles  # noqa: E402
 
 #  Le test de connexion vit dans `llm_connexion.py` depuis le 04/10/2026, pour
 #  la même raison : les limites d'appels (`llm_limites`) faisaient passer ce

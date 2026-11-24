@@ -45,6 +45,10 @@ REFERENCE = "reference"
 ESSAI = "essai"
 LIMITEE = "limitee"
 ACTIVE = "active"
+
+#: Pourquoi une installation d'essai n'appelle pas la référence — dit par le
+#: constat et par le client qui s'abstient (#2949).
+ESSAI_SANS_REFERENCE = "installation d'essai : la référence n'est pas appelée"
 SUSPENDUE = "suspendue"
 
 
@@ -131,9 +135,7 @@ def constater(
     if reference:
         return Constat(REFERENCE, "la référence n'est jamais limitée", services=None)
     if essai:
-        return Constat(
-            ESSAI, "installation d'essai : la référence n'est pas appelée", services=None
-        )
+        return Constat(ESSAI, ESSAI_SANS_REFERENCE, services=None)
     if etat.illisible:
         return Constat(LIMITEE, "état d'inscription illisible")
     if not etat.identifiant:

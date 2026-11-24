@@ -59,6 +59,8 @@ DEMARREE_LE = horloge.maintenant()
 
 #: Le dépôt public, pour l'API de GitHub (`owner/repo`).
 DEPOT = DEPOT_SOURCE.removeprefix("https://github.com/")
+#: L'API de GitHub pour ce dépôt — versions publiées, comparaison de commits (#2949).
+API_DEPOT = f"https://api.github.com/repos/{DEPOT}"
 
 
 def role_installation(valeur: Optional[str] = None) -> str:
@@ -158,7 +160,7 @@ def verifier(empreinte_courante: str, branche: str, *, client=None) -> Verificat
         return Verification("non_verifie", detail=demo.MESSAGE)  # rien ne sort (#1902)
     if not empreinte_courante:
         return Verification("non_verifie", detail="image construite sans son commit (GIT_HASH)")
-    url = f"https://api.github.com/repos/{DEPOT}/compare/{empreinte_courante}...{branche}"
+    url = f"{API_DEPOT}/compare/{empreinte_courante}...{branche}"
     try:
         if client is None:
             with httpx.Client(timeout=5) as c:
