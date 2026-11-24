@@ -17,7 +17,8 @@ export interface EtatInstallation {
 	/** `reference` | `replique` | `inconnu` — absent du `.env`, jamais « référence ». */
 	role: 'reference' | 'replique' | 'inconnu';
 	libelle: string;
-	/** `main` | `replica` ; `null` quand le rôle est inconnu. */
+	/** `main` pour la référence, le tag `vX.Y.Z` de la version de son bail pour une réplique
+	 *  (#3009) ; `null` quand le rôle est inconnu ou que le bail ne désigne aucune version. */
 	branche: string | null;
 	/** Le commit de l'image ; vide pour une image construite sans lui. */
 	empreinte: string;

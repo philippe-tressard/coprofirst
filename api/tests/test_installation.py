@@ -11,6 +11,7 @@ from __future__ import annotations
 import pytest
 from sqlmodel import Session
 
+from app.inscription import constat
 from app.models.core import ConfigSite, RoleUtilisateur
 from app.models.roles import ROLE_OPERATEUR
 from app.routers.admin import installation as routeur_installation
@@ -40,9 +41,20 @@ def test_un_role_absent_ou_mal_ecrit_est_inconnu_jamais_reference(valeur, attend
     assert installation.role_installation(valeur) == attendu
 
 
-def test_chaque_role_suit_sa_branche():
-    assert installation.ROLES["reference"][1] == "main"
-    assert installation.ROLES["replique"][1] == "replica"
+@pytest.mark.parametrize(
+    ("role", "version_cible", "attendu"),
+    [
+        ("reference", None, "main"),
+        ("reference", "3.124.1", "main"),
+        #  #3009 : une réplique suit la version que son bail lui fait installer — le
+        #  tag de cette version —, plus la branche `replica`, retirée.
+        ("replique", "3.124.1", "v3.124.1"),
+        ("replique", None, None),
+        ("inconnu", "3.124.1", None),
+    ],
+)
+def test_chaque_role_suit_ce_qu_il_installe(role, version_cible, attendu):
+    assert installation.cible_suivie(role, version_cible) == attendu
 
 
 @pytest.mark.parametrize(
@@ -147,24 +159,52 @@ def test_service_coupe_rien_ne_part(moteur, monkeypatch):
     assert corps["verification_active"] is False and appels == []
 
 
-def test_service_active_la_route_verifie(moteur, monkeypatch):
+def _replique_au_bail(moteur, monkeypatch, verdict):
+    """Une réplique, service activé, dont le bail rangé rend `verdict` (sans appel)."""
     with Session(moteur) as s:
         s.add(ConfigSite(cle="verification_version_active", valeur="1"))
         s.commit()
     monkeypatch.setattr(installation, "role_installation", lambda valeur=None: "replique")
+    monkeypatch.setattr(routeur_installation.client, "constat_courant", lambda: verdict)
+    appels = []
     monkeypatch.setattr(
         routeur_installation.installation,
         "verifier",
-        lambda empreinte, branche: installation.Verification("en_retard", retard=1),
+        lambda empreinte, cible: (
+            appels.append(cible) or installation.Verification("en_retard", retard=1)
+        ),
     )
     http, _ = client_http(moteur, RoleUtilisateur.admin, roles_json=f"admin,{ROLE_OPERATEUR}")
-    corps = http.get("/admin/installation").json()
+    return http.get("/admin/installation").json(), appels
+
+
+def test_une_replique_se_mesure_a_la_version_de_son_bail(moteur, monkeypatch):
+    """#3009 : « à jour » se mesure contre le tag de la version que le bail fait
+    installer, jamais contre une branche que plus rien n'avance."""
+    verdict = constat.Constat("active", "bail valide", "CF-000001", version_cible="3.124.1")
+    corps, appels = _replique_au_bail(moteur, monkeypatch, verdict)
     assert (corps["libelle"], corps["branche"], corps["etat"], corps["retard"]) == (
         "Réplique",
-        "replica",
+        "v3.124.1",
         "en_retard",
         1,
     )
+    assert appels == ["v3.124.1"]
+
+
+@pytest.mark.parametrize(
+    "verdict",
+    [
+        constat.Constat("limitee", "aucun bail reçu de la référence"),
+        #  Un bail valide qui ne désigne encore aucune version (Fixe pas encore rodée).
+        constat.Constat("active", "bail valide", "CF-000001", version_cible=None),
+    ],
+)
+def test_une_replique_sans_version_a_installer_n_est_pas_verifiee(moteur, monkeypatch, verdict):
+    corps, appels = _replique_au_bail(moteur, monkeypatch, verdict)
+    assert (corps["branche"], corps["etat"]) == (None, "non_verifie")
+    assert "aucune version à installer" in corps["detail"]
+    assert appels == [], "rien ne part sans cible à comparer"
 
 
 #  Une ou plusieurs copropriétés : un constat lu par `contexte.est_commune()`,

@@ -1,14 +1,17 @@
-"""Le rôle de CETTE installation dans la distribution, et son écart à la branche suivie (#1761).
+"""Le rôle de CETTE installation dans la distribution, et l'écart de sa version (#1761).
 
 Lot DI-8 du chantier multi-copropriétés (`specs/architecture/multi-coproprietes.md`
 §4.10, règle 11). Exigence de l'auteur, 08/10/2026 : *« savoir si l'instance est
-le master (git => main) ou une réplique (git => replica) »*.
+le master (git => main) ou une réplique »*.
 
-| Rôle        | Libellé   | Branche suivie |
-|-------------|-----------|----------------|
-| `reference` | Référence | `main`       |
-| `replique`  | Réplique  | `replica`      |
-| `inconnu`   | Inconnu   | —              |
+| Rôle        | Libellé   | Ce qu'elle suit (`cible_suivie`)                     |
+|-------------|-----------|------------------------------------------------------|
+| `reference` | Référence | la branche `main`                                    |
+| `replique`  | Réplique  | le tag de la version que son bail fait installer     |
+| `inconnu`   | Inconnu   | —                                                    |
+
+Une réplique suivait la branche `replica` jusqu'à #3009 (24/11/2026) : depuis #2210,
+c'est le bail qui décide de sa version (`registre/canaux.py`), et `replica` est retirée.
 
 ## Les règles
 
@@ -18,7 +21,7 @@ le master (git => main) ou une réplique (git => replica) »*.
 2. **Absent ou mal écrit → « inconnu », jamais « référence »** : une réplique mal
    configurée ne doit pas se croire la référence (`standards/04` §1).
 3. **Le fait, pas la déclaration** : le commit qui tourne (`GIT_HASH`, posé à la
-   construction de l'image) doit appartenir à l'historique de la branche suivie.
+   construction de l'image) doit appartenir à l'historique de ce qu'elle suit.
    Le dépôt public le dit (`compare`), et une réponse impossible rend « non
    vérifié », jamais « à jour ».
 4. **Rien ne sort sans accord** (§4.10, règle 9) : la vérification interroge
@@ -46,11 +49,8 @@ from app.utils import demo
 from app.utils import horloge
 from app.utils.plateforme import DEPOT_SOURCE
 
-#: rôle → (libellé, branche suivie). La seule écriture.
-ROLES: dict[str, tuple[str, str]] = {
-    "reference": ("Référence", "main"),
-    "replique": ("Réplique", "replica"),
-}
+#: rôle → libellé. La seule écriture.
+ROLES: dict[str, str] = {"reference": "Référence", "replique": "Réplique"}
 INCONNU = "inconnu"
 
 #: L'instant où ce processus a démarré : « en service depuis ». Une constante,
@@ -66,6 +66,21 @@ def role_installation(valeur: Optional[str] = None) -> str:
     brut = get_settings().role_installation if valeur is None else valeur
     role = (brut or "").strip().lower().replace("î", "i").replace("é", "e")
     return role if role in ROLES else INCONNU
+
+
+def cible_suivie(role: str, version_a_installer: Optional[str]) -> Optional[str]:
+    """PURE. Ce contre quoi la version qui tourne se mesure : `main` pour la référence,
+    le tag `vX.Y.Z` de la version que le bail fait installer pour une réplique
+    (`inscription/constat.version_a_installer`, #3009) ; `None` sinon — jamais une
+    cible supposée."""
+    #  Dans la fonction : `registre/canaux` importe ce module (son `DEPOT`).
+    from app.registre.canaux import CANAL_REFERENCE
+
+    if role == "reference":
+        return CANAL_REFERENCE
+    if role == "replique" and version_a_installer:
+        return f"v{version_a_installer}"
+    return None
 
 
 def est_replique() -> bool:
@@ -127,7 +142,7 @@ def version_logicielle() -> str:
 
 @dataclass(frozen=True)
 class Verification:
-    """Ce que le dépôt dit du commit qui tourne, face à la branche suivie."""
+    """Ce que le dépôt dit du commit qui tourne, face à ce qu'il suit."""
 
     etat: str  #: a_jour · en_retard · ecart · non_verifie
     retard: int = 0  #: commits de la branche absents d'ici (en_retard)
@@ -135,11 +150,11 @@ class Verification:
 
 
 def verdict_comparaison(statut: Optional[str], en_avance: int = 0) -> Verification:
-    """PURE. `statut` est celui de `GET /repos/…/compare/{empreinte}...{branche}`.
+    """PURE. `statut` est celui de `GET /repos/…/compare/{empreinte}...{cible}`.
 
-    `ahead` : la BRANCHE a des commits que l'empreinte n'a pas → en retard.
+    `ahead` : la CIBLE a des commits que l'empreinte n'a pas → en retard.
     `identical` → à jour. `behind` ou `diverged` : l'empreinte porte des commits
-    absents de la branche → elle n'est PAS une version de cette branche (écart).
+    absents de la cible — en avance sur elle, ou à part → écart.
     """
     if statut == "identical":
         return Verification("a_jour")
@@ -147,18 +162,18 @@ def verdict_comparaison(statut: Optional[str], en_avance: int = 0) -> Verificati
         return Verification("en_retard", retard=en_avance)
     if statut in ("behind", "diverged"):
         return Verification(
-            "ecart", detail="la version qui tourne n'appartient pas à la branche suivie"
+            "ecart", detail="la version qui tourne n'est pas dans l'historique de ce qu'elle suit"
         )
     return Verification("non_verifie", detail="réponse du dépôt illisible")
 
 
-def verifier(empreinte_courante: str, branche: str, *, client=None) -> Verification:
+def verifier(empreinte_courante: str, cible: str, *, client=None) -> Verification:
     """Interroge le dépôt public. Toute impossibilité rend « non vérifié » (règle 3)."""
     if demo.est_demo():
         return Verification("non_verifie", detail=demo.MESSAGE)  # rien ne sort (#1902)
     if not empreinte_courante:
         return Verification("non_verifie", detail="image construite sans son commit (GIT_HASH)")
-    url = f"https://api.github.com/repos/{DEPOT}/compare/{empreinte_courante}...{branche}"
+    url = f"https://api.github.com/repos/{DEPOT}/compare/{empreinte_courante}...{cible}"
     try:
         if client is None:
             with httpx.Client(timeout=5) as c:
