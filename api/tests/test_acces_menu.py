@@ -19,7 +19,9 @@ from app.models.core import Delegation, StatutDelegation, Utilisateur
 from app.models.roles import ROLE_OPERATEUR, RoleUtilisateur, StatutUtilisateur
 from app.schemas import UserRead
 from app.utils import horloge
+from app.routers.delegations import list_delegations
 from app.utils.acces_menu import ACCES_MENU, SANS_ADMIN_SEUL, acces_du_menu
+from app.utils.communaute import MOTIF_PROFIL, motif_de_refus
 from app.utils.lecture_utilisateur import construire_user_read
 from app.utils.roles_du_statut import roles_du_statut
 from tests.aides_base import compte
@@ -65,7 +67,8 @@ TOUS_RESIDENT = ["tous", "resident"]
         #  #2905 : le syndic et le mandataire n'avaient AUCUNE entrée sur le site.
         (S.syndic, None, False, TOUS_RESIDENT),
         (S.mandataire, None, False, TOUS_RESIDENT),
-        (S.aidant, None, False, ["tous", "cs-ou-aidant"]),
+        #  #2993 : la Communauté, que le serveur lui ouvre (`motif_de_refus`).
+        (S.aidant, None, False, ["tous", "resident", "cs-ou-aidant"]),
         (S.locataire, None, True, ["tous", "resident", "cs-ou-aidant"]),
         (
             S.copropriétaire_résident,
@@ -122,8 +125,9 @@ def test_rien_de_ce_que_le_site_montrait_ne_disparait(statut, aidant_actif):
 
 
 def test_ce_qui_s_ajoute_est_declare():
-    """Seuls GAGNENT les pages générales et la Communauté (Avis) : le compte lié par son
-    statut sans rôle d'habitant, et le syndic et le mandataire (rôle `externe`, #2905)."""
+    """Seuls GAGNENT les pages générales et la Communauté : le compte lié par son statut
+    sans rôle d'habitant, le syndic et le mandataire (rôle `externe`, #2905 : l'Avis), et
+    l'aidant (#2993 : la Communauté que le serveur lui ouvre déjà)."""
     for statut in [None, *S]:
         for roles in COMBINAISONS:
             u = _u(statut, roles)
@@ -131,12 +135,58 @@ def test_ce_qui_s_ajoute_est_declare():
             if gagne:
                 assert gagne <= {"tous", "resident"}, (statut, roles, gagne)
                 #  …soit parce qu'il n'avait aucun rôle d'habitant, soit parce que son
-                #  statut de gestionnaire lui ouvre l'Avis de la Communauté (#2075).
+                #  statut de gestionnaire lui ouvre l'Avis de la Communauté (#2075), soit
+                #  parce que c'est l'aidant, et seulement la Communauté (#2993).
                 gestionnaire = statut in (S.syndic, S.mandataire)
-                assert gestionnaire or not set(roles) & {"propriétaire", "résident"}, (
+                aidant = statut == S.aidant and gagne == {"resident"}
+                assert gestionnaire or aidant or not set(roles) & {"propriétaire", "résident"}, (
                     statut,
                     roles,
                 )
+
+
+# ── Le public `resident` et la règle d'accès de la Communauté (#2993) ────────
+#
+#  L'entrée de la Communauté suit ce que le serveur OUVRE (`communaute.motif_de_refus`),
+#  jamais une liste à part : l'aidant, que le serveur admet, en était exclu par le menu
+#  seul. Deux écarts, et seulement eux, sont déclarés :
+#    · le syndic et le mandataire : refusés par leur profil, l'entrée les mène au seul
+#      onglet Avis (`profil=False`, #2075) ;
+#    · le compte NON LIÉ (compte technique, ou sans statut ni rôle d'habitant) : admis
+#      par la règle, absent du menu — il n'habite pas la résidence (tranché le
+#      23/11/2026 avec `tous`, #2969).
+
+
+def test_le_public_resident_croise_la_regle_d_acces_de_la_communaute():
+    ecarts = []
+    for statut in [None, *S]:
+        for roles in COMBINAISONS:
+            u = _u(statut, roles)
+            menu = acces_du_menu(u, roles, False)
+            motif = motif_de_refus(u)
+            if "resident" in menu and motif is not None:
+                #  Refusé par son profil, et ouvert à l'Avis : le seul cas déclaré.
+                if not (motif == MOTIF_PROFIL and motif_de_refus(u, profil=False) is None):
+                    ecarts.append(("montré, refusé", statut, roles))
+            if motif is None and "resident" not in menu and "tous" in menu:
+                ecarts.append(("admis, caché", statut, roles))
+            if motif == MOTIF_PROFIL:
+                assert statut in (S.syndic, S.mandataire), (statut, roles)
+    assert not ecarts, sorted({(e[0], getattr(e[1], "value", None)) for e in ecarts})
+
+
+def test_un_compte_banni_garde_l_entree():
+    """Le bannissement ne cache pas l'entrée : l'écran dit le motif
+    (`UserRead.communaute_motif_refus`). Comportement d'avant #2993, gardé."""
+    for champs in (
+        {"communaute_interdit": True},
+        {"communaute_ban_jusqu_au": horloge.maintenant() + timedelta(days=10)},
+    ):
+        u = _u(S.locataire, ["résident"])
+        for nom, v in champs.items():
+            setattr(u, nom, v)
+        assert motif_de_refus(u) not in (None, MOTIF_PROFIL), "le compte doit être banni"
+        assert "resident" in acces_du_menu(u, ["résident"], False), champs
 
 
 # ── Concordance avec les tables du front ──────────────────────────────────────
@@ -181,6 +231,43 @@ def test_l_aidant_d_une_delegation_active_ouvre_les_delegations(session):
     lu = construire_user_read(a, session)
     assert lu.delegations_aidant, "la délégation doit être active : sinon le test ne prouve rien"
     assert "cs-ou-aidant" in lu.acces_menu
+
+
+def _delegation(session, mandant, aidant, statut):
+    d = Delegation(
+        mandant_id=mandant.id,
+        aidant_id=aidant.id,
+        cree_par_id=mandant.id,
+        statut=statut,
+        date_debut=horloge.aujourd_hui(),
+    )
+    session.add(d)
+    session.commit()
+    return d
+
+
+def test_l_aidant_designe_d_une_delegation_en_attente_ouvre_les_delegations(session):
+    """#3001 : le serveur laisse l'aidant désigné LIRE la délégation en attente et
+    l'ACCEPTER (`routers/delegations`) ; l'entrée « Délégations » s'y montre donc. Rien
+    de plus : il ne lit pas au titre du mandant tant qu'il n'a pas accepté."""
+    a = compte(session, prefixe="aidant", statut=S.locataire, role="résident")
+    m = compte(session, prefixe="mandant", role="propriétaire")
+    _delegation(session, m, a, StatutDelegation.en_attente)
+    #  Le serveur la lui sert, avec le geste « Accepter » : sinon le test ne prouve rien.
+    assert [d.peut_accepter for d in list_delegations(session=session, user=a)] == [True]
+    lu = construire_user_read(a, session)
+    assert lu.delegations_aidant == [], "en attente : l'héritage de lecture reste fermé"
+    assert "cs-ou-aidant" in lu.acces_menu
+    #  Le mandant n'y gagne rien.
+    assert "cs-ou-aidant" not in construire_user_read(m, session).acces_menu
+
+
+@pytest.mark.parametrize("statut", [StatutDelegation.revoquee, StatutDelegation.expiree])
+def test_une_delegation_terminee_n_ouvre_rien(session, statut):
+    a = compte(session, prefixe="aidant", statut=S.locataire, role="résident")
+    m = compte(session, prefixe="mandant", role="propriétaire")
+    _delegation(session, m, a, statut)
+    assert "cs-ou-aidant" not in construire_user_read(a, session).acces_menu
 
 
 # ── Les comptes que les e2e simulent (`front/e2e/acces-menu-servis.json`) ────

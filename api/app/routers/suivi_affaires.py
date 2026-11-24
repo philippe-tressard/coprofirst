@@ -45,6 +45,7 @@ from app.utils.points_conseil_etats import etat_par_defaut
 from app.utils.lecture_pastille.modele import Lecture
 from app.utils.lecture_pastille.objets import lecture_du_ticket
 from app.utils.perimetres.servi import AvecPerimetreLibelle
+from app.utils.en_tete_fichier import en_tete_fichier
 
 router = APIRouter(prefix="/suivi-affaires", tags=["suivi-affaires"])
 
@@ -224,5 +225,5 @@ def exporter_pdf(
     return Response(
         content=pdf,
         media_type="application/pdf",
-        headers={"Content-Disposition": f'attachment; filename="{nom}"'},
+        headers=en_tete_fichier(nom),
     )

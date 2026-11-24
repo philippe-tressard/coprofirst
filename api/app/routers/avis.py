@@ -58,6 +58,7 @@ from app.utils.destinataires import est_gestionnaire_du_site
 from app.utils.lecture import lire_objet
 from app.utils.liens import lien_element
 from app.utils.recuperer import ou_404, ou_rien
+from app.utils.en_tete_fichier import en_tete_fichier
 
 router = APIRouter(prefix="/avis", tags=["avis"])
 
@@ -135,7 +136,7 @@ def exporter_avis(
     nom = f"avis-coprofirst-{horloge.aujourd_hui().isoformat()}.json"
     return JSONResponse(
         {"genere_le": horloge.aujourd_hui().isoformat(), "avis": contenu},
-        headers={"Content-Disposition": f'attachment; filename="{nom}"'},
+        headers=en_tete_fichier(nom),
     )
 
 

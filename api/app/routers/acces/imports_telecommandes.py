@@ -13,7 +13,7 @@ from fastapi import APIRouter, Depends, File, Query, UploadFile
 from pydantic import BaseModel
 from sqlmodel import Session
 
-from app.auth.deps import require_admin, require_cs_or_admin
+from app.auth.deps import require_admin
 from app.database import get_session
 from app.models.core import (
     TelecommandeImport,
@@ -49,7 +49,7 @@ async def upload_import_excel(
     file: UploadFile = File(...),
     remplacer: bool = Query(False, description="Supprimer les imports en_attente avant ré-import"),
     session: Session = Depends(get_session),
-    _: Utilisateur = Depends(require_cs_or_admin),
+    _: Utilisateur = Depends(require_admin),
 ):
     """Upload un fichier Excel et importe les télécommandes dans la table de staging."""
     from app.utils.import_telecommandes import importer_depuis_bytes
@@ -62,7 +62,7 @@ async def upload_import_excel(
 def list_imports(
     statut: str = Query(None),
     session: Session = Depends(get_session),
-    _: Utilisateur = Depends(require_cs_or_admin),
+    _: Utilisateur = Depends(require_admin),
 ):
     """Liste les imports, optionnellement filtrés par statut."""
     return _lister_imports(TELECOMMANDE, statut, session)
@@ -71,7 +71,7 @@ def list_imports(
 @router.post("/admin/imports/auto-match")
 def auto_match_imports(
     session: Session = Depends(get_session),
-    _: Utilisateur = Depends(require_cs_or_admin),
+    _: Utilisateur = Depends(require_admin),
 ):
     """Apparie les imports en attente : leur lot, puis les comptes inscrits.
 
@@ -85,7 +85,7 @@ def auto_match_imports(
 @router.post("/admin/imports/rattacher")
 def rattacher_imports(
     session: Session = Depends(get_session),
-    _: Utilisateur = Depends(require_cs_or_admin),
+    _: Utilisateur = Depends(require_admin),
 ):
     """Le rattachement en masse : chaque ligne dont le lot est connu (#1194)."""
     return rattacher_les_reconnues(TELECOMMANDE, session)
@@ -96,7 +96,7 @@ def patch_import(
     import_id: int,
     body: PatchImportBody,
     session: Session = Depends(get_session),
-    _: Utilisateur = Depends(require_cs_or_admin),
+    _: Utilisateur = Depends(require_admin),
 ):
     """Met à jour les liaisons d'un import (utilisateurs, lot, possession).
     Fonctionne même si l'import est déjà résolu (correction après coup)."""
@@ -107,7 +107,7 @@ def patch_import(
 def resoudre_import(
     import_id: int,
     session: Session = Depends(get_session),
-    admin: Utilisateur = Depends(require_cs_or_admin),
+    admin: Utilisateur = Depends(require_admin),
 ):
     """Rattache la télécommande de cette ligne à son lot.
 
@@ -129,7 +129,7 @@ def ignorer_import(
     import_id: int,
     body: BaseModel = None,
     session: Session = Depends(get_session),
-    _: Utilisateur = Depends(require_cs_or_admin),
+    _: Utilisateur = Depends(require_admin),
 ):
     """Marque un import comme ignoré (accès non-résidentiel, doublon, etc.)."""
     return _ignorer_import(TelecommandeImport, import_id, session)
@@ -139,7 +139,7 @@ def ignorer_import(
 def remettre_en_attente_import(
     import_id: int,
     session: Session = Depends(get_session),
-    _: Utilisateur = Depends(require_cs_or_admin),
+    _: Utilisateur = Depends(require_admin),
 ):
     """Remet un import ignoré en statut 'en attente' pour traitement ultérieur."""
     return _remettre_en_attente_import(TelecommandeImport, import_id, session)
@@ -149,7 +149,7 @@ def remettre_en_attente_import(
 def refuser_telecommande_locataire(
     import_id: int,
     session: Session = Depends(get_session),
-    _: Utilisateur = Depends(require_cs_or_admin),
+    _: Utilisateur = Depends(require_admin),
 ):
     """Le locataire a refusé la télécommande — elle reste/revient chez le propriétaire.
 
@@ -171,7 +171,7 @@ def refuser_telecommande_locataire(
 @router.get("/admin/imports/stats")
 def stats_imports(
     session: Session = Depends(get_session),
-    _: Utilisateur = Depends(require_cs_or_admin),
+    _: Utilisateur = Depends(require_admin),
 ):
     """Statistiques synthétiques sur les imports."""
     lignes, stats = _stats_socle(TELECOMMANDE, session)

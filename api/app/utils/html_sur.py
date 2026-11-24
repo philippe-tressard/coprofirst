@@ -103,7 +103,7 @@ def html_riche(texte: str | None) -> Markup:
 def filtre_safe(valeur) -> Markup:
     """Le filtre `| safe` des courriels : il ASSAINIT, il ne fait plus confiance.
 
-    Les modèles vivent en base et se réécrivent depuis Admin → Emails : `| safe`
+    Les modèles vivent en base et se réécrivent depuis Admin › Présentation › Modèles e-mail : `| safe`
     peut y être écrit sur n'importe quelle variable. Redéfini ici, il ne peut
     plus laisser passer un HTML que personne n'a nettoyé. Une valeur déjà
     marquée sûre par le code (`html_riche`, un texte échappé) passe telle quelle.

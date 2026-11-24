@@ -45,6 +45,7 @@ from app.utils.lecture_pastille.vocabulaire import CS
 from app.utils.limiter import LIMITE_SESSION, limiter
 from app.utils.points_conseil_ou import ou_du_point
 from app.utils.recuperer import ou_404
+from app.utils.en_tete_fichier import en_tete_fichier
 from app.utils.stockage import stockage
 from app.utils.visibility import ticket_visible
 
@@ -233,7 +234,7 @@ def _reponse_pdf(contenu: bytes, nom: str) -> Response:
     return Response(
         content=contenu,
         media_type="application/pdf",
-        headers={"Content-Disposition": f'attachment; filename="{nom}"'},
+        headers=en_tete_fichier(nom),
     )
 
 
