@@ -74,6 +74,17 @@ updates:
       - dependency-name: sqlalchemy
         versions: [">=2.1.0"]
 
+  # ── Les outils Python de la CI — ajouté le 24/11/2026 (#2962) ───────────────
+  # `ruff`, `pip-audit`, `reuse` : épinglés une fois, dans ce dossier. Avant, dans
+  # des lignes de commande qu'aucun proposeur ne lisait.
+  - package-ecosystem: pip
+    directory: /scripts/ci/outils
+    target-branch: dev
+    schedule:
+      interval: monthly
+    commit-message:
+      prefix: "chore(deps)"
+
   # ── Frontend npm ───────────────────────────────────────────────────────────
   - package-ecosystem: npm
     directory: /front

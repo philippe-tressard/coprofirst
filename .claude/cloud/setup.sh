@@ -94,14 +94,13 @@ pip_installer() {
         || python3 -m pip install -q --break-system-packages --ignore-installed "$@" 2>/dev/null \
         || python3 -m pip install -q "$@"
 }
-#  `=` admis : un outil épinglé (`ruff==0.15.8`, #1048) n'était plus extrait du tout,
-#  donc plus installé ici — et `ruff format --check` ne tournait plus en session.
-OUTILS=$(sed -nE 's/.*pip install ([A-Za-z][A-Za-z0-9_.=-]*)[[:space:]]*$/\1/p' "$CI" | sort -u | tr '\n' ' ')
-if [ -z "$OUTILS" ]; then
-    signaler "aucun outil Python extrait de ci.yml"
+#  Les outils de la CI (`ruff`, `pip-audit`, `reuse`) s'épinglent dans UN fichier
+#  depuis #2962, celui que les workflows installent — plus extraits de `ci.yml`.
+OUTILS_CI="$DEPOT/scripts/ci/outils/requirements.txt"
+if [ ! -f "$OUTILS_CI" ]; then
+    signaler "outils Python de la CI introuvables ($OUTILS_CI)"
 else
-    # shellcheck disable=SC2086
-    pip_installer $OUTILS && echo "✓ outils Python : $OUTILS" || signaler "pip : échec sur $OUTILS"
+    pip_installer -r "$OUTILS_CI" && echo "✓ outils Python de la CI" || signaler "pip : échec sur $OUTILS_CI"
 fi
 #  `requirements-dev.txt` inclut la production et y ajoute pytest, épinglé : la CI
 #  l'installe ainsi depuis #1048, et l'extraction ci-dessus ne le voit plus.
