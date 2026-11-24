@@ -1,22 +1,27 @@
 #!/bin/bash
 # install-cloudflared.sh — installe et configure cloudflared sur le RPi5
-# Usage : bash install-cloudflared.sh <TOKEN>
+# Usage : sudo bash install-cloudflared.sh   (le jeton se colle à l'invite, sans écho)
 
 set -eu
 
-TOKEN="${1:-}"
+# shellcheck source=../lib/lib-jeton-tunnel.sh
+source "$(dirname "$0")/../lib/lib-jeton-tunnel.sh"
 
-if [ -z "$TOKEN" ]; then
-  echo "Usage: bash install-cloudflared.sh <TOKEN>"
-  echo "Le token se trouve dans Cloudflare Zero Trust > Networks > Tunnels > ton tunnel > Ajouter un connecteur :"
-  echo "c'est la longue chaîne eyJ… de la commande d'installation — PAS l'« ID du tunnel » (91d1afa9-…)."
+#  Le jeton ne passe JAMAIS en argument (claude-config#614, 23/11/2026) : il
+#  resterait dans l'historique de l'interpréteur et la trace de `sudo`. Il se colle
+#  à l'invite masquée de `lire_jeton_saisi`, comme pour la rotation.
+if [ $# -gt 0 ]; then
+  echo "REFUSÉ — le jeton ne se passe plus en argument : relancez sans rien après le script,"
+  echo "puis collez-le à l'invite. Une valeur déjà tapée en argument est à remplacer"
+  echo "(Cloudflare Zero Trust > le tunnel > rafraîchir le jeton), et l'historique à purger."
   exit 1
 fi
+echo "Le jeton se trouve dans Cloudflare Zero Trust > Networks > Tunnels > ton tunnel > Ajouter un connecteur :"
+echo "c'est la longue chaîne eyJ… de la commande d'installation — PAS l'« ID du tunnel » (91d1afa9-…)."
+TOKEN=$(lire_jeton_saisi)
 
 # L'identifiant du tunnel a déjà été collé à la place du jeton (25/09/2026, #1318).
 # La règle (et l'unité modèle) vit dans lib-jeton-tunnel.sh, partagée avec changer-jeton-tunnel.sh.
-# shellcheck source=../lib/lib-jeton-tunnel.sh
-source "$(dirname "$0")/../lib/lib-jeton-tunnel.sh"
 VERDICT=$(verdict_jeton "$TOKEN" "")
 if [ "$VERDICT" != "ok" ]; then
   echo "REFUSÉ — $(motif_refus "$VERDICT")"
