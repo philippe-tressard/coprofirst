@@ -20,6 +20,13 @@ eu à copier que l'adresse de la page voisine.
 | la lecture de l'URL | le **`load`** du `+page.ts` : `resoudreOnglet(pageId, url)` |
 | l'onglet dans l'écran | `export let data` → `$: onglet = data.onglet` — **jamais** un `let onglet` qu'on affecte |
 
+**Ce qu'annonce un lecteur d'écran (24/11/2026, #2943)** : un onglet étant une
+adresse, la rangée est une **navigation** — `<nav class="tabs" aria-label="…">` — et
+l'onglet ouvert porte `aria-current="page"` (`"true"` sur un onglet-bouton), posé par
+`Onglet.svelte` seul. Jamais `role="tablist"` : il promet des `role="tab"` et la
+navigation aux flèches, que des liens n'ont pas. Même règle au menu (`Nav.svelte`).
+🔒 `e2e/onglet-actif-annonce.spec.ts`.
+
 **La forme de l'adresse** : *plate quand l'onglet est un CONTENU* (`/annonces`,
 `/idees`, `/sondages`), *imbriquée quand il est une VUE* (`/tickets/kanban`,
 `/espace-cs/reporting`, `/mon-lot/location/archives`). `/kanban` seul ne dit pas de

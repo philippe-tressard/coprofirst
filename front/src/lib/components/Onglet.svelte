@@ -38,6 +38,11 @@
   - `href` absent → un `<button type="button">` : l'onglet bascule un panneau,
     et l'écran écoute `on:click`.
 
+  L'onglet actif se DIT, il ne se colore pas seulement (#2943, `standards/11` §2) :
+  `aria-current="page"` sur le lien (il désigne la page ouverte), `"true"` sur le
+  bouton. Une rangée d'onglets est une navigation — `<nav class="tabs">` —, jamais
+  un `role="tablist"` : ses enfants sont des liens, pas des `role="tab"`.
+
   `type="button"` n'est pas décoratif : dans un `<form>`, un `<button>` sans type
   vaut `submit` et enverrait le formulaire au premier clic.
 -->
@@ -65,6 +70,7 @@
 		class="tab-btn"
 		class:active={actif}
 		class:eteint
+		aria-current={actif ? 'page' : undefined}
 		title={eteint ? 'Service coupé — il s’active dans Services' : undefined}
 	>
 		<slot />{#if eteint}<span class="sr-only"> (service coupé)</span>{/if}
@@ -76,6 +82,7 @@
 		class="tab-btn"
 		class:active={actif}
 		class:eteint
+		aria-current={actif ? 'true' : undefined}
 		title={eteint ? 'Service coupé — il s’active dans Services' : undefined}
 		on:click
 	>
