@@ -9,6 +9,8 @@ from pydantic import BaseModel, NaiveDatetime
 from sqlmodel import Session, select
 
 from app.auth.deps import (
+    est_auteur,
+    est_moderateur,
     exiger_non_externe,
     get_current_user,
     peut_editer,
@@ -109,7 +111,9 @@ class IdeeRead(AssisteIASortie, AvecPerimetreLibelle):
     id: int
     titre: str
     description: str
-    auteur_id: Optional[int] = None  # compte supprimé (#1821)
+    #: Servi à l'auteur et à qui modère seulement, `None` sinon (et pour un compte
+    #: supprimé, #1821) : une idée ne dit pas son auteur (`utils/masquage`).
+    auteur_id: Optional[int] = None
     statut: str
     perimetre_cible: list[str] = []
     public_cible: list[str] = []
@@ -186,6 +190,7 @@ def _enrich(idees: list, user: Utilisateur, session: Session) -> list[dict]:
             archivee=est_archivable("idee", idee, seuil_jours=seuil_jours),
             reponses=reponses,
             nb_reponses=len(reponses),
+            auteur_id=idee.auteur_id if est_auteur(idee, user) or est_moderateur(user) else None,
             nouveau=est_nouveau(idee.cree_le),
             peut_modifier=peut_editer(idee, user),
             peut_supprimer=user.has_role(RoleUtilisateur.admin),

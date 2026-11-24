@@ -5,18 +5,32 @@ le geste (`/masquages`), chaque liste où il s'applique — annonces, réponses,
 suites et messages d'une affaire — et celle où il ne s'applique pas : une idée,
 dont l'auteur ne se dit pas. Le conseil syndical et l'administration voient
 tout, ne masquent pas et ne se masquent pas.
+
+On ne masque que l'auteur d'une publication SIGNÉE qu'on lit
+(`masquage.auteur_lu_par`) : sinon la route répond comme pour un compte absent, et
+ne nomme personne. Une idée ne sert son auteur qu'à lui-même et à qui modère.
 """
 
 from __future__ import annotations
 
+import ast
+
 import pytest
 from sqlmodel import Session
 
-from app.models.communaute import Idee, PetiteAnnonce, ReponseCommunaute
+from app.models.communaute import (
+    CommentaireSondage,
+    Idee,
+    PetiteAnnonce,
+    ReponseCommunaute,
+    Sondage,
+)
 from app.models.core import RoleUtilisateur
 from app.models.tickets import MessageTicket, TicketEvolution
 from app.utils import masquage
+from app.utils.limiter import LIMITE_PREFERENCE
 from tests.aides_base import compte
+from tests.aides_sources import modules_app
 from tests.aides_http import base_http, client_http
 from tests.aides_suivi import affaire_ouverte
 
@@ -30,6 +44,13 @@ def moteur():
 def _voisin(moteur, **champs) -> int:
     with Session(moteur) as s:
         return compte(s, prefixe="voisin", nom="Durand", prenom="Reine", **champs).id
+
+
+def _voisin_lu(moteur, **champs) -> int:
+    """Un voisin dont une annonce se lit de toute la résidence : son nom s'y affiche."""
+    voisin = _voisin(moteur, **champs)
+    _poser(moteur, PetiteAnnonce(titre="Annonce lue", description="…", auteur_id=voisin))
+    return voisin
 
 
 def _poser(moteur, *objets) -> list[int]:
@@ -51,7 +72,7 @@ def _titres(http, chemin: str, cle: str = "titre") -> set[str]:
 
 def test_masquer_lister_demasquer(moteur):
     http, _ = client_http(moteur, RoleUtilisateur.propriétaire)
-    voisin = _voisin(moteur)
+    voisin = _voisin_lu(moteur)
     r = http.post("/masquages", json={"auteur_id": voisin})
     assert r.status_code == 201, r.text
     assert r.json()["auteur"] == "Reine DURAND"
@@ -64,7 +85,8 @@ def test_masquer_lister_demasquer(moteur):
 
 def test_les_refus(moteur):
     http, moi = client_http(moteur, RoleUtilisateur.propriétaire)
-    cs = _voisin(moteur, roles_json="conseil_syndical")
+    #  Le motif « on ne masque pas le conseil » se dit depuis une publication VUE.
+    cs = _voisin_lu(moteur, roles_json="conseil_syndical")
     assert http.post("/masquages", json={"auteur_id": moi}).json()["detail"] == masquage.REFUS_SOI
     r = http.post("/masquages", json={"auteur_id": cs})
     assert (r.status_code, r.json()["detail"]) == (422, masquage.REFUS_MODERATEUR_CIBLE)
@@ -106,7 +128,7 @@ def test_une_idee_dont_l_auteur_ne_se_dit_pas_reste(moteur):
     """🔴 Une idée ne dit jamais son auteur : la retirer avec le reste révélerait
     qui l'a écrite. Elle reste, au fil comme dans sa liste."""
     http, _ = client_http(moteur, RoleUtilisateur.propriétaire)
-    voisin = _voisin(moteur)
+    voisin = _voisin_lu(moteur)
     _poser(moteur, Idee(titre="Idée du voisin", description="…", auteur_id=voisin))
     http.post("/masquages", json={"auteur_id": voisin})
     assert _titres(http, "/idees") == {"Idée du voisin"}
@@ -149,3 +171,115 @@ def test_un_masque_devenu_conseiller_redevient_visible(moteur):
         s.add(u)
         s.commit()
     assert _titres(http, "/annonces") == {"Annonce du voisin"}
+
+
+# ── On ne masque que l'auteur d'une publication signée qu'on lit ─────────────
+
+
+def _absent(http) -> dict:
+    r = http.post("/masquages", json={"auteur_id": 999_999})
+    assert r.status_code == 404, r.text
+    return r.json()
+
+
+def test_un_compte_dont_je_ne_lis_rien_repond_comme_un_compte_absent(moteur):
+    """Ni publication, ni seulement une idée (qui ne dit pas son auteur), ni une suite
+    d'une affaire que je ne lis pas : la réponse est celle d'un compte absent, et le
+    nom n'y est pas. Rien n'est posé."""
+    http, _ = client_http(moteur, RoleUtilisateur.propriétaire)
+    attendu = _absent(http)
+    muet = _voisin(moteur)
+    anonyme = _voisin(moteur)
+    _poser(moteur, Idee(titre="Idée", description="…", auteur_id=anonyme))
+    hors_de_vue = _voisin(moteur)
+    secrete = affaire_ouverte(moteur, "Litige privé", confidentiel=True)
+    _poser(
+        moteur,
+        TicketEvolution(
+            ticket_id=secrete, type="commentaire", contenu="Secret", auteur_id=hors_de_vue
+        ),
+    )
+    cs_jamais_lu = _voisin(moteur, roles_json="conseil_syndical")
+    for ident in (muet, anonyme, hors_de_vue, cs_jamais_lu):
+        r = http.post("/masquages", json={"auteur_id": ident})
+        assert (r.status_code, r.json()) == (404, attendu), ident
+        assert "DURAND" not in r.text
+    assert http.get("/masquages").json() == []
+
+
+def _publication_signee(moteur, quoi: str, auteur: int) -> None:
+    if quoi == "annonce":
+        _poser(moteur, PetiteAnnonce(titre="Vélo", description="…", auteur_id=auteur))
+    elif quoi == "reponse":
+        (idee,) = _poser(moteur, Idee(titre="Bancs", description="…"))
+        _poser(
+            moteur,
+            ReponseCommunaute(rubrique="idee", cible_id=idee, contenu="Oui", auteur_id=auteur),
+        )
+    elif quoi == "commentaire":
+        (sondage,) = _poser(moteur, Sondage(question="Peinture ?"))
+        _poser(moteur, CommentaireSondage(sondage_id=sondage, contenu="Non", auteur_id=auteur))
+    elif quoi == "suite":
+        affaire = affaire_ouverte(moteur)
+        _poser(
+            moteur,
+            TicketEvolution(ticket_id=affaire, type="commentaire", contenu="Vu", auteur_id=auteur),
+        )
+    else:
+        affaire = affaire_ouverte(moteur)
+        _poser(moteur, MessageTicket(ticket_id=affaire, contenu="Bonjour", auteur_id=auteur))
+
+
+@pytest.mark.parametrize("quoi", ["annonce", "reponse", "commentaire", "suite", "message"])
+def test_depuis_une_publication_signee_que_je_lis_le_masque_se_pose(moteur, quoi):
+    http, _ = client_http(moteur, RoleUtilisateur.propriétaire)
+    voisin = _voisin(moteur)
+    _publication_signee(moteur, quoi, voisin)
+    r = http.post("/masquages", json={"auteur_id": voisin})
+    assert (r.status_code, r.json().get("auteur")) == (201, "Reine DURAND"), r.text
+
+
+def test_les_publications_signees_sont_celles_que_le_masque_retire():
+    """Le registre de la question et les listes filtrées par `garder` se confrontent
+    dans les deux sens : une liste neuve qui masque, ou un type retiré du registre,
+    fait échouer ici."""
+    filtrent = {
+        m.rel.removeprefix("routers/")
+        for m in modules_app("routers", minimum=25)
+        if any(
+            isinstance(n, ast.Call) and ast.unparse(n.func) == "garder" for n in ast.walk(m.arbre)
+        )
+    }
+    #  Fichier qui filtre → ce qu'il filtre ; le fil ne fait que réunir les autres.
+    attendus = {
+        "annonces.py": PetiteAnnonce,
+        "reponses_communaute.py": ReponseCommunaute,
+        "sondages/crud.py": CommentaireSondage,
+        "tickets/evolutions.py": TicketEvolution,
+        "tickets/messages.py": MessageTicket,
+        "flux/__init__.py": None,
+    }
+    assert filtrent == set(attendus)
+    modeles = {m for m, _ in masquage.publications_signees()}
+    assert modeles == {m for m in attendus.values() if m is not None}
+
+
+def test_l_auteur_d_une_idee_ne_se_sert_qu_a_lui_et_a_qui_modere(moteur):
+    """Une idée ne dit pas son auteur : son identifiant ne se sert qu'à lui (le
+    drapeau « signaler » ne lui est pas tendu) et à qui modère."""
+    auteur, auteur_id = client_http(moteur, RoleUtilisateur.propriétaire)
+    autre, _ = client_http(moteur, RoleUtilisateur.propriétaire)
+    cs, _ = client_http(moteur, RoleUtilisateur.conseil_syndical)
+    _poser(moteur, Idee(titre="Bancs", description="…", auteur_id=auteur_id))
+    assert [i["auteur_id"] for i in autre.get("/idees").json()] == [None]
+    assert [i["auteur_id"] for i in auteur.get("/idees").json()] == [auteur_id]
+    assert [i["auteur_id"] for i in cs.get("/idees").json()] == [auteur_id]
+
+
+def test_le_geste_a_sa_limite_de_debit(moteur):
+    http, _ = client_http(moteur, RoleUtilisateur.propriétaire)
+    plafond = int(LIMITE_PREFERENCE.split("/")[0])
+    codes = [
+        http.post("/masquages", json={"auteur_id": 999_999}).status_code for _ in range(plafond + 1)
+    ]
+    assert codes[:plafond] == [404] * plafond and codes[-1] == 429, codes

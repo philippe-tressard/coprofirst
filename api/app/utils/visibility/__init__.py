@@ -77,6 +77,7 @@ from .fichiers import (
     Porteur,
     exiger_fichier_lisible,
     fichier_lisible,
+    message_lisible,
     porteurs_du_fichier,
 )
 from .defauts_affaire import (
@@ -138,6 +139,7 @@ __all__ = [
     "Porteur",
     "exiger_fichier_lisible",
     "fichier_lisible",
+    "message_lisible",
     "porteurs_du_fichier",
     "trace_lecture_par_defaut",
 ]

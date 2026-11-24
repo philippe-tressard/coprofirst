@@ -59,6 +59,13 @@ INTENTIONS = {
     "exiger_cle_maintenance": "LIMITE_CLE_PARTAGEE",
 }
 
+#: Hors des intentions et des modules d'authentification, les routes dont une limite est
+#: EXIGÉE (une constante quelconque), et pourquoi. Une entrée sans route échoue.
+ROUTES_LIMITEES_HORS_AUTH = {
+    ("routers/masquages.py", "masquer"): "elle répond sur un compte désigné par le client "
+    "(23/11/2026)",
+}
+
 #: Planchers du relevé (cas zéro) : le 23/11/2026, quatre routes éprouvaient un mot de
 #: passe et sept la clé partagée.
 PLANCHERS = {"verify_password": 4, "exiger_cle_maintenance": 7}
@@ -107,6 +114,7 @@ def _routes_auth() -> list[tuple[str, str]]:
 def portee(modules=None) -> dict[tuple[str, str], str | None]:
     """Chaque route relevée → la constante EXIGÉE (None : une constante quelconque)."""
     exigences: dict[tuple[str, str], str | None] = dict.fromkeys(_routes_auth())
+    exigences.update(dict.fromkeys(ROUTES_LIMITEES_HORS_AUTH))
     for cible, constante in INTENTIONS.items():
         for route in routes_qui_atteignent({cible}, modules=modules):
             exigences[route] = constante
@@ -210,3 +218,8 @@ def test_temoin_une_route_hors_d_auth_qui_eprouve_un_secret_est_relevee():
     assert fautes_de_limite(plafonnee, "modifier", "LIMITE_SECRET_EPROUVE", connues) == [
         "routers/forge.py::modifier : éprouve un secret — limite attendue `LIMITE_SECRET_EPROUVE`"
     ]
+
+
+def test_les_routes_declarees_hors_auth_existent():
+    for rel, nom in ROUTES_LIMITEES_HORS_AUTH:
+        _route(module_app(rel), nom)  # lève si la route a disparu
