@@ -34,8 +34,11 @@ Venu de `CLAUDE.md` (#2709). Chaque règle nomme sa porte et le test qui la tien
   `test_horloge_utc_naif.py`, exception déclarée : `registre/versions.py`, bibliothèque
   standard seulement).
 - **Archiver, pas une colonne `actif`** : les objets qui quittent les listes se déclarent dans
-  `utils/archivage.REGLES`. 🔒 `test_archivage_colonnes_booleennes.py` (toute colonne
-  `actif`/`active`/`archivee` couverte par `REGLES` ou déclarée référentiel, #1568).
+  `utils/archivage.REGLES`. 🔒 `test_archivage_colonnes_booleennes.py`, qui lit
+  `SQLModel.metadata` (colonnes héritées comprises) : tout booléen `actif`/`active`/`archivee`/
+  `archive_manuel`/`enabled`/`masque`/`visible` couvert par `REGLES` ou déclaré référentiel,
+  toute date d'archivage (`archive_le`…) nommée par `REGLES` ou déclarée dans
+  `ARCHIVAGES_HORS_REGLES` — l'avis s'y retire par un geste daté (#1568, #2954).
 - Deux tables qui portent le même objet (Vigik/Télécommande et leurs stagings) : une classe de
   base non-table (`models/acces._ObjetAcces`). Un import xlsx déclare son `_traiter_rows` et
   nomme ses importeurs par `import_xlsx.importeurs`.
@@ -95,9 +98,10 @@ Un nom de classe déjà pris dans `app/` se qualifie de son module dans `openapi
 l'app iOS génère (`app__schemas_communaute__MessageRead`) : un schéma neuf prend un nom neuf.
 
 ### Nommage, contrat, tables publiées
-- Français, tables, routes et tags compris. Les noms anglais existants sont **figés
-  définitivement** (`TABLES_FIGEES`, `ROUTES_FIGEES` de `test_nommage_francais.py`, décision du
-  30/10/2026, #2314) ; un nom figé renommé sort de la liste. Tag OpenAPI en minuscules à
+- Français, tables, colonnes, routes et tags compris. Les noms anglais existants sont **figés
+  définitivement** (`TABLES_FIGEES`, `COLONNES_FIGEES`, `ROUTES_FIGEES` de
+  `test_nommage_francais.py`, décision du 30/10/2026, #2314 ; colonnes depuis #2954) ; un nom
+  figé renommé sort de la liste. Tag OpenAPI en minuscules à
   tirets (`carnet-entretien`), préfixe de routeur au pluriel (#1056).
 - **Le contrat de l'API ne recule pas sans annonce** (#2456) : l'app iOS génère son client
   depuis `openapi.json`, joint à chaque release (`scripts/ci/lib-contrat-version.sh`), jamais
