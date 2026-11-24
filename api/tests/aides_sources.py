@@ -67,6 +67,23 @@ def _tous() -> tuple[Module, ...]:
     return modules
 
 
+@functools.lru_cache(maxsize=None)
+def sources_api(dossier: str, *, minimum: int = 1) -> tuple[tuple[pathlib.Path, str], ...]:
+    """Les fichiers Python d'un AUTRE dossier de `api/` (`"alembic"`, `"tests"`) : chemin
+    et texte, triés, sans `__pycache__`. Même cas zéro que `modules_app` (#2959)."""
+    racine = APP.parent / dossier
+    trouves = tuple(
+        (p, p.read_text(encoding="utf-8"))
+        for p in sorted(racine.rglob("*.py"))
+        if "__pycache__" not in p.parts
+    )
+    assert len(trouves) >= minimum, (
+        f"`api/{dossier}/` ne rend que {len(trouves)} fichier(s) (plancher {minimum}) : "
+        "le dossier a bougé, et le contrôle qui le lit ne mesure plus rien."
+    )
+    return trouves
+
+
 def modules_app(sous_dossier: str = "", *, minimum: int = 1) -> tuple[Module, ...]:
     """Les modules de `app/` — ou d'un sous-dossier (`"routers"`, `"utils/email"`).
 

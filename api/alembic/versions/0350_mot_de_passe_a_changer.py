@@ -11,14 +11,14 @@ touché — seule une installation neuve la voit vraie, sur ses deux comptes ini
 et l'image précédente l'ignore (#1757).
 
 Revision ID: 0350
-Revises: 0347
+Revises: 0349
 """
 
 import sqlalchemy as sa
 from alembic import op
 
 revision = "0350"
-down_revision = "0347"
+down_revision = "0349"
 branch_labels = None
 depends_on = None
 
