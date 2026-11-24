@@ -18,7 +18,7 @@ from datetime import datetime, timedelta
 from app.utils import horloge
 from typing import Optional
 
-from fastapi import APIRouter, Depends, Header
+from fastapi import APIRouter, Depends, Header, Request
 from pydantic import BaseModel
 from sqlmodel import Session, select
 
@@ -34,6 +34,7 @@ from .exploitation import _purger_anciens_rapports
 from app.utils.conservation_copie import accuser_copies
 from app.utils.maintenance import purger
 from app.utils.recuperer import present_ou_404
+from app.utils.limiter import LIMITE_CLE_PARTAGEE, limiter
 
 router = APIRouter()
 
@@ -68,7 +69,9 @@ class RapportMaintenance(BaseModel):
 
 
 @router.get("/maintenance/dernier-rapport")
+@limiter.limit(LIMITE_CLE_PARTAGEE)
 def maintenance_dernier_rapport(
+    request: Request,
     tache: str = "maintenance",
     x_maintenance_key: Optional[str] = Header(default=None, alias="x-maintenance-key"),
     session: Session = Depends(get_session),
@@ -167,7 +170,9 @@ def enregistrer_rapport(session: Session, body: RapportMaintenance) -> Historiqu
 
 
 @router.post("/maintenance/rapport", status_code=201)
+@limiter.limit(LIMITE_CLE_PARTAGEE)
 def maintenance_rapport(
+    request: Request,
     body: RapportMaintenance,
     x_maintenance_key: Optional[str] = Header(default=None, alias="x-maintenance-key"),
     session: Session = Depends(get_session),
@@ -191,7 +196,9 @@ class BattementTache(BaseModel):
 
 
 @router.post("/maintenance/battement")
+@limiter.limit(LIMITE_CLE_PARTAGEE)
 def maintenance_battement(
+    request: Request,
     body: BattementTache,
     x_maintenance_key: Optional[str] = Header(default=None, alias="x-maintenance-key"),
     session: Session = Depends(get_session),
@@ -253,7 +260,9 @@ class BailMiseAJour(BaseModel):
 
 
 @router.post("/maintenance/bail", response_model=BailMiseAJour)
+@limiter.limit(LIMITE_CLE_PARTAGEE)
 def maintenance_bail(
+    request: Request,
     x_maintenance_key: Optional[str] = Header(default=None, alias="x-maintenance-key"),
 ):
     """Le bail renouvelé, et la version qu'il fait installer (R5 #1881).
@@ -279,7 +288,9 @@ class CopiesArchivesAffaires(BaseModel):
 
 
 @router.post("/maintenance/archives-affaires/copiees")
+@limiter.limit(LIMITE_CLE_PARTAGEE)
 def maintenance_archives_affaires_copiees(
+    request: Request,
     body: CopiesArchivesAffaires,
     x_maintenance_key: Optional[str] = Header(default=None, alias="x-maintenance-key"),
     session: Session = Depends(get_session),
@@ -296,7 +307,9 @@ def maintenance_archives_affaires_copiees(
 
 
 @router.post("/maintenance/purges")
+@limiter.limit(LIMITE_CLE_PARTAGEE)
 def maintenance_purges(
+    request: Request,
     x_maintenance_key: Optional[str] = Header(default=None, alias="x-maintenance-key"),
 ):
     """Les purges hebdomadaires, exécutées DANS ce process (#1232).
@@ -311,7 +324,9 @@ def maintenance_purges(
 
 
 @router.get("/emails/echecs-recents")
+@limiter.limit(LIMITE_CLE_PARTAGEE)
 def emails_echecs_recents(
+    request: Request,
     jours: int = 7,
     x_maintenance_key: Optional[str] = Header(default=None, alias="x-maintenance-key"),
     session: Session = Depends(get_session),

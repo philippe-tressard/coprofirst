@@ -272,6 +272,7 @@ def test_une_adresse_prise_entre_temps_n_est_pas_volee(session, courriels):
 def _admin_modifie(session, admin, cible, **champs):
     taches = BackgroundTasks()
     lu = admin_utilisateurs.modifier_utilisateur(
+        requete_de_test("/admin/utilisateurs/1", "PATCH"),
         cible.id,
         body=admin_utilisateurs.AdminUserUpdate(**champs),
         background_tasks=taches,

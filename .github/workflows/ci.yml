@@ -612,6 +612,9 @@ jobs:
           python scripts/ci/plafonds_jobs.py --selftest
           python scripts/ci/arbre_deja_vert.py --selftest
           bash scripts/ci/apt-ci.sh --selftest
+          # La lecture des routes de `caddy adapt` (claude-config#604) ; le binaire lui-même
+          # est joué par le workflow « Caddyfile », docker n'étant pas au poste.
+          python scripts/ci/caddy_variantes.py --selftest
           python scripts/poste/verifier_migrations_texte.py --selftest
           bash scripts/lib/lib-role.sh              --selftest
           bash scripts/lib/lib-applicatifs.sh       --selftest

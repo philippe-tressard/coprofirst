@@ -15,11 +15,13 @@ from fastapi import BackgroundTasks, HTTPException
 
 from app.routers.admin.utilisateurs import AdminUserUpdate, modifier_utilisateur
 from tests.aides_badges import _compte
+from tests.conftest import requete_de_test
 
 
 def _corriger(session, cible, **champs):
     admin = _compte(session, "Admin")
     return modifier_utilisateur(
+        requete_de_test("/admin/utilisateurs/1", "PATCH"),
         cible.id,
         AdminUserUpdate(**champs),
         background_tasks=BackgroundTasks(),
