@@ -92,7 +92,8 @@ function codeDe(chemin, texte) {
 	//  Les lignes hors script sont blanchies : les numéros de ligne restent justes.
 	let code = '';
 	let fin = 0;
-	for (const m of texte.matchAll(/<script\b[^>]*>([\s\S]*?)<\/script\s*>/g)) {
+	//  `i` : une balise s'écrit aussi `<SCRIPT>` (CodeQL js/bad-tag-filter, #3075).
+	for (const m of texte.matchAll(/<script\b[^>]*>([\s\S]*?)<\/script\s*>/gi)) {
 		const debut = m.index + m[0].indexOf('>') + 1;
 		code += texte.slice(fin, debut).replace(/[^\n]/g, ' ') + m[1];
 		fin = debut + m[1].length;
