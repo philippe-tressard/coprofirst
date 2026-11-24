@@ -21,7 +21,7 @@ from app.database import get_session
 from app.models.core import ConfigSite, Utilisateur
 from app.utils.config_site import ecrire_cle
 from app.utils.fichiers import enregistrer_fichier_recu, lire_fichier_recu
-from app.utils.images import carre_png
+from app.utils.images import IMAGE_ILLISIBLE, carre_png
 from app.utils.stockage import stockage
 from app.utils.logo import (
     CLES,
@@ -68,7 +68,7 @@ def televerser_logo(
         carre_png(octets, 32)
     except ValueError:
         stockage().supprimer(f"{DOSSIER}/{nom}")
-        raise HTTPException(400, "Impossible de lire l'image.")
+        raise HTTPException(400, IMAGE_ILLISIBLE)
     ancien = fichier_logo(session, variante)
     ecrire_cle(session, cle, nom)
     session.commit()

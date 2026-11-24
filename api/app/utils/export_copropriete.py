@@ -65,6 +65,7 @@ from sqlalchemy import (
 from sqlmodel import SQLModel
 
 from app.utils import horloge
+from app.utils.revision_base import LIRE_REVISION
 import app.models.core  # noqa: F401 — enregistre TOUTES les tables (#1157)
 
 FORMAT = 1
@@ -163,7 +164,7 @@ def lire(connexion, metadata=None) -> tuple[dict[str, list[dict]], list[str], st
     ignorees = sorted(presentes - connues)
     revision = None
     if "alembic_version" in presentes:
-        revision = connexion.execute(text("SELECT version_num FROM alembic_version")).scalar()
+        revision = connexion.execute(text(LIRE_REVISION)).scalar()
     return contenu, ignorees, revision
 
 

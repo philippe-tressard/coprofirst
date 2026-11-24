@@ -39,6 +39,8 @@ from alembic.script import ScriptDirectory
 from sqlalchemy import create_engine, inspect, text
 
 ALEMBIC_INI = Path(__file__).resolve().parents[2] / "alembic.ini"
+#: La lecture de la révision posée — ici, et dans l'archive d'une copropriété (#2949).
+LIRE_REVISION = "SELECT version_num FROM alembic_version"
 
 
 def config_alembic(ini: Path = ALEMBIC_INI) -> Config:
@@ -78,9 +80,7 @@ def _lire(url: str | None, ini: Path) -> tuple[set[str], set[str], list[str] | N
         with moteur.connect() as connexion:
             if "alembic_version" not in inspect(connexion).get_table_names():
                 return connues, set(script.get_heads()), None
-            posees = [
-                r[0] for r in connexion.execute(text("SELECT version_num FROM alembic_version"))
-            ]
+            posees = [r[0] for r in connexion.execute(text(LIRE_REVISION))]
     finally:
         moteur.dispose()
     return connues, set(script.get_heads()), posees

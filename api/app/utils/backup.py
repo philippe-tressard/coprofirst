@@ -133,7 +133,7 @@ def horodatage_archive(
 NOM_EXPORT_BASE = "base-export.tar.gz"
 
 
-def _integrite() -> str:
+def verdict_integrite() -> str:
     """Le verdict du moteur, « ok » si sain — une erreur de lecture n'est pas « ok »."""
     try:
         with contexte.moteur().connect() as connexion:
@@ -204,7 +204,7 @@ def run_backup(history_id: int | None = None):
             filename = nom_archive(horloge.maintenant(), qui=qui_nomme_l_archive(session))
             dest = os.path.join(dossier_archives, filename)
 
-            verdict = _integrite()
+            verdict = verdict_integrite()
             if verdict != "ok":
                 _annuler(session, entry, verdict)
                 return

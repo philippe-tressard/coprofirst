@@ -197,6 +197,9 @@ class FamilleFichier:
     extensions: tuple[str, ...]
 
 
+#: Le type d'un classeur Excel (.xlsx), reçu ou servi (#2949).
+TYPE_XLSX = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+
 _TYPES_IMAGE = {
     "image/jpeg": ".jpg",
     "image/png": ".png",
@@ -220,7 +223,7 @@ _TYPES_DOCUMENT = {
     "application/msword": ".doc",
     "application/vnd.openxmlformats-officedocument.wordprocessingml.document": ".docx",
     "application/vnd.ms-excel": ".xls",
-    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": ".xlsx",
+    TYPE_XLSX: ".xlsx",
     #  Texte brut accepté le 16/08/2026 : l'écran le proposait, le serveur le
     #  refusait en 400. `.zip` n'est PAS accepté et ne doit pas l'être — une
     #  archive transporte un contenu arbitraire que rien n'inspecte, et le
@@ -229,7 +232,7 @@ _TYPES_DOCUMENT = {
 }
 
 _TYPES_TABLEUR = {
-    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": ".xlsx",
+    TYPE_XLSX: ".xlsx",
     "application/vnd.ms-excel": ".xls",
 }
 

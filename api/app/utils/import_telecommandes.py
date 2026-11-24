@@ -28,6 +28,7 @@ from sqlmodel import Session, select
 from app.utils.import_xlsx import (  # ré-export de `normaliser`
     NOMS_NON_RESIDENTS,
     importeurs,
+    note_hors_residents,
     normaliser,
     purger_staging,
 )
@@ -79,7 +80,7 @@ def _traiter_rows(rows: list, session: Session, remplacer: bool) -> dict:
                 nom_loc_raw,
                 reference_raw,
                 statut=StatutImport.ignore,
-                notes_admin=f"Ignoré automatiquement (hors résidents) — ligne Excel {i}",
+                notes_admin=note_hors_residents(i),
             )
             continue
 

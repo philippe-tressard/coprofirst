@@ -47,16 +47,18 @@ from app.utils.etat_descriptif_application import (
     ouvrir_lecture_ia,
     poser,
 )
-from app.utils.etat_descriptif_ia import USAGE_LECTURE_ETAT_DESCRIPTIF, remplir_en_tache_de_fond
-from app.utils.fichiers import lire_tableur_recu
+from app.utils.etat_descriptif_ia import (
+    AUCUN_REGLEMENT,
+    USAGE_LECTURE_ETAT_DESCRIPTIF,
+    remplir_en_tache_de_fond,
+)
+from app.utils.fichiers import TYPE_XLSX, lire_tableur_recu
 from app.utils.import_xlsx import feuille_du_classeur, lignes_du_classeur
 from app.utils.libelles_lot import libelle_type_lot
 from app.utils.recuperer import ou_404
 from app.utils.en_tete_fichier import en_tete_fichier
 
 router = APIRouter()
-
-_TYPE_XLSX = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
 
 
 class LigneLue(Ligne):
@@ -189,7 +191,7 @@ def gabarit_etat_descriptif(_: Utilisateur = Depends(require_cs_or_admin)):
     tampon.seek(0)
     return StreamingResponse(
         tampon,
-        media_type=_TYPE_XLSX,
+        media_type=TYPE_XLSX,
         headers=en_tete_fichier("etat-descriptif.xlsx"),
     )
 
@@ -263,7 +265,7 @@ def lire_le_reglement(
             400, "L'assistant n'est pas activé pour cette lecture (Admin › Assistant IA)."
         )
     if assembler(session) is None:
-        raise HTTPException(400, "Aucun règlement n'est versé (Ma résidence › Règlement).")
+        raise HTTPException(400, AUCUN_REGLEMENT)
     #  La limite d'appels se dit AVANT d'ouvrir la lecture : la tâche la verrait
     #  aussi (`demander`), mais l'écran aurait remplacé ce qui attendait pour rien.
     refus = llm_limites.refus_avant_envoi(session, USAGE_LECTURE_ETAT_DESCRIPTIF, user.id)

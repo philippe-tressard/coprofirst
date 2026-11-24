@@ -67,7 +67,9 @@ def test_un_export_qui_ne_se_restaure_pas_fait_echouer_la_sauvegarde(sauvegarde,
 
 
 def test_une_base_abimee_n_est_pas_sauvegardee(sauvegarde, monkeypatch):
-    monkeypatch.setattr(backup, "_integrite", lambda: "2 page(s) en échec de somme de contrôle")
+    monkeypatch.setattr(
+        backup, "verdict_integrite", lambda: "2 page(s) en échec de somme de contrôle"
+    )
     backup.run_backup()
     assert _derniere().statut == StatutSauvegarde.echouee
     assert not backup.archives(sauvegarde), "aucune archive d'une base abîmée"

@@ -55,6 +55,14 @@ Traitement = Callable[[list, Session, bool], dict]
 
 _ERREUR_OPENPYXL = "openpyxl n'est pas installé. Ajouter au requirements.txt."
 
+#: Ce que fait la case « remplacer » des imports de badges (télécommandes, Vigik, #2949).
+REMPLACER_EN_ATTENTE = "Supprimer les imports en_attente avant ré-import"
+
+
+def note_hors_residents(ligne: int) -> str:
+    """La note d'une ligne mise de côté parce qu'elle nomme un `NOMS_NON_RESIDENTS` (#2949)."""
+    return f"Ignoré automatiquement (hors résidents) — ligne Excel {ligne}"
+
 
 def normaliser(s: Optional[str]) -> str:
     """Normalise une chaîne : majuscules, sans accents, espaces normalisés.

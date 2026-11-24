@@ -121,6 +121,10 @@ def peut_changer_prestataires(ticket: Any, user: Utilisateur) -> bool:
     )
 
 
+#: Le refus de `categorie_permise`, à la création comme à la correction (#2949).
+CATEGORIE_RESERVEE = "Cette catégorie est réservée au conseil syndical"
+
+
 def categorie_permise(categorie: Any, user: Utilisateur) -> bool:
     """Ce compte peut-il poser cette catégorie (création, correction) ? 403 sinon."""
     return est_moderateur(user) or not categorie_reservee(categorie)

@@ -58,7 +58,12 @@ Les titres et numéros de section sont ceux de toujours : un renvoi se lit au so
 - **Un module s'importe seul** (#2241) : `test_imports_sans_cycle.py` ; un cycle se coupe par
   un import dans la fonction qui s'en sert.
 - **Clones Python** (#1564) : `scripts/ci/clones_python.py` (jscpd épinglé) échoue dans les
-  deux sens — un clone ajouté, ou un retiré sans baisser `PLAFOND_CLONES`.
+  deux sens — un clone ajouté, ou un retiré sans baisser `PLAFOND_CLONES`. Sous jscpd,
+  `test_copies_de_code_api.py` (#2949) : une phrase de plus de 25 caractères écrite dans deux
+  modules de `app/` est une règle recopiée — une constante au module de la notion, sa porte dans
+  `MESSAGES` de `test_messages_source_unique.py` —, sinon une homonymie déclarée avec sa raison
+  (`HOMONYMES`, qui ne fait que baisser) ; deux fonctions au corps identique (empreinte d'AST,
+  dès trois instructions) échouent (`COPIES_ADMISES` vide).
 - Un contrôle front « une notion, une source » s'écrit sur `front/scripts/lib-source-unique.mjs`
   (cas zéro, témoin, exceptions déclarées) (#779).
 - Un test sauté sur le poste (`@besoin_weasyprint`) est NOMMÉ par le rejeu (#1734) : seule la

@@ -24,7 +24,7 @@ from app.utils.quand import exiger_description
 from app.utils.suivi_actualite import normaliser_suivi, poser_etat_saisi
 
 from app.auth.appartenance import exiger_objet_autorise
-from app.auth.gestes_affaire import categorie_permise
+from app.auth.gestes_affaire import CATEGORIE_RESERVEE, categorie_permise
 from app.auth.deps import (
     exiger_non_externe,
     get_current_user,
@@ -138,7 +138,7 @@ def create_ticket(
     #  la retomber en « panne » publierait sous une autre catégorie que celle choisie.
     #  La règle est celle que la grille de l'app lit (`gestes_affaire`, #2508).
     if not categorie_permise(body.categorie, user):
-        raise HTTPException(403, "Cette catégorie est réservée au conseil syndical")
+        raise HTTPException(403, CATEGORIE_RESERVEE)
     #  Même règle que pour une actualité, et au même endroit (#1092).
     exiger_description(body.description, debut=body.debut)
     bug = est_bug(body.categorie)
