@@ -437,9 +437,9 @@ app.include_router(fichiers_commune.router)  # 404 hors d'une installation commu
 #  La racine du stockage (`utils/stockage`, #1748) est créée au démarrage, jamais
 #  par un chemin figé : un `mkdir` absolu rendait `app.main` inimportable hors
 #  conteneur (tests/test_demarrage.py).
-from app.utils.stockage import stockage as _stockage  # noqa: E402
+from app.utils.stockage import creer_les_racines  # noqa: E402
 
-_stockage().racine.mkdir(parents=True, exist_ok=True)
+creer_les_racines()  # chaque copropriété servie, commune comprise (#3108)
 
 
 @app.get("/health", tags=["system"])
