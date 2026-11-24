@@ -28,7 +28,7 @@ from tests.aides_caddy import blocs_handle, caddyfile
 from tests.aides_base import compte
 from tests.aides_commune_reelle import HOTES, installation_commune_reelle, sous
 
-CLE = "photos/temoin.txt"
+CLE = "fichiers/temoin.txt"  # un dossier que le code écrit (claude-config#637)
 
 
 def _administrateur(nom: str, s) -> tuple[str, int]:
@@ -90,7 +90,12 @@ def test_sans_session_rien_n_est_servi(fichiers):
 
 @pytest.mark.parametrize(
     "cle",
-    ["prive/pv.txt", "annonces-hall/a.pdf", "../b/photos/temoin.txt", "%2e%2e/b/photos/temoin.txt"],
+    [
+        "prive/pv.txt",
+        "annonces-hall/a.pdf",
+        "../b/fichiers/temoin.txt",
+        "%2e%2e/b/fichiers/temoin.txt",
+    ],
 )
 def test_ni_les_dossiers_jamais_servis_ni_une_sortie_de_la_racine(fichiers, cle):
     jeton, _ = fichiers["temoins"]["a"]

@@ -21,6 +21,15 @@ d'une affaire réservée était plus ouvert que l'affaire.
    encore enregistré) ; sans auteur connu (fichier reçu avant #2154, compte
    supprimé), le conseil et l'administration.
 
+## Un dossier que le code n'écrit pas : refusé à tous (claude-config#637)
+
+Arbitrage du 23/11/2026, délégué par Philippe au coordinateur des sessions :
+avant toute règle, le premier segment de la clé est un dossier SERVI
+(`DOSSIERS_SERVIS` : les pièces jointes de `photos.DOSSIERS_DES_PIECES_JOINTES`
+et `TOUTE_SESSION`), sinon la clé est refusée — la racine du volume comprise. La
+règle 4 se repliait sur le conseil pour n'importe quelle clé. Relevé en lecture
+seule le 24/11/2026 : chaque dossier présent en production est connu.
+
 Un fichier cité seulement dans un HTML riche n'a pas de porteur ici : l'éditeur
 n'insère aucune image (`RichEditor`, sans extension Image), et une citation forgée
 par l'API retombe sur la règle 4 — le sens fermé.
@@ -47,7 +56,7 @@ from app.models.core import Utilisateur
 from app.models.evenement import Evenement, EvenementEvolution
 from app.models.fichiers_recus import FichierRecu
 from app.models.tickets import MessageTicket, Ticket, TicketEvolution
-from app.utils.photos import parse_photos
+from app.utils.photos import DOSSIERS_DES_PIECES_JOINTES, parse_photos
 from app.utils.recuperer import present_ou_404
 from app.utils.stockage import JAMAIS_SERVIS, PREFIXE_URL
 from app.utils.visibility.objets import annonce_visible, evenement_visible, ticket_visible
@@ -58,6 +67,11 @@ TOUTE_SESSION = {
     "residence": "la photo de la résidence, celle de l'accueil de chacun",
     "logo": "le logo, servi sans session par /config/logo.png",
 }
+
+#: Les seuls dossiers servis en direct : tout autre premier segment est refusé.
+#: Dérivés, jamais recopiés (🔒 `test_acces_fichiers_porteur.py` exige que chaque
+#: dossier qu'un téléversement écrit y figure).
+DOSSIERS_SERVIS = frozenset(DOSSIERS_DES_PIECES_JOINTES | TOUTE_SESSION.keys())
 
 
 def _ticket(session: Session, user: Utilisateur, ticket: Ticket) -> bool:
@@ -145,8 +159,8 @@ def porteurs_du_fichier(session: Session, cle: str) -> list[tuple[Porteur, objec
 
 def fichier_lisible(session: Session, user: Utilisateur, cle: str) -> bool:
     """Cet utilisateur peut-il lire le fichier `cle` (`fichiers/<nom>.jpg`) ?"""
-    dossier = cle.split("/", 1)[0]
-    if dossier in JAMAIS_SERVIS:
+    dossier, separe, _ = cle.partition("/")
+    if dossier in JAMAIS_SERVIS or not separe or dossier not in DOSSIERS_SERVIS:
         return False
     if dossier in TOUTE_SESSION:
         return True
