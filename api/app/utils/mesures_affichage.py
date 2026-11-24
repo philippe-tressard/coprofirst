@@ -32,22 +32,20 @@ pas : le client du site n'en envoie pas.
 
 ## Durée
 
-`CONSERVATION_JOURS`, purgées par l'agrégation quotidienne — ce que dit la
+`erreurs_navigateur.CONSERVATION_JOURS` — celle des erreurs, pas une seconde
+valeur —, purgées par l'agrégation quotidienne (par
+`erreurs_navigateur.purger_releves_du_navigateur`) — ce que dit la
 politique de confidentialité (`seed/contenus_legaux.TELEMETRIE_PERFORMANCE`).
 """
 
 import math
 from collections import defaultdict
-from datetime import date, datetime, timedelta
+from datetime import date, datetime
 
-from sqlmodel import Session, delete, select
+from sqlmodel import Session, select
 
 from app.models.telemetrie import MesureAffichage
 from app.utils import horloge
-
-#  `CONSERVATION_JOURS` : celle des erreurs, et pas une seconde valeur — la
-#  politique de confidentialité et le tableau de bord (`_depuis`) les disent ensemble.
-from app.utils.erreurs_navigateur import CONSERVATION_JOURS
 
 #: L'action d'une mesure. ⚠️ Tenue à la main avec `ACTION_MESURE` de
 #: `front/src/lib/telemetry.ts` : le front et l'API ne partagent aucun fichier.
@@ -132,10 +130,3 @@ def synthese_mesures(session: Session, depuis: date) -> dict:
         "pages": pages[:PAGES_AFFICHEES],
     }
 
-
-def purger_mesures(session: Session, aujourd_hui: date) -> int:
-    """Retire les mesures de plus de `CONSERVATION_JOURS` ; rend leur nombre."""
-    limite = (aujourd_hui - timedelta(days=CONSERVATION_JOURS)).isoformat()
-    resultat = session.exec(delete(MesureAffichage).where(MesureAffichage.jour < limite))
-    session.commit()
-    return resultat.rowcount

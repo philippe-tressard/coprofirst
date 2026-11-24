@@ -37,7 +37,7 @@ ouvert : `total` compte donc des onglets touchés, pas des répétitions.
 from datetime import date, datetime, timedelta
 
 from sqlalchemy import func
-from sqlmodel import Session, delete, select
+from sqlmodel import Session, SQLModel, delete, select
 
 from app.models.telemetrie import ErreurNavigateur
 from app.utils import horloge
@@ -108,9 +108,15 @@ def synthese_erreurs(session: Session, depuis: date) -> list[dict]:
     ]
 
 
-def purger_erreurs(session: Session, aujourd_hui: date) -> int:
-    """Retire les compteurs de plus de `CONSERVATION_JOURS` ; rend leur nombre."""
+def purger_releves_du_navigateur(session: Session, modele: type[SQLModel], aujourd_hui: date) -> int:
+    """Retire les lignes de plus de `CONSERVATION_JOURS` d'un relevé ; rend leur nombre.
+
+    Une règle pour les trois relevés du navigateur — erreurs (`ErreurNavigateur`),
+    durées d'affichage (`MesureAffichage`), gestes de formulaire
+    (`GesteFormulaire`) : même durée, même colonne `jour` (« AAAA-MM-JJ »). Elle
+    s'écrivait trois fois, au modèle près (#2949).
+    """
     limite = (aujourd_hui - timedelta(days=CONSERVATION_JOURS)).isoformat()
-    resultat = session.exec(delete(ErreurNavigateur).where(ErreurNavigateur.jour < limite))
+    resultat = session.exec(delete(modele).where(modele.jour < limite))
     session.commit()
     return resultat.rowcount
