@@ -60,6 +60,12 @@ CONSTANTES: dict[str, Constante] = {
         "LONGUEUR_MIN_MOT_DE_PASSE",
         "le nombre de caractères qu'un mot de passe doit atteindre (#2755)",
     ),
+    "motifMotDePasseAChanger": Constante(
+        "app.auth.mot_de_passe_a_changer",
+        "MOTIF",
+        "le `detail.code` du 403 qu'un compte au mot de passe temporaire reçoit partout "
+        "sauf `GET /auth/me` et `POST /auth/change-password` : mener au changement (#3019)",
+    ),
     "motifImage": Constante(
         "app.utils.fichiers",
         "_EXTENSIONS_IMAGE",

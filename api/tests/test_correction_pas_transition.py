@@ -26,43 +26,23 @@ from __future__ import annotations
 import json
 import uuid
 
-import pytest
 from fastapi import BackgroundTasks
-from sqlmodel import Session, SQLModel, select
+from sqlmodel import Session, select
 
 from app.database import engine
 from app.models.core import (
-    RoleUtilisateur,
     Ticket,
     TicketEvolution,
-    Utilisateur,
 )
 from app.routers.tickets.mise_a_jour import update_ticket
 from app.schemas import TicketUpdate
-from tests.aides_base import compte
+from tests.aides_fil import cs  # noqa: F401 — fixture importée par son nom (#2950)
 
 #  🔴 La purge passe par le code de PRODUCTION : supprimer une ligne sans ce
 #  qui la référence est ce que les clés étrangères refusent (#546).
 from tests.aides_purge import purger_ligne
 
 PREFIXE_CORRECTION = "Correction"
-
-
-@pytest.fixture()
-def cs() -> Utilisateur:
-    """Un membre du conseil syndical, seul habilité à corriger l'état."""
-    SQLModel.metadata.create_all(engine)
-    with Session(engine) as session:
-        membre = compte(
-            session,
-            prefixe="cs",
-            prenom="Camille",
-            nom="Sorel",
-            role=RoleUtilisateur.conseil_syndical,
-        )
-        yield membre
-        purger_ligne(session, Utilisateur, membre.id)
-        session.commit()
 
 
 # ── Publications — retirées le 23/09/2026 ─────────────────────────────────────

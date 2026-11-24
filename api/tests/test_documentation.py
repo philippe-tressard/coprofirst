@@ -150,8 +150,10 @@ def test_ancrage_du_controle_p3_reste_valide():
     import json
 
     nom = json.loads((_RACINE / "front" / "package.json").read_text(encoding="utf-8"))["name"]
-    skill = (_RACINE / ".claude" / "skills" / "mep-precheck" / "SKILL.md").read_text(
-        encoding="utf-8"
+    #  La skill ET ses annexes (#2910) : le post-check, où vit P3, est en annexe.
+    skill = "\n".join(
+        f.read_text(encoding="utf-8")
+        for f in sorted((_RACINE / ".claude" / "skills" / "mep-precheck").glob("*.md"))
     )
 
     assert f'"{nom}"' in skill, (

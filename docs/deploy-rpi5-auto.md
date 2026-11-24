@@ -20,8 +20,9 @@
 
 ## Les trois faits à ne pas oublier
 
-- **Fusionner vers `main` n'est pas déployer.** `auto-deploy.sh` fait le `git pull`
-  puis le build ; la MEP n'est faite qu'à la ligne `Déployé: <sha>` dans
+- **Fusionner vers `main` n'est pas déployer.** `auto-deploy.sh` aligne le code et
+  tire les images de la CI (les construire sur le nœud n'est qu'un secours, qui
+  alerte) ; la MEP n'est faite qu'à la ligne `Déployé: <sha>` dans
   `/var/log/hostachy-deploy.log` **sur l'actif**.
 - **Reprise en main** : `sudo bash scripts/exploitation/MaJ-Hostachy.sh`, sur le RPi
   **actif** uniquement (le script bloque sur le standby, et pose le verrou de

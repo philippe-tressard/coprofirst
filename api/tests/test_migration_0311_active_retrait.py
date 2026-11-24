@@ -9,21 +9,12 @@ retour arrière la rend avec son défaut.
 from __future__ import annotations
 
 import sqlalchemy as sa
-from alembic.migration import MigrationContext
-from alembic.operations import Operations
 from sqlmodel import Session
 
 from app.models.core import ConfigSauvegarde
 from tests import aides_migrations
 from tests.aides_base import moteur_de_test
-
-
-def _jouer(moteur, pas) -> None:
-    """Un pas de migration dans sa transaction, sur CE moteur (un appel de
-    `moteur_de_test()` ouvre un schéma neuf : la base d'un test n'est qu'à un moteur)."""
-    with moteur.begin() as conn:
-        with Operations.context(MigrationContext.configure(conn)):
-            pas()
+from tests.aides_migrations import jouer_pas
 
 
 def _colonnes(moteur) -> dict[str, dict]:
@@ -39,15 +30,15 @@ def test_la_colonne_part_la_table_sert_toujours_et_le_retour_la_rend():
     assert "active" in _colonnes(moteur), "cas zéro : la colonne de la production est là"
 
     migration = aides_migrations.charger_migration("0311")
-    _jouer(moteur, migration.upgrade)
-    _jouer(moteur, migration.upgrade)  # idempotente : un redémarrage la rejoue
+    jouer_pas(moteur, migration.upgrade)
+    jouer_pas(moteur, migration.upgrade)  # idempotente : un redémarrage la rejoue
     assert "active" not in _colonnes(moteur), "la colonne n'a pas été retirée"
 
     with Session(moteur) as session:
         session.add(ConfigSauvegarde(heure_execution=4))
         session.commit()
 
-    _jouer(moteur, migration.downgrade)
+    jouer_pas(moteur, migration.downgrade)
     revenue = _colonnes(moteur)["active"]
     assert revenue["nullable"] is False and revenue["default"] == "true"
     moteur.dispose()
@@ -57,5 +48,5 @@ def test_la_migration_ne_touche_pas_une_base_neuve():
     """Une base neuve n'a pas la colonne : rien à retirer, et rien ne lève."""
     moteur = moteur_de_test()
     migration = aides_migrations.charger_migration("0311")
-    _jouer(moteur, migration.upgrade)
+    jouer_pas(moteur, migration.upgrade)
     assert "active" not in _colonnes(moteur)

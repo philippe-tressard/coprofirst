@@ -35,7 +35,12 @@ def test_le_module_de_la_regle_se_lit_sans_l_application():
 def test_droits_au_plus_juste_et_le_constat_par_defaut():
     flux = _yaml(WORKFLOW)
     assert flux["permissions"] == {}
-    assert flux["jobs"]["purger"]["permissions"] == {"contents": "write", "packages": "write"}
+    #  `issues: write` : l'alerte d'échec de son dernier pas (#2988).
+    assert flux["jobs"]["purger"]["permissions"] == {
+        "contents": "write",
+        "packages": "write",
+        "issues": "write",
+    }
     texte = WORKFLOW.read_text(encoding="utf-8")
     assert "bash scripts/ci/purge-paquets.sh" in texte
     #  À la main : le constat, sauf demande explicite ; la nuit : la suppression.

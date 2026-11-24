@@ -42,7 +42,8 @@ nocturne efface la base et les fichiers.
    **sans** `MODE_DEMO` : une installation ordinaire, avec son administrateur
    initial.
 2. **S'inscrire au registre** avec le compte **opérateur** (`operateur@localhost`) :
-   *Administration › Maintenance › Inscription au registre*. L'inscription,
+   *Administration › Exploitation › Installation*, carte *Inscription au
+   registre*. L'inscription,
    rangée dans le volume `app_data`, survit aux remises à zéro ; l'opérateur, lui,
    est recréé chaque nuit — avec le mot de passe de `DEMO_OPERATEUR_MOT_DE_PASSE`
    s'il est posé.

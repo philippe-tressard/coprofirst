@@ -48,7 +48,7 @@ async def upload_import_vigik_excel(
     file: UploadFile = File(...),
     remplacer: bool = Query(False, description="Supprimer les imports en_attente avant ré-import"),
     session: Session = Depends(get_session),
-    _: Utilisateur = Depends(require_cs_or_admin),
+    _: Utilisateur = Depends(require_admin),
 ):
     """Upload un fichier Excel et importe les vigiks dans la table de staging."""
     from app.utils.import_vigiks import importer_depuis_bytes
@@ -60,7 +60,7 @@ async def upload_import_vigik_excel(
 @router.get("/admin/imports-vigik/stats")
 def stats_imports_vigik(
     session: Session = Depends(get_session),
-    _: Utilisateur = Depends(require_cs_or_admin),
+    _: Utilisateur = Depends(require_admin),
 ):
     """Statistiques synthétiques sur les imports vigik."""
     lignes, stats = _stats_socle(VIGIK, session)
@@ -73,7 +73,7 @@ def stats_imports_vigik(
 def list_imports_vigik(
     statut: str = Query(None),
     session: Session = Depends(get_session),
-    _: Utilisateur = Depends(require_cs_or_admin),
+    _: Utilisateur = Depends(require_admin),
 ):
     """Liste les imports vigik, optionnellement filtrés par statut."""
     return _lister_imports(VIGIK, statut, session)
@@ -82,6 +82,8 @@ def list_imports_vigik(
 @router.get("/admin/imports-lots")
 def lots_a_choisir(
     session: Session = Depends(get_session),
+    #  Le CONSEIL aussi : l'Espace CS (`BadgesCopropriete`) choisit un lot dans cette
+    #  liste. Les imports eux-mêmes sont réservés à l'administrateur (#3012).
     _: Utilisateur = Depends(require_cs_or_admin),
 ):
     """Les lots, pour choisir celui d'une ligne d'import — les DEUX écrans (#1194).
@@ -110,7 +112,7 @@ def lots_a_choisir(
 @router.post("/admin/imports-vigik/auto-match")
 def auto_match_imports_vigik(
     session: Session = Depends(get_session),
-    _: Utilisateur = Depends(require_cs_or_admin),
+    _: Utilisateur = Depends(require_admin),
 ):
     """Apparie les imports vigik en attente : leur lot, puis les comptes inscrits."""
     return socle_imports.auto_match(VIGIK, session)
@@ -119,7 +121,7 @@ def auto_match_imports_vigik(
 @router.post("/admin/imports-vigik/rattacher")
 def rattacher_imports_vigik(
     session: Session = Depends(get_session),
-    _: Utilisateur = Depends(require_cs_or_admin),
+    _: Utilisateur = Depends(require_admin),
 ):
     """Le rattachement en masse : chaque ligne dont le lot est connu (#1194)."""
     return rattacher_les_reconnues(VIGIK, session)
@@ -130,7 +132,7 @@ def patch_import_vigik(
     import_id: int,
     body: PatchImportBody,
     session: Session = Depends(get_session),
-    _: Utilisateur = Depends(require_cs_or_admin),
+    _: Utilisateur = Depends(require_admin),
 ):
     """Met à jour les liaisons d'un import vigik.
     Fonctionne même si l'import est déjà résolu (correction après coup)."""
@@ -141,7 +143,7 @@ def patch_import_vigik(
 def resoudre_import_vigik(
     import_id: int,
     session: Session = Depends(get_session),
-    admin: Utilisateur = Depends(require_cs_or_admin),
+    admin: Utilisateur = Depends(require_admin),
 ):
     """Rattache le badge de cette ligne à son lot. Ses porteurs s'en déduisent —
     les copropriétaires du lot, conjoint compris (`utils/porteurs_acces`)."""
@@ -152,7 +154,7 @@ def resoudre_import_vigik(
 def remettre_en_attente_import_vigik(
     import_id: int,
     session: Session = Depends(get_session),
-    _: Utilisateur = Depends(require_cs_or_admin),
+    _: Utilisateur = Depends(require_admin),
 ):
     """Remet un import vigik ignoré en 'en attente' — absent jusqu'à #576."""
     return _remettre_en_attente_import(VigikImport, import_id, session)
@@ -162,7 +164,7 @@ def remettre_en_attente_import_vigik(
 def ignorer_import_vigik(
     import_id: int,
     session: Session = Depends(get_session),
-    _: Utilisateur = Depends(require_cs_or_admin),
+    _: Utilisateur = Depends(require_admin),
 ):
     """Marque un import vigik comme ignoré."""
     return _ignorer_import(VigikImport, import_id, session)

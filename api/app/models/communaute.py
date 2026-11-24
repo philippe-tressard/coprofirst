@@ -137,7 +137,7 @@ class PetiteAnnonce(AssisteIAMixin, table=True):
     #  Le prix en euros, en FLOTTANT : la colonne d'avant #3011, encore écrite et lue
     #  pendant l'expansion. On ne la lit ni ne l'écrit en direct : `utils/prix_annonce`.
     prix: Optional[float] = None
-    #  Le prix en centimes entiers (socle 06 §7, migration 0348) — la colonne qui reste.
+    #  Le prix en centimes entiers (socle 06 §7, migration 0351) — la colonne qui reste.
     prix_centimes: Optional[int] = None
     negotiable: bool = False
     photos_json: str = Field(default="[]")  # JSON array of up to 5 URLs

@@ -25,6 +25,7 @@ from __future__ import annotations
 import ast
 import functools
 import pathlib
+import re
 from dataclasses import dataclass
 
 APP = pathlib.Path(__file__).resolve().parents[1] / "app"
@@ -66,6 +67,23 @@ def _tous() -> tuple[Module, ...]:
     return modules
 
 
+@functools.lru_cache(maxsize=None)
+def sources_api(dossier: str, *, minimum: int = 1) -> tuple[tuple[pathlib.Path, str], ...]:
+    """Les fichiers Python d'un AUTRE dossier de `api/` (`"alembic"`, `"tests"`) : chemin
+    et texte, triés, sans `__pycache__`. Même cas zéro que `modules_app` (#2959)."""
+    racine = APP.parent / dossier
+    trouves = tuple(
+        (p, p.read_text(encoding="utf-8"))
+        for p in sorted(racine.rglob("*.py"))
+        if "__pycache__" not in p.parts
+    )
+    assert len(trouves) >= minimum, (
+        f"`api/{dossier}/` ne rend que {len(trouves)} fichier(s) (plancher {minimum}) : "
+        "le dossier a bougé, et le contrôle qui le lit ne mesure plus rien."
+    )
+    return trouves
+
+
 def modules_app(sous_dossier: str = "", *, minimum: int = 1) -> tuple[Module, ...]:
     """Les modules de `app/` — ou d'un sous-dossier (`"routers"`, `"utils/email"`).
 
@@ -102,6 +120,21 @@ def docstrings(arbre: ast.AST) -> set[int]:
             ):
                 vus.add(id(corps[0].value))
     return vus
+
+
+def empreinte_du_corps(fonction: ast.FunctionDef | ast.AsyncFunctionDef) -> str:
+    """Le corps d'une fonction, docstring écartée, en texte comparable (`ast.dump`).
+
+    Deux fonctions au même corps ont la même empreinte, quels que soient leur nom,
+    leur docstring et leur mise en forme : c'est ce que comparent les contrôles de
+    copies entre fichiers de tests et entre migrations (#2950).
+    """
+    exclues = docstrings(fonction)
+    return "|".join(
+        ast.dump(instruction)
+        for instruction in fonction.body
+        if not (isinstance(instruction, ast.Expr) and id(instruction.value) in exclues)
+    )
 
 
 def chaines_du_code(arbre: ast.AST) -> list[ast.Constant]:
@@ -202,6 +235,17 @@ def operations_montees(routeur, prefixe: str = ""):
                 yield methode, prefixe + route.path, route
 
 
+def chemin_concret(gabarit: str) -> str:
+    """Le gabarit d'une route, chaque paramètre de chemin valant 1 — ce qu'un balayage appelle."""
+    return re.sub(r"\{[^}]+\}", "1", gabarit)
+
+
+def resout(dependant, appels) -> bool:
+    """FastAPI résout-il l'une de ces dépendances pour cette route, à quelque niveau que ce
+    soit ? Reconnue par l'IDENTITÉ de l'objet, jamais par son nom (`route.dependant`)."""
+    return any(d.call in appels or resout(d, appels) for d in dependant.dependencies)
+
+
 # ─── Un relevé d'appels, écrit une fois (#2912) ──────────────────────────────────
 #
 # « Cette fonction ATTEINT-elle une porte ? » — elle l'appelle, ou appelle une
@@ -287,6 +331,11 @@ def atteint(rel: str, nom: str, cibles: set[str], *, modules=None, profondeur: i
         vus.add((rel, nom))
         module, fonction = _fonction(index, rel, nom)
         if fonction is None:
+            #  Un nom RÉEXPORTÉ (`from app.utils.llm_connexion import tester` dans
+            #  `utils/llm.py`) : on suit l'import jusqu'à la définition (#3005).
+            source = _portee_des_noms(module, index).get(nom) if module else None
+            if source and source != (rel, nom) and source[1]:
+                a_voir.append((*source, niveau))
             continue
         portee = _portee_des_noms(module, index)
         for appel in (n for n in ast.walk(fonction) if isinstance(n, ast.Call)):

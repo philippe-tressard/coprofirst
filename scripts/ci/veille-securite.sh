@@ -43,7 +43,7 @@ VEILLE_TITRE="Veille sécurité nocturne"
 VEILLE_ETIQUETTE="securite"
 #: Les étapes attendues, dans l'ordre du rapport. Une étape ABSENTE du dossier
 #: (jamais lancée, workflow interrompu) est un rouge : INCONNU n'est pas vert.
-VEILLE_ETAPES="python node trivy-api trivy-front trivy-caddy trivy-whatsapp-bridge attestation"
+VEILLE_ETAPES="python node node-bridge trivy-api trivy-front trivy-caddy trivy-whatsapp-bridge attestation"
 #: Combien de lignes de la sortie d'une étape rouge entrent dans l'issue.
 VEILLE_LIGNES=40
 
@@ -139,7 +139,9 @@ if [ "${1:-}" = "--selftest" ]; then
     t "des rouges, issue ouverte → commenter" commenter "$(veille_decision "python" 42)"
     corps=$(veille_corps "$d" 0123456789abcdef)
     t "corps : le commit, court" 1 "$(grep -c '`main` à 0123456789ab$' <<< "$corps")"
-    t "corps : une ligne par étape" 7 "$(grep -c '^| [a-z-]* | ' <<< "$corps")"
+    #  Dérivé de VEILLE_ETAPES, jamais recopié : une étape ajoutée (`node-bridge`,
+    #  #2962) ne fait pas mentir le compte.
+    t "corps : une ligne par étape" "$(wc -w <<< "$VEILLE_ETAPES" | tr -d ' ')" "$(grep -c '^| [a-z-]* | ' <<< "$corps")"
     t "corps : le rouge et son code" 1 "$(grep -c '^| python | ❌ rouge (code 1) |$' <<< "$corps")"
     t "corps : l'étape absente n'est pas verte" 1 "$(grep -c '^| trivy-caddy | ⚠️ non lancée' <<< "$corps")"
     t "corps : la sortie du rouge, repliée" 1 "$(grep -c '^PYSEC-2026-1 cryptography$' <<< "$corps")"

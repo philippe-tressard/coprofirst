@@ -41,7 +41,7 @@ from __future__ import annotations
 
 import pytest
 from fastapi import HTTPException
-from sqlmodel import Session, SQLModel
+from sqlmodel import Session
 
 from app.database import engine
 from app.models.core import (
@@ -54,61 +54,22 @@ from app.models.core import (
 from app.routers.annonces import AnnonceCreate, create_annonce
 from app.routers.idees import IdeeCreate, IdeeUpdate, create_idee, update_idee
 from app.utils.visibility import annonce_visible, idee_visible
-from tests.aides_base import compte
-from tests.aides_purge import purger_ligne
-
-
-def _utilisateur(role: RoleUtilisateur, statut: StatutUtilisateur, prenom: str) -> Utilisateur:
-    SQLModel.metadata.create_all(engine)
-    with Session(engine) as session:
-        return compte(
-            session,
-            prefixe=prenom.lower(),
-            prenom=prenom,
-            nom="Aulnay",
-            role=role,
-            statut=statut,
-        )
-
-
-def _supprimer(modele: type, ident: int) -> None:
-    with Session(engine) as session:
-        purger_ligne(session, modele, ident)
-        session.commit()
-
-
-def _sans_perimetre(modele: type, ident: int) -> None:
-    """N'éprouver que le public cible — cf. `test_communaute_public_cible`."""
-    with Session(engine) as session:
-        objet = session.get(modele, ident)
-        objet.perimetre_cible = "[]"
-        session.add(objet)
-        session.commit()
-
-
-@pytest.fixture()
-def locataire() -> Utilisateur:
-    u = _utilisateur(RoleUtilisateur.résident, StatutUtilisateur.locataire, "Lou")
-    yield u
-    _supprimer(Utilisateur, u.id)
+from tests.aides_communaute_cible import (  # noqa: F401 — fixtures importées par leur nom
+    conseiller,
+    locataire,
+    sans_perimetre,
+    supprimer,
+    utilisateur_du_public,
+)
 
 
 @pytest.fixture()
 def voisin() -> Utilisateur:
-    u = _utilisateur(
+    u = utilisateur_du_public(
         RoleUtilisateur.propriétaire, StatutUtilisateur.copropriétaire_résident, "Valentin"
     )
     yield u
-    _supprimer(Utilisateur, u.id)
-
-
-@pytest.fixture()
-def conseiller() -> Utilisateur:
-    u = _utilisateur(
-        RoleUtilisateur.conseil_syndical, StatutUtilisateur.copropriétaire_résident, "Charlie"
-    )
-    yield u
-    _supprimer(Utilisateur, u.id)
+    supprimer(Utilisateur, u.id)
 
 
 # ── 🔴 L'auteur voit toujours ce qu'il a écrit ────────────────────────────────
@@ -129,12 +90,12 @@ def test_l_auteur_voit_son_idee_meme_s_il_l_a_ciblee_ailleurs(locataire):
             user=locataire,
         )
         idee_id = idee.id
-    _sans_perimetre(Idee, idee_id)
+    sans_perimetre(Idee, idee_id)
     try:
         with Session(engine) as session:
             assert idee_visible(session.get(Idee, idee_id), locataire) is True
     finally:
-        _supprimer(Idee, idee_id)
+        supprimer(Idee, idee_id)
 
 
 def test_l_auteur_voit_son_annonce_meme_s_il_l_a_ciblee_ailleurs(locataire):
@@ -149,12 +110,12 @@ def test_l_auteur_voit_son_annonce_meme_s_il_l_a_ciblee_ailleurs(locataire):
             session=session,
             user=locataire,
         )
-    _sans_perimetre(PetiteAnnonce, cree["id"])
+    sans_perimetre(PetiteAnnonce, cree["id"])
     try:
         with Session(engine) as session:
             assert annonce_visible(session.get(PetiteAnnonce, cree["id"]), locataire) is True
     finally:
-        _supprimer(PetiteAnnonce, cree["id"])
+        supprimer(PetiteAnnonce, cree["id"])
 
 
 def test_un_tiers_hors_public_ne_voit_toujours_pas(locataire, voisin):
@@ -174,12 +135,12 @@ def test_un_tiers_hors_public_ne_voit_toujours_pas(locataire, voisin):
             user=locataire,
         )
         idee_id = idee.id
-    _sans_perimetre(Idee, idee_id)
+    sans_perimetre(Idee, idee_id)
     try:
         with Session(engine) as session:
             assert idee_visible(session.get(Idee, idee_id), voisin) is False
     finally:
-        _supprimer(Idee, idee_id)
+        supprimer(Idee, idee_id)
 
 
 # ── Corriger une idée ─────────────────────────────────────────────────────────
@@ -200,7 +161,7 @@ def _idee_de(auteur: Utilisateur) -> int:
             user=auteur,
         )
         idee_id = idee.id
-    _sans_perimetre(Idee, idee_id)
+    sans_perimetre(Idee, idee_id)
     return idee_id
 
 
@@ -218,7 +179,7 @@ def test_l_auteur_corrige_son_idee(locataire):
             #  La description n'était pas envoyée : elle ne doit pas être effacée.
             assert maj["description"] == "<p>Dans le hall.</p>"
     finally:
-        _supprimer(Idee, idee_id)
+        supprimer(Idee, idee_id)
 
 
 def test_un_voisin_ne_corrige_pas_l_idee_d_un_autre(locataire, voisin):
@@ -229,7 +190,7 @@ def test_un_voisin_ne_corrige_pas_l_idee_d_un_autre(locataire, voisin):
                 update_idee(idee_id, IdeeUpdate(titre="Détourné"), session=session, user=voisin)
             assert refus.value.status_code == 403
     finally:
-        _supprimer(Idee, idee_id)
+        supprimer(Idee, idee_id)
 
 
 def test_le_conseil_syndical_ne_reecrit_pas_une_idee(locataire, conseiller):
@@ -248,7 +209,7 @@ def test_le_conseil_syndical_ne_reecrit_pas_une_idee(locataire, conseiller):
                 )
             assert refus.value.status_code == 403
     finally:
-        _supprimer(Idee, idee_id)
+        supprimer(Idee, idee_id)
 
 
 def test_un_titre_vide_est_refuse(locataire):
@@ -260,7 +221,7 @@ def test_un_titre_vide_est_refuse(locataire):
                 update_idee(idee_id, IdeeUpdate(titre="   "), session=session, user=locataire)
             assert refus.value.status_code == 422
     finally:
-        _supprimer(Idee, idee_id)
+        supprimer(Idee, idee_id)
 
 
 def test_corriger_ne_repousse_pas_l_archivage(locataire):
@@ -284,7 +245,7 @@ def test_corriger_ne_repousse_pas_l_archivage(locataire):
         with Session(engine) as session:
             assert session.get(Idee, idee_id).statut_change_le == avant
     finally:
-        _supprimer(Idee, idee_id)
+        supprimer(Idee, idee_id)
 
 
 def test_idee_inexistante_rend_404(locataire):

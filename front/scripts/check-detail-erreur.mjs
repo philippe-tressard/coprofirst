@@ -49,6 +49,12 @@ const CAS = [
 	],
 	[[{ msg: 'a' }, { msg: 'Assertion error, b' }], 'A ; B'],
 	[{ inattendu: true }, REPLI],
+	//  Un refus à motif (#3019) : la phrase, jamais l'objet.
+	[
+		{ code: 'mot_de_passe_a_changer', message: 'Votre mot de passe est temporaire.' },
+		'Votre mot de passe est temporaire.',
+	],
+	[{ code: 'mot_de_passe_a_changer', message: '' }, REPLI],
 	[[], REPLI],
 	[undefined, REPLI],
 	['', REPLI],

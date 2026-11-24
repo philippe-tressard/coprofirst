@@ -19,8 +19,10 @@ que les lignes encore vides.
 import sqlalchemy as sa
 from alembic import op
 
-revision = "0348"
-down_revision = "0347"
+from app.utils.colonnes_presentes import colonnes_presentes
+
+revision = "0351"
+down_revision = "0350"
 branch_labels = None
 depends_on = None
 
@@ -28,12 +30,8 @@ TABLE = "petite_annonce"  # identifiant, constante du fichier
 COLONNE = "prix_centimes"
 
 
-def _colonnes() -> set[str]:
-    return {c["name"] for c in sa.inspect(op.get_bind()).get_columns(TABLE)}
-
-
 def upgrade():
-    if COLONNE not in _colonnes():
+    if COLONNE not in colonnes_presentes(op.get_bind(), TABLE):
         op.add_column(TABLE, sa.Column(COLONNE, sa.Integer, nullable=True))
     op.execute(
         sa.text(
@@ -44,5 +42,5 @@ def upgrade():
 
 
 def downgrade():
-    if COLONNE in _colonnes():
+    if COLONNE in colonnes_presentes(op.get_bind(), TABLE):
         op.drop_column(TABLE, COLONNE)
