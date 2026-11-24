@@ -20,18 +20,12 @@ import asyncio
 
 import pytest
 
-from app.models.core import ConfigSite
 from app.utils.llm import config_llm, demander
 from app.utils.llm_fournisseurs import FOURNISSEURS
 from app.utils.llm_usages import EFFORTS, decrire, valeur_effort
+from tests.aides_reglages import poser_reglages
 
 USAGE = "description"
-
-
-def _poser(session, **valeurs):
-    for cle, valeur in valeurs.items():
-        session.add(ConfigSite(cle=cle, valeur=valeur))
-    session.commit()
 
 
 # ── 1. La table ─────────────────────────────────────────────────────────────
@@ -51,7 +45,7 @@ def test_l_ecran_recoit_la_table_et_la_cle_de_chaque_usage():
 
 
 def test_la_configuration_lit_l_effort_de_l_usage(session):
-    _poser(session, **{f"llm_{USAGE}_effort": "faible"})
+    poser_reglages(session, **{f"llm_{USAGE}_effort": "faible"})
     assert config_llm(session, USAGE).effort == "low"
     assert config_llm(session, "synthese_contrat").effort == ""
 
@@ -159,7 +153,7 @@ def test_l_appel_repart_sans_l_effort_quand_le_modele_le_refuse(monkeypatch, ses
             return reponses.pop(0)
 
     monkeypatch.setattr(httpx, "AsyncClient", _Client)
-    _poser(
+    poser_reglages(
         session,
         llm_actif="1",
         llm_fournisseur="openai",

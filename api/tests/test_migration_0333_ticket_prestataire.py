@@ -10,8 +10,6 @@ la migration n'écrit rien de plus ; défaite, la table part.
 from __future__ import annotations
 
 import sqlalchemy as sa
-from alembic.migration import MigrationContext
-from alembic.operations import Operations
 from sqlmodel import Session
 
 from app.models.core import Ticket
@@ -19,12 +17,7 @@ from app.models.prestataires import Prestataire
 
 from tests import aides_migrations
 from tests.aides_base import moteur_de_test
-
-
-def _jouer(moteur, pas) -> None:
-    with moteur.begin() as conn:
-        with Operations.context(MigrationContext.configure(conn)):
-            pas()
+from tests.aides_migrations import jouer_pas
 
 
 def _lignes(moteur) -> list[tuple]:
@@ -54,11 +47,11 @@ def test_la_reprise_pose_une_ligne_de_rang_0_par_affaire_qui_a_un_intervenant():
     assert "ticket_prestataire" not in sa.inspect(moteur).get_table_names(), "cas zéro"
 
     migration = aides_migrations.charger_migration("0333")
-    _jouer(moteur, migration.upgrade)
+    jouer_pas(moteur, migration.upgrade)
     assert _lignes(moteur) == [("TK-1", prestataire, 0)]
-    _jouer(moteur, migration.upgrade)  # un redémarrage la rejoue : rien de plus
+    jouer_pas(moteur, migration.upgrade)  # un redémarrage la rejoue : rien de plus
     assert _lignes(moteur) == [("TK-1", prestataire, 0)]
 
-    _jouer(moteur, migration.downgrade)
+    jouer_pas(moteur, migration.downgrade)
     assert "ticket_prestataire" not in sa.inspect(moteur).get_table_names()
     moteur.dispose()

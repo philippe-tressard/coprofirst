@@ -18,8 +18,10 @@ copie. Une exception se DÉCLARE (`EXCEPTIONS`, avec sa raison) et le contrôle
 
 from __future__ import annotations
 
+import ast
 import pathlib
 import re
+from collections import defaultdict
 from dataclasses import dataclass
 
 TESTS = pathlib.Path(__file__).resolve().parent
@@ -208,3 +210,90 @@ def test_chaque_exception_sert_encore():
         if not par_nom[nom].regex.search(textes.get(fichier, ""))
     ]
     assert not mortes, f"exception(s) qui ne servent plus — à retirer : {mortes}"
+
+
+# ── Les copies que les motifs ne nomment pas : l'empreinte du corps (#2950) ─────
+#
+#  `MOTIFS` refuse onze copies CONNUES. L'audit du 23/11/2026 en a trouvé dix
+#  autres par empreinte d'arbre syntaxique — la fixture `cs` d'`aides_fil`
+#  recopiée deux fois, `_config`, `_schema`, `_classeur`… : des fonctions au corps
+#  identique dans deux fichiers, qu'aucun motif textuel ne pouvait prévoir. Une
+#  fonction de niveau module (une fixture comprise) se compare donc par son
+#  empreinte : signature, décorateurs et corps, docstring retirée.
+
+#: En dessous, un corps est trop court pour être une notion (`return None`,
+#: `yield session`) : deux fichiers ont le droit d'écrire la même ligne.
+INSTRUCTIONS_MINIMUM = 3
+
+#: Groupes au corps identique que l'on garde, avec leur raison. 🔴 Liste qui ne
+#: fait que BAISSER : une entrée dont le groupe a disparu fait échouer.
+COPIES_ADMISES: dict[frozenset[str], str] = {}
+
+
+def _corps_sans_docstring(fonction: ast.FunctionDef | ast.AsyncFunctionDef) -> list[ast.stmt]:
+    corps = fonction.body
+    if (
+        corps
+        and isinstance(corps[0], ast.Expr)
+        and isinstance(corps[0].value, ast.Constant)
+        and isinstance(corps[0].value.value, str)
+    ):
+        return corps[1:]
+    return corps
+
+
+def empreintes(source: str) -> dict[str, tuple[str, str]]:
+    """{empreinte: (nom, ligne)} des fonctions de niveau module assez longues. PURE."""
+    trouvees = {}
+    for noeud in ast.parse(source).body:
+        if not isinstance(noeud, (ast.FunctionDef, ast.AsyncFunctionDef)):
+            continue
+        corps = _corps_sans_docstring(noeud)
+        taille = sum(isinstance(n, ast.stmt) for c in corps for n in ast.walk(c))
+        if taille < INSTRUCTIONS_MINIMUM:
+            continue
+        empreinte = "|".join(
+            [ast.dump(noeud.args), *map(ast.dump, noeud.decorator_list), *map(ast.dump, corps)]
+        )
+        trouvees[empreinte] = (noeud.name, str(noeud.lineno))
+    return trouvees
+
+
+def copies_entre_fichiers(textes) -> list[frozenset[str]]:
+    """Les groupes `{fichier:fonction}` au corps identique, dans deux fichiers au moins. PURE."""
+    par_empreinte: dict[str, set[str]] = defaultdict(set)
+    for fichier, texte in textes:
+        for empreinte, (nom, _ligne) in empreintes(texte).items():
+            par_empreinte[empreinte].add(f"{fichier}:{nom}")
+    return [
+        frozenset(groupe)
+        for groupe in par_empreinte.values()
+        if len({membre.split(":")[0] for membre in groupe}) > 1
+    ]
+
+
+def test_aucune_fonction_recopiee_d_un_fichier_de_tests_a_l_autre():
+    groupes = copies_entre_fichiers(_textes() + [(CE_FICHIER, pathlib.Path(__file__).read_text())])
+    neufs = sorted(sorted(g) for g in groupes if g not in COPIES_ADMISES)
+    assert not neufs, (
+        "Fonction(s) au corps identique dans plusieurs fichiers de tests — la remonter "
+        "dans un `tests/aides_*.py` et l'importer (une fixture s'importe par son nom) :\n"
+        + "\n".join(f"  • {', '.join(g)}" for g in neufs)
+    )
+    mortes = sorted(sorted(g) for g in COPIES_ADMISES if g not in groupes)
+    assert not mortes, f"copie(s) admise(s) qui n'existent plus — à retirer : {mortes}"
+
+
+def test_l_empreinte_sait_REFUSER():
+    fixture = (
+        "@pytest.fixture()\ndef cs():\n    '''{doc}'''\n    a = 1\n    b = a + 1\n    yield b\n"
+    )
+    groupes = copies_entre_fichiers(
+        [
+            ("test_a.py", fixture.format(doc="Un membre du conseil.")),
+            ("test_b.py", fixture.format(doc="Une autre docstring : même corps.")),
+            ("test_c.py", "def f():\n    return None\n"),
+            ("test_d.py", "def g():\n    return None\n"),
+        ]
+    )
+    assert groupes == [frozenset({"test_a.py:cs", "test_b.py:cs"})], groupes

@@ -26,11 +26,6 @@ après un réimport — et non le prédicat. Vérifier `_PURGES_PAR_REMPLACER` a
 recopié la décision au lieu de la constater (`standards/04` §14).
 """
 
-import io
-
-#  Un IMPORT, pas un `importorskip` (#2952) : une dépendance de production
-#  disparue fait échouer ces tests, pas sauter.
-import openpyxl
 import pytest
 from sqlmodel import select
 
@@ -42,15 +37,7 @@ from app.models.core import (
     VigikImport,
 )
 from app.utils import import_lots, import_telecommandes, import_vigiks
-
-
-def _classeur(lignes: list[list]) -> bytes:
-    wb = openpyxl.Workbook()
-    for ligne in lignes:
-        wb.active.append(ligne)
-    tampon = io.BytesIO()
-    wb.save(tampon)
-    return tampon.getvalue()
+from tests.aides_xlsx import classeur
 
 
 #:  Les trois imports, avec de quoi les exercer : (nom, module, modèle,
@@ -122,7 +109,7 @@ def test_remplacer_PRESERVE_une_ligne_ecartee_par_l_admin(
     session.add(ecartee)
     session.commit()
 
-    module.importer_depuis_bytes(_classeur(lignes), session, True)
+    module.importer_depuis_bytes(classeur(lignes), session, True)
 
     restantes = session.exec(select(modele)).all()
     ecartees = [ligne for ligne in restantes if ligne.statut.value == "ignore"]
@@ -145,7 +132,7 @@ def test_remplacer_efface_BIEN_le_non_traite(
     session.add(temoin)
     session.commit()
 
-    module.importer_depuis_bytes(_classeur(lignes), session, True)
+    module.importer_depuis_bytes(classeur(lignes), session, True)
 
     #  ⚠️ Le DÉCOMPTE tranche, pas l'identifiant : un identifiant ne dit pas
     #  si la ligne a été remplacée. Comparer les `id` jugerait à côté.
@@ -169,7 +156,7 @@ def test_sans_remplacer_rien_n_est_purge(session):
     session.commit()
 
     import_telecommandes.importer_depuis_bytes(
-        _classeur([["Copro", "Loc", "Réf"], ["DUPONT Jean", "", "TC-001"]]), session, False
+        classeur([["Copro", "Loc", "Réf"], ["DUPONT Jean", "", "TC-001"]]), session, False
     )
 
     refs = {ligne.reference for ligne in session.exec(select(TelecommandeImport)).all()}

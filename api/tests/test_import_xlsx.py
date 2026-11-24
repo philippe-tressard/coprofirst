@@ -13,31 +13,13 @@ l'interface d'administration : ouverture du classeur, en-tête ignorée, lignes
 vides, doublons, noms exclus, accents, et la transaction validée.
 """
 
-import io
-
-#  Un IMPORT, pas un `importorskip` (#2952) : openpyxl est épinglé dans
-#  `requirements.txt` ; s'il disparaît, ces tests doivent échouer, pas sauter.
-import openpyxl
 import pytest
 from sqlmodel import select
 
 from app.models.core import LotImport, TelecommandeImport, VigikImport
 from app.utils import import_lots, import_telecommandes, import_vigiks
 from app.utils.import_xlsx import normaliser
-
-
-def _classeur(lignes: list[list]) -> bytes:
-    """Un vrai fichier .xlsx en mémoire — pas une imitation de `openpyxl`.
-
-    Simuler la bibliothèque aurait testé mon idée de son comportement plutôt que
-    le sien : c'est elle qui décide de ce qu'une cellule vide ou un nombre rend.
-    """
-    wb = openpyxl.Workbook()
-    for ligne in lignes:
-        wb.active.append(ligne)
-    tampon = io.BytesIO()
-    wb.save(tampon)
-    return tampon.getvalue()
+from tests.aides_xlsx import classeur
 
 
 # ── normaliser : la fonction que les trois modules partagent ─────────────────
@@ -76,7 +58,7 @@ def test_les_trois_modules_exposent_la_meme_normalisation():
 
 
 def test_import_telecommandes_compte_doublons_ignores_et_importes(session):
-    contenu = _classeur(
+    contenu = classeur(
         [
             ["Copropriétaire", "Locataire", "Référence"],  # en-tête, ignorée
             ["DUPONT Jean", "", "TC-001"],
@@ -110,7 +92,7 @@ def test_import_lots_signale_un_batiment_illisible_sans_interrompre(session):
     Un import qui s'arrête à la première erreur oblige à recommencer autant de
     fois qu'il y a de fautes de frappe dans le classeur.
     """
-    contenu = _classeur(
+    contenu = classeur(
         [
             ["Bât", "Lot", "Nom", "Type"],
             [1, "A101", "DUPONT Jean", "Appartement"],
@@ -130,7 +112,7 @@ def test_import_lots_signale_un_batiment_illisible_sans_interrompre(session):
 def test_un_classeur_sans_donnee_ne_casse_pas(session):
     """Cas zéro : un fichier vide ou réduit à son en-tête n'écrit rien, sans lever."""
     for lignes in ([], [["Nom", "Bât", "Réf"]]):
-        stats = import_vigiks.importer_depuis_bytes(_classeur(lignes), session, False)
+        stats = import_vigiks.importer_depuis_bytes(classeur(lignes), session, False)
         assert stats["importes"] == 0
         assert stats["erreurs"] == []
     assert session.exec(select(VigikImport)).all() == []

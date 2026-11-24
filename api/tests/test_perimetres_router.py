@@ -23,13 +23,13 @@ from app.models.core import (
     Evenement,
     Ticket,
     TypeEvenement,
-    Utilisateur,
 )
 from app.models.perimetre import Perimetre
 from app.routers.patrimoine import _codes_cites, _en_lecture
 from app.seed.patrimoine import poser_arborescence
 from tests.conftest import vider_patrimoine
 from tests.aides_purge import purger_ligne
+from tests.aides_base import auteur_partage
 
 
 #  Le montage (quatre bâtiments + arbre semé) vit dans `conftest.py` depuis le
@@ -38,19 +38,6 @@ from tests.aides_purge import purger_ligne
 def _vider(session: Session) -> None:
     """Purge locale : le patrimoine **et** les contenus que ce fichier écrit."""
     vider_patrimoine(session, (Ticket, Evenement))
-
-
-def _auteur(session: Session) -> int:
-    """`Ticket.auteur_id` et `Evenement.auteur_id` sont NOT NULL."""
-    existant = session.exec(
-        select(Utilisateur).where(Utilisateur.email == "auteur@test.test")
-    ).first()
-    if existant:
-        return existant.id
-    u = Utilisateur(nom="A", prenom="B", email="auteur@test.test", actif=True)
-    session.add(u)
-    session.commit()
-    return u.id
 
 
 def _actualite(auteur: int, perimetre_cible: str) -> Ticket:
@@ -83,7 +70,7 @@ def test_lecture_de_l_arborescence_par_le_router(batiments):
     """
 
     with Session(engine) as session:
-        auteur = _auteur(session)
+        auteur = auteur_partage(session)
         #  Un contenu qui cite deux périmètres, pour que `utilise` ait à les trouver
         #  dans les deux formats stockés (JSON et CSV).
         actualite = _actualite(auteur, '["aful", "bat:%d"]' % batiments[0])
@@ -118,7 +105,7 @@ def test_codes_cites_lit_les_trois_formats_de_stockage(batiments):
     """JSON, CSV et champ vide : les cinq entités n'écrivent pas pareil."""
 
     with Session(engine) as session:
-        auteur = _auteur(session)
+        auteur = auteur_partage(session)
         actualite = _actualite(auteur, '["parking"]')
         evenement = Evenement(
             titre="E",
