@@ -251,7 +251,7 @@ def _parcourir(session: Session, user, monkeypatch) -> dict:
     """Les trois parcours qui émettent un jeton, par les routes — rend {modèle: brut}."""
     envois: list = []
 
-    async def _intercepter(code, to, context, *args, **kwargs):  # noqa: ARG001
+    async def _intercepter(code, to, context, *args, **kwargs):
         envois.append((code, context))
 
     #  Lue à l'appel par les routes (`from app.utils.email import send_email`) :
