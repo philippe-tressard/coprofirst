@@ -98,10 +98,28 @@ const DEUX_DECIMALES = new Intl.NumberFormat('fr-FR', {
  * ferait tous valoir « 0 % ». Le format est celui de `fmtNombre`, la virgule comprise.
  * Une part de fréquentation se lit à une décimale : `decimales = 1` (Top pages, #2358).
  */
-export function fmtPartEnPourcent(numerateur: number, denominateur: number, decimales = 2): string {
+export function fmtPartEnPourcent(
+	numerateur: number,
+	denominateur: number,
+	decimales: 1 | 2 = 2,
+): string {
 	if (!denominateur) return '—';
-	const format = decimales === 1 ? UNE_DECIMALE : DEUX_DECIMALES;
-	return `${format.format((numerateur / denominateur) * 100)}\u00a0%`;
+	return fmtPourcent((numerateur / denominateur) * 100, decimales);
+}
+
+/**
+ * Un taux DÉJÀ calculé, de 0 à 100 — servi par l'API (`taux`, `part`) ou arrondi par
+ * l'écran : `57` → `57 %` · `null` → `—`. L'espace est insécable : « 57 » et « % » ne
+ * se séparent jamais en fin de ligne.
+ *
+ * Sans `decimales`, le format de `fmtNombre` ; avec, celui de `fmtPartEnPourcent`, qui
+ * passe par ici : une seule écriture de « nombre, espace insécable, % » (#2944 — six
+ * écrans la recomposaient, l'espace sécable). 🔒 `npm run lint:dates` refuse `{x} %`.
+ */
+export function fmtPourcent(taux: number | null | undefined, decimales?: 1 | 2): string {
+	if (taux == null) return '—';
+	const format = decimales === 1 ? UNE_DECIMALE : decimales === 2 ? DEUX_DECIMALES : NOMBRE;
+	return `${format.format(taux)}\u00a0%`;
 }
 
 /**

@@ -1,5 +1,5 @@
 <!--
-  Espace CS › Courriels — ce que la relève a fait de chaque message reçu à
+  Espace CS › Courriels affaires — ce que la relève a fait de chaque message reçu à
   l'adresse des affaires, et pourquoi (#1447, ouvert au conseil le 05/10/2026).
 
   🔴 Un transfert du conseil a été refusé parce que son objet portait `TK-E000066`

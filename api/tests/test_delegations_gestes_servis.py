@@ -18,24 +18,16 @@ servi `False` la voit refuser. Le prédicat qui sert est celui qui refuse
 from __future__ import annotations
 
 from app.models.core import RoleUtilisateur
-from tests.aides_http import base_http, client_http
-
-
-def _schema(chemin: str, methode: str, code: str = "200") -> str:
-    from app.main import app
-
-    reponse = app.openapi()["paths"][chemin][methode]["responses"][code]
-    schema = reponse["content"]["application/json"]["schema"]
-    return schema.get("$ref") or schema["items"]["$ref"]
+from tests.aides_http import base_http, client_http, schema_servi
 
 
 def test_les_routes_des_delegations_sont_typees_dans_le_contrat():
-    assert _schema("/delegations", "get").endswith("/DelegationRead")
-    assert _schema("/delegations", "post", "201").endswith("/DelegationRead")
-    assert _schema("/delegations/{delegation_id}/accepter", "post").endswith("/DelegationRead")
-    assert _schema("/delegations/{delegation_id}/revoquer", "post").endswith("/DelegationRead")
+    assert schema_servi("/delegations", "get").endswith("/DelegationRead")
+    assert schema_servi("/delegations", "post", "201").endswith("/DelegationRead")
+    assert schema_servi("/delegations/{delegation_id}/accepter", "post").endswith("/DelegationRead")
+    assert schema_servi("/delegations/{delegation_id}/revoquer", "post").endswith("/DelegationRead")
     #  Les menus mandant / aidant du formulaire.
-    assert _schema("/admin/utilisateurs", "get").endswith("/UtilisateurAdminRead")
+    assert schema_servi("/admin/utilisateurs", "get").endswith("/UtilisateurAdminRead")
 
 
 def test_les_delegations_d_un_aidant_sont_typees_dans_auth_me():

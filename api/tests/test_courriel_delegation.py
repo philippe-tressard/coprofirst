@@ -10,12 +10,9 @@ leçon de `test_courriel_authenticite` — tester ce qui nourrit la décision.
 
 from __future__ import annotations
 
-import base64
 
 import dkim
 import pytest
-from cryptography.hazmat.primitives import serialization
-from cryptography.hazmat.primitives.asymmetric import rsa
 from fastapi import HTTPException
 from sqlmodel import select
 
@@ -23,24 +20,11 @@ from app.models.core import ConfigSite
 from app.routers.config import save_config
 from app.utils import courriel_delegation as cd
 from app.utils.courriel_authenticite import repond_de, verifier_expediteur
+from tests.aides_dkim import cle  # noqa: F401 — fixture importée par son nom (#2950)
 
 _SELECTEUR = b"selector1"
 _CABINET = "cabinet-gestion.test"
 _ABONNEMENT = "cabinetgestion.onmicrosoft.com"
-
-
-@pytest.fixture(scope="module")
-def cle():
-    privee = rsa.generate_private_key(public_exponent=65537, key_size=2048)
-    pem = privee.private_bytes(
-        serialization.Encoding.PEM,
-        serialization.PrivateFormat.TraditionalOpenSSL,
-        serialization.NoEncryption(),
-    )
-    publique = privee.public_key().public_bytes(
-        serialization.Encoding.DER, serialization.PublicFormat.SubjectPublicKeyInfo
-    )
-    return pem, b"v=DKIM1; k=rsa; p=" + base64.b64encode(publique)
 
 
 def _signe_par_l_abonnement(cle, de: str = f"gestion@{_CABINET}") -> tuple[bytes, object]:

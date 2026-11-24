@@ -56,6 +56,10 @@ import {
  * `reponse` → ↩️ : elle répond à quelque chose, ce que la bulle seule ne disait
  * pas — et la bulle revient à qui la mérite.
  * `etat` → 🔄, inchangée : une transition de workflow.
+ *
+ * `relance` n'a pas d'entrée : elle prend la bulle, par le repli d'`evolutionIcone`.
+ * Ce repli est DÉCLARÉ — un type que l'API écrit sans icône ni repli déclaré fait
+ * échouer `api/tests/test_icones_evolution.py` (#2947).
  */
 export const EVOLUTION_ICONE: Record<string, string> = {
 	commentaire: '\u{1F4AC}',

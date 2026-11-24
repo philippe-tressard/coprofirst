@@ -1,7 +1,7 @@
 """Le journal des messages relevés — ce que la relève a décidé, et pourquoi (#1447).
 
 Une ligne par message traité (`courriel_boite.traiter`), écrite dans la même
-transaction que le verdict. Elle se lit dans Espace CS › Courriels (depuis le
+transaction que le verdict. Elle se lit dans Espace CS › Courriels affaires (depuis le
 05/10/2026 — elle était réservée à l'admin, sous Admin › Services › Courriel, et un
 transfert refusé pour un numéro mal tapé y est resté invisible au conseil), et se
 purge chaque dimanche (`maintenance.purger`).

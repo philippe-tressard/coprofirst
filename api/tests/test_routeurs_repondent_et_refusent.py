@@ -36,7 +36,6 @@ from fastapi.testclient import TestClient
 from sqlmodel import Session, select
 
 from app.auth.jwt import creer_jeton_acces
-from app.database import get_session
 from app.main import app
 from app.models.core import (
     LotImport,
@@ -46,25 +45,16 @@ from app.models.core import (
     Utilisateur,
 )
 from app.models.telemetrie import DerniereVisite, PresenceMensuelle, TelemetryEvent
-from app.utils.limiter import limiter
-from tests.aides_base import compte, moteur_de_test
+from tests.aides_base import compte
+from tests.aides_http import base_http
 
 
 @pytest.fixture(name="moteur")
 def moteur_fixture():
-    moteur = moteur_de_test()
-
-    def _session():
-        with Session(moteur) as s:
-            yield s
-
-    app.dependency_overrides[get_session] = _session
-    #  Les routes RGPD sont limitées à 5 par minute : sans remise à zéro, l'ordre
-    #  d'exécution des tests déciderait de leur verdict.
-    limiter.reset()
-    yield moteur
-    app.dependency_overrides.clear()
-    limiter.reset()
+    #  Les routes RGPD sont limitées à 5 par minute : `base_http` remet les plafonds
+    #  de débit à zéro, sans quoi l'ordre d'exécution des tests déciderait de leur verdict.
+    with base_http() as moteur:
+        yield moteur
 
 
 def _client(moteur, role: RoleUtilisateur | None) -> tuple[TestClient, int | None]:

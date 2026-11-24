@@ -21,12 +21,13 @@ from fastapi import BackgroundTasks
 from sqlmodel import Session, select
 
 from app.database import engine
-from app.models.core import StatutUtilisateur
+from app.models.core import StatutUtilisateur, Ticket
 from app.models.prestataires import ContratEntretien, Prestataire
 from app.routers.tickets import crud, evolutions, mise_a_jour
 from app.schemas import TicketCreate, TicketUpdate
 from app.schemas_tickets import TicketEvolutionCreate
 from app.seed import equipements_par_defaut
+from app.utils.horloge import maintenant
 from app.utils.perimetres import arbre
 from tests.aides_base import compte
 
@@ -108,3 +109,23 @@ def _suite(session, user, ticket_id, **champs):
         **{"type": "commentaire", "contenu": "<p>Point d'étape.</p>", "notifier": False, **champs}
     )
     return evolutions.add_evolution(ticket_id, corps, BackgroundTasks(), session=session, user=user)
+
+
+def affaire_en_base(moteur, auteur_id: int) -> int:
+    """Une affaire « Porte du hall » écrite DIRECTEMENT dans la base d'un client HTTP
+    (`aides_http.base_http`) — sans route, quand le test juge ce qui vient après sa
+    création. `test_fil_messages_auteur.py` et `test_message_ticket_correction.py`
+    portaient chacun ce corps (#2950)."""
+    with Session(moteur) as s:
+        t = Ticket(
+            numero=f"TK-{auteur_id:06d}",
+            titre="Porte du hall",
+            description="Elle ne ferme plus.",
+            categorie="panne",
+            auteur_id=auteur_id,
+            cree_le=maintenant(),
+            mis_a_jour_le=maintenant(),
+        )
+        s.add(t)
+        s.commit()
+        return t.id

@@ -15,13 +15,10 @@ comme à la relève. Seul le réseau est remplacé.
 
 from __future__ import annotations
 
-import base64
 import re
 
 import dkim
 import pytest
-from cryptography.hazmat.primitives import serialization
-from cryptography.hazmat.primitives.asymmetric import rsa
 
 from app.utils.courriel_authenticite import (
     MOTIFS_ECART,
@@ -30,23 +27,9 @@ from app.utils.courriel_authenticite import (
     domaine_de,
     verifier_expediteur,
 )
+from tests.aides_dkim import cle  # noqa: F401 — fixture importée par son nom (#2950)
 
 _SELECTEUR = b"s1"
-
-
-@pytest.fixture(scope="module")
-def cle():
-    """Une paire de clés tirée pour ce module — jamais écrite dans le dépôt."""
-    privee = rsa.generate_private_key(public_exponent=65537, key_size=2048)
-    pem = privee.private_bytes(
-        serialization.Encoding.PEM,
-        serialization.PrivateFormat.TraditionalOpenSSL,
-        serialization.NoEncryption(),
-    )
-    publique = privee.public_key().public_bytes(
-        serialization.Encoding.DER, serialization.PublicFormat.SubjectPublicKeyInfo
-    )
-    return pem, b"v=DKIM1; k=rsa; p=" + base64.b64encode(publique)
 
 
 def _dns(enregistrements: dict[bytes, bytes]):

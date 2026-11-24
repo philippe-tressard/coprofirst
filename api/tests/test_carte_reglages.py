@@ -339,6 +339,72 @@ def test_le_controle_des_chemins_voit_un_onglet_disparu():
         assert chemins_d_admin_inconnus(juste, ranges) == [], juste
 
 
+# ── Les chemins « Espace CS › … » aussi (#3002) ──────────────────────────────────
+#
+#  La confrontation ci-dessus ne lisait que « Admin › … ». Douze textes nommaient
+#  « Espace CS › Courriels » un onglet que l'écran appelle « 📨 Courriels affaires » —
+#  dont le lien et un libellé de champ de l'écran SMTP, servis tels quels. Le même
+#  relevé, sur les mêmes textes et sur le front : un chemin « Espace CS › X » doit
+#  commencer par un onglet que `pages-roles.ts` range sous l'Espace CS.
+
+_CHEMIN_ESPACE_CS = re.compile(r"\bEspace CS ?(?:›|→|&rarr;) ?([^\n]*)")
+_FRONT_SRC = _RACINE / "front" / "src"
+#: Un chemin qui nomme exprès un onglet DISPARU, avec sa raison.
+_CHEMINS_HISTORIQUES = {
+    "docs/manuel-utilisateur.html": "« L'ancienne adresse Espace CS › Règlement mène ici » : "
+    "l'onglet a quitté l'Espace CS, son adresse redirige",
+}
+
+
+def chemins_espace_cs_inconnus(texte: str, onglets: set[str]) -> list[str]:
+    """PURE. Les chemins « Espace CS › … » de ce texte dont l'onglet n'est pas rangé."""
+    noms = onglets | {_sans_emoji(o) for o in onglets}
+    inconnus = []
+    for m in _CHEMIN_ESPACE_CS.finditer(texte):
+        segment = _HABILLAGE.sub("", _SEPARATEUR.split(m.group(1))[0])
+        if segment and segment[0] not in "{<" and not segment.startswith(tuple(noms)):
+            inconnus.append(m.group(0)[:90])
+    return inconnus
+
+
+def _onglets_espace_cs() -> set[str]:
+    return {e.split(" › ", 1)[1] for e in ecrans_ranges() if e.startswith("Espace CS › ")}
+
+
+def test_chaque_chemin_de_l_espace_cs_nomme_un_onglet_que_le_front_range():
+    onglets = _onglets_espace_cs()
+    fichiers = [*_textes_qui_renvoient(), *sorted(_FRONT_SRC.rglob("*.svelte"))]
+    fichiers += sorted(_FRONT_SRC.rglob("*.ts"))
+    lus, fautes, servis = 0, [], set()
+    for f in fichiers:
+        rel = f.relative_to(_RACINE).as_posix()
+        texte = f.read_text(encoding="utf-8")
+        lus += len(_CHEMIN_ESPACE_CS.findall(texte))
+        inconnus = chemins_espace_cs_inconnus(texte, onglets)
+        if rel in _CHEMINS_HISTORIQUES and inconnus:
+            servis.add(rel)
+            continue
+        fautes += [f"{rel} : {c}" for c in inconnus]
+    assert lus >= 20  # cas zéro : le relevé lit les renvois (une quarantaine)
+    assert not fautes, (
+        "Ces textes nomment un onglet de l'Espace CS que `pages-roles.ts` ne range pas "
+        "sous ce nom — l'écrire comme l'écran le montre :\n  " + "\n  ".join(fautes)
+    )
+    assert servis == set(_CHEMINS_HISTORIQUES), "un chemin historique déclaré ne sert plus"
+
+
+def test_le_controle_de_l_espace_cs_voit_un_onglet_renomme():
+    onglets = _onglets_espace_cs()
+    assert chemins_espace_cs_inconnus("se lit dans Espace CS › Courriels.", onglets)
+    assert chemins_espace_cs_inconnus("le conseil (Espace CS › Écrans)", onglets)
+    for juste in (
+        '<a href="/espace-cs/courriels">Espace CS › Courriels affaires</a>',
+        "<em>Espace CS › 📺 Écrans du hall</em>",
+        "Espace CS › Reporting › Point conseil",
+    ):
+        assert chemins_espace_cs_inconnus(juste, onglets) == [], juste
+
+
 # ── Rien n'échappe à la carte ───────────────────────────────────────────────────
 
 

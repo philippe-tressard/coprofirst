@@ -1,6 +1,6 @@
 <!--
   Classer un courriel qu'aucune affaire ne désigne (#2555) — sous sa ligne, dans
-  Espace CS › Courriels.
+  Espace CS › Courriels affaires.
 
   Le message est authentifié et vient d'un correspondant connu : il attend que le
   conseil le RATTACHE à une affaire ouverte, en CRÉE une, ou l'ÉCARTE. Les affaires

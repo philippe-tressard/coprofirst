@@ -123,14 +123,14 @@ jobs:
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
 
-      - name: Set up Python
+      - name: Installer Python
         uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7
         with:
           #  La version de l'image (`api/Dockerfile`) : pip-audit résout l'arbre sous
           #  CELLE-CI (#2951). 🔒 `test_version_python_alignee.py`.
           python-version: "3.12"
 
-      - name: Install Ruff
+      - name: Installer Ruff
         # ÉPINGLÉ depuis le 24/09/2026 (#1048) : `ruff format --check` compare le
         # code au style de LA version installée, et Ruff change son style de
         # formatage chaque année. Non épinglé, le job passerait au rouge un
@@ -211,7 +211,7 @@ jobs:
           python scripts/ci/descriptif_depot.py --selftest
           python scripts/ci/descriptif_depot.py
 
-      - name: Run Ruff
+      - name: Lancer Ruff
         # F401 (import inutilisé) sur `app/` seulement, ajouté le 08/08/2026 :
         # ce n'est pas du style. Une factorisation se termine par la suppression
         # de ce qu'elle a remplacé (socle 02 §5), et l'import orphelin est le
@@ -365,7 +365,7 @@ jobs:
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
 
-      - name: Set up Python
+      - name: Installer Python
         uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7
         with:
           python-version: "3.12" # aligné sur l'image de prod (conteneur API)
@@ -380,7 +380,7 @@ jobs:
       - name: Bibliothèques système pour le rendu PDF
         run: bash scripts/ci/bibliotheques-pdf.sh
 
-      - name: Install dependencies
+      - name: Installer les dépendances
         working-directory: api
         # `requirements-dev.txt` = la production (`-r requirements.txt`) + pytest
         # ÉPINGLÉ (#1048, 24/09/2026). Il était installé ici sans version : les
@@ -409,7 +409,7 @@ jobs:
       #  PostgreSQL » (`postgresql.yml`), check requis lui aussi : la jouer ici
       #  la jouerait deux fois. Ici : les PR vers `dev`, et le lancement à la main.
       #  🔒 test_suite_postgresql_une_fois.py tient les deux déclencheurs ensemble.
-      - name: Run pytest
+      - name: Lancer pytest
         if: github.base_ref == 'dev' || github.event_name == 'workflow_dispatch'
         working-directory: api
         run: bash ../scripts/ci/mesure-postgresql.sh
@@ -1076,12 +1076,12 @@ jobs:
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
 
-      - name: Set up Node.js
+      - name: Installer Node.js
         uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7
         with:
           node-version: "26"
 
-      - name: Install dependencies
+      - name: Installer les dépendances
         working-directory: front
         # `npm ci`, comme `front/Dockerfile` (#1050) : `npm install` re-résolvait
         # les plages et réécrivait le lock — la CI validait donc un arbre que
@@ -2073,7 +2073,7 @@ jobs:
         working-directory: front
         run: npm run check
 
-      - name: Build
+      - name: Construire
         working-directory: front
         run: npm run build
         env:
@@ -2970,12 +2970,12 @@ jobs:
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
 
-      - name: Set up Node.js
+      - name: Installer Node.js
         uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7
         with:
           node-version: "26"
 
-      - name: Install dependencies
+      - name: Installer les dépendances
         working-directory: front
         # `npm ci`, comme `front/Dockerfile` (#1050) : `npm install` re-résolvait
         # les plages et réécrivait le lock — la CI validait donc un arbre que
@@ -2998,7 +2998,7 @@ jobs:
           path: ~/.cache/apt-playwright
           key: apt-playwright-${{ runner.os }}-${{ matrix.tranche.navigateurs }}-${{ hashFiles('front/node_modules/playwright-core/package.json') }}
 
-      - name: Install Playwright browsers
+      - name: Installer les navigateurs de Playwright
         working-directory: front
         run: |
           #  🔴 Le dépôt Google Chrome de l'image GitHub sert par moments un index

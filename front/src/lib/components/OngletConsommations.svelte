@@ -25,6 +25,7 @@
 -->
 <script lang="ts">
 	import { fmtNombre, nombreOuNull } from '#lib/utils.ts';
+	import { jourIso } from '#lib/date.ts';
 	import {
 		prestataires as prestApi,
 		type CompteurConfig,
@@ -66,7 +67,7 @@
 	/** Le libellé que le bouton de page affiche — il nomme le compteur choisi. */
 	export let libelleBouton = 'Nouveau relevé';
 	let editReleveId: number | null = null;
-	let releveForm = { date_releve: new Date().toISOString().slice(0, 10), index: '', note: '' };
+	let releveForm = { date_releve: jourIso(), index: '', note: '' };
 	let relevePhotoFichiers: File[] = [];
 	//  ⚠️ `relevePhotoKey` a disparu (#370) : la clé de remontage n'existait que
 	//  pour vider un `<input type="file">` nu, qu'aucune affectation ne remet à
@@ -129,7 +130,7 @@
 	$: if (typeCompteur) loadReleves();
 
 	function resetReleveForm() {
-		releveForm = { date_releve: new Date().toISOString().slice(0, 10), index: '', note: '' };
+		releveForm = { date_releve: jourIso(), index: '', note: '' };
 		relevePhotoFichiers = [];
 		editReleveId = null;
 		showReleveForm = false;

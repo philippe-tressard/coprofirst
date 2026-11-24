@@ -28,12 +28,10 @@ import pytest
 from fastapi.testclient import TestClient
 from sqlmodel import Session, select
 
-from app.database import get_session
 from app.main import app
 from app.models.telemetrie import TelemetryEvent
 from app.utils import limiter as module_limiter
-from app.utils.limiter import limiter
-from tests.aides_base import moteur_de_test
+from tests.aides_http import base_http
 from tests.aides_sources import module_app
 
 ROUTE = "/telemetry/collect"
@@ -41,17 +39,8 @@ ROUTE = "/telemetry/collect"
 
 @pytest.fixture(name="moteur")
 def moteur_fixture():
-    moteur = moteur_de_test()
-
-    def _session():
-        with Session(moteur) as s:
-            yield s
-
-    app.dependency_overrides[get_session] = _session
-    limiter.reset()
-    yield moteur
-    app.dependency_overrides.clear()
-    limiter.reset()
+    with base_http() as moteur:
+        yield moteur
 
 
 def _evenements(moteur) -> list[TelemetryEvent]:
