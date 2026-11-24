@@ -52,6 +52,7 @@ import { readFileSync, readdirSync, statSync, existsSync } from 'node:fs';
 import { join, relative } from 'node:path';
 import { extraire } from './lib-lecture-source.mjs';
 import { motifNombre, valeurNombre } from './lib-nombres-fr.mjs';
+import { FORMULATIONS } from './check-consignes.regles.mjs';
 
 const RACINE_FRONT = new URL('../src', import.meta.url).pathname.replace(/^\/([A-Za-z]:)/, '$1');
 const RACINE_DEPOT = new URL('../..', import.meta.url).pathname.replace(/^\/([A-Za-z]:)/, '$1');
@@ -453,21 +454,7 @@ for (const notion of NOMBRES) {
 //  Une phrase qui décrit un état défait, et que rien d'autre ne relit. Une entrée
 //  par défaut constaté, avec ce qui est vrai à la place — jamais un mot isolé : le
 //  motif porte la phrase fautive, pour ne pas punir celle qui raconte l'histoire.
-const FORMULATIONS = [
-	{
-		motif: /pr[ée]-?check[^.\n]{0,40}\bavant (?:le|tout) `?(?:git )?push/giu,
-		vrai: "le pré-check se passe après la CI de la PR, avant `conduire-mep.sh` (CLAUDE.md, « Ordre d'un lot », #2908)",
-	},
-	{
-		motif: /\bAPI_VERSION\b/gu,
-		vrai: 'la constante est partie : `/api/health` rend `contrat.VERSION_CONTRAT`, `GET /config` publie `version_logicielle` (#2934)',
-	},
-	{
-		//  Un compte de tests se périme au premier test ajouté (« 5 tests » pour huit).
-		motif: /\(\s*\d+ tests?\b|\b\d+ tests?,? CI\b/gu,
-		vrai: 'nommer le fichier de tests, sans son compte (#2934)',
-	},
-];
+//  La table vit dans `check-consignes.regles.mjs`.
 
 for (const { relatif, texte } of textes) {
 	for (const { motif, vrai } of FORMULATIONS) {

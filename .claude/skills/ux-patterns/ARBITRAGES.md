@@ -251,7 +251,7 @@ vers un numéro absent, et un `lint:*` ou un fichier de test de « Tenu par » q
 - **Décidé** : `--largeur-saisie` (100 % du conteneur), posée par le squelette, sur tous les formulaires ; jamais une largeur écrite dans une page. Les modales gardent la leur.
 - **Pourquoi** : le cap à 720 px arrêtait la boîte de création avant les cartes de la liste.
 - **Écarté** : 640 / 720 px selon l'écran ; la liste `ROUTES_LARGEUR_PLEINE` (retirée).
-- **Tenu par** : aucun garde-fou nommé.
+- **Tenu par** : `npm run lint:largeur-saisie` — aucune largeur de saisie écrite dans un écran (#2976).
 
 ### n° 30 · en vigueur — Le fil d'évolutions montre les photos en grand
 18/08/2026 · non retrouvé · l'utilisateur, à l'écran · §11
@@ -347,7 +347,7 @@ vers un numéro absent, et un `lint:*` ou un fichier de test de « Tenu par » q
 - **Décidé** : un motif (signaler au conseil) passe par `Saisie.svelte`, la version ouverte de `Confirmation`.
 - **Pourquoi** : le motif ne crée ni ne corrige aucun objet ; la règle la plus déployée (seize confirmations) l'emporte.
 - **Écarté** : ouvrir le motif dans la rangée (un état d'ouverture par ligne, retiré à seize appels).
-- **Tenu par** : aucun garde-fou nommé.
+- **Tenu par** : en partie — `npm run lint:formulaires` refuse un champ dans une fenêtre et y déclare `Saisie.svelte` (#931) ; `npm run lint:confirmation` refuse `prompt()`. Qu'un motif passe par `Saisie` plutôt que par la rangée, aucun contrôle ne le lit (#2976).
 
 ### n° 44 · remplacé par n° 19 — La densité « F1 »
 18/09/2026 · non retrouvé · l'utilisateur, à l'écran · §3 « La densité »
@@ -438,7 +438,7 @@ vers un numéro absent, et un `lint:*` ou un fichier de test de « Tenu par » q
 - **Décidé** : `BadgeNouveau` dit « NEW », en rouge, fixe.
 - **Pourquoi** : non écrit — seule trace : la mention en §3, où une maquette d'affaires ne l'a pas défait (10/10).
 - **Écarté** : « Nouveau ».
-- **Tenu par** : aucun garde-fou nommé.
+- **Tenu par** : `npm run lint:badge-nouveau` — « NEW » ou « Nouveau » écrit à la main hors de `BadgeNouveau` (#2976).
 
 ### n° 57 · en vigueur — Un message : deux régimes
 26/09/2026 · non retrouvé · non dit · §17

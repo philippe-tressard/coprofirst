@@ -16,6 +16,10 @@ from app.utils.demo import MESSAGE, est_demo
 
 logger = logging.getLogger("hostachy.llm")
 
+#: Le fournisseur ne répond pas au réseau — dit à l'appel comme à la liste des
+#: modèles (#2949). Ici et non dans `llm`, qui ré-exporte ce module (#2241).
+SERVICE_INJOIGNABLE = "Le service n'a pas pu être joint."
+
 
 async def modeles_disponibles(session: Session) -> dict[str, Any]:
     """Ce que la clé enregistrée peut RÉELLEMENT appeler, demandé au fournisseur.
@@ -61,7 +65,7 @@ async def modeles_disponibles(session: Session) -> dict[str, Any]:
         async with httpx.AsyncClient(timeout=cfg.delai_s) as client:
             reponse = await client.get(url, headers=cfg.fournisseur.entetes(cfg.cle))
     except httpx.HTTPError:
-        return {"listable": False, "motif": "Le service n'a pas pu être joint.", "modeles": []}
+        return {"listable": False, "motif": SERVICE_INJOIGNABLE, "modeles": []}
     if reponse.status_code in (401, 403):
         #  Le cas le plus fréquent : une clé créée en écriture seule, ou
         #  restreinte à `/chat/completions`. Elle SYNTHÉTISE très bien et ne

@@ -309,11 +309,17 @@ def _marques(session: Session, v: VersementCourriel) -> list[MessageVerse]:
     )
 
 
+def motif_affaire_close(numero: int) -> str:
+    """Pourquoi rien n'est versé à une affaire close — relevé, transfert ou déplacement (#2949)."""
+    return f"l'affaire #{numero} est close : elle ne reçoit plus rien"
+
+
 def _exiger_cible(v: VersementCourriel, cible: Ticket) -> None:
     if cible.id == v.ticket_id:
         raise HTTPException(422, "Le transfert est déjà dans cette affaire.")
     if valeur(cible.statut) in STATUTS_TICKET_CLOS:
-        raise HTTPException(422, f"L'affaire #{cible.numero} est close : elle ne reçoit plus rien.")
+        motif = motif_affaire_close(cible.numero)
+        raise HTTPException(422, f"{motif[0].upper()}{motif[1:]}.")
 
 
 def _rendre_le_statut(ticket: Ticket, v: VersementCourriel) -> None:

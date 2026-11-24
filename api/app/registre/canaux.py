@@ -68,7 +68,7 @@ from app.registre.versions import (
     version_valide,
 )
 from app.utils import demo, horloge
-from app.utils.installation import DEPOT
+from app.utils.installation import API_DEPOT
 
 logger = logging.getLogger("hostachy.registre")
 
@@ -76,7 +76,7 @@ logger = logging.getLogger("hostachy.registre")
 CANAL_REFERENCE = "main"
 CANAL_URGENCE = "urgence"
 #: Ce que lit la référence : les releases du dépôt public, par pages de 100.
-URL_RELEASES = f"https://api.github.com/repos/{DEPOT}/releases"
+URL_RELEASES = f"{API_DEPOT}/releases"
 PAGES_MAX = 10
 
 #: Le geste du journal qui règle la distribution d'une installation.

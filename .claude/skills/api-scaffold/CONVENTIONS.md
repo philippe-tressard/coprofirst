@@ -172,7 +172,9 @@ visent « CS ou admin » et rendent des `Utilisateur` — autre destinataire.
   si le canal est éteint) puis `diffuser(background_tasks, config, titre, contenu, …)`. Le
   registre `CANAUX` n'a qu'un canal (WhatsApp, dont le bridge est l'adaptateur) ; les clés
   `whatsapp_*` et `whatsapp_log` gardent leur nom jusqu'au second (#1060).
-  🔒 `test_diffusion_canal.py`.
+  🔒 `test_diffusion_canal.py` (les IMPORTS : nul ne nomme le transport) et
+  `test_groupe_portes.py` (les APPELS : rien ne part sur le groupe hors d'une porte déclarée
+  dans `PORTES`, #2977). Les gestes d'envoi sont listés par `utils/whatsapp.GESTES_D_ENVOI`.
 - « Ce service est-il activé ? » : `utils/services` — `service_actif(cfg, SERVICE_…)`,
   `cle_actif(SERVICE_…)` —, jamais une lecture de `llm_actif`, `whatsapp_enabled` ou
   `imap_enabled` (#1718). Le registre `SERVICES` est la seule liste ; l'onglet Admin ›

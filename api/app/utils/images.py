@@ -25,6 +25,9 @@ from app.utils.process_isole import EchecIsole, executer_isole
 logger = logging.getLogger(__name__)
 
 #: Le module qui lit les images — nommé, jamais importé : l'enfant l'importe seul.
+#: Le refus d'une image que le moteur ne sait pas lire — téléversée ou logo (#2949).
+IMAGE_ILLISIBLE = "Impossible de lire l'image."
+
 MOTEUR = "app.utils.images_moteur"
 
 #: Au-delà, l'enfant est abattu. Une photo de 12 Mpx (HEIC compris) se lit en
@@ -133,7 +136,7 @@ def enregistrer_image_recue(
     try:
         data = reencoder_jpeg(data, max_dim=max_dim)
     except ValueError:
-        raise HTTPException(400, "Impossible de lire l'image.")
+        raise HTTPException(400, IMAGE_ILLISIBLE)
     #  🔴 Le type ÉCRIT est celui des octets écrits : du JPEG. Avec le type reçu,
     #  la signature du JPEG produit était confrontée à `.png` — toute image PNG,
     #  WebP ou GIF était refusée en 400, et seules les photos JPEG passaient

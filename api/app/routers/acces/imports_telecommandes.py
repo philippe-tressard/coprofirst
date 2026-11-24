@@ -30,6 +30,7 @@ from .commun import (
 from app.utils.resolution_acces import rattacher_les_reconnues
 from app.utils.types_acces import TELECOMMANDE
 from app.utils.fichiers import lire_tableur_recu
+from app.utils.import_xlsx import REMPLACER_EN_ATTENTE
 from . import socle_imports
 from .socle_imports import PatchImportBody
 
@@ -47,7 +48,7 @@ router = APIRouter()
 @router.post("/admin/imports/upload", status_code=201)
 async def upload_import_excel(
     file: UploadFile = File(...),
-    remplacer: bool = Query(False, description="Supprimer les imports en_attente avant ré-import"),
+    remplacer: bool = Query(False, description=REMPLACER_EN_ATTENTE),
     session: Session = Depends(get_session),
     _: Utilisateur = Depends(require_admin),
 ):

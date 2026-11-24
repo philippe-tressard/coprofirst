@@ -5,10 +5,9 @@ l'autre. Qualifiés un à un : ceux qui disent la MÊME règle vivent dans une
 constante du module de la notion, importée par les autres. Ce contrôle refuse
 qu'un de ces textes se réécrive en littéral — `standards/02` §1 ter.
 
-Les homonymies — même texte, règle différente — restent écrites à leur place,
-et ne sont pas listées ici : « Dernière sauvegarde réussie il y a » dit un
-retard en JOURS au registre des installations (`registre/alertes`) et en HEURES
-au-delà de 25 h sur le nœud (`health_monitor`).
+Les homonymies — même texte, règle différente — restent écrites à leur place ;
+elles se déclarent, avec leur raison, dans `HOMONYMES` de
+`test_copies_de_code_api.py`, qui refuse toute autre phrase recopiée.
 
 Lu sur l'AST : une chaîne littérale ou le morceau constant d'une f-string ; les
 docstrings et les commentaires ne comptent pas.
@@ -28,6 +27,21 @@ MESSAGES = {
     "nouveau_statut requis pour un changement d'état": "utils/evolutions.py",
     "Mot de passe actuel incorrect.": "utils/mots_de_passe.py",
     "Périmètre parent inconnu": "routers/patrimoine.py",
+    #  Second relevé (#2949, 24/11/2026) — chacun dit la même règle à ses deux endroits.
+    "Cette catégorie est réservée au conseil syndical": "auth/gestes_affaire.py",
+    "Impossible de lire l'image.": "utils/images.py",
+    "Aucun règlement n'est versé (Ma résidence › Règlement).": "utils/etat_descriptif_ia.py",
+    "contrôle d'intégrité en échec": "utils/backup.py",
+    "Supprimer les imports en_attente avant ré-import": "utils/import_xlsx.py",
+    "Ignoré automatiquement (hors résidents)": "utils/import_xlsx.py",
+    "est close : elle ne reçoit plus rien": "utils/versement_transfert.py",
+    "Le service n'a pas pu être joint.": "utils/llm_modeles.py",
+    "installation d'essai : la référence n'est pas appelée": "inscription/constat.py",
+    #  Des noms, sans espace : le relevé général (`test_copies_de_code_api.py`) ne les
+    #  voit pas, leur porte est ici.
+    "https://api.github.com/repos/": "utils/installation.py",
+    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": "utils/fichiers.py",
+    "SELECT version_num FROM alembic_version": "utils/revision_base.py",
 }
 
 
