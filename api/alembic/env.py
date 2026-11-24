@@ -1,4 +1,3 @@
-import os
 from logging.config import fileConfig
 
 from sqlalchemy import engine_from_config, pool
@@ -7,14 +6,13 @@ from sqlmodel import SQLModel
 
 # Import all models so Alembic can detect them
 import app.models.core  # noqa: F401
+from app.utils.revision_base import poser_url_de_l_environnement
 
 config = context.config
 
-#  `DATABASE_URL` l'emporte sur `alembic.ini` (#1747), comme pour l'API et
-#  `app/utils/revision_base.config_alembic` : une installation sur PostgreSQL
-#  n'a que cette variable.
-if os.environ.get("DATABASE_URL"):
-    config.set_main_option("sqlalchemy.url", os.environ["DATABASE_URL"].replace("%", "%%"))
+#  `DATABASE_URL` l'emporte sur `alembic.ini` (#1747) : une installation sur
+#  PostgreSQL n'a que cette variable. La règle vit dans `revision_base` (#2949).
+poser_url_de_l_environnement(config)
 
 if config.config_file_name is not None:
     #  `disable_existing_loggers=False` : appelé DANS un processus qui journalise

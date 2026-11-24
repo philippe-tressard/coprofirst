@@ -63,7 +63,7 @@ test('un problème renvoie vers une affaire « Bogue », pas vers un avis', asyn
 
 //  Arbitré le 18/10/2026 : l'Avis est la seule rubrique de la Communauté ouverte
 //  au syndic. Les trois autres lui sont masquées, et leur adresse le ramène ici.
-const SYNDIC = { ...MEMBRE_CS, statut: 'syndic', role: 'résident', roles: ['résident'] };
+const SYNDIC = { ...MEMBRE_CS, statut: 'syndic', role: 'externe', roles: ['externe'] };
 
 test('le syndic arrive sur l’Avis, seul onglet de la Communauté qui lui est ouvert', async ({
 	page,

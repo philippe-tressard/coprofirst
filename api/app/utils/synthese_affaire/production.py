@@ -50,7 +50,7 @@ from app.models.synthese import (
 )
 from app.models.tickets import STATUTS_TICKET_CLOS
 from app.utils import horloge
-from app.utils.description_format import ReponseIllisible
+from app.utils.description_format import ILLISIBLE, ReponseIllisible
 from app.utils.synthese_affaire.format import (
     USAGE_SYNTHESE_AFFAIRE,
     consigne_complete,
@@ -123,7 +123,7 @@ async def _rediger(
     except ErreurLLM as exc:
         return None, None, "erreur", str(exc)
     except ReponseIllisible as exc:
-        return None, None, "erreur", f"Réponse de l'assistant illisible : {exc}"
+        return None, None, "erreur", f"{ILLISIBLE} : {exc}"
 
 
 def _auteur_de_la_suite(

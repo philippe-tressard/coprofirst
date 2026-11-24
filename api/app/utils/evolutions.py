@@ -75,6 +75,20 @@ TYPES_EFFACABLES: tuple[str, ...] = TYPES_SAISIS
 REFUS_TYPE = "Cette entrée ne peut pas être supprimée : une réponse appartient à son auteur."
 
 
+def exiger_saisie_valide(type_saisi: str, nouveau_statut: Any) -> None:
+    """Refuse (422) une entrée saisie au fil qui n'est ni un commentaire ni un état,
+    ou un changement d'état sans l'état visé.
+
+    Le même refus au fil de l'affaire (`routers/tickets/evolutions`) et à la
+    correction de la Suite (`routers/tickets/suite_sections`) — il s'y écrivait
+    deux fois, mot pour mot (#2949).
+    """
+    if type_saisi not in TYPES_SAISIS:
+        raise HTTPException(422, "Type invalide (commentaire ou etat)")
+    if type_saisi == "etat" and not nouveau_statut:
+        raise HTTPException(422, "nouveau_statut requis pour un changement d'état")
+
+
 def evolution_modifiable(
     session: Session,
     modele: type,

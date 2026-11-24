@@ -84,19 +84,19 @@ mindmap
 | Assistant IA : fournisseur, clé, réglage de chaque usage | Admin › 🔌 Services › Assistant IA | config_site | `PUT /config` |
 | Logo de la résidence | Admin › 🏢 Copropriété › Identité | fichier + config_site (`site_logo`, `site_logo_sombre`) | `POST /config/logo` |
 | Palette de couleurs du site, des courriels et des affiches | Admin › 🏢 Copropriété › Identité | config_site (`site_palette`) | `PUT /config/palette` |
-| Fiche de la copropriété : identité, adresse, syndic, références | Admin › 🏢 Copropriété › Identité ; Ma résidence | table `copropriete` (+ `config_site.site_nom`) | `PATCH /copropriete` |
+| Fiche de la copropriété : identité, adresse, syndic, références | Admin › 🏢 Copropriété › Identité ; Ma résidence › 🏢 Fiche | table `copropriete` (+ `config_site.site_nom`) | `PATCH /copropriete` |
 | Périmètres (arbre des bâtiments et espaces) et leurs accès fixes | Admin › 🏢 Copropriété › Périmètres | table `perimetre` | `PATCH /perimetres/{perimetre_id}` |
 | Modèles de courriel | Admin › 🎨 Présentation › Modèles e-mail | table `modele_email` | `PATCH /admin/modeles-email/{modele_id}` |
-| Provenance du règlement | Ma résidence › Règlement (mode administration) | table / `config_site` | `PUT /reglement/provenance` |
+| Provenance du règlement | Ma résidence › ⚖️ Règlement (mode administration) | table / `config_site` | `PUT /reglement/provenance` |
 
 ### Conseil syndical (ou administrateur)
 
 | Notion | Écran | Stockage | Route |
 |---|---|---|---|
-| Annuaire du syndic | Espace CS › Annuaire CS & Syndic | table / `config_site` | `PUT /admin/annuaire/syndic` |
-| Annuaire du conseil syndical (composition) | Espace CS › Annuaire CS & Syndic | table / `config_site` | `PUT /admin/annuaire/cs` |
-| Consignes aux arrivants | Espace CS › Annuaire CS & Syndic (consignes aux arrivants) | `config_site.consignes_arrivant`, `config_site.accueil_arrivant` | `PUT /admin/consignes-arrivant` |
-| Compteurs (relevés) | Espace CS › Compteurs (configuration des catégories) | table `compteur_config` | `POST /prestataires/compteurs-config` |
+| Annuaire du syndic | Espace CS › 📒 Annuaire CS & Syndic | table / `config_site` | `PUT /admin/annuaire/syndic` |
+| Annuaire du conseil syndical (composition) | Espace CS › 📒 Annuaire CS & Syndic | table / `config_site` | `PUT /admin/annuaire/cs` |
+| Consignes aux arrivants | Espace CS › 📒 Annuaire CS & Syndic (consignes aux arrivants) | `config_site.consignes_arrivant`, `config_site.accueil_arrivant` | `PUT /admin/consignes-arrivant` |
+| Compteurs (relevés) | Prestataires › 💧 Consommations (catégories de compteur) | table `compteur_config` | `POST /prestataires/compteurs-config` |
 
 ### Opérateur de la plateforme
 

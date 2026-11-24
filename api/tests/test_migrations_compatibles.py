@@ -25,10 +25,17 @@ et ce sera vrai chaque nuit pour chaque installation CoproFirst (#1756).
 Le second temps se déclare dans `CONTRACTIONS`, au moment où le code **cesse** de
 dépendre de l'ancienne forme (premier temps, version V). La migration qui retire
 vient dans une version **ultérieure** : le contrôle exige que V soit strictement
-antérieure à la version de `front/package.json` — celle du lot, puisque le bump
-en est le dernier commit. ⚠️ Avant ce bump, le second temps se lit donc en écart
-quand V est la version en production : c'est attendu, le rejeu de la CI passe
-après le bump.
+antérieure à la version de `front/package.json`. Depuis #2631, un lot ne porte plus
+de bump — la version se pose à la MEP : ce fichier dit donc la dernière version
+posée par un train, et le second temps n'est admis que si l'annonce est déjà
+partie dans un train précédent.
+
+Un RETRAIT de données (`drop_column`, `drop_table`) exige en plus sa **preuve sans
+perte, lue sur la production** (`standards/06` §3, #2124 annulé par #2149, #2937) :
+une ligne de `PREUVES_SANS_PERTE` — date, requête jouée sur la base servie, résultat.
+Que le code n'en dépende plus ne dit pas que la colonne est vide. Une session qui ne
+lit pas la production (session cloud) ne peut pas l'écrire : elle donne la requête à
+jouer au poste, et le lot attend.
 
 Pour un retrait ou un renommage, le contrôle vérifie aussi le **fait** : aucun
 modèle ne déclare plus la table ou la colonne retirée.
@@ -95,6 +102,20 @@ CONTRACTIONS: dict[str, tuple[str, str]] = {
         "la sauvegarde ne se coupe plus depuis #2060, rien ne lit ni n'écrit l'interrupteur (#2182)",
     ),
 }
+
+#: La preuve, lue SUR LA PRODUCTION, qu'un retrait ne perd rien (#2937) :
+#: `{cible: "JJ/MM/AAAA — requête jouée sur la base servie → résultat"}`. La requête
+#: se joue sur l'actif (`docker exec hostachy_postgres psql …`), donc au poste : une
+#: session cloud ne l'écrit pas. Vide tant qu'aucun retrait n'est en cours.
+PREUVES_SANS_PERTE: dict[str, str] = {}
+
+#: La règle de la preuve naît avec #2937 : les retraits d'avant (0308, 0311) sont en
+#: production depuis v3.13 et n'ont pas à la produire après coup. Seuil fixe, jamais
+#: relevé — une migration neuve porte un numéro plus grand.
+PREUVE_EXIGEE_APRES = 346
+
+#: Les gestes qui PERDENT des données, et donc exigent leur preuve.
+PERTES = frozenset({"drop_table", "drop_column"})
 
 #: Les gestes qui retirent quelque chose à l'ancien code.
 RETRAITS = frozenset({"drop_table", "drop_column", "rename_table", "renommer_colonne"})
@@ -257,6 +278,12 @@ def migrations() -> dict[str, tuple[int, str]]:
     return trouvees
 
 
+def _preuve_exigee(fichier: str) -> bool:
+    """Une migration écrite après la règle (ou un cas forgé, sans numéro)."""
+    numero = _numero(Path(fichier))
+    return numero is None or numero > PREUVE_EXIGEE_APRES
+
+
 def _version(texte: str) -> tuple[int, ...]:
     return tuple(int(x) for x in texte.split("."))
 
@@ -280,8 +307,11 @@ def tables_et_colonnes_des_modeles() -> set[str]:
     return cibles
 
 
-def ecarts(fichier: str, gestes: list[Geste], contractions, version: str, modeles) -> list[str]:
+def ecarts(
+    fichier: str, gestes: list[Geste], contractions, version: str, modeles, preuves=None
+) -> list[str]:
     """Ce qui rend une migration neuve incompatible avec la version précédente du code."""
+    preuves = PREUVES_SANS_PERTE if preuves is None else preuves
     sortie = []
     for g in gestes:
         lieu = f"{fichier}:{g.ligne}"
@@ -316,6 +346,14 @@ def ecarts(fichier: str, gestes: list[Geste], contractions, version: str, modele
             sortie.append(
                 f"{lieu} : `{g.cible}` est retirée, mais un modèle la déclare encore — "
                 "le code en dépend toujours."
+            )
+        elif g.geste in PERTES and g.cible not in preuves and _preuve_exigee(fichier):
+            sortie.append(
+                f"{lieu} : `{g.cible}` est retirée sans preuve sans perte lue sur la "
+                "PRODUCTION (`standards/06` §3) — jouer sur l'actif la requête qui montre "
+                "qu'elle ne porte rien qui ne soit repris ailleurs, et noter date, requête "
+                "et résultat dans `PREUVES_SANS_PERTE`. Une session sans accès à la "
+                "production donne la requête et ne fusionne pas."
             )
     return sortie
 
@@ -392,9 +430,20 @@ def test_la_regle_refuse_et_admet_ce_qu_il_faut():
     annonce = {"facture.ancien": ("2.119.0", "le code a cessé de la lire")}
     assert ecarts("m.py", retrait, {}, "2.120.0", set())
     assert ecarts("m.py", retrait, annonce, "2.119.0", set())
-    assert ecarts("m.py", retrait, annonce, "2.120.0", {"facture.ancien"})
-    assert not ecarts("m.py", retrait, annonce, "2.120.0", {"facture"})
-    assert not ecarts("m.py", retrait, annonce, "2.119.10", set()), "comparaison numérique"
+    preuve = {"facture.ancien": "23/11/2026 — select count(*) … → 0"}
+    assert ecarts("m.py", retrait, annonce, "2.120.0", {"facture.ancien"}, preuve)
+    assert not ecarts("m.py", retrait, annonce, "2.120.0", {"facture"}, preuve)
+    assert not ecarts("m.py", retrait, annonce, "2.119.10", set(), preuve), "comparaison numérique"
+    #  #2937 : annoncé, plus déclaré, mais sans preuve lue sur la production → refusé.
+    assert ecarts("m.py", retrait, annonce, "2.120.0", {"facture"}, {})
+    #  Les retraits d'avant la règle ne la produisent pas après coup ; un neuf, si.
+    assert not ecarts("0308_x.py", retrait, annonce, "2.120.0", {"facture"}, {})
+    assert ecarts(
+        f"{PREUVE_EXIGEE_APRES + 1:04d}_x.py", retrait, annonce, "2.120.0", {"facture"}, {}
+    )
+    #  Un renommage ne perd rien : il n'exige pas de preuve.
+    renommage = [Geste("rename_table", "avant", 4)]
+    assert not ecarts("m.py", renommage, {"avant": ("2.119.0", "x")}, "2.120.0", set(), {})
     obligatoire = [Geste("colonne_obligatoire", "facture.montant", 4)]
     #  Une colonne rendue obligatoire existe toujours : le modèle la déclare, c'est normal.
     assert not ecarts(

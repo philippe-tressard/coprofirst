@@ -21,6 +21,7 @@ from app.utils.pdf_theme import (
     CSS_ENTETE_RAPPORT,
     FONT_SANS,
     PALETTE_CSS,
+    document_html,
     entete_rapport,
     html_to_pdf,
     regle_page,
@@ -127,13 +128,13 @@ def html_rapport(r: Releve, *, site_nom: str, logo_png: bytes | None) -> str:
     """PURE. Le document HTML autonome du rapport."""
     pluriel = "s" if r.total > 1 else ""
     titre = TITRES.get(r.mode, TITRES["affaires"])
-    return (
-        f"<!doctype html><html lang='fr'><head><meta charset='utf-8'><title>{titre}</title>"
-        f"<style>{CSS_RAPPORT}</style></head><body>"
+    return document_html(
+        titre,
+        CSS_RAPPORT,
         f"{entete_rapport(logo_png, site_nom, f'Édité le {date_courte(r.jour)}')}"
         f"<h1>{titre}</h1>"
         f"{tete_html(r, f'affaire{pluriel} non fermée{pluriel}')}"
-        f"{tableau_html(r.affaires)}</body></html>"
+        f"{tableau_html(r.affaires)}",
     )
 
 

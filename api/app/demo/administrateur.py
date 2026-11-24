@@ -66,8 +66,16 @@ def operateur(session: Session) -> Utilisateur:
 
 
 def fixer_mot_de_passe(session: Session, compte: Utilisateur) -> bool:
-    """Pose le mot de passe du `.env` pour ce compte, s'il y en a un. Rend vrai s'il a été posé."""
+    """Pose le mot de passe du `.env` pour ce compte, s'il y en a un. Rend vrai s'il a été posé.
+
+    Sans lui, le compte garde celui du seed — et perd son drapeau `mot_de_passe_a_changer`
+    (#3019) : la démo ferme le changement de mot de passe (`utils/demo.GESTES_FERMES`), un
+    compte marqué y serait enfermé. Son mot de passe ne vit que dans le journal de la
+    remise à zéro, qui le tire à nouveau chaque nuit.
+    """
     if not _secret(compte.email):
+        compte.mot_de_passe_a_changer = False
+        session.add(compte)
         return False
     poser_mot_de_passe(session, compte, _secret(compte.email))
     return True

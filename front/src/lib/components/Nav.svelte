@@ -1,12 +1,7 @@
 <script lang="ts">
 	import { lieu } from '#lib/lieu.svelte.ts';
-	import {
-		currentUser,
-		estModerateur,
-		isAdminOuOperateur,
-		hasResidentRole,
-		isAdminOnly,
-	} from '#lib/stores/auth.ts';
+	import { currentUser } from '#lib/stores/auth.ts';
+	import { pageAuMenu } from '#lib/acces-menu.ts';
 	import { locale, NAV_LABELS } from '#lib/stores/locale.ts';
 	import { auth as authApi } from '#lib/api/index.ts';
 	import { CHEMIN_CONNEXION } from '#lib/redirection.ts';
@@ -115,31 +110,11 @@
 	$: _pagesOrderJson = $configStore['pages_order'];
 	$: orderedHrefs = computeOrderedHrefs(_pagesOrderJson);
 
-	//  Les outils du conseil — Prestataires, Espace CS, Délégations. `$estModerateur` inclut l'admin ;
-	//  le compte technique créé à l'installation (admin seul, sans lot ni CS)
-	//  n'a pas à les voir. Prestataires et Délégations ne l'excluaient pas,
-	//  l'Espace CS si : une seule règle, posée ici, pour les trois.
-	$: outilDuConseil = $estModerateur && !$isAdminOnly;
-
+	//  Qui voit quelle entrée : le public de la page (`acces`, `#lib/pages`) parmi ceux
+	//  que le serveur sert au compte (`acces_menu`, #2969). Aucun rôle ni statut ici —
+	//  la règle est calculée par l'API, que les apps lisent aussi (`#lib/acces-menu`).
 	$: allNav = orderedHrefs
-		.filter((href) => {
-			const statut = $currentUser?.statut;
-			if (
-				href === '/sondages' &&
-				(statut === 'syndic' || statut === 'mandataire' || statut === 'aidant')
-			)
-				return false;
-			if (href === '/prestataires') return outilDuConseil;
-			if (href === '/espace-cs') return outilDuConseil;
-			if (href === '/delegations')
-				return (
-					outilDuConseil ||
-					($currentUser?.delegations_aidant?.length ?? 0) > 0 ||
-					statut === 'aidant'
-				);
-			if (href === '/admin') return $isAdminOuOperateur;
-			return $hasResidentRole;
-		})
+		.filter((href) => pageAuMenu(HREF_VERS_PAGE[href], $currentUser?.acces_menu))
 		.map((href) => navItem(href, $configStore));
 
 	function isActive(href: string) {

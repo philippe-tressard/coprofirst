@@ -82,6 +82,10 @@ from app.routers.patrimoine_schemas import (  # ré-exportés (patrimoine_branch
 
 router = APIRouter(prefix="/perimetres", tags=["perimetres"])
 
+#: Le refus d'un parent nommé par un code qui n'existe pas — créer, déplacer ou
+#: copier sous un parent (`patrimoine_branche`) : un refus, un message (#2949).
+PARENT_INCONNU = "Périmètre parent inconnu"
+
 
 # ── Aides internes ────────────────────────────────────────────────────────────
 
@@ -309,7 +313,7 @@ def _resoudre_parent(session: Session, code_parent: Optional[str]) -> Optional[i
         return None
     parent = session.exec(select(Perimetre).where(Perimetre.code == code_parent)).first()
     if not parent:
-        raise HTTPException(422, f"Périmètre parent inconnu : {code_parent}")
+        raise HTTPException(422, f"{PARENT_INCONNU} : {code_parent}")
     return parent.id
 
 
@@ -419,7 +423,7 @@ def modifier_perimetre(
     admin: Utilisateur = Depends(require_admin),
 ):
     noeud = _noeud(session, perimetre_id)
-    donnees = body.dict(exclude_unset=True)
+    donnees = body.model_dump(exclude_unset=True)
     #  Le parent et `selectionnable` (un regroupement qui devient une cible fait
     #  descendre toute sa branche d'un niveau) changent des niveaux : on compare
     #  l'arbre avant et après, sans rien écrire tant que l'écart n'est pas jugé.

@@ -31,6 +31,10 @@
 #  | absentes                       | < DELAI_IMAGES_CI_S | `attendre`  |
 #  | absentes                       | ≥ DELAI_IMAGES_CI_S | `construire` |
 #  | absentes, sans attente demandée | —                 | `construire` |
+#  | absentes, tirage seul (#3033)  | —                  | `attendre`   |
+#
+#  « Tirage seul » : un build a déjà échoué sur ce code (`.images-echec`) — on
+#  retente de TIRER à chaque passage, jamais de reconstruire.
 #
 #  « construire » est le SECOURS arbitré le 08/10/2026 (« build local +
 #  alerte ») : la production ne dépend jamais de GitHub. Il coûte un second
@@ -58,14 +62,18 @@ SERVICES_IMAGES="api front caddy whatsapp-bridge"
 #: Au-delà, le nœud construit lui-même. La CI construit les quatre services
 #: sur deux architectures en une quinzaine de minutes ; trente laissent passer
 #: une file d'attente des runners sans geler un déploiement pour une panne.
+#: Mesuré le 24/11/2026 sur 39 publications : médiane 4 min, p90 12, max 38
+#: (runners saturés). Un dépassement n'est plus bloquant : après un secours
+#: échoué, le tirage est retenté à chaque passage (`tirer`, #3033).
 DELAI_IMAGES_CI_S=1800
 
 # ── La décision (PURE) ───────────────────────────────────────────────────────
 #  $1 tirage (ok | absent) · $2 âge du commit en secondes · $3 délai
-#  · $4 sans attente (1) → tirees | attendre | construire
+#  · $4 sans attente (1) · $5 tirage seul (1) → tirees | attendre | construire
 decider_obtention() {
-    local tirage="${1:-}" age="${2:-}" delai="${3:-0}" sans_attente="${4:-0}"
+    local tirage="${1:-}" age="${2:-}" delai="${3:-0}" sans_attente="${4:-0}" seul="${5:-0}"
     if [ "$tirage" = ok ]; then echo tirees; return; fi
+    if [ "$seul" = 1 ]; then echo attendre; return; fi
     if [ "$sans_attente" = 1 ]; then echo construire; return; fi
     #  Un âge illisible n'autorise pas à attendre indéfiniment : on construit.
     case "$age" in ''|*[!0-9]*) echo construire; return ;; esac
@@ -129,7 +137,7 @@ obtenir_images() {
         IMAGES_OBTENUES=tirees
         return 0
     fi
-    case "$(decider_obtention absent "$age" "$DELAI_IMAGES_CI_S" "${OBTENIR_SANS_ATTENTE:-0}")" in
+    case "$(decider_obtention absent "$age" "$DELAI_IMAGES_CI_S" "${OBTENIR_SANS_ATTENTE:-0}" "${OBTENIR_TIRAGE_SEUL:-0}")" in
         attendre)
             IMAGES_OBTENUES=attente
             return 3 ;;
@@ -154,6 +162,8 @@ if [ "${BASH_SOURCE[0]}" = "$0" ] && [ "${1:-}" = "--selftest" ]; then
     attendu "tirées pendant une bascule → tirees"            tirees     ok     10    1800 1
     attendu "âge illisible → construire, jamais attendre"    construire absent ""    1800 0
     attendu "âge négatif (horloge) → construire"             construire absent -5    1800 0
+    attendu "tirage seul, absentes, délai dépassé → attendre" attendre  absent 99999 1800 0 1
+    attendu "tirage seul, tirées → tirees"                   tirees     ok     99999 1800 0 1
 
     echo "== self-test : nom local des images =="
     vu=$(cd / && COMPOSE_PROJECT_NAME=5Hostachy image_locale api)

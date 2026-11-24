@@ -17,6 +17,7 @@ on:
     paths:
       - "api/Dockerfile"
       - "api/requirements.txt"
+      - "api/.dockerignore"
       - "api/scripts/verifier_heif.py"
       - "api/tests/donnees/photo.heic"
       - ".github/workflows/image-api.yml"

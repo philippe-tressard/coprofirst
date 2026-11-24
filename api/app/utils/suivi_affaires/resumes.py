@@ -27,7 +27,7 @@ from sqlmodel import Session, col, select
 from app.models.tickets import Ticket
 from app.utils import horloge
 from app.utils.dates_fr import date_courte
-from app.utils.description_format import ReponseIllisible
+from app.utils.description_format import FORMAT_INATTENDU, ReponseIllisible
 from app.utils.llm import ErreurLLM, config_llm, demander
 from app.utils.suivi_affaires.format import (
     FORMAT_REPONSE,
@@ -95,7 +95,7 @@ async def rediger(session: Session, r: Releve, *, demandeur: int) -> dict[str, s
         return lire_reponse(reponse.texte)
     except ReponseIllisible as exc:
         logger.warning("Résumé des affaires en cours : %s", exc)
-        raise ErreurLLM("Le modèle n'a pas répondu dans le format attendu — réessayez.") from exc
+        raise ErreurLLM(FORMAT_INATTENDU) from exc
 
 
 def enregistrer_resumes(session: Session, r: Releve, par_affaire: dict[str, str]) -> int:

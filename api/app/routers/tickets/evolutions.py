@@ -26,7 +26,11 @@ from app.models.core import (
 )
 from app.schemas import TicketEvolutionCreate, TicketEvolutionRead, TicketEvolutionUpdate
 from .actualite import diffuser_actualite
-from app.utils.evolutions import TYPES_SAISIS, evolution_modifiable, supprimer_evolution
+from app.utils.evolutions import (
+    evolution_modifiable,
+    exiger_saisie_valide,
+    supprimer_evolution,
+)
 from app.utils.perimetre_fil import doit_propager
 from app.utils.suivi_fil import statuts_avant
 from app.utils.suivi_actualite import etat_de_la_suite, refuser_etat
@@ -274,10 +278,7 @@ def add_evolution(
     refuser_si_absorbee(ticket)  # son fil vit dans la principale (#1704)
     #  La liste vit dans `utils/evolutions` : créer, corriger et effacer
     #  posent la même question, et elle était écrite quatre fois (#779).
-    if body.type not in TYPES_SAISIS:
-        raise HTTPException(422, "Type invalide (commentaire ou etat)")
-    if body.type == "etat" and not body.nouveau_statut:
-        raise HTTPException(422, "nouveau_statut requis pour un changement d'état")
+    exiger_saisie_valide(body.type, body.nouveau_statut)
     if body.type == "etat":
         refuser_etat(ticket, body.nouveau_statut, est_cs=est_moderateur(user))
 

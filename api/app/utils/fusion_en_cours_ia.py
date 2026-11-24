@@ -30,7 +30,7 @@ from app.models.tickets import Ticket, TicketEvolution
 from app.utils.annonce_hall import texte_brut
 from app.utils.categories_ticket import libelle_categorie
 from app.utils.dates_fr import date_courte
-from app.utils.description_format import ReponseIllisible, lire_objet
+from app.utils.description_format import FORMAT_INATTENDU, ReponseIllisible, lire_objet
 from app.utils.fichiers import nom_lisible
 from app.utils.photos import parse_photos
 from app.utils.valeurs import valeur
@@ -171,5 +171,5 @@ async def proposer_fusion(
         from app.utils.llm import ErreurLLM
 
         logger.warning("Fusion d'affaires : %s", exc)
-        raise ErreurLLM("Le modèle n'a pas répondu dans le format attendu — réessayez.") from exc
+        raise ErreurLLM(FORMAT_INATTENDU) from exc
     return Proposition(titre, en_paragraphes(description), True)
