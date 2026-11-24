@@ -33,7 +33,7 @@ from app.models.points_conseil import CompteRenduAffaire
 from app.utils.annonce_hall import texte_brut
 from app.utils.dates_fr import date_courte, date_longue, datetime_longue
 from app.utils.palettes import recolorer
-from app.utils.pdf_theme import entete_rapport, html_to_pdf
+from app.utils.pdf_theme import document_html, entete_rapport, html_to_pdf
 from app.utils.points_conseil import CrGlobal, nom_present
 from app.utils.points_conseil_ou import ou_du_point
 from app.utils.roles_libelles import libelle_role, libelle_statut
@@ -208,9 +208,9 @@ def html_compte_rendu(doc: DocumentPoint, *, site_nom: str, logo_png: bytes | No
         if cr.non_traitees
         else ""
     )
-    return (
-        f"<!doctype html><html lang='fr'><head><meta charset='utf-8'><title>{TITRE}</title>"
-        f"<style>{_CSS}</style></head><body>"
+    return document_html(
+        TITRE,
+        _CSS,
         f"{entete_rapport(logo_png, site_nom, mention)}"
         f"<h1>{TITRE} du {escape(date_longue(point.debut))}</h1>"
         '<div class="cote"><div class="point"><h3>Le point</h3>'
@@ -226,7 +226,7 @@ def html_compte_rendu(doc: DocumentPoint, *, site_nom: str, logo_png: bytes | No
             entete="Affaire et compte rendu",
             vide="Aucune affaire abordée.",
         )
-        + f"{non_traitees}</body></html>"
+        + non_traitees,
     )
 
 
