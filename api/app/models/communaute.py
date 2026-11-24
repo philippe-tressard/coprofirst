@@ -134,10 +134,9 @@ class PetiteAnnonce(AssisteIAMixin, table=True):
     description: str  # rich-text HTML
     type_annonce: TypeAnnonce = TypeAnnonce.vente
     categorie: CategorieAnnonce = CategorieAnnonce.divers
-    #  Le prix en euros, en FLOTTANT : la colonne d'avant #3011, encore écrite et lue
-    #  pendant l'expansion. On ne la lit ni ne l'écrit en direct : `utils/prix_annonce`.
-    prix: Optional[float] = None
-    #  Le prix en centimes entiers (socle 06 §7, migration 0352) — la colonne qui reste.
+    #  Le prix en centimes entiers (socle 06 §7, migration 0352) — la seule colonne du
+    #  prix. L'ancienne, `prix` en euros flottants, n'est plus ni lue ni écrite (#3011,
+    #  `CONTRACTIONS`) ; le champ servi `prix` se calcule (`utils/prix_annonce`).
     prix_centimes: Optional[int] = None
     negotiable: bool = False
     photos_json: str = Field(default="[]")  # JSON array of up to 5 URLs
