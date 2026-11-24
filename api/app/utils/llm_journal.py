@@ -164,7 +164,7 @@ def journaliser(
                 )
             )
             s.commit()
-    except Exception as exc:  # pragma: no cover - le journal ne casse jamais l'appel
+    except Exception as exc:  # noqa: BLE001 — le journal ne casse pas l'appel  # pragma: no cover
         logger.warning("Journal IA non écrit (%s) : %s", usage, exc)
 
 

@@ -150,7 +150,7 @@ def _lu(user) -> _Lu:
                 if lots
                 else frozenset()
             )
-    except Exception as exc:
+    except Exception as exc:  # noqa: BLE001 — base indisponible : le bâtiment de rattachement seul
         #  Pas de mise en cache : la base reviendra, et une liste figée à vide
         #  ferait durer la panne au-delà d'elle-même.
         logger.error(

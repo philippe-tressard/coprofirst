@@ -94,7 +94,7 @@ class PrestataireRead(AssisteIASortie):
         if isinstance(v, str):
             try:
                 return json.loads(v)
-            except Exception:
+            except Exception:  # noqa: BLE001 — un JSON abîmé en base ne casse pas la lecture
                 return []
         if v is None:
             return []

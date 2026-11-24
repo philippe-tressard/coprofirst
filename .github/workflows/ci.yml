@@ -237,6 +237,11 @@ jobs:
         # directive porte une raison sont déclarées `external` (`api/ruff.toml`).
         # `api/scripts/` est lu avec le jeu d'`app/`.
         #
+        # BLE001 (`except Exception` aveugle) sur `app/`, `scripts/` et `tests/`
+        # depuis #2998 : un `except Exception` porte sa raison sur la ligne,
+        # `# noqa: BLE001 — <pourquoi tout attraper est voulu ici>`, ou nomme les
+        # exceptions que son `try` peut lever. 69 sites de `app/` n'en avaient pas.
+        #
         # `tests/` depuis le 24/09/2026 (#1048) : la CI n'y passait AUCUNE règle,
         # et `test_verrou_bascule.py` employait `nl` sans le définir. Le message
         # d'un `assert` n'est évalué qu'en cas d'échec : le test était vert, et
@@ -281,9 +286,9 @@ jobs:
         # l'instant de la base `horloge.maintenant()`. Ruff ne voit que les
         # appels : `default_factory=date.today` est refusé par `test_horloge.py`.
         run: |
-          ruff check api/app/ api/scripts/ --select E9,F63,F7,F82,F401,S608,F811,F841,E711,E712,E741,E731,DTZ003,DTZ005,DTZ006,DTZ011,W605,RUF100
+          ruff check api/app/ api/scripts/ --select E9,F63,F7,F82,F401,S608,F811,F841,E711,E712,E741,E731,DTZ003,DTZ005,DTZ006,DTZ011,W605,RUF100,BLE001
           ruff check api/alembic/ api/alembic_plateforme/ --select E9,F63,F7,F82,F401,S608,F811,F841,E711,E712,E741,E731,W605,RUF100
-          ruff check api/tests/ --select E9,F63,F7,F82,F401,F841,E711,E712,E741,E731,W605,RUF100
+          ruff check api/tests/ --select E9,F63,F7,F82,F401,F841,E711,E712,E741,E731,W605,RUF100,BLE001
 
       - name: Ruff format (API)
         # Depuis le 24/09/2026 (#1048) : aucun formateur n'était en usage côté

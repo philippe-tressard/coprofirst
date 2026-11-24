@@ -239,7 +239,7 @@ def noter_premier_essai(session: Session, cfg: "ConfigLLM", rep: "Reponse") -> N
                 ligne = ConfigSite(cle=cle, valeur=valeur)
             s.add(ligne)
             s.commit()
-    except Exception as exc:  # pragma: no cover - l'étalon ne casse jamais l'appel
+    except Exception as exc:  # noqa: BLE001 — l'étalon ne casse jamais l'appel  # pragma: no cover
         logger.warning("Premier essai IA non noté (%s) : %s", cfg.usage.code, exc)
 
 

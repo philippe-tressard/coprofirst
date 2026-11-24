@@ -175,7 +175,7 @@ def lancer(session: Session | None = None) -> Verdict | None:
         else:
             _tracer(session, verdict, debut)
             logger.info("Canari de l'assistant IA : %s (%s)", verdict.code, verdict.cas)
-    except Exception as exc:  # pragma: no cover - la tâche ne meurt pas
+    except Exception as exc:  # noqa: BLE001 — la tâche planifiée ne meurt pas  # pragma: no cover
         logger.warning("Canari de l'assistant IA non mesuré : %s", type(exc).__name__)
     finally:
         if propre:

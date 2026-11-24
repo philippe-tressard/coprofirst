@@ -275,7 +275,7 @@ def _purger(rapport: dict, cle: str, sql: str, **params) -> None:
             result = conn.execute(requete_liee(sql, **params) if params else text(sql))
             conn.commit()
             rapport[cle] = result.rowcount
-    except Exception as exc:
+    except Exception as exc:  # noqa: BLE001 — une étape en échec n'arrête pas l'agrégation
         rapport["erreurs"].append(f"{cle}: {exc}")
 
 
@@ -313,7 +313,7 @@ def run_telemetry_aggregation(entry_id: int | None = None) -> dict:
                 if _agreger_jour(session, jour, gestionnaire_id):
                     rapport["jours_agreges"] += 1
             session.commit()
-        except Exception as exc:
+        except Exception as exc:  # noqa: BLE001 — une étape en échec n'arrête pas l'agrégation
             rapport["erreurs"].append(f"agrégation daily: {exc}")
             session.rollback()
 
@@ -323,7 +323,7 @@ def run_telemetry_aggregation(entry_id: int | None = None) -> dict:
                 if _agreger_mois(session, mois):
                     rapport["mois_agreges"] += 1
             session.commit()
-        except Exception as exc:
+        except Exception as exc:  # noqa: BLE001 — une étape en échec n'arrête pas l'agrégation
             rapport["erreurs"].append(f"agrégation monthly: {exc}")
             session.rollback()
 
@@ -381,7 +381,7 @@ def run_telemetry_aggregation(entry_id: int | None = None) -> dict:
                 rapport[cle] = purger_releves_du_navigateur(
                     session, modele, horloge.jour_civil(now_utc)
                 )
-            except Exception as exc:
+            except Exception as exc:  # noqa: BLE001 — une étape en échec n'arrête pas l'agrégation
                 rapport["erreurs"].append(f"purge {libelle}: {exc}")
                 session.rollback()
 

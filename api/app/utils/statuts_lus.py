@@ -69,7 +69,7 @@ def statuts_lus(user) -> frozenset[str]:
                 and m.actif
                 and m.statut is not None
             )
-    except Exception as exc:
+    except Exception as exc:  # noqa: BLE001 — base indisponible : l'aidant lit à son seul titre
         #  Pas de cache : la base reviendra. Sans héritage, l'aidant lit à son
         #  seul titre — le sens fermé, jamais l'ouvert.
         logger.error("Délégations de l'aidant %s illisibles (%s)", user_id, exc)

@@ -169,7 +169,7 @@ def _build_cs_section(cs_data: dict) -> str:
 
             try:
                 vote += f" — {date_longue(dt_date.fromisoformat(ag_date))}"
-            except Exception:
+            except (ValueError, TypeError):
                 vote += f" — {ag_date}"
 
     #  Quatre colonnes au plus : au-delà, les bâtiments passent à la ligne.

@@ -134,7 +134,7 @@ def verdict_envoi(envoi: Callable[[], Any]) -> tuple[str, str | None]:
         return STATUT_ENVOYE, None
     except EnvoiIncertain as exc:
         return STATUT_INCERTAIN, str(exc)
-    except Exception as exc:
+    except Exception as exc:  # noqa: BLE001 — tout autre échec d'envoi se trace « échec »
         return STATUT_ECHEC, str(exc)
 
 
@@ -405,7 +405,7 @@ def envoyer_whatsapp_avec_log(
         session.add(log)
         session.commit()
         _prune_logs(session)
-    except Exception as exc:
+    except Exception as exc:  # noqa: BLE001 — le journal WhatsApp ne casse jamais l'envoi
         logger.error("Erreur lors de l'enregistrement du log WhatsApp: %s", exc)
     finally:
         session.close()

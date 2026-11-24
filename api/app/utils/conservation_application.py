@@ -197,7 +197,7 @@ def appliquer_conservation(
             for groupe, contenus in echus(session, aujourd_hui):
                 try:
                     rendu["groupes"].append(traiter_groupe(session, groupe, contenus, maintenant))
-                except Exception as exc:  # une archive invalide, ou autre : ce groupe seul
+                except Exception as exc:  # noqa: BLE001 — ce groupe seul échoue, pas la passe
                     session.rollback()
                     rendu["echecs"] += 1
                     logger.warning(
@@ -215,7 +215,7 @@ def appliquer_conservation(
             rendu["echecs"],
             rendu["archives_retirees"],
         )
-    except Exception as exc:  # pragma: no cover - la tâche ne meurt pas
+    except Exception as exc:  # noqa: BLE001 — la tâche planifiée ne meurt pas  # pragma: no cover
         session.rollback()
         logger.warning("Conservation des affaires non traitée : %s", exc)
     finally:

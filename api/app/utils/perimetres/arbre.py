@@ -156,7 +156,7 @@ def arbre() -> dict[str, Noeud]:
                 )
                 for ligne in lignes
             }
-    except Exception as exc:
+    except Exception as exc:  # noqa: BLE001 — base indisponible : arbre vide, jamais en cache
         #  Table absente ou base indisponible. On ne met **pas** le résultat en
         #  cache : la table apparaîtra au prochain démarrage, et figer un arbre
         #  vide pour 30 s masquerait le rétablissement.
@@ -479,6 +479,6 @@ def parse_json_perimetres(perimetre_cible: Optional[str]) -> list[str]:
     try:
         val = json.loads(perimetre_cible) if isinstance(perimetre_cible, str) else perimetre_cible
         codes = [str(v) for v in val] if isinstance(val, (list, tuple)) else []
-    except Exception:
+    except Exception:  # noqa: BLE001 — affichage seul : un JSON abîmé rend le défaut
         codes = []
     return _avec_defaut(codes)

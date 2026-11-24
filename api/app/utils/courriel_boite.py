@@ -416,7 +416,7 @@ def relever() -> dict[str, int]:
                     #  INCONNU, pas un refus : le message reste non lu, repris ensuite.
                     logger.warning("Réponse par courriel : vérification reportée (%s)", exc)
                     continue
-                except Exception as exc:
+                except Exception as exc:  # noqa: BLE001 — le message reste non lu, repris ensuite
                     #  Le message reste NON LU : il sera repris dans dix minutes. Et
                     #  l'échec est journalisé en ERROR, donc visible du point 6 du
                     #  pré-check et de l'alerte quotidienne — un message qui
@@ -436,7 +436,7 @@ def relever() -> dict[str, int]:
         finally:
             try:
                 boite.logout()
-            except Exception:
+            except Exception:  # noqa: BLE001 — une déconnexion ratée ne perd rien
                 pass
     except Exception as exc:  # noqa: BLE001  (le tuyau, pas la décision)
         derniere_erreur = exc

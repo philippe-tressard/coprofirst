@@ -103,7 +103,7 @@ def traiter_file(session: Optional[Session] = None) -> dict[str, int]:
                 compte["produites"] += 1
                 if resultat.a_aviser:
                     asyncio.run(envoyer_avis(session, demande.id))
-            except Exception as exc:  # une demande ne bloque pas la file
+            except Exception as exc:  # noqa: BLE001 — une demande ne bloque pas la file
                 session.rollback()
                 compte["echecs"] += 1
                 logger.warning("Synthèse d'affaire %s non produite : %s", demande.id, exc)
@@ -115,7 +115,7 @@ def traiter_file(session: Optional[Session] = None) -> dict[str, int]:
             compte["perimees"],
             compte["echecs"],
         )
-    except Exception as exc:  # pragma: no cover - la tâche ne meurt pas
+    except Exception as exc:  # noqa: BLE001 — la tâche planifiée ne meurt pas  # pragma: no cover
         logger.warning("File des synthèses non traitée : %s", exc)
     finally:
         if propre:
