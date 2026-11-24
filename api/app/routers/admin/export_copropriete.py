@@ -22,6 +22,7 @@ from app.models.core import Utilisateur
 from app.utils import export_copropriete as ex
 from app.utils import import_copropriete as im
 from app.utils import horloge
+from app.utils.journal_securite import journaliser_securite
 
 router = APIRouter()
 
@@ -82,7 +83,7 @@ def _exporter(chemin: Path) -> None:
 
 
 @router.post("/export-copropriete", response_model=ExportLance, status_code=202)
-def lancer_export(background_tasks: BackgroundTasks, _: Utilisateur = Depends(require_admin)):
+def lancer_export(background_tasks: BackgroundTasks, admin: Utilisateur = Depends(require_admin)):
     """Écrit l'archive complète — tables ET fichiers — dans le volume des sauvegardes."""
     #  Le dossier de CETTE copropriété : sur une installation commune, le volume est
     #  partagé, et un administrateur listerait sinon l'export d'une autre (#2053).
@@ -90,6 +91,11 @@ def lancer_export(background_tasks: BackgroundTasks, _: Utilisateur = Depends(re
     dossier.mkdir(parents=True, exist_ok=True)
     nom = f"{PREFIXE}{horloge.a_paris(horloge.maintenant()):%Y%m%d_%H%M%S}_paris.tar.gz"
     background_tasks.add_task(_exporter, dossier / nom)
+    #  Toute la copropriété — comptes, adresses, fichiers — tient dans cette archive :
+    #  qui l'a fait écrire se relit (#2941). Un identifiant, jamais une adresse.
+    #  La vérification (`/verifier`) ne journalise pas : elle réimporte dans une
+    #  base jetable, rien ne sort du processus.
+    journaliser_securite("export_copropriete", acteur_id=admin.id, detail=nom)
     return ExportLance(archive=nom)
 
 
