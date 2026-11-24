@@ -6,7 +6,9 @@ question de visibilité, ou se déclare avec sa raison.
 Une route qui reçoit l'identifiant d'un compte (chemin, requête ou corps) et le
 lit peut en rendre le nom. Ouverte à tout résident connecté, elle ne nomme que
 qui ce lecteur connaît déjà : elle appelle une question nommée (le masquage :
-`masquage.auteur_lu_par`), ou se déclare dans `ROUTES_DECLAREES`, avec sa raison.
+`masquage.auteur_lu_par` ; le locataire d'un bail : `appartenance.est_locataire_designable`),
+dans son corps ou dans une fonction du même module qu'elle appelle, ou se déclare dans
+`ROUTES_DECLAREES`, avec sa raison.
 
 ## Ce que le balayage voit — et sa limite
 
@@ -38,21 +40,21 @@ _METHODES = {"get", "post", "put", "patch", "delete"}
 _MODERATION = {"require_cs_or_admin", "require_admin", "require_operateur"}
 _CHARGEURS = {"ou_404", "ou_rien", "get"}
 
-#: « module::route » → la question de visibilité que la route appelle.
+#: « module::route » → la question de visibilité que la route appelle — dans son corps,
+#: ou dans une fonction du même module qu'elle appelle (un niveau, la portée du relevé).
 ROUTES_QUESTIONNEES = {
     "masquages.py::masquer": "auteur_lu_par",
+    #  Le locataire d'un bail : un compte que la recherche ouverte au bailleur rendrait
+    #  (`auth/appartenance.est_locataire_designable`, claude-config#656).
+    "bailleur/baux.py::creer_bail_multi": "est_locataire_designable",
+    "bailleur/baux.py::update_bail": "est_locataire_designable",
 }
-
-_BAIL = (
-    "le bailleur désigne son locataire, trouvé par la recherche qui lui est ouverte "
-    "(`search-locataire`) ; la route vérifie que le compte existe (#1535)"
-)
 
 #: « module::route » → pourquoi elle lit le compte désigné sans autre question.
-ROUTES_DECLAREES = {
-    "bailleur/baux.py::creer_bail_multi": _BAIL,
-    "bailleur/baux.py::update_bail": _BAIL,
-}
+ROUTES_DECLAREES: dict[str, str] = {}
+
+#: Route relevée → les fonctions du même module qu'elle appelle (un niveau).
+_APPELEES: dict[ast.AST, list[ast.AST]] = {}
 
 
 def _noms(noeud: ast.AST) -> set[str]:
@@ -154,6 +156,13 @@ def _routes_qui_lisent_un_compte_designe(exclues=_MODERATION) -> dict[str, ast.A
                 lit = any(_noms(i) & relayes for i in _ids_charges(aide))
             if lit:
                 trouvees[f"{module.rel.removeprefix('routers/')}::{route.name}"] = route
+                _APPELEES[route] = [
+                    aides[n.func.id]
+                    for n in ast.walk(route)
+                    if isinstance(n, ast.Call)
+                    and isinstance(n.func, ast.Name)
+                    and n.func.id in aides
+                ]
     return trouvees
 
 
@@ -182,10 +191,11 @@ def test_la_question_declaree_est_appelee():
     trouvees = _routes_qui_lisent_un_compte_designe()
     muettes = []
     for cle, question in ROUTES_QUESTIONNEES.items():
-        route = trouvees.get(cle)
+        route = trouvees.get(cle) or ast.Module(body=[], type_ignores=[])
         appels = {
             ast.unparse(n.func).split(".")[-1]
-            for n in ast.walk(route or ast.Module(body=[], type_ignores=[]))
+            for f in [route, *_APPELEES.get(route, [])]
+            for n in ast.walk(f)
             if isinstance(n, ast.Call)
         }
         if question not in appels:

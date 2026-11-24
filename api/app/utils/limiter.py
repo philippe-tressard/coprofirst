@@ -105,6 +105,9 @@ LIMITE_DONNEES_PERSONNELLES = "5/minute"
 #: La **recherche d'une personne** parmi les comptes — un bailleur qui cherche son
 #: locataire (#2153). Elle se lance au clic, jamais à la frappe : vingt par
 #: minute ne gênent personne, et bornent un balayage alphabétique de l'annuaire.
+#: La DÉSIGNATION du compte trouvé — créer ou corriger un bail — porte la même
+#: intention (claude-config#656) : vingt baux posés ou corrigés par minute restent
+#: hors d'atteinte d'un bailleur.
 LIMITE_RECHERCHE_DE_PERSONNES = "20/minute"
 
 #: Le **dépôt d'un fichier** par un compte connecté — photo, pièce jointe, avatar
