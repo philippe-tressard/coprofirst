@@ -33,7 +33,7 @@ from typing import Optional
 
 from fastapi import HTTPException
 
-from app.config import get_settings
+from app.config import defaut_du_secret, get_settings
 from app.utils.journal_securite import journaliser_securite
 from app.utils.leurres import est_cle_maintenance_leurre
 
@@ -57,6 +57,12 @@ def exiger_cle_maintenance(cle_recue: Optional[str]) -> None:
             status_code=503,
             detail="Maintenance reporting non configuré (MAINTENANCE_KEY vide)",
         )
+    #  Le plancher de `SECRET_KEY` (32 caractères), au CONTRÔLE et jamais au démarrage :
+    #  refusé au démarrage, il bloquerait le conteneur (`start.sh`, `set -e`). Mesuré le
+    #  23/11/2026 sur les deux nœuds : 48 caractères. Le message nomme le réglage, jamais
+    #  sa valeur.
+    if trop_faible := defaut_du_secret(settings.maintenance_key, "MAINTENANCE_KEY"):
+        raise HTTPException(status_code=503, detail=trop_faible)
     #  La fausse clé (#2365), montrée par le faux `.env.bak` : la présenter, c'est
     #  l'avoir volée. Le même 403 qu'une clé fausse, et une ligne que S6 lit en FAIL.
     if est_cle_maintenance_leurre(cle_recue):
@@ -70,4 +76,7 @@ def exiger_cle_maintenance(cle_recue: Optional[str]) -> None:
     if not hmac.compare_digest(
         (cle_recue or "").encode("utf-8"), settings.maintenance_key.encode("utf-8")
     ):
+        #  Un refus se TRACE : sans ligne, une série d'essais ne se voit nulle part —
+        #  l'audit de la nuit (S6) compte cet événement. Ni la clé reçue ni sa longueur.
+        journaliser_securite("cle_maintenance_refusee")
         raise HTTPException(status_code=403, detail="Clé maintenance invalide")

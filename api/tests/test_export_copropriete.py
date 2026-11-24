@@ -195,6 +195,29 @@ def test_l_export_ecrit_une_archive_entiere_et_se_relit(http_admin):
     assert not list((dossier / "sauvegardes").glob("*.partiel")), "aucun reste d'écriture"
 
 
+def test_l_export_laisse_une_ligne_qui_nomme_l_administrateur(http_admin, caplog):
+    """Toute la copropriété sort dans une archive : qui l'a lancé se relit (#2941).
+
+    La vérification, elle, réimporte dans une base jetable — rien ne sort, pas de ligne.
+    """
+    import logging
+    import re
+
+    http, _ = http_admin
+    caplog.set_level(logging.INFO, logger="securite")
+
+    def lignes():
+        return [r.getMessage() for r in caplog.records if r.name == "securite"]
+
+    http.post("/admin/export-copropriete/verifier")
+    assert lignes() == [], "la vérification ne journalise pas"
+    nom = http.post("/admin/export-copropriete").json()["archive"]
+    assert len(lignes()) == 1 and re.fullmatch(
+        rf"securite export_copropriete acteur=\d+ cible=- {re.escape(nom)}", lignes()[0]
+    ), lignes()
+    assert "@" not in lignes()[0], "un identifiant, jamais une adresse"
+
+
 def test_on_ne_garde_que_les_derniers_exports(http_admin, monkeypatch):
     http, dossier = http_admin
     sauvegardes = dossier / "sauvegardes"

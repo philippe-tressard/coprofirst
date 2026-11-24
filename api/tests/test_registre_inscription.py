@@ -26,7 +26,9 @@ from app.registre.modeles import (
     Installation,
     registre_plateforme,
 )
-from app.registre.routeur import EN_TETE_SIGNATURE, PLAFOND_EN_ATTENTE, TAILLE_MAX
+from app.registre.contrat import EN_TETE_SIGNATURE
+from app.registre.gardes import TAILLE_MAX
+from app.registre.routeur import PLAFOND_EN_ATTENTE
 from tests.aides_registre import HOTE, registre_allume
 
 

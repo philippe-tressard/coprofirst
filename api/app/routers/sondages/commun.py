@@ -66,7 +66,9 @@ class SondageRead(AssisteIASortie, AvecPerimetreLibelle):
     cloture_le: Optional[datetime] = None
     cloture_forcee: bool = False
     resultats_publics: bool
-    auteur_id: Optional[int] = None  # compte supprimé (#1821)
+    #: Servi à l'auteur et à qui modère seulement, `None` sinon (et pour un compte
+    #: supprimé, #1821) : un sondage ne dit pas son auteur (`masquage.auteur_servi`).
+    auteur_id: Optional[int] = None
     cree_le: datetime
     #  Exposés en LISTES, comme les publications et les tickets : la colonne est
     #  du texte JSON, mais aucun appelant ne doit avoir à le savoir. La page des
@@ -174,7 +176,9 @@ class SondageDetail(BaseModel):
     description: Optional[str] = None
     cloture_le: Optional[datetime] = None
     resultats_publics: bool
-    auteur_id: Optional[int] = None  # compte supprimé (#1821)
+    #: Même règle que la liste (`masquage.auteur_servi`) : `None` hors de l'auteur
+    #: et de qui modère, et pour un compte supprimé (#1821).
+    auteur_id: Optional[int] = None
     cree_le: datetime
     perimetre_cible: List[str] = []
     public_cible: List[str] = []

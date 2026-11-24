@@ -20,6 +20,7 @@ from __future__ import annotations
 
 from app.models.core import RoleUtilisateur, StatutUtilisateur, Utilisateur
 from app.models.roles import role_principal
+from app.utils.journal_securite import journaliser_securite
 
 #: Les statuts qui CONSULTENT seulement (#1911, arbitré le 13/10/2026).
 STATUTS_EXTERNES = frozenset(
@@ -60,3 +61,21 @@ def poser_roles_du_statut(user: Utilisateur, statut: StatutUtilisateur) -> tuple
     user.roles_json = ",".join(nouveaux)
     user.role = role_principal(nouveaux, defaut=nouveaux[0]) or user.role
     return set(nouveaux) - set(avant), set(avant) - set(nouveaux)
+
+
+def changer_statut(user: Utilisateur, statut: StatutUtilisateur, *, acteur_id: int) -> None:
+    """LE geste qui change le statut d'un compte existant : statut, rôles, journal.
+
+    🔴 Deux portes écrivaient le statut : l'approbation d'une demande de profil
+    (`admin/profils.py`), corrigée par #2161, et la fiche de l'administrateur
+    (`admin/utilisateurs.py`), qui le recopiait champ par champ sans toucher aux
+    rôles. Un copropriétaire passé locataire par la fiche gardait `propriétaire`.
+    Les deux passent ici ; chaque rôle qui change va au journal de sécurité.
+    """
+    user.statut = statut
+    ajoutes, retires = poser_roles_du_statut(user, statut)
+    #  Codes littéraux : `test_journal_securite` lit chaque code dans l'appel.
+    for role in sorted(ajoutes):
+        journaliser_securite("role_ajoute", acteur_id=acteur_id, cible_id=user.id, detail=role)
+    for role in sorted(retires):
+        journaliser_securite("role_retire", acteur_id=acteur_id, cible_id=user.id, detail=role)

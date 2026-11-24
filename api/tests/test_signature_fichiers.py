@@ -14,10 +14,10 @@ lignes d'écart.
 
 ## Pourquoi ce test regarde AUSSI la portée
 
-La règle ne vaut que si **chaque** point de réception l'appelle — les
-quatre qui écrivent (`uploads`, `compteurs`, `diagnostics`, `documents`) et les
-trois imports de tableur (`_POINTS`, sept en tout). Une règle centralisée qu'un
-seul appelant emploie ne protège qu'un seul chemin, et donne l'illusion de tous
+La règle ne vaut que si **chaque** point de réception l'APPELLE : toute route
+déclarée qui reçoit un `UploadFile` (`points_de_reception`, relevés sur les
+routes, jamais une liste recopiée — #2912). Une règle centralisée qu'un seul
+appelant emploie ne protège qu'un seul chemin, et donne l'illusion de tous
 (`standards/03` §1).
 
 Qu'aucun routeur n'écrive un fichier reçu hors de `utils/fichiers.py` est tenu
@@ -28,34 +28,73 @@ depuis la factorisation (#1026) — un vert à vide, retiré le 30/09/2026.
 
 from __future__ import annotations
 
+import inspect
 import pathlib
+import typing
 
 from app.utils.fichiers import signature_incoherente
+from tests.aides_sources import (
+    APP,
+    Module,
+    atteint,
+    routes_declarees,
+    routes_qui_atteignent,
+)
 
-_ROUTERS = pathlib.Path(__file__).resolve().parents[1] / "app" / "routers"
-
-#: Les endpoints qui reçoivent un fichier d'un client.
+#: Les points de réception : les routes qui reçoivent un fichier d'un client.
 #:
-#: 🔴 Les TROIS IMPORTS DE TABLEUR ont rejoint cette liste le 19/09/2026
-#: (#1026) : ils n'y étaient pas, et n'avaient **aucun** contrôle — ni type, ni
-#: taille, ni signature. Le test était vert, et il avait raison au sens strict :
-#: sa portée disait « les quatre endpoints qui ÉCRIVENT sur le disque », et un
-#: import n'écrit rien, il analyse en mémoire.
+#: 🔴 Les TROIS IMPORTS DE TABLEUR ont rejoint la liste le 19/09/2026 (#1026) :
+#: ils n'y étaient pas, et n'avaient **aucun** contrôle — ni type, ni taille, ni
+#: signature. Le test était vert, et il avait raison au sens strict : sa portée
+#: disait « les quatre endpoints qui ÉCRIVENT sur le disque », et un import
+#: n'écrit rien, il analyse en mémoire.
 #:
 #: ⚠️ C'est la leçon de `standards/05` §9 dans sa forme la plus coûteuse : **la
 #: portée d'un contrôle fait partie du contrôle**. Celle-ci était juste, et elle
 #: laissait dehors trois chemins par lesquels un fichier arbitraire entrait.
 #: « Écrire sur le disque » était le critère du jour où le test a été écrit ;
 #: « recevoir un fichier » est celui de la règle.
-_POINTS = (
-    "uploads.py",
-    "compteurs.py",
-    "diagnostics.py",
-    "documents.py",
-    "acces/imports_vigik.py",
-    "acces/imports_telecommandes.py",
-    "lots_imports.py",
-)
+#:
+#: 🔴 ET LE DÉFAUT EST REVENU (audit du 23/11/2026, #2912). La liste `_POINTS` —
+#: sept noms de fichier écrits à la main — ignorait trois routes qui reçoivent un
+#: fichier : la photo d'annonce, le logo, et l'état descriptif des lots, un
+#: QUATRIÈME import de tableur ajouté après #1026. Et son critère était une
+#: sous-chaîne dans le TEXTE du fichier : un import, un commentaire ou une autre
+#: route du même fichier le satisfaisaient — l'import des lots lu sans la porte,
+#: son nom laissé en commentaire, restait vert.
+#:
+#: Désormais la liste ne se recopie plus, elle se RELÈVE : toute route déclarée
+#: dont un paramètre est un `UploadFile` est un point de réception, et sa
+#: fonction doit APPELER une porte — directement ou par une fonction de `app/`
+#: qu'elle appelle (`_save_image` de `routers/uploads.py`, importée par
+#: l'annonce), résolue par les imports du module (`aides_sources.atteint`).
+
+#: Le plancher du relevé : douze routes recevaient un fichier le 23/11/2026. En
+#: dessous, le relevé ne voit plus les routes, et le contrôle ne mesure plus rien.
+PLANCHER_POINTS = 12
+
+
+def _est_un_fichier(annotation) -> bool:
+    """`UploadFile`, `list[UploadFile]`, `Optional[UploadFile]`, `Annotated[…]`."""
+    from starlette.datastructures import UploadFile
+
+    if isinstance(annotation, type) and issubclass(annotation, UploadFile):
+        return True
+    return any(_est_un_fichier(a) for a in typing.get_args(annotation))
+
+
+def points_de_reception() -> list[tuple[str, str]]:
+    """(module relatif à `app/`, fonction) de chaque route déclarée qui reçoit un fichier."""
+    points = set()
+    for route in routes_declarees():
+        fonction = inspect.unwrap(route.endpoint)
+        #  `eval_str` : sous `from __future__ import annotations`, une annotation
+        #  est une chaîne ; FastAPI l'a déjà évaluée pour déclarer la route.
+        parametres = inspect.signature(fonction, eval_str=True).parameters.values()
+        if any(_est_un_fichier(p.annotation) for p in parametres):
+            chemin = pathlib.Path(inspect.getsourcefile(fonction)).resolve()
+            points.add((chemin.relative_to(APP).as_posix(), fonction.__name__))
+    return sorted(points)
 
 
 def test_un_faux_pdf_est_refuse():
@@ -153,16 +192,89 @@ def test_chaque_point_de_televersement_appelle_la_regle():
     Une règle centralisée qu'un seul appelant emploie ne protège qu'un chemin —
     et laisse croire qu'elle les protège tous.
     """
-    manquants = [
-        nom
-        for nom in _POINTS
-        if not any(a in (_ROUTERS / nom).read_text(encoding="utf-8") for a in _APPELS_ADMIS)
-    ]
+    points = points_de_reception()
+    assert len(points) >= PLANCHER_POINTS, (
+        f"seulement {len(points)} route(s) reçoivent un `UploadFile` "
+        f"(plancher {PLANCHER_POINTS}) : {points}. Le relevé ne voit plus les routes, "
+        "et ce contrôle serait vert sur rien."
+    )
+    controlees = set(routes_qui_atteignent(set(_APPELS_ADMIS)))
+    manquants = [f"{rel}::{nom}" for rel, nom in points if (rel, nom) not in controlees]
     assert not manquants, (
-        "ces points de téléversement ne vérifient pas la signature du fichier : "
-        f"{manquants}. Un fichier déguisé y passe encore. "
-        "Employer `enregistrer_televersement` (valide ET écrit), ou "
-        "`signature_incoherente` si l'écriture est particulière."
+        "ces points de téléversement n'APPELLENT pas la vérification du fichier, ni "
+        f"directement ni par une aide de `app/` : {manquants}. Un fichier déguisé y "
+        "passe encore. Employer `enregistrer_fichier_recu` (valide ET écrit), "
+        "`verifier_fichier_recu` ou `lire_tableur_recu` (valident sans écrire)."
+    )
+
+
+def _module_forge(rel: str, source: str) -> Module:
+    return Module(APP / rel, rel, inspect.cleandoc(source))
+
+
+#: Le code forgé du témoin : une aide qui vérifie, un routeur, et un homonyme.
+_AIDE_FORGEE = """
+    from app.utils.fichiers import verifier_fichier_recu
+
+    def _enregistrer(fichier):
+        verifier_fichier_recu(fichier.file.read(), fichier.filename, "", "image")
+"""
+_ROUTEUR_FORGE = """
+    from app.utils.fichiers import enregistrer_fichier_recu  # importée, non appelée
+    from app.utils.aide_forgee import _enregistrer
+    from app.utils import aide_forgee
+
+    @router.post("/autre")
+    def autre_route(file):
+        return enregistrer_fichier_recu(file)
+
+    @router.post("/commentaire")
+    def route_commentaire(file):
+        # enregistrer_fichier_recu(file) : la porte, en commentaire seulement
+        return file.file.read()
+
+    @router.post("/aide")
+    def route_par_aide(file):
+        return _enregistrer(file)
+
+    @router.post("/module")
+    async def route_par_module(file):
+        return aide_forgee._enregistrer(file)
+"""
+_HOMONYME_FORGE = """
+    def _enregistrer(file):
+        return file.file.read()  # même nom que l'aide qui vérifie, sans la porte
+
+    @router.post("/homonyme")
+    def route_homonyme(file):
+        return _enregistrer(file)
+"""
+
+
+def test_temoin_nommer_la_porte_ne_suffit_pas_il_faut_l_appeler():
+    """🔴 Le défaut de #2912, rejoué sur un code forgé.
+
+    Refusées : la route qui ne nomme la porte que dans un commentaire et un import
+    non appelé (une AUTRE route du même module l'appelant), et celle qui appelle
+    une aide locale homonyme d'une aide qui vérifie — la résolution suit les
+    imports, pas le nom. Admises : l'appel direct, et l'appel d'une aide d'un
+    autre module qui appelle la porte, par son nom ou par son module.
+    """
+    modules = [
+        _module_forge("utils/aide_forgee.py", _AIDE_FORGEE),
+        _module_forge("routers/forge.py", _ROUTEUR_FORGE),
+        _module_forge("routers/homonyme.py", _HOMONYME_FORGE),
+    ]
+    portes = set(_APPELS_ADMIS)
+    assert routes_qui_atteignent(portes, modules=modules) == [
+        ("routers/forge.py", "autre_route"),
+        ("routers/forge.py", "route_par_aide"),
+        ("routers/forge.py", "route_par_module"),
+    ], "un commentaire, un import non appelé ou un nom homonyme satisfait le contrôle"
+    assert not atteint("routers/forge.py", "route_commentaire", portes, modules=modules)
+    assert not atteint("routers/homonyme.py", "route_homonyme", portes, modules=modules)
+    assert atteint("routers/forge.py", "route_par_aide", portes, modules=modules), (
+        "l'appel d'une aide qui appelle la porte n'est plus suivi"
     )
 
 
