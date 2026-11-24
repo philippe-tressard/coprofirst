@@ -149,6 +149,7 @@ l'écran en gras, puis ce qu'il fait.
 | `npm run lint:manuel-menus` | une route du menu sans fiche, une fiche sans route, un public faux, deux maquettes qui divergent ou ne suivent pas l'ordre par défaut |
 | `npm run lint:manuel-profils` | un onglet réservé non annoncé, la table des sections ou des catégories qui diverge du code, une icône de carte non documentée — **et** un README qui énumère trois catégories ou plus, ou les compte (#1540) |
 | `npm run lint:manuels` | un balisage mal formé, dans `docs/` comme dans `front/static/` |
+| `npm run lint:manuel-volume` | un manuel, une section ou une carte d'écran au-dessus de son plafond de mots (`check-manuel-volume.regles.mjs`, qui ne fait que baisser : un texte qui maigrit baisse son plafond dans le même lot), une carte neuve sans plafond — arbitrage du 07/09/2026, #3008. Ajouter une phrase à une carte, c'est en retirer une autre |
 | `npm run lint:pictogrammes` | 🚨 dans le manuel : l'urgence se dit ⚡ |
 | `test_documentation.py` | les deux copies qui diffèrent, un numéro de version du manuel, un logo dessiné, les badges du README (Python, Node, CI) qui ne suivent plus l'image ni la CI |
 | `test_manuel_ne_recopie_rien.py` | une valeur dont le code est la source : taille de fichier, nombre de pièces jointes, extensions, délai en jours, énumération de catégories |
