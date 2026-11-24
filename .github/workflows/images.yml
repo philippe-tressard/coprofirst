@@ -46,6 +46,7 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 5
     permissions:
+      issues: write  # l'alerte d'échec ouvre un ticket (#2988)
       contents: write   # pousser le tag, et rien d'autre
     outputs:
       version: ${{ steps.lire.outputs.version }}
@@ -72,6 +73,15 @@ jobs:
         id: tag
         run: bash scripts/ci/tag-version.sh "${{ steps.lire.outputs.version }}"
 
+      #  Un rouge de `main` ou d'un passage planifié ouvre (ou complète) un ticket
+      #  (#2988, `scripts/ci/signaler_echec_ci.py`) : le dernier pas du job, ou
+      #  l'avant-dernier devant la marque « arbre jugé vert », qui ne pose qu'un vert.
+      - name: Alerte d'échec
+        if: failure()
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: python3 "${GITHUB_WORKSPACE:-$(git rev-parse --show-toplevel)}/scripts/ci/signaler_echec_ci.py" --signaler
+
   construire:
     name: Construire ${{ matrix.service.nom }} (${{ matrix.plateforme }})
     needs: version
@@ -80,6 +90,7 @@ jobs:
     runs-on: ${{ matrix.plateforme == 'arm64' && 'ubuntu-24.04-arm' || 'ubuntu-24.04' }}
     timeout-minutes: 30
     permissions:
+      issues: write  # l'alerte d'échec ouvre un ticket (#2988)
       contents: read
       packages: write
     strategy:
@@ -140,12 +151,22 @@ jobs:
           retention-days: 1
           if-no-files-found: error
 
+      #  Un rouge de `main` ou d'un passage planifié ouvre (ou complète) un ticket
+      #  (#2988, `scripts/ci/signaler_echec_ci.py`) : le dernier pas du job, ou
+      #  l'avant-dernier devant la marque « arbre jugé vert », qui ne pose qu'un vert.
+      - name: Alerte d'échec
+        if: failure()
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: python3 "${GITHUB_WORKSPACE:-$(git rev-parse --show-toplevel)}/scripts/ci/signaler_echec_ci.py" --signaler
+
   publier:
     name: Publier ${{ matrix.service }}
     needs: [version, construire]
     runs-on: ubuntu-24.04
     timeout-minutes: 10
     permissions:
+      issues: write  # l'alerte d'échec ouvre un ticket (#2988)
       contents: read
       packages: write
       id-token: write       # signer l'attestation (Sigstore, sans clé stockée)
@@ -198,12 +219,29 @@ jobs:
           subject-digest: ${{ steps.index.outputs.digest }}
           push-to-registry: true
 
+      #  Ce job ne récupère pas le dépôt : l'alerte d'échec en extrait son seul script.
+      - name: Script de l'alerte d'échec
+        if: failure()
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          sparse-checkout: scripts/ci/signaler_echec_ci.py
+          sparse-checkout-cone-mode: false
+      #  Un rouge de `main` ou d'un passage planifié ouvre (ou complète) un ticket
+      #  (#2988, `scripts/ci/signaler_echec_ci.py`) : le dernier pas du job, ou
+      #  l'avant-dernier devant la marque « arbre jugé vert », qui ne pose qu'un vert.
+      - name: Alerte d'échec
+        if: failure()
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: python3 "${GITHUB_WORKSPACE:-$(git rev-parse --show-toplevel)}/scripts/ci/signaler_echec_ci.py" --signaler
+
   verifier-front:
     name: Le pied de page de l'image affiche sa version
     needs: [version, publier]
     runs-on: ubuntu-24.04
     timeout-minutes: 10
     permissions:
+      issues: write  # l'alerte d'échec ouvre un ticket (#2988)
       contents: read
       packages: read
     steps:
@@ -231,6 +269,15 @@ jobs:
   #  déploiement standard, une fois ses images publiées et lues. C'est ce que la
   #  référence propose aux installations (canal Urgence ou version choisie) : sans
   #  archive, la mise à jour nocturne d'une réplique n'aurait rien à télécharger.
+
+      #  Un rouge de `main` ou d'un passage planifié ouvre (ou complète) un ticket
+      #  (#2988, `scripts/ci/signaler_echec_ci.py`) : le dernier pas du job, ou
+      #  l'avant-dernier devant la marque « arbre jugé vert », qui ne pose qu'un vert.
+      - name: Alerte d'échec
+        if: failure()
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: python3 "${GITHUB_WORKSPACE:-$(git rev-parse --show-toplevel)}/scripts/ci/signaler_echec_ci.py" --signaler
   publier-version:
     name: Publier la version (release et archive)
     needs: [version, verifier-front]
@@ -238,6 +285,7 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 10
     permissions:
+      issues: write  # l'alerte d'échec ouvre un ticket (#2988)
       contents: write   # créer la release et y joindre l'archive
       packages: read    # l'image de l'API, d'où s'exporte le contrat (#2456)
     steps:
@@ -258,3 +306,12 @@ jobs:
           VERSION: ${{ needs.version.outputs.version }}
           GH_TOKEN: ${{ github.token }}
         run: bash scripts/ci/publier-version.sh
+
+      #  Un rouge de `main` ou d'un passage planifié ouvre (ou complète) un ticket
+      #  (#2988, `scripts/ci/signaler_echec_ci.py`) : le dernier pas du job, ou
+      #  l'avant-dernier devant la marque « arbre jugé vert », qui ne pose qu'un vert.
+      - name: Alerte d'échec
+        if: failure()
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: python3 "${GITHUB_WORKSPACE:-$(git rev-parse --show-toplevel)}/scripts/ci/signaler_echec_ci.py" --signaler

@@ -84,8 +84,8 @@ def mentions(site_nom: str, site_url: str, edite_le: date) -> str:
     <dd>Le conseil syndical de la copropriété. Mentions légales complètes et
         politique de confidentialité sur {escape(site_url)}/mentions-legales.</dd>
     <dt>Diffusion</dt>
-    <dd>Document à usage interne, destiné aux résidents. Il décrit un site dont
-        l'accès est réservé aux personnes inscrites.</dd>
+    <dd>Document public : il décrit les écrans, sans aucune donnée de la
+        copropriété. Le site lui-même est réservé aux personnes inscrites.</dd>
     <dt>Licence</dt>
     <dd>Ce site est servi par {NOM_PLATEFORME}, un logiciel libre distribué sous la
         {LICENCE_NOM} (<strong>{LICENCE_SPDX}</strong>) : chacun peut l'utiliser,

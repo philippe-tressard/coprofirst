@@ -266,7 +266,7 @@
 								{:else if !t.noeud_enregistre}
 									<span
 										class="non-enregistre"
-										title="Cette exécution est antérieure à la migration 0137, qui a ajouté la colonne : on ne sait pas quel nœud l'a faite. Afficher le nœud qui répond aujourd'hui serait faux — le rôle alterne chaque nuit. La colonne se remplit à chaque exécution depuis."
+										title="Aucun nœud n'est enregistré pour cette exécution : soit elle précède la migration 0137, qui a ajouté la colonne, soit l'installation ne déclare pas de nœud (un seul serveur, sans INSTANCE_ID). Afficher le serveur qui répond aujourd'hui serait faux."
 									>
 										non enregistré
 									</span>
