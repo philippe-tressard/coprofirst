@@ -87,6 +87,17 @@ def a_paris(instant: datetime) -> datetime:
     return instant.astimezone(TZ_PARIS)
 
 
+def utc_naif(instant: datetime) -> datetime:
+    """Un instant en **UTC naïf**, la forme de la base — conscient, il est ramené en UTC.
+
+    Un instant naïf est rendu tel quel : en base, il est déjà de l'UTC. Écrit ici,
+    une fois (#2949) : la conversion s'écrivait cinq fois hors de `horloge`.
+    """
+    if instant.tzinfo is None:
+        return instant
+    return instant.astimezone(timezone.utc).replace(tzinfo=None)
+
+
 def de_paris(heure_murale: datetime) -> datetime:
     """Une heure MURALE de Paris (naïve, lue dans un nom de fichier) en UTC naïf.
 
@@ -94,7 +105,7 @@ def de_paris(heure_murale: datetime) -> datetime:
     pour être comparé à une date de la base. Pendant l'heure répétée du passage à
     l'heure d'hiver, la première occurrence est retenue (`fold=0`).
     """
-    return heure_murale.replace(tzinfo=TZ_PARIS).astimezone(timezone.utc).replace(tzinfo=None)
+    return utc_naif(heure_murale.replace(tzinfo=TZ_PARIS))
 
 
 def jour_civil(instant: date | datetime) -> date:
@@ -132,4 +143,4 @@ def debut_du_jour_utc(jour: date | datetime | None = None) -> datetime:
     """
     jour = aujourd_hui() if jour is None else jour_civil(jour)
     minuit = datetime(jour.year, jour.month, jour.day, tzinfo=TZ_PARIS)
-    return minuit.astimezone(timezone.utc).replace(tzinfo=None)
+    return utc_naif(minuit)

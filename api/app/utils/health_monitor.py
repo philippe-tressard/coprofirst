@@ -6,7 +6,7 @@ Le disque est une donnée de la PLATEFORME : `utils/sante_plateforme` (#1814).
 import json
 import logging
 import os
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timedelta
 from app.utils import horloge
 
 from sqlmodel import Session, select
@@ -41,9 +41,7 @@ def _heures_depuis(horodatage: str | None) -> float | None:
     except ValueError:
         return None
     #  UTC NAÏF, comme `horloge.maintenant()` : le bridge écrit un ISO en « Z ».
-    if debut.tzinfo is not None:
-        debut = debut.astimezone(timezone.utc).replace(tzinfo=None)
-    return (horloge.maintenant() - debut).total_seconds() / 3600
+    return (horloge.maintenant() - horloge.utc_naif(debut)).total_seconds() / 3600
 
 
 def _check_whatsapp(session: Session) -> list[str]:

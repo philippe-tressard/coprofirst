@@ -38,7 +38,7 @@ from __future__ import annotations
 import logging
 import re
 from dataclasses import dataclass
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timedelta
 from typing import Iterable, Optional
 
 from pydantic import ValidationError
@@ -140,13 +140,6 @@ def version_de_tete(versions: Iterable[Optional[str]]) -> Optional[tuple[int, in
     return max(lues) if lues else None
 
 
-def _naif(instant: datetime) -> datetime:
-    """Un instant du rapport en UTC naïf, comme `horloge.maintenant()`."""
-    if instant.tzinfo is None:
-        return instant
-    return instant.astimezone(timezone.utc).replace(tzinfo=None)
-
-
 def _en_retard(version: tuple[int, int, int], tete: tuple[int, int, int]) -> bool:
     return version[0] < tete[0] or (
         version[0] == tete[0] and tete[1] - version[1] >= RETARD_MINEURES
@@ -158,8 +151,8 @@ def _alertes_de_sauvegarde(sauv, maintenant: datetime) -> dict[str, str]:
     trouvees: dict[str, str] = {}
     if sauv.derniere_reussie_le is None:
         trouvees["sauvegarde_ancienne"] = "Aucune sauvegarde réussie déclarée."
-    elif maintenant - _naif(sauv.derniere_reussie_le) > SAUVEGARDE_MAX:
-        jours = (maintenant - _naif(sauv.derniere_reussie_le)).days
+    elif maintenant - horloge.utc_naif(sauv.derniere_reussie_le) > SAUVEGARDE_MAX:
+        jours = (maintenant - horloge.utc_naif(sauv.derniere_reussie_le)).days
         trouvees["sauvegarde_ancienne"] = f"Dernière sauvegarde réussie il y a {jours} jour(s)."
     if sauv.copie_hors_machine is False:
         trouvees["sans_copie_hors_machine"] = "La sauvegarde ne quitte pas la machine."
@@ -202,7 +195,7 @@ def evaluer(
             if pct > DISQUE_PLEIN_PCT:
                 trouvees["disque_plein"] = f"Disque occupé à {pct:.0f} %."
         if heb.certificat_expire_le is not None:
-            reste = _naif(heb.certificat_expire_le) - maintenant
+            reste = horloge.utc_naif(heb.certificat_expire_le) - maintenant
             if reste < CERTIFICAT_AVANT:
                 trouvees["certificat_echeance"] = (
                     f"Le certificat TLS expire dans {max(reste.days, 0)} jour(s)."
