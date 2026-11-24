@@ -1,6 +1,6 @@
 ---
 name: infra-rpi
-description: "Infrastructure HA 5Hostachy sur 2 Raspberry Pi : serveurs et rôle actif, règle d'or des données (PostgreSQL : primaire, réplique, promotion, reconstruction), distinction panne de chemin public / panne de nœud, crontabs, monitoring APScheduler, bridge WhatsApp. Use when: intervenir sur un RPi, basculer, diagnostiquer un site HS, deux primaires ou une réplique en retard, reconnecter WhatsApp, analyser un incident ou une coupure de courant."
+description: "Infrastructure HA 5Hostachy sur 2 Raspberry Pi : serveurs et rôle actif, bascule, règle d'or de la base (PostgreSQL : primaire, réplique, promotion, reconstruction), distinction panne de chemin public / panne de nœud, crons et points d'entrée, monitoring APScheduler, bridge WhatsApp, audit de sécurité nocturne (S1–S6) et durcissement, scripts d'infra en CI (self-tests). À charger : intervenir sur un RPi, basculer, diagnostiquer un site HS ou un incident, deux primaires ou une réplique en retard, reconnecter WhatsApp, analyser une coupure de courant, écrire un script d'infra."
 argument-hint: "Décrire l'intervention ou le symptôme (ex. « site HS depuis 20 min », « reconnecter le bridge WhatsApp », « C37 en FAIL : deux primaires »)"
 ---
 
@@ -22,7 +22,7 @@ La conduite à tenir est ci-dessous.
 > maintenance sur tous les nœuds, hygiène).
 
 ## Serveurs
-- **RPi 1** `192.168.1.222` (PhT-RB5) · **RPi 2** `192.168.1.223` (PhT-RB5i2)
+- **RPi 1** `192.168.1.222` (PhT-RB5) · **RPi 2** `192.168.1.223` (PhT-RB5i2) — dans un script, la table hôte ⇄ rôle ⇄ adresse est `scripts/lib/lib-role.sh` (`noeud_ssh`, `role_of`, `role_ip`, `role_peer`), jamais recopiée — elle l'était dans sept scripts
 - RPi actif : `cat /opt/5hostachy/.active` — ⚠️ ce fichier peut disparaître, le recréer si absent
 - Conteneurs **applicatifs** uniquement sur le RPi actif ; le standby porte toujours `hostachy_postgres`, sa réplique (`docker ps` la montre : ce n'est pas un split-brain)
 - En cas de split-brain (conteneurs **applicatifs** sur les 2) : arrêter l'application du nœud qui ne doit pas servir par `docker compose stop $SERVICES_APPLICATIFS` (`lib-applicatifs.sh`) — jamais un `stop` sans liste, qui arrêterait sa réplique — puis recréer `.active`
@@ -192,7 +192,7 @@ cloudflared` tel quel dans une réponse, un ticket ou un journal : masquer d'abo
   aucun script). Le rôle alternant chaque
   nuit, chaque nœud n'accumule qu'un jour sur deux, et `_rotate_backups()` ne voit que
   ses fichiers locaux → 7 versions ≈ 14 jours **à trous**, aucun nœud n'ayant celle de
-  la veille. Copie hors site : `scripts/poste/export-hors-site.cmd` (voir ci-dessous)
+  la veille. Copie hors site : `scripts/poste/export-hors-site.sh` (voir ci-dessous)
 - **Le nom d'une archive dit l'heure de PARIS** (#1611, 05/10/2026) :
   `<préfixe>AAAAMMJJ_HHMMSS_paris.tar.gz`. Avant, l'horloge UTC y était écrite
   sans le dire (`…_020000` pour une sauvegarde prise à 04:00) ; les anciennes archives
@@ -238,9 +238,9 @@ nœud — jamais d'un `docker volume rm`, d'un rançongiciel ou d'un sinistre, q
 emportent base + uploads + toutes les sauvegardes d'un coup
 (`standards/06-donnees-et-integrite.md` §6).
 
-- **Lancement : MANUEL depuis le poste** — double-clic sur `scripts/poste/export-hors-site.cmd`, ou
-  `bash /c/Dev/5hostachy/scripts/poste/export-hors-site.sh`. Destination par défaut : `C:\Backup`
-  (`EXPORT_DEST`), **2 versions** (`EXPORT_KEEP`) — réduit de 14 à 2 le 12/09/2026 : on ne
+- **Lancement : MANUEL depuis le poste** — double-clic sur `scripts/poste/export-hors-site.command` (Mac ;
+  `.cmd` sous Windows), ou `bash scripts/poste/export-hors-site.sh`. Destination par défaut : celle du poste
+  (`/Volumes/Data/Backup` sur le Mac, `C:\Backup` sous Windows — `EXPORT_DEST`), **2 versions** (`EXPORT_KEEP`) — réduit de 14 à 2 le 12/09/2026 : on ne
   restaure que la dernière ou l'avant-dernière, et quatorze archives de ~100 Mo pesaient
   1,4 Go. La rotation efface donc les plus anciennes **à chaque export** ; le rattrapage
   sur l'autre nœud et le relevé des jours manquants suivent la même valeur. La valeur

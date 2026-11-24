@@ -1,6 +1,6 @@
 {
   "format": 1,
-  "version": "1.6.0",
+  "version": "1.7.0",
   "tables": {
     "attributsAdmis": {
       "source": "front/src/lib/sanitize.ts#ALLOWED_ATTR",
@@ -1162,6 +1162,7 @@
         {
           "id": "tableau-de-bord",
           "href": "/tableau-de-bord",
+          "acces": "tous",
           "nom": "Tableau de bord",
           "titre": "Tableau de bord",
           "navLabel": "Accueil",
@@ -1171,6 +1172,7 @@
         {
           "id": "residence",
           "href": "/residence",
+          "acces": "tous",
           "nom": "Ma résidence",
           "titre": "Ma résidence",
           "navLabel": "Résidence",
@@ -1202,6 +1204,7 @@
         {
           "id": "mes-demandes",
           "href": "/tickets",
+          "acces": "tous",
           "nom": "Affaires",
           "titre": "Mes affaires",
           "navLabel": "Affaires",
@@ -1232,11 +1235,12 @@
         {
           "id": "mon-lot",
           "href": "/mon-lot",
+          "acces": "tous",
           "nom": "Mes lots & accès",
           "titre": "Mes lots & accès",
           "navLabel": "Mes lots & accès",
           "icone": "key-round",
-          "descriptif": "Vos lots (appartement, cave & parkings), vos badges Vigik et télécommandes de parking, et la gestion locative pour les copropriétaires mandataires.",
+          "descriptif": "Vos lots (appartement, cave & parkings), vos badges Vigik et télécommandes de parking, et la gestion locative des lots que vous donnez en location.",
           "onglets": [
             {
               "id": "lots",
@@ -1277,6 +1281,7 @@
         {
           "id": "annuaire",
           "href": "/annuaire",
+          "acces": "tous",
           "nom": "Annuaire",
           "titre": "Annuaire",
           "navLabel": "Annuaire",
@@ -1286,6 +1291,7 @@
         {
           "id": "prestataires",
           "href": "/prestataires",
+          "acces": "cs",
           "nom": "Prestataires",
           "titre": "Prestataires",
           "navLabel": "Prestataires",
@@ -1315,6 +1321,7 @@
         {
           "id": "communaute",
           "href": "/sondages",
+          "acces": "resident",
           "nom": "Communauté",
           "titre": "Communauté",
           "navLabel": "Communauté",
@@ -1353,6 +1360,7 @@
         {
           "id": "faq",
           "href": "/faq",
+          "acces": "tous",
           "nom": "FAQ",
           "titre": "FAQ",
           "navLabel": "FAQ",
@@ -1362,6 +1370,7 @@
         {
           "id": "espace-cs",
           "href": "/espace-cs",
+          "acces": "cs",
           "nom": "Espace CS",
           "titre": "Espace Conseil Syndical (CS)",
           "navLabel": "Espace CS",
@@ -1378,7 +1387,7 @@
               "id": "badges",
               "route": "/espace-cs/badges",
               "label": "🏷️ Badges & télécommandes",
-              "descriptif": "Tous les badges Vigik et télécommandes de la copropriété, avec leur porteur et leur lot. Vue de consultation : un badge s’enregistre par l’import du syndic, ou par son porteur."
+              "descriptif": "Tous les badges Vigik et télécommandes de la copropriété, avec leur porteur et leur lot, à tenir à jour et à exporter."
             },
             {
               "id": "reporting",
@@ -1415,6 +1424,7 @@
         {
           "id": "admin",
           "href": "/admin",
+          "acces": "admin",
           "nom": "Paramétrage",
           "titre": "Paramétrage",
           "navLabel": "Admin",
@@ -1427,7 +1437,7 @@
               "route": "/admin",
               "label": "À traiter",
               "groupe": "👥 Personnes",
-              "descriptif": "Ce qui attend un geste de l'administrateur : comptes à valider, commandes d'accès, demandes de modification de profil."
+              "descriptif": "Ce qui attend un geste de l'administrateur : chaque demande en attente, rangée dans sa file."
             },
             {
               "id": "utilisateurs",
@@ -1455,7 +1465,7 @@
               "route": "/admin?onglet=imports",
               "label": "Imports",
               "groupe": "📥 Imports",
-              "descriptif": "Charger un tableur du syndic — lots et copropriétaires, télécommandes ou badges Vigik — et le rapprocher des lots."
+              "descriptif": "Charger un tableur du syndic ou du règlement de copropriété, et le rapprocher des lots."
             },
             {
               "id": "copropriete",
@@ -1562,7 +1572,7 @@
               "route": "/admin?onglet=maintenance",
               "label": "Maintenance",
               "groupe": "🛠 Exploitation",
-              "descriptif": "Les tâches automatiques, leur historique et leur déclenchement manuel.",
+              "descriptif": "Le suivi technique de l'installation et la garde de ses données — chacun y voit ce que son rôle lui ouvre.",
               "ouvertOperateur": true
             },
             {
@@ -1579,6 +1589,7 @@
         {
           "id": "delegations",
           "href": "/delegations",
+          "acces": "cs-ou-aidant",
           "nom": "Délégations",
           "titre": "Délégations aidant",
           "navLabel": "Délégations",

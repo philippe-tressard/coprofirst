@@ -28,8 +28,8 @@ from __future__ import annotations
 
 from typing import Literal
 
-#: Les canaux, dans l'ordre où l'écran les range. `android` est réservé : aucun
-#: client ne l'envoie encore, il n'apparaît à l'écran qu'avec ses premières vues.
+#: Les canaux, dans l'ordre où l'écran les range. `android` est celui de l'app
+#: Android, qui l'envoie ; il n'apparaît à l'écran qu'avec ses premières vues.
 CANAUX = ("site", "ios", "android")
 Canal = Literal["site", "ios", "android"]
 
