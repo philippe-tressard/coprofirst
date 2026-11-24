@@ -71,11 +71,15 @@ def test_aucune_sortie_d_outil_versionnee_a_la_racine_du_front():
 
 
 def test_les_py_de_poste_ne_sont_pas_executables():
-    fichiers = _index("scripts/poste/*.py")
-    assert len(fichiers) >= 3, "aucun .py de poste lu — le motif ne voit plus rien"
+    #  `scripts/ci/` depuis #2979 : 9 de ses .py sur 20 étaient en 100755, tous
+    #  appelés par `python scripts/ci/…` — la récidive de #1607 dans le dossier
+    #  voisin, que ce test ne lisait pas.
+    for motif in ("scripts/poste/*.py", "scripts/ci/*.py"):
+        assert len(_index(motif)) >= 3, f"`{motif}` ne rend aucun .py — le motif ne voit plus rien"
+    fichiers = _index("scripts/poste/*.py", "scripts/ci/*.py")
     executables = [c for mode, c in fichiers if mode != "100644"]
     assert not executables, (
-        f"{executables} : un .py de poste s'appelle par `python …` — "
+        f"{executables} : un .py de scripts/poste ou scripts/ci s'appelle par `python …` — "
         "`git update-index --chmod=-x <fichier>`"
     )
 
