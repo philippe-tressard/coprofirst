@@ -76,13 +76,19 @@
 # Rend une chaîne vide si un argument manque : l'appelant doit traiter le cas
 # comme INCONNU et s'abstenir, jamais construire une commande tronquée —
 # `rm -rf ""` et un montage sur `/` sont exactement ce qu'on ne veut pas produire.
+#  L'image du conteneur jetable : `image_utilitaire` (#2962), son étiquette lue dans
+#  `infra/Dockerfile.utilitaire`. Illisible → code 1, comme un argument manquant.
+# shellcheck source=lib-image-utilitaire.sh
+. "$(dirname "${BASH_SOURCE[0]}")/lib-image-utilitaire.sh"
+
 cmd_installer_volume() {
-    local volume="${1:-}" source="${2:-}"
+    local volume="${1:-}" source="${2:-}" image
     [ -n "$volume" ] || return 1
     [ -n "$source" ] || return 1
+    image=$(image_utilitaire) || return 1
     #  La source est montée en LECTURE SEULE : le conteneur n'a aucune raison
     #  d'écrire dans /tmp, et le lui interdire est gratuit.
-    printf '%s' "docker run --rm -v ${volume}:/dst -v ${source}:/src:ro alpine sh -c \"cp -a /src/. /dst/\" && rm -rf ${source}"
+    printf '%s' "docker run --rm -v ${volume}:/dst -v ${source}:/src:ro ${image} sh -c \"cp -a /src/. /dst/\" && rm -rf ${source}"
 }
 
 # Transférer un volume local vers le volume homonyme du peer, en deux temps :
@@ -214,7 +220,7 @@ if [ "${BASH_SOURCE[0]}" = "$0" ] && [ "${1:-}" = "--selftest" ]; then
     #  Le nom du volume et le temporaire ne sont pas codés en dur : uploads et
     #  WhatsApp auth passent par la même fonction.
     check "la fonction sert un autre volume" \
-        "docker run --rm -v 5hostachy_whatsapp_auth:/dst -v /tmp/sync_wa_auth:/src:ro alpine sh -c \"cp -a /src/. /dst/\" && rm -rf /tmp/sync_wa_auth" \
+        "docker run --rm -v 5hostachy_whatsapp_auth:/dst -v /tmp/sync_wa_auth:/src:ro $(image_utilitaire) sh -c \"cp -a /src/. /dst/\" && rm -rf /tmp/sync_wa_auth" \
         "$(cmd_installer_volume 5hostachy_whatsapp_auth /tmp/sync_wa_auth)"
 
     # ─────────────────────────────────────────────────────────────────────────

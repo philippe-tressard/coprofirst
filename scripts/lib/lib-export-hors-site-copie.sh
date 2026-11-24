@@ -157,7 +157,12 @@ copier_plateforme() { # $1=ip du nœud source
 #
 # Pose AFFAIRES_COPIEES (lignes « nom empreinte » des copies VÉRIFIÉES, présentes
 # sur le PC et toujours annoncées par le serveur) et AFFAIRES_RESUME.
-LIRE_FICHIERS="docker run --rm -v 5hostachy_uploads:/u:ro alpine"
+#  L'image du conteneur de lecture (#2962) : vide si `infra/Dockerfile.utilitaire`
+#  ne se lit pas — `export-hors-site.sh` s'arrête alors sur INCONNU avant tout geste.
+# shellcheck source=lib-image-utilitaire.sh
+. "$(dirname "${BASH_SOURCE[0]}")/lib-image-utilitaire.sh"
+IMAGE_UTILITAIRE=$(image_utilitaire) || IMAGE_UTILITAIRE=""
+LIRE_FICHIERS="docker run --rm -v 5hostachy_uploads:/u:ro $IMAGE_UTILITAIRE"
 copier_archives_affaires() { # $1=ip du nœud source
   local ip="$1" liste n dest local_ sha_src sha_dst neuves=0 echecs=0 copiees
   AFFAIRES_COPIEES=""

@@ -204,7 +204,9 @@ updates:
   # Node, de Python ou d'Alpine n'arrivait jusqu'ici que par hasard, au
   # prochain `docker compose build` qui tirait une étiquette flottante.
   - package-ecosystem: docker
-    directories: ["/api", "/front", "/whatsapp-bridge", "/"]
+    #  `/infra` : l'image des conteneurs jetables des scripts (`Dockerfile.utilitaire`,
+    #  #2962) — ni construite ni servie, mais tirée sur les deux nœuds.
+    directories: ["/api", "/front", "/whatsapp-bridge", "/", "/infra"]
     target-branch: dev
     schedule:
       interval: monthly
