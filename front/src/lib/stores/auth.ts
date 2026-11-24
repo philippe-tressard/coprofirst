@@ -70,12 +70,6 @@ export const isAdminOuOperateur = derived(currentUser, ($u) =>
 //  était donc le premier à ne pas l'employer — et `aRole` traite un cas qu'elles
 //  oubliaient : un compte qui n'a que l'ancien champ `role`, sans `roles`.
 
-// Vrai si l'utilisateur a au moins un rôle résidentiel (propriétaire, résident, ou aidant avec délégation active)
-export const hasResidentRole = derived(
-	currentUser,
-	($u) => aRole($u, 'propriétaire', 'résident') || $u?.statut === 'aidant',
-);
-
 /**
  * Copropriétaire, conseil syndical ou administration.
  *

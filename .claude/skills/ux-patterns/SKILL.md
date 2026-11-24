@@ -135,6 +135,9 @@ détail de chaque motif est plus haut dans cette skill.
       `UserRead.est_moderateur`, servi par `auth/deps.est_moderateur`, que l'app iOS lit
       aussi, #2633), `$isProprioOuCS`, `aRole(u, …)`, ou le geste SERVI avec l'objet
       (`peut_*` ; le crayon d'une affaire : `peut_corriger`) — `npm run lint:droits`
+- [ ] Une entrée de menu se montre par le PUBLIC de sa page (`acces`, `#lib/pages`) parmi
+      ceux que sert `acces_menu` (`api/app/utils/acces_menu.py`, #2969) — `pageAuMenu` ;
+      jamais un rôle ni un statut dans `Nav.svelte` (`npm run lint:manuel-menus`)
 - [ ] Un geste d'écriture n'est offert qu'aux rôles que sa route accepte : le prédicat de
       l'écran n'est jamais plus large que la dépendance de la route (#2096). Un geste neuf se
       déclare dans `GESTES` de `test_ecran_offre_ce_que_la_route_permet.py`

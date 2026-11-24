@@ -32,6 +32,7 @@
 
 import { TITRE_ARCHIVES } from '#lib/archives.ts';
 import { PAGES_ROLES } from './pages-roles';
+import type { AccesMenu } from '#lib/acces-menu.ts';
 import type { PageConfig } from '#lib/stores/pageConfig.ts';
 
 export interface OngletDef {
@@ -115,6 +116,8 @@ export interface PageDef {
 	id: string;
 	/** Route du menu, ou `null` pour une page sans entrée de navigation. */
 	href: string | null;
+	/** Le public qui voit l'entrée du menu, exigé avec `href` (`#lib/acces-menu`, #2969). */
+	acces?: AccesMenu;
 	/** Nom de la page dans l'écran « Descriptif pages ». */
 	nom: string;
 	/** Titre affiché en tête de la page. */
@@ -136,6 +139,7 @@ export const PAGES: PageDef[] = [
 	{
 		id: 'tableau-de-bord',
 		href: '/tableau-de-bord',
+		acces: 'tous',
 		nom: 'Tableau de bord',
 		titre: 'Tableau de bord',
 		navLabel: 'Accueil',
@@ -146,6 +150,7 @@ export const PAGES: PageDef[] = [
 	{
 		id: 'residence',
 		href: '/residence',
+		acces: 'tous',
 		nom: 'Ma résidence',
 		titre: 'Ma résidence',
 		navLabel: 'Résidence',
@@ -195,6 +200,7 @@ export const PAGES: PageDef[] = [
 	{
 		id: 'mes-demandes',
 		href: '/tickets',
+		acces: 'tous',
 		nom: 'Affaires',
 		titre: 'Mes affaires',
 		navLabel: 'Affaires',
@@ -235,6 +241,7 @@ export const PAGES: PageDef[] = [
 	{
 		id: 'mon-lot',
 		href: '/mon-lot',
+		acces: 'tous',
 		//  🔴 « Mes lots & accès » (12/09/2026, #928) : la page réunit ce qui était
 		//  deux entrées de menu, et le nom dit les DEUX.
 		//  ⚠️ Les trois champs changent ENSEMBLE — recherche, en-tête, menu.
@@ -299,6 +306,7 @@ export const PAGES: PageDef[] = [
 	{
 		id: 'annuaire',
 		href: '/annuaire',
+		acces: 'tous',
 		nom: 'Annuaire',
 		titre: 'Annuaire',
 		navLabel: 'Annuaire',
@@ -309,6 +317,7 @@ export const PAGES: PageDef[] = [
 	{
 		id: 'prestataires',
 		href: '/prestataires',
+		acces: 'cs',
 		nom: 'Prestataires',
 		titre: 'Prestataires',
 		navLabel: 'Prestataires',
@@ -339,6 +348,7 @@ export const PAGES: PageDef[] = [
 	{
 		id: 'communaute',
 		href: '/sondages',
+		acces: 'resident',
 		nom: 'Communauté',
 		titre: 'Communauté',
 		navLabel: 'Communauté',
@@ -379,6 +389,7 @@ export const PAGES: PageDef[] = [
 	{
 		id: 'faq',
 		href: '/faq',
+		acces: 'tous',
 		nom: 'FAQ',
 		titre: 'FAQ',
 		navLabel: 'FAQ',
