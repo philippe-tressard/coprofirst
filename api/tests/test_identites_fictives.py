@@ -34,10 +34,14 @@ Formes repérées :
   dans une docstring (#2560). Un sigle (« (SMTP) ») s'écrit aussi en minuscules
   ou se déclare dans `PAS_DES_NOMS`.
 
-Portée (`PORTEE`, `DOCUMENTS_RACINE`) : le code et les tests, les migrations
-(`api/alembic`) et les documents (`docs/`, `specs/`, `infra/`, `.claude/skills/`,
-`.github/`, et les `.md` de la racine) — les deux derniers depuis #1544 : une
-docstring de migration nommait deux employées du syndic, hors de toute portée.
+Portée : TOUT fichier texte suivi par git (`git ls-files`), moins des exclusions
+nommées (`NON_LUS`), comme `test_hotes_fictifs.py` (#2961, 24/11/2026). Elle était
+une liste de dossiers : 137 fichiers texte lui échappaient (`whatsapp-bridge/`,
+`deploiement/`, `api/alembic_plateforme/`, `Caddyfile`…), et un dossier neuf
+n'était lu que si quelqu'un pensait à l'ajouter — le mécanisme même de #1544, où
+une docstring de migration nommait deux employées du syndic hors de toute
+portée. Un dossier de premier niveau ni lu ni exclu nommément fait échouer
+(`test_chaque_dossier_suivi_est_lu_ou_exclu`).
 
 ⚠️ Ce qu'il ne voit pas : un nom isolé hors de ces formes — « Prénom Nom » sans
 civilité ni capitales, par exemple : à casse mixte, la forme attraperait chaque
@@ -53,41 +57,40 @@ from __future__ import annotations
 
 import pathlib
 import re
+import subprocess
 import unicodedata
 from collections import defaultdict
 
-from tests.aides_sources import modules_app
-
 RACINE = pathlib.Path(__file__).resolve().parents[2]
-CE_FICHIER = pathlib.Path(__file__).name
-SUFFIXES = {".py", ".ts", ".svelte", ".mjs", ".js", ".sh"}
-#: Les suffixes des documents publiés avec le dépôt (`DOCUMENTS`, plus bas).
-SUFFIXES_DOCUMENTS = {".md", ".html", ".json", ".js", ".yml"}
+CE_FICHIER = "api/tests/test_identites_fictives.py"
+
+#: Ce qui n'est pas lu, chacun avec sa raison :
+#: - l'attribution légale (`NOTICE.md`, `LICENSE`, `LICENSES/`, `REUSE.toml`) nomme
+#:   l'auteur, et c'est voulu ;
+#: - `package-lock.json` : écrit par npm, il ne porte que des paquets et des
+#:   empreintes, des milliers de lignes qu'aucune personne n'écrit ;
+#: - les binaires, par leur suffixe (une image, une police) ; un fichier qui ne se
+#:   décode pas en UTF-8 est sauté aussi (`_sources`).
+NON_LUS = re.compile(
+    r"^(NOTICE\.md|LICENSE|REUSE\.toml)$|^LICENSES/|(^|/)package-lock\.json$"
+    r"|\.(png|jpe?g|gif|webp|ico|pdf|woff2?|ttf|otf|heic|zip|gz)$"
+)
+#: Les dossiers de premier niveau qui ne sont pas lus du tout — exclus NOMMÉMENT.
+DOSSIERS_NON_LUS = frozenset({"LICENSES"})
 
 #: Où vivent les jeux de données : les champs de nom y portent des personnes.
-DONNEES = ("api/tests", "front/e2e")
-#: Et dans `app/` : le jeu de la démo publique (spec `mode-demo.md` §6.3).
-DEMO = "demo/"
-#: Le code hors `app/` (lu par `modules_app`) : seuls les noms en clair comptent.
-#: `api/alembic` y est depuis #1544 : la docstring d'une migration nommait deux
-#: employées du syndic, et aucun contrôle ne lisait ce dossier.
-CODE = ("front/src", "front/scripts", "scripts", "api/alembic")
-#: Les documents : ils sont publics au même titre que le code (#1544).
-DOCUMENTS = ("docs", "specs", "infra", ".claude/skills", ".github")
-#: Les documents de la racine, nommés un à un. `NOTICE.md` et
-#: `LICENSE` n'y sont PAS : l'attribution légale nomme l'auteur,
-#: et c'est voulu.
-DOCUMENTS_RACINE = ("README.md", "CLAUDE.md", "CONTRIBUTING.md", "SECURITY.md")
+#: `api/app/demo/` est le jeu de la démo publique (spec `mode-demo.md` §6.3, #1904).
+DONNEES = ("api/tests/", "front/e2e/", "api/app/demo/")
 
 #: Les noms inventés. En ajouter un, c'est affirmer qu'il ne désigne personne
 #: de la résidence, du syndic ni de ses prestataires.
 FICTIFS = frozenset(
     """
     ADELE ALAIN ALEX ALICE ALIX ANNE BERNARD BLONDEL BRUNO CAMILLE CARON CATHERINE
-    CHRISTINE CHRISTOPHE CLAIRE COLLARD DELMAS DUPONT DUPRE DURAND DURANDAL ELISE
+    CHLOE CHRISTINE CHRISTOPHE CLAIRE COLLARD DELMAS DUPONT DUPRE DURAND DURANDAL ELISE
     ELODIE FAURE FORT HELENE INES ITO JEAN JEAN-BAPTISTE JEAN-HERVE JEANNE KERBRAT
     LAMBERT LEROY LUC LYON MARC MARCEL MARCO MARTIN MARTIN-LEROY MARTINEAU MERCIER
-    MOREL MORIN-LEGRAND NADIA ODILE PAUL PERRIN PHILIPPE PIERRE REINE RENARD RENEE
+    MOI MOREL MORIN-LEGRAND NADIA ODILE PAUL PERRIN PHILIPPE PIERRE REINE RENARD RENEE
     ROBIN ROSSI ROUSSEL ROY SIDENTE SOPHIE SOREL SYLVIE VERDIERE ZELLER ZOE
     """.split()
 )
@@ -96,16 +99,16 @@ FICTIFS = frozenset(
 #: entreprises, lieux, rôles, mots d'interface.
 PAS_DES_NOMS = frozenset(
     """
-    ADMIN ALPHABET AMIANTE ANCIEN APERCU APPROVED ASCENSEURS ASSUREUR AULNAY AUTRE BAILLEUR BEARER
+    ADMIN AMIANTE ANCIEN APERCU APPROVED ASCENSEURS ASSUREUR AULNAY AUTRE BAILLEUR BEARER
     BONJOUR BSD CABINET CAS CLE COMPTEURS CONSEIL CONSTATE COPRO COPROPRIETE CORPS COTE CRAYON CSS
     DEGAT DEJA DEMANDEUR DUREE ENTREE ENVIRONNEMENTS ESPACES ESSAI EXTERNE FAQ GEST HALL HTML INCENDIE
     INCONNU LES LICENSE LIE LOC LOCATAIRE MIS MIT MIXTE MME NOM NOUVEAU NOUVEL NOUVELLE
     NOYAU OSI OTIS PARC PARTI PDF PLANS PLOMBERIE PRENOM PROPRIO REGLEMENT
     REJEU RESIDENCE RESIDENT SANS SANSBAT SCAN SECURITE SERIE SERVICES SICLI SITE
     SONDAGE SOURCE STOCK SYNDIC TEMOIN TEST TILLEULS UNUSED VERTS
-    AAAA-MM-JJ AAAAMMJJ ANAH DAPP DSFR ECONNREFUSED EINVAL ERESOLVE HSTS ISCL LCEN
-    LGPL ONDE RGESN SAMU SIGPIPE SSRF WSAENOBUFS WYSIWYG ENF FCP MVP OOM PWA RGPD SCA
-    SSR TTI
+    AAAA-MM-JJ AAAAMMJJ ANAH DAPP DSFR ECONNREFUSED EINVAL ERESOLVE HSTS ISC ISCL LCEN
+    LGPL ONDE RGESN SAMU SIGKILL SIGPIPE SSRF WSAENOBUFS WYSIWYG ENF FCP MVP OOM PWA RGPD
+    SCA TTI
     """.split()
 )
 
@@ -175,40 +178,31 @@ def noms_dans(source: str, *, donnees: bool) -> list[str]:
     ]
 
 
-#: (dossier, est-ce un jeu de données, suffixes lus) — la portée, écrite une fois.
-PORTEE = (
-    [(d, True, SUFFIXES) for d in DONNEES]
-    + [(d, False, SUFFIXES) for d in CODE]
-    + [(d, False, SUFFIXES_DOCUMENTS) for d in DOCUMENTS]
-)
-
-
-def _lu(chemin: pathlib.Path, donnees: bool) -> tuple[str, str, bool]:
-    return (chemin.relative_to(RACINE).as_posix(), chemin.read_text(encoding="utf-8"), donnees)
+def _git_ls_files() -> list[str]:
+    sortie = subprocess.run(
+        ["git", "ls-files", "-z"], cwd=RACINE, capture_output=True, text=True, check=True
+    ).stdout
+    return [f for f in sortie.split("\0") if f]
 
 
 def _sources() -> list[tuple[str, str, bool]]:
-    """(chemin relatif, texte, est-ce un jeu de données) pour toute la portée."""
-    #  `app/demo/` est le jeu de données de la démo publique (#1904) : ses champs de
-    #  nom portent des personnes, comme ceux des tests.
-    lus = [(f"api/app/{m.rel}", m.source, m.rel.startswith(DEMO)) for m in modules_app()]
-    for dossier, donnees, suffixes in PORTEE:
-        racine = RACINE / dossier
-        assert racine.is_dir(), f"`{dossier}/` introuvable : la portée du contrôle a bougé."
-        fichiers = [
-            p
-            for p in sorted(racine.rglob("*"))
-            if p.suffix in suffixes and p.name != CE_FICHIER and "node_modules" not in p.parts
-        ]
-        #  Cas zéro PAR dossier : un document porte rarement un nom repéré, et le
-        #  plancher global ne verrait pas un dossier devenu muet.
-        assert fichiers, f"`{dossier}/` ne rend aucun fichier lu : la portée a bougé."
-        lus += [_lu(p, donnees) for p in fichiers]
-    for nom in DOCUMENTS_RACINE:
-        chemin = RACINE / nom
-        assert chemin.is_file(), f"`{nom}` introuvable : la portée du contrôle a bougé."
-        lus.append(_lu(chemin, False))
+    """(chemin relatif, texte, est-ce un jeu de données) pour tout fichier texte suivi."""
+    lus = []
+    for rel in _git_ls_files():
+        if rel == CE_FICHIER or NON_LUS.search(rel):
+            continue
+        try:
+            texte = (RACINE / rel).read_text(encoding="utf-8")
+        except (UnicodeDecodeError, FileNotFoundError, IsADirectoryError):
+            continue  # un binaire sans suffixe connu, ou un fichier retiré non encore committé
+        lus.append((rel, texte, rel.startswith(DONNEES)))
+    assert len(lus) > 1000, f"{len(lus)} fichiers lus — cas zéro, la lecture a échoué"
     return lus
+
+
+def _premier_niveau(rel: str) -> str:
+    """Le dossier de premier niveau d'un chemin, ou `""` pour un fichier de la racine."""
+    return rel.split("/", 1)[0] if "/" in rel else ""
 
 
 def _releve() -> dict[str, set[str]]:
@@ -264,6 +258,25 @@ def test_aucun_nom_reel_dans_le_code_ni_les_tests():
         "personnelle : le remplacer par un nom inventé de même forme. Un nom déjà "
         "inventé s'ajoute à `FICTIFS` ; un mot qui n'est pas un nom, à `PAS_DES_NOMS`."
     )
+
+
+def test_chaque_dossier_suivi_est_lu_ou_exclu():
+    """Un dossier de premier niveau suivi par git est lu, ou exclu nommément (#2961)."""
+    sources = _sources()
+    suivis = {_premier_niveau(f) for f in _git_ls_files()} - {""}
+    lus = {_premier_niveau(rel) for rel, _, _ in sources} - {""}
+    muets = sorted(suivis - lus - DOSSIERS_NON_LUS)
+    assert not muets, (
+        f"dossier(s) suivi(s) dont aucun fichier n'est lu : {muets} — les lire, ou les "
+        "déclarer dans DOSSIERS_NON_LUS avec leur raison"
+    )
+    morts = sorted(DOSSIERS_NON_LUS - suivis)
+    assert not morts, f"DOSSIERS_NON_LUS nomme un dossier que git ne suit plus : {morts}"
+    assert not DOSSIERS_NON_LUS & lus, "un dossier exclu est pourtant lu : l'exclusion ment"
+    for donnees in DONNEES:
+        assert any(rel.startswith(donnees) and d for rel, _, d in sources), (
+            f"`{donnees}` ne rend aucun fichier lu comme jeu de données : il a bougé."
+        )
 
 
 def test_chaque_entree_declaree_sert_encore():
