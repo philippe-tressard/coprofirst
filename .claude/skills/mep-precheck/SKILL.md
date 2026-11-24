@@ -32,11 +32,13 @@ avec une ligne fausse — « MEP : `MaJ-Hostachy.sh` sur le RPi actif », alors 
 MEP est faite par `auto-deploy.sh` et que `MaJ-Hostachy.sh` est la **reprise en
 main** (claude-config#122, 23/09/2026).
 
-## Trois règles qui priment sur la liste des contrôles
+## Trois règles qui priment sur la liste des contrôles — ce qu'elles valent ici
 
-Issues de l'incident du 26/07/2026 (cf. « Rétrospective » en fin de section). Un
-contrôle mal conçu est plus dangereux qu'un contrôle absent, parce qu'il produit
-de la confiance.
+Les règles s'énoncent dans `CLAUDE.md` (« Git & MEP ») et le socle (`standards/04`
+§1-2, `standards/09`), seules écritures (#2972). Voici leur instanciation : ce que
+l'incident du 26/07/2026 a montré sur ce dépôt (cf. « Rétrospective » en fin de
+section). Un contrôle mal conçu est plus dangereux qu'un contrôle absent, parce
+qu'il produit de la confiance.
 
 1. **Un contrôle qui ne peut pas s'exécuter renvoie INCONNU, jamais OK.**
    `sudo` en SSH non interactif échoue en demandant un mot de passe ; `… | grep -c`
@@ -192,8 +194,9 @@ de travail :**
    réalité qu'une **création** de branche. La recréer par un push simple, sous
    `SKIP_PRECHECK=1` : le sha de squash n'a jamais été pré-checké, et le hook
    refuserait un commit que la CI de la PR vient de valider.
-3. **La fusion n'est pas le déploiement.** `auto-deploy.sh` fait le `git pull`
-   **puis** le build : entre les deux, les points **12** et **18** échouent
+3. **La fusion n'est pas le déploiement** (`CLAUDE.md`, « Git & MEP »).
+   `auto-deploy.sh` met le code à jour **puis** tire les images de la CI (il ne
+   construit qu'en secours) : entre les deux, les points **12** et **18** échouent
    légitimement — le code est à jour, l'image ne l'est pas encore. Attendre la
    ligne `Déployé: <sha>` dans `/var/log/hostachy-deploy.log` sur l'**actif**.
    Le `git log` du nœud passe au vert **avant** que l'image soit bâtie : s'y fier
