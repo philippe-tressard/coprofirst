@@ -1518,6 +1518,9 @@ jobs:
           # zéro, témoin, exceptions qui doivent servir, commentaires blanchis.
           # Six contrôles le recopiaient, et `lint:type-lot` sans cas zéro.
           node scripts/lib-source-unique.mjs --selftest
+          # « Ce build est-il celui de cette source ? » (#2976) — partagé par les
+          # cinq contrôles qui lisent le build ; un build périmé rend INCONNU.
+          node scripts/lib-build-a-jour.mjs --selftest
           # Le relevé des classes des FEUILLES GLOBALES que plus rien n'emploie
           # (#1537) : `lint:css-orphelin` disait « aucun sélecteur orphelin » en
           # ne lisant que les `<style>` des composants — 23 classes de
@@ -1809,21 +1812,6 @@ jobs:
         # production. Une règle sans garde-fou tient tant qu'on s'en souvient.
         working-directory: front
         run: npm run lint:largeur-saisie
-
-      - name: Clés de liste (plafond décroissant)
-        # 🔴 `svelte/require-each-key` compte 105 signalements : une règle ESLint
-        # qui échoue en permanence finit désarmée, et #419 interdit à raison le
-        # `--max-warnings <chiffre>` qui la masquerait avec toutes les autres.
-        # Ce plafond-ci ne concerne qu'un défaut NOMMÉ, nomme chaque occurrence
-        # quand il dépasse, et baisse à chaque lot — le motif de
-        # `lint:confirmation`, déjà en service.
-        #
-        # Sans clé, Svelte réutilise les nœuds par POSITION. Le relevé du
-        # 30/08/2026 a montré que le danger est aujourd'hui CONTENU — ce dépôt
-        # indexe son état par identité (`expandedEvId === ev.id`) — mais rien ne
-        # préviendrait le jour où un composant de liste tiendrait un état interne.
-        working-directory: front
-        run: npm run lint:each-key
 
       - name: Tableaux dans un conteneur défilant (responsive)
         # 🔴 Un `<table>` ne se comprime pas, et `normes.css` pose même
