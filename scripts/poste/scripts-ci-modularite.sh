@@ -68,9 +68,6 @@ EXCEPTIONS_PLAFOND=(
 #  plafond ne se relève jamais : il se BAISSE quand le fichier raccourcit.
 #  Format : `chemin|plafond|raison`.
 PLAFONDS_DECLARES=(
-  ".claude/skills/infra-rpi/SKILL.md|1260|longueur au 23/11/2026 — à découper en annexes (#2910)"
-  ".claude/skills/mep-precheck/SKILL.md|827|longueur au 23/11/2026 — à découper en annexes (#2910)"
-  ".claude/skills/api-scaffold/SKILL.md|600|longueur au 23/11/2026, lots du jour compris — §8 et §9 sont cités par numéro depuis CLAUDE.md (#2910)"
   ".claude/skills/ux-patterns/ARBITRAGES.md|700|registre qui ne fait que s'allonger, lu par grep (son en-tête) ; à 700 lignes, il se scinde par tranche de numéros (#2910)"
 )
 plafond_declare_de() {
@@ -171,8 +168,8 @@ if [ "${1:-}" = "--selftest" ]; then
   #  #2910 — une skill se mesure ; une skill déjà longue a son plafond du jour.
   t "skill au-dessus de 500"          "640 .claude/skills/x/SKILL.md"    "  .claude/skills/x/SKILL.md : 640 lignes (plafond 500)"
   t "annexe de skill sous 500"        "420 .claude/skills/x/CADRE.md"    ""
-  t "skill longue à son plafond"      "1260 .claude/skills/infra-rpi/SKILL.md" ""
-  t "skill longue qui grossit"        "1261 .claude/skills/infra-rpi/SKILL.md" "  .claude/skills/infra-rpi/SKILL.md : 1261 lignes (plafond 1260)"
+  t "skill longue à son plafond"      "700 .claude/skills/ux-patterns/ARBITRAGES.md" ""
+  t "skill longue qui grossit"        "701 .claude/skills/ux-patterns/ARBITRAGES.md" "  .claude/skills/ux-patterns/ARBITRAGES.md : 701 lignes (plafond 700)"
   u() { r=$(printf '%s\n' "$2" | exceptions_inutiles); [ "$r" = "$3" ] && echo "PASS  $1" \
         || { echo "FAIL  $1  attendu=[$3] obtenu=[$r]"; st=1; }; }
   u "exception qui sert"              "2269 .github/workflows/ci.yml"    ""
@@ -180,8 +177,8 @@ if [ "${1:-}" = "--selftest" ]; then
   u "exception sur un fichier disparu"  "40 front/a.ts"                  "  .github/workflows/ci.yml : exception sur un fichier absent des mesures"
   v() { r=$(printf '%s\n' "$2" | plafonds_inutiles | grep -F "$3"); [ -n "$r" ] && echo "PASS  $1" \
         || { echo "FAIL  $1  attendu une ligne contenant [$3]"; st=1; }; }
-  v "plafond d'une skill revenue sous 500" "480 .claude/skills/infra-rpi/SKILL.md" "infra-rpi/SKILL.md : 480 lignes, sous le plafond 500"
-  v "plafond d'une skill disparue"         "40 front/a.ts"                         "infra-rpi/SKILL.md : plafond déclaré sur un fichier absent"
+  v "plafond d'une skill revenue sous 500" "480 .claude/skills/ux-patterns/ARBITRAGES.md" "ARBITRAGES.md : 480 lignes, sous le plafond 500"
+  v "plafond d'une skill disparue"         "40 front/a.ts"                         "ARBITRAGES.md : plafond déclaré sur un fichier absent"
   [ $st -eq 0 ] && echo "== TOUS OK ==" || echo "== ÉCHECS =="
   exit $st
 fi
