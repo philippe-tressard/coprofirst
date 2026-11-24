@@ -66,8 +66,8 @@ Ce que le point 16 ci-dessus ne dit pas, et qui sert quand un rejeu ou un job d�
   pré-vol : `lib-ci-prevol.sh`.
 
 ### La CI GitHub
-- Un check requis **annulé** par GitHub bloque une PR sans un mot :
-  `bash scripts/ci/relancer-annules.sh <n° de PR>`.
+- Un check requis **annulé** par GitHub bloque une PR sans un mot : `bash scripts/ci/relancer-annules.sh <n° de PR>`.
+- **Un rouge de `main` ou d'un passage planifié ouvre un ticket** (#2988, `scripts/ci/signaler_echec_ci.py`) ; fermé à la main, sur le vert revenu.
 - **Un arbre déjà jugé vert ne se rejoue pas** (#2632) : le job `arbre` saute un job requis
   quand une exécution précédente le prouve (même workflow, même dépôt, job `success` joué,
   arbre recalculé égal à `HEAD^{tree}`, base d'alors ancêtre de la tête). L'artefact
@@ -99,8 +99,8 @@ Ce que le point 16 ci-dessus ne dit pas, et qui sert quand un rejeu ou un job d�
 - **Chaque commit de `main` publie ses images** (#1753) : `images.yml` publie les images
   signées des quatre services sur `ghcr.io/philippe-tressard/coprofirst-*` (amd64 et arm64),
   étiquetées `sha-<commit>` ; une version bumpée reçoit le tag git `vX.Y.Z`
-  (`scripts/ci/tag-version.sh`, jamais à la main) et l'étiquette `X.Y.Z`.
-  🔒 `test_images_publiees.py`.
+  (`scripts/ci/tag-version.sh`, jamais à la main) et l'étiquette `X.Y.Z` ; construite dès la PR (`images-pr.yml`, #2963).
+  🔒 `test_images_publiees.py`, `test_contexte_images.py`.
 - **La référence TIRE ces images** (#1758) : `auto-deploy.sh` et la bascule passent par
   `obtenir_images` (`scripts/lib/lib-images-ci.sh`) ; tant qu'elles ne sont pas publiées, le
   journal dit « en attente des images de la CI », et au-delà de 30 min le nœud construit en

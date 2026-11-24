@@ -38,19 +38,33 @@
  *
  * Script Node sans dépendance, comme `check-sw-url.mjs`.
  *
- * Usage : npm run lint:audit
+ * Usage : npm run lint:audit                         (le front)
+ *         node front/scripts/check-audit.mjs --dossier whatsapp-bridge   (#2962)
+ *   Le dossier porte son `package-lock.json` et, s'il en a, son `audit-exceptions.json`.
  *   exit 0 = aucune vulnérabilité hors exception
  *   exit 1 = vulnérabilité non couverte, ou exception périmée/inutile
  *   exit 2 = INCONNU (l'audit n'a pas pu être mesuré)
  */
 
 import { spawnSync } from 'node:child_process';
-import { readFileSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
-import { dirname, join } from 'node:path';
+import { dirname, join, resolve } from 'node:path';
 
-const RACINE = join(dirname(fileURLToPath(import.meta.url)), '..');
+//  Le dossier audité : le front par défaut, ou `--dossier <chemin>` — le bridge
+//  WhatsApp n'avait que Trivy, la nuit, aux seuils CRITICAL et HIGH (#2962). Même
+//  seuil, même mécanique d'exceptions nominatives, un fichier par dossier.
+const iDossier = process.argv.indexOf('--dossier');
+const RACINE =
+	iDossier > 0
+		? resolve(process.argv[iDossier + 1] ?? '/dossier-absent')
+		: join(dirname(fileURLToPath(import.meta.url)), '..');
 const FICHIER_EXCEPTIONS = join(RACINE, 'audit-exceptions.json');
+if (!existsSync(join(RACINE, 'package-lock.json'))) {
+	//  Un dossier mal nommé (ou `--dossier` sans valeur) n'est pas un arbre sain.
+	console.error(`\n⚠️  INCONNU — aucun package-lock.json dans ${RACINE} : rien n'a été audité.\n`);
+	process.exit(2);
+}
 
 /** Rend INCONNU : le contrôle n'a pas pu mesurer, ce qui n'est pas un succès. */
 function inconnu(raison, detail) {

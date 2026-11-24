@@ -19,6 +19,7 @@ from sqlmodel import Session
 
 from app.database import get_session
 from app.utils.manuel_pdf import ManuelIndisponible, generer_manuel_pdf, identite_du_manuel
+from app.utils.en_tete_fichier import en_tete_fichier
 
 router = APIRouter(prefix="/manuel", tags=["manuel"])
 
@@ -42,5 +43,5 @@ def manuel_pdf(session: Session = Depends(get_session)):
     return Response(
         content=pdf,
         media_type="application/pdf",
-        headers={"Content-Disposition": f'inline; filename="{nom}"'},
+        headers=en_tete_fichier(nom, mode="inline"),
     )
