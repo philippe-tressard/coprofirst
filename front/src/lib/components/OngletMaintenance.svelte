@@ -1,6 +1,9 @@
 <!--
-  L'onglet **Maintenance** de l'administration : les tâches planifiées des deux
-  nœuds, l'intégrité référentielle, et le contrôle de santé quotidien.
+  L'onglet **Maintenance** de l'administration. À l'opérateur : les tâches
+  planifiées de chaque nœud, les contrôles de fiabilité et l'audit de sécurité
+  nocturne, l'intégrité de la base et le contrôle de santé quotidien. À
+  l'administrateur : la consommation de l'assistant IA, l'export vérifié de sa
+  copropriété et la conservation des affaires (#2995).
 
   Extrait de `admin/+page.svelte` le 09/09/2026 (#852) — la page fait 1 741 lignes
   et son plafond de modularité lui interdit de grossir. Elle porte déjà dix-sept
@@ -26,9 +29,10 @@
       l'opérateur qui n'est pas administrateur ne les voit donc pas (#2029). -->
 {#if $isOperateur}
 	<p class="muted intro-maintenance">
-		Exécution des tâches planifiées sur les <strong>deux</strong> Raspberry&nbsp;Pi. Le nœud actif assure
-		la maintenance applicative (purges, VACUUM) ; le nœud en veille fait son hygiène locale (cache de
-		build, rotation des logs, images de base) et transmet son rapport au nœud actif.
+		Exécution des tâches planifiées sur chaque serveur de l'installation. Quand elle en compte deux,
+		le nœud actif assure la maintenance applicative (purges, VACUUM) ; le nœud en veille fait son
+		hygiène locale (cache de build, rotation des logs, images de base) et transmet son rapport au
+		nœud actif.
 	</p>
 {:else}
 	<p class="muted intro-maintenance">

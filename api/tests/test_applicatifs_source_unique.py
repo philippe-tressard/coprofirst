@@ -191,15 +191,6 @@ MOTIF_DES_DOCUMENTS = "*.md"
 #: change fait échouer : la table ne fait que baisser.
 DOCUMENTS_SANS_LISTE = {
     "README.md": (1, "poste de développement : la pile locale, aucune base de production"),
-    "CONTRIBUTING.md": (1, "poste de développement : la pile locale, aucune base de production"),
-    "docs/redondance-rpi5.md": (
-        1,
-        "procédure « site HS » à réécrire par #2918 (en cours) — l'entrée tombe avec lui",
-    ),
-    "specs/architecture/stack.md": (
-        1,
-        "spécification d'origine, à un seul nœud : son installation est périmée (#2989)",
-    ),
 }
 
 

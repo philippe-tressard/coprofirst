@@ -19,7 +19,7 @@ une table (`FAMILLES`), un seul balayage, et tous les écarts nommés d'un coup 
 | Forme citée | Lue dans | Doit exister |
 |---|---|---|
 | `Quelquechose.svelte` | les skills du front | un fichier de ce nom sous `front/src` |
-| `lint:quelquechose` | les skills du front | un script de ce nom dans `front/package.json` |
+| `lint:quelquechose` | les skills du front et `user-manual` | un script de ce nom dans `front/package.json` |
 | `#lib/x.ts` | les skills du front | le fichier correspondant |
 | `test_x.py`, ou `` `test_x` `` | **toutes** les skills et `CLAUDE.md` | un fichier de `api/tests/` — ou, sans extension, une fonction de test |
 
@@ -65,6 +65,11 @@ _TESTS = _RACINE / "api" / "tests"
 #: ⚠️ La portée fait partie du contrôle : une skill ajoutée qui parle du front
 #: doit rejoindre cette liste, et le premier test échoue si l'une disparaît.
 SKILLS_FRONT = ("svelte-patterns", "ux-patterns")
+
+#: Les skills dont les `lint:*` cités se vérifient aussi (#2936) : `user-manual`
+#: nomme les contrôles qui lisent le manuel. La famille « linter » seule s'y
+#: applique — les composants et `#lib/` restent l'affaire des skills du front.
+SKILLS_LINTERS = SKILLS_FRONT + ("user-manual",)
 
 #: Une ligne qui porte l'un de ces mots parle du PASSÉ : le nom qu'elle cite a
 #: le droit de ne plus exister, et c'est même le but.
@@ -117,6 +122,11 @@ def _documents_front() -> list[tuple[str, pathlib.Path]]:
         for skill in SKILLS_FRONT
         for p in sorted((_SKILLS / skill).glob("*.md"))
     ]
+
+
+def _documents_linters() -> list[tuple[str, pathlib.Path]]:
+    """Les skills dont les `lint:*` cités doivent exister (#2936)."""
+    return [(skill, _SKILLS / skill / "SKILL.md") for skill in SKILLS_LINTERS]
 
 
 def _documents_consignes() -> list[tuple[str, pathlib.Path]]:
@@ -187,7 +197,7 @@ FAMILLES = (
     ),
     Famille(
         "linter",
-        _documents_front,
+        _documents_linters,
         re.compile(r"\b(lint:[a-z0-9-]+)\b"),
         lambda nom: nom in _scripts_npm(),
     ),
@@ -219,7 +229,7 @@ def _noms_cites(famille: Famille, texte: str):
 
 def test_la_portee_du_controle_est_intacte():
     """Cas zéro : une skill absente, et le contrôle ne vérifie plus rien."""
-    for skill in SKILLS_FRONT:
+    for skill in SKILLS_LINTERS:
         assert (_SKILLS / skill / "SKILL.md").exists(), (
             f"{skill}/SKILL.md est introuvable — le contrôle a perdu sa portée"
         )
