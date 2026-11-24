@@ -79,6 +79,15 @@ jobs:
           { npm ci --ignore-scripts >/dev/null 2>&1 && npm run --silent lint:audit; } > "$RUNNER_TEMP/node.txt" 2>&1 || rc=$?
           cat "$RUNNER_TEMP/node.txt"
           bash ../scripts/ci/veille-securite.sh etape "$RESULTATS" node "$rc" < "$RUNNER_TEMP/node.txt"
+      #  Le bridge, même mécanique (#2962) : `npm audit` lit son verrou, sans installer.
+      - name: Audit des dépendances Node du bridge
+        if: always()
+        working-directory: whatsapp-bridge
+        run: |
+          rc=0
+          node ../front/scripts/check-audit.mjs --dossier . > "$RUNNER_TEMP/node-bridge.txt" 2>&1 || rc=$?
+          cat "$RUNNER_TEMP/node-bridge.txt"
+          bash ../scripts/ci/veille-securite.sh etape "$RESULTATS" node-bridge "$rc" < "$RUNNER_TEMP/node-bridge.txt"
 
       # ── 3. Les images PUBLIÉES pour ce commit (images.yml, #1753) ──────────
       - uses: docker/login-action@81c6f93d4bc991e510b342a00b419b3bb4efc5c6 # v4.7.0

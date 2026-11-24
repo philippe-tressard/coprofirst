@@ -1043,6 +1043,13 @@ jobs:
           npm ci --omit=dev --ignore-scripts
           npm test
 
+      # Vulnérabilités des dépendances du BRIDGE (#2962) : la mécanique du front —
+      # seuil `low`, exceptions nominatives (`whatsapp-bridge/audit-exceptions.json`
+      # s'il en faut une). Il n'avait que Trivy, la nuit, aux seuils CRITICAL et HIGH.
+      - name: Vulnérabilités des dépendances du bridge WhatsApp
+        working-directory: whatsapp-bridge
+        run: node ../front/scripts/check-audit.mjs --dossier .
+
       # Vulnérabilités connues des dépendances. Le 17/08/2026, `npm audit` en local
       # en relevait QUATRE dont une haute, quand le bandeau GitHub n'en annonçait
       # qu'une basse : Dependabot suit ses propres avis sur la branche par défaut,
