@@ -5,7 +5,7 @@ phrase de la politique à un DÉCLENCHEUR dans le code, comme `EXIGENCES` dans
 `test_politique_confidentialite_couvre_le_code.py` : tant que le code fait la chose, la
 phrase doit être là ; le jour où il cesse, le test le dit, et la phrase se relit.
 
-⚠️ Il lit le GABARIT ; le texte servi se corrige par migration (0347).
+⚠️ Il lit le GABARIT ; le texte servi se corrige par migration (0349).
 """
 
 from __future__ import annotations

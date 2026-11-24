@@ -17,8 +17,8 @@ dans le texte (`&nbsp;`). Ancres vérifiées sur le texte servi en production le
 23/11/2026 (forme de l'éditeur, une occurrence chacune). Données seules : l'image
 précédente lit les mêmes clés (#1757).
 
-Revision ID: 0347
-Revises: 0346
+Revision ID: 0349
+Revises: 0348
 """
 
 from alembic import op
@@ -37,8 +37,8 @@ from app.seed.contenus_legaux_notifications import (
 )
 from app.utils.textes_livres import forme_editeur, lire_texte, remplacer_passage
 
-revision = "0347"
-down_revision = "0346"
+revision = "0349"
+down_revision = "0348"
 branch_labels = None
 depends_on = None
 
