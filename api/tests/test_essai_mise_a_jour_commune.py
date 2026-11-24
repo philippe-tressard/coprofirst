@@ -47,10 +47,14 @@ def test_le_mode_commune_constate_avant_et_apres_la_mise_a_jour():
 
 
 def test_les_coproprietes_se_creent_par_l_outillage_de_l_hebergeur():
-    """Le vrai `creer-copropriete.sh` de <de>, jamais une déclaration écrite à la main."""
+    """Le chemin de l'hébergeur : la copropriété de l'installation déclarée à la main
+    (une déclaration vide est refusée), puis la suivante par le vrai
+    `creer-copropriete.sh` de <de> — jamais une base créée par l'essai lui-même."""
     texte = LIB.read_text(encoding="utf-8")
     assert "bash deploiement/standard/commune/creer-copropriete.sh" in texte
     assert "coproprietes.json" in texte  # COPROPRIETES_FICHIER, posé avant elles
+    assert '"base": "DATABASE_URL"' in texte, "A reprend la base de l'installation"
+    assert "CREATE DATABASE" not in texte and "base_creer" not in texte
 
 
 def test_l_autotest_de_la_decision_est_branche_et_vert():

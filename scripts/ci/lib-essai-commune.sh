@@ -14,14 +14,16 @@
 #
 #  Le déroulé, celui d'un hébergeur, sur l'installation de <de> :
 #    1. `COPROPRIETES_FICHIER` dans `.env`, la pile recréée (surcouche comprise) ;
-#    2. deux copropriétés, A et B, par `creer-copropriete.sh` de <de> ;
+#    2. deux copropriétés : A, celle de l'installation, déclarée à la main ; B, par
+#       `creer-copropriete.sh` de <de> ;
 #    3. un fichier témoin chez A, dans un dossier que le code écrit (`fichiers/`) ;
 #    4. le CONSTAT (`constater_commune`), avant ET après la mise à jour :
 #       la surcouche sur les conteneurs, le fichier de A servi sous l'hôte de A et
 #       refusé sous celui de B (le jeton de A), le front sous chaque hôte.
 #
 #  Les variables qu'il pose pour l'appelant : HOTE_A, HOTE_B, MDP_A (le témoin de
-#  connexion, sous l'hôte de A). Il emploie COMPOSE, TRAVAIL, RACINE et `poser`.
+#  connexion, sous l'hôte de A). Il emploie COMPOSE, TRAVAIL, RACINE, `poser` et
+#  `attendre_sante`.
 #
 #  Test : bash scripts/ci/lib-essai-commune.sh --selftest
 # =============================================================================
@@ -94,32 +96,48 @@ code_sous() {
     curl -s -m 10 -o "$corps" -w '%{http_code}' -H "Host: $hote" "$@" "http://localhost$chemin" || true
 }
 
-#  Deux copropriétés, A et B, sur l'installation de <de>. Pose HOTE_A, HOTE_B, MDP_A.
+#: L'hôte commun de l'essai : un nom RÉSERVÉ (`.test`), jamais un vrai domaine
+#: (`standards/03` §8 quater) ; une déclaration exige un nom de domaine, pas `localhost`.
+HOTE_COMMUN_ESSAI="essai.test"
+
+#  Deux copropriétés sur l'installation de <de>, par le chemin de l'hébergeur
+#  (`deploiement/standard/commune/LISEZMOI.md`) :
+#  - A : la copropriété DE L'INSTALLATION, déclarée à la main (« Déclarer les
+#    copropriétés ») — sa base et son secret restent `DATABASE_URL` et `SECRET_KEY`.
+#    C'est le passage d'une installation propre à une installation commune ; une
+#    déclaration vide est refusée (« Aucune copropriété déclarée »), d'où une
+#    première copropriété écrite, jamais créée par l'outil ;
+#  - B : ajoutée par `creer-copropriete.sh`, sa base et son secret neufs.
+#  Pose HOTE_A, HOTE_B, MDP_A (l'administrateur initial de l'installation, devenu
+#  celui de A : $1).
 installer_commune() {
-    local c log adresse racine
+    local log adresse
+    MDP_A="${1:?mot de passe de l'administrateur initial attendu}"
+    poser ORIGIN "http://$HOTE_COMMUN_ESSAI"
     poser COPROPRIETES_FICHIER /app/data/coproprietes.json
+    "${COMPOSE[@]}" exec -T -u app api sh -c 'cat > /app/data/coproprietes.json' <<JSON
+{"coproprietes": [{"identifiant": "essai-a", "code_postal": "75011", "nom": "Essai a",
+  "anciens_alias": [], "hotes": [], "suspendue": false,
+  "base": "DATABASE_URL", "secret": "SECRET_KEY", "racine_fichiers": "/app/uploads/essai-a",
+  "expediteur": "contact@exemple.test", "nom_expediteur": "Essai a"}]}
+JSON
     mapfile -t COMPOSE < <(. "$RACINE/deploiement/standard/lib-installation.sh"; definir_compose; printf '%s\n' "${COMPOSE[@]}")
     "${COMPOSE[@]}" up -d --quiet-pull
     attendre_sante || { echo "::error::l'installation ne répond plus une fois déclarée commune"; return 1; }
-    for c in a b; do
-        log="$TRAVAIL/creer-$c.log"
-        bash deploiement/standard/commune/creer-copropriete.sh "essai-$c" \
-            --code-postal 7501"$([ $c = a ] && echo 1 || echo 2)" --nom "Essai $c" \
-            --expediteur "contact@exemple.test" 2>&1 | tee "$log" \
-            || { echo "::error::creer-copropriete.sh a échoué pour essai-$c"; return 1; }
-        adresse=$(sed -n 's/.*Copropriété essai-'"$c"' déclarée : *//p' "$log" | tail -1 | tr -d '\r ')
-        [ -n "$adresse" ] || { echo "::error::adresse de essai-$c introuvable dans la sortie"; return 1; }
-        if [ $c = a ]; then
-            HOTE_A=$(hote_de "$adresse")
-            MDP_A=$(sed -n 's/.*Mot de passe temporaire : *//p' "$log" | tail -1 | tr -d '\r ')
-            [ -n "$MDP_A" ] || { echo "::error::mot de passe initial de essai-a introuvable"; return 1; }
-        else
-            HOTE_B=$(hote_de "$adresse")
-        fi
-    done
-    racine=$("${COMPOSE[@]}" exec -T api cat /app/data/coproprietes.json \
-        | python3 -c 'import json,sys; print(next(c["racine_fichiers"] for c in json.load(sys.stdin)["coproprietes"] if c["identifiant"] == "essai-a"))')
-    "${COMPOSE[@]}" exec -T -u app api sh -c "mkdir -p '$racine/$(dirname "$TEMOIN_COMMUNE")' && printf '%s' '$CONTENU_A' > '$racine/$TEMOIN_COMMUNE'"
+    HOTE_A="75011-essai-a.$HOTE_COMMUN_ESSAI"
+    log="$TRAVAIL/creer-b.log"
+    bash deploiement/standard/commune/creer-copropriete.sh essai-b --code-postal 75012 \
+        --nom "Essai b" --expediteur contact@exemple.test 2>&1 | tee "$log" \
+        || { echo "::error::creer-copropriete.sh a échoué pour essai-b"; return 1; }
+    adresse=$(sed -n 's/.*Copropriété essai-b déclarée : *//p' "$log" | tail -1 | tr -d '\r ')
+    [ -n "$adresse" ] || { echo "::error::adresse de essai-b introuvable dans la sortie"; return 1; }
+    HOTE_B=$(hote_de "$adresse")
+    #  Le runner résout les noms de l'essai, comme un navigateur : la sonde de version
+    #  lit le site par son adresse. Une machine jetable seulement (CI).
+    if [ "${GITHUB_ACTIONS:-}" = true ]; then
+        printf '127.0.0.1 %s %s %s\n' "$HOTE_COMMUN_ESSAI" "$HOTE_A" "$HOTE_B" | sudo tee -a /etc/hosts >/dev/null
+    fi
+    "${COMPOSE[@]}" exec -T -u app api sh -c "mkdir -p '/app/uploads/essai-a/$(dirname "$TEMOIN_COMMUNE")' && printf '%s' '$CONTENU_A' > '/app/uploads/essai-a/$TEMOIN_COMMUNE'"
     echo "Copropriétés : A sous $HOTE_A, B sous $HOTE_B ; témoin $TEMOIN_COMMUNE chez A."
 }
 

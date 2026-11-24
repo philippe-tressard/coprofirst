@@ -120,10 +120,10 @@ MDP_ADMIN=$("${COMPOSE[@]}" logs api 2>&1 | sed -n 's/.*Mot de passe temporaire 
 HOTE_TEMOIN=localhost
 if [ "$MODE" = commune ]; then
     echo "== 3 bis. L'installation devient commune : deux copropriétés"
-    installer_commune || exit 1
-    #  L'hôte commun ne sert aucune copropriété (421) : le témoin est l'administrateur
-    #  initial de A, sous l'hôte de A.
-    HOTE_TEMOIN="$HOTE_A"; MDP_ADMIN="$MDP_A"
+    installer_commune "$MDP_ADMIN" || exit 1
+    #  L'hôte commun ne sert aucune copropriété (421) : le témoin se connecte sous
+    #  l'hôte de A, la copropriété de l'installation.
+    HOTE_TEMOIN="$HOTE_A"
     AVANT=$(constater_commune avant | tee /dev/stderr | tail -1)
     [ "$AVANT" = OK ] || { echo "::error::installation commune AVANT la mise à jour : $AVANT"; exit 1; }
 fi
@@ -149,7 +149,9 @@ echo "== 5. Le verdict"
 attendre_sante || true
 REUSSIE=$(grep -q "Mise à jour réussie : $VERS" "$TRAVAIL/maj.log" && echo oui || echo non)
 ENV_VERSION=$(sed -n 's/^COPROFIRST_VERSION=//p' .env | tail -1)
-SERVIE=$(node "$RACINE/front/scripts/check-version-servie.mjs" --site http://localhost 2>/dev/null | tail -1 || true)
+#  Sur une installation commune, le site d'une copropriété (`/etc/hosts` du runner).
+SITE=http://localhost; [ "$MODE" = propre ] || SITE="http://$HOTE_A"
+SERVIE=$(node "$RACINE/front/scripts/check-version-servie.mjs" --site "$SITE" 2>/dev/null | tail -1 || true)
 VOLUMES=$(ls "$SAUV"/coprofirst_*_vers_"$VERS"_*.tar.gz 2>/dev/null | grep -v -- '-base\.tar\.gz$' | grep . >/dev/null && echo oui || echo non)
 BASE=$(ls "$SAUV"/*-base.tar.gz >/dev/null 2>&1 && echo oui || echo non)
 TEMOIN=$(se_connecte)
