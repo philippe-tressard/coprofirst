@@ -34,6 +34,15 @@ export const REGLES_PARTAGEES = {
 		//  Servie par `UserRead.libelle_logement` depuis v3.61.0 (#2500).
 	},
 
+	//  ── Sondages (#3060) ────────────────────────────────────────────────────
+	//  Le nom est celui de la fonction que `ResultatsSondage` portait : le front
+	//  ne doit plus en définir une — elle recalculerait la part avec son arrondi.
+	pct: {
+		quoi: 'la part de chaque option d’un sondage, en % (la barre et le chiffre)',
+		api: 'api/app/utils/pourcentages.py#part_en_pourcent',
+		//  Servie par `OptionFiche.part` depuis #3060.
+	},
+
 	//  ── Admin › Utilisateurs (#2618) ─────────────────────────────────────────
 	gestesAdminOperateur: {
 		quoi: 'les gestes de rôle offerts sur un compte (+ CS, – Admin, + Opérateur…)',

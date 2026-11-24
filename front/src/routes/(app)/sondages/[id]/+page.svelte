@@ -240,7 +240,7 @@
 				      « N votes » posé à côté de chaque choix. -->
 				{#if voirResultats}
 					<div class="resultats-avant-vote">
-						<ResultatsSondage options={sondage.options} total={totalVotes} visibles provisoires />
+						<ResultatsSondage options={sondage.options} visibles provisoires />
 					</div>
 				{/if}
 				<!-- Mode vote -->
@@ -317,7 +317,6 @@
 				<ResultatsSondage
 					options={sondage.options}
 					monVote={sondage.mon_vote}
-					total={totalVotes}
 					visibles={voirResultats}
 					provisoires={!sondage.cloture}
 				/>

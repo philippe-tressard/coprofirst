@@ -198,7 +198,7 @@ détail de chaque motif est plus haut dans cette skill.
       ne se décide qu'à `#lib/theme.ts` et ne se choisit qu'au Profil (`ChoixTheme`,
       `e2e/bascule-theme.spec.ts`)
 - [ ] Style dans le `<style>` du composant ou `src/styles/`, jamais en attribut `style="…"`
-      sauf une valeur tirée des données (`width:{pct}%`) — plafond zéro (`npm run
+      sauf une valeur tirée des données (`width:{opt.part}%`, une part servie par l'API) — plafond zéro (`npm run
       lint:styles-en-ligne`). Si une règle globale plus forte vise l'élément, qualifier le
       sélecteur
 - [ ] Bloc pliable : un seul déplié à la fois, par `#lib/accordeon`, jamais un `Set`

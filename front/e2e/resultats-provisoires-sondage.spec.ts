@@ -12,8 +12,25 @@ import type { Page } from '@playwright/test';
 import { attendreHydratation, expect, simulerApi, test } from './aides';
 
 const OPTIONS_COMPTEES = [
-	{ id: 31, libelle: 'Beige', ordre: 0, champ_libre: false, nb_votes: 2, reponses_libres: [] },
-	{ id: 32, libelle: 'Gris perle', ordre: 1, champ_libre: false, nb_votes: 1, reponses_libres: [] },
+	//  `part` est SERVIE par l'API (#3060) : l'écran ne la recalcule plus.
+	{
+		id: 31,
+		libelle: 'Beige',
+		ordre: 0,
+		champ_libre: false,
+		nb_votes: 2,
+		part: 67,
+		reponses_libres: [],
+	},
+	{
+		id: 32,
+		libelle: 'Gris perle',
+		ordre: 1,
+		champ_libre: false,
+		nb_votes: 1,
+		part: 33,
+		reponses_libres: [],
+	},
 ];
 
 const FICHE = {
@@ -73,6 +90,23 @@ test('ouvert, résultats masqués : rien avant la clôture, le vote seul', async
 	await expect(page.getByRole('radio')).toHaveCount(2);
 	await expect(page.getByText(PROVISOIRES)).toHaveCount(0);
 	await expect(page.getByText(/%$/)).toHaveCount(0);
+});
+
+test('la part affichée est celle que l’API sert, jamais recalculée des votes (#3060)', async ({
+	page,
+}) => {
+	//  2 votes sur 3 feraient 67 % ; l'API dit 60 : l'écran lit l'API.
+	await ouvrir(page, {
+		...FICHE,
+		options: [
+			{ ...OPTIONS_COMPTEES[0], part: 60 },
+			{ ...OPTIONS_COMPTEES[1], part: 40 },
+		],
+	});
+	await expect(page.getByText('60 %')).toBeVisible();
+	await expect(page.getByText('40 %')).toBeVisible();
+	await expect(page.getByText('67 %')).toHaveCount(0);
+	await expect(page.locator('.result-bar').first()).toHaveAttribute('style', /width:\s*60%/);
 });
 
 test('clos : les résultats, sans la mention « provisoires »', async ({ page }) => {
