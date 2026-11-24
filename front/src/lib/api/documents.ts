@@ -46,7 +46,8 @@ export interface Document {
 export type PorteurAnnexes = 'document' | 'diagnostic' | 'regle';
 
 /**  La colonne de `Document` qui rattache une annexe à chaque porteur — lue par
- *   `CHAMP_RATTACHEMENT` ci-dessous et par `annexesParFiche`, écrite ici seule. */
+ *   `CHAMP_RATTACHEMENT` ci-dessous et par `annexesParFiche`, écrite ici seule.
+ *   🔒 Égale à `PORTEURS` de l'API : `api/tests/test_tables_front_couvrent_l_api.py`. */
 const COLONNE_PORTEUR = {
 	document: 'document_parent_id',
 	diagnostic: 'diagnostic_rapport_id',

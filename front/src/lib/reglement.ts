@@ -16,7 +16,8 @@ export const TYPES_FICHIERS_REGLEMENT = `${LIBELLE_TYPES.documents}, Markdown (.
 
 /**
  * La teinte d'un état de transcription d'un PV d'AG (29/10/2026) — le LIBELLÉ
- * vient du serveur (`statut_libelle`, `transcription.STATUTS`).
+ * vient du serveur (`statut_libelle`, `transcription.STATUTS`). Lue sans repli : une
+ * teinte par statut, 🔒 `api/tests/test_tables_front_couvrent_l_api.py` (#2947).
  */
 export const TEINTE_TRANSCRIPTION: Record<string, string> = {
 	en_cours: 'badge-blue',
