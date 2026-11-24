@@ -195,14 +195,16 @@ def require_proprietaire(user: Utilisateur = Depends(get_current_user)) -> Utili
     return user
 
 
-def require_cs_or_admin(user: Utilisateur = Depends(get_current_user)) -> Utilisateur:
-    #  Le REFUS s'appuie sur le PRÉDICAT, il ne le redérive pas : deux écritures
-    #  de « qui modère » divergeraient sans que rien ne le dise — l'une
-    #  répondrait oui, l'autre lèverait un 403 (#1028).
+def exiger_moderateur(user: Utilisateur, motif: str = "Réservé au conseil syndical et à l'admin"):
+    """Le REFUS « réservé au conseil » (403), sur le PRÉDICAT — jamais redérivé : deux
+    écritures de « qui modère » divergeraient en silence (#1028). `motif` ne dit que le
+    geste refusé ; quatre copies hors d'`auth/` l'écrivaient (#2942)."""
     if not est_moderateur(user):
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN, detail="Réservé au conseil syndical et à l'admin"
-        )
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=motif)
+
+
+def require_cs_or_admin(user: Utilisateur = Depends(get_current_user)) -> Utilisateur:
+    exiger_moderateur(user)
     return user
 
 
@@ -381,9 +383,8 @@ def est_auteur(objet, user: Utilisateur) -> bool:
     #  ⚠️ Sans identifiant, on ne compare rien : `None == None` rendrait VRAI sur
     #  tout objet dont l'auteur est nul, et ouvrirait l'édition à qui n'a pas
     #  d'identité. Un utilisateur authentifié en a toujours un — c'est donc une
-    #  garde défensive, et son jumeau `#lib/droits.ts` la portait déjà. Les deux
-    #  écritures d'une même règle doivent dire la même chose jusque dans leurs cas
-    #  limites, sinon les comparer côte à côte ne prouve rien.
+    #  garde défensive. (Son jumeau du front a disparu : les écrans lisent les
+    #  droits que l'API leur sert.)
     if uid is None:
         return False
     return (
