@@ -5,7 +5,8 @@ s'affiche-t-il (#2312), quelle est l'adresse du site (#2058), sert-on la démo
 (#1901), l'installation est-elle suspendue en lecture seule (R6 #1882), l'opérateur est-il désigné par l'exploitant (`auth/operateur`,
 31/10/2026), quel contrat d'API l'installation sert (`app/contrat`, #2456 : l'app
 iOS adapte ses gestes à une installation plus ancienne), et quelle release elle sert
-(`installation.version_logicielle`, #2833 : une app juge « au moins vX.Y.Z »). Sorties de
+(`installation.version_logicielle`, #2833 : une app juge « au moins vX.Y.Z »), et la
+version minimale de chaque app (`contrat/versions_minimales`, #2994). Sorties de
 `routers/config.py` pour qu'il reste sous 500 lignes : une clé calculée neuve
 s'ajoute ici, et `PUT /config` la refuse (`utils/reglages`).
 """
@@ -13,6 +14,7 @@ s'ajoute ici, et `PUT /config` la refuse (`utils/reglages`).
 from __future__ import annotations
 
 from app import contrat
+from app.contrat import circulation, versions_minimales
 from app.auth import operateur
 from app.inscription import regime, suspension
 from app.utils import demo, installation
@@ -35,4 +37,5 @@ def cles_calculees(reglages: dict[str, str]) -> dict[str, str]:
         operateur.CLE_PUBLIQUE: _drapeau(operateur.designe_par_l_exploitant()),
         contrat.CLE_PUBLIQUE: contrat.VERSION_CONTRAT,
         "version_logicielle": installation.version_logicielle(),
+        **versions_minimales.cles_publiques(circulation.APPS),
     }
