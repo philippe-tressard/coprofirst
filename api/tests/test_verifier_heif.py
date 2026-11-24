@@ -79,4 +79,4 @@ def test_l_image_lance_la_verification_sur_la_photo_temoin():
     dockerfile = (API / "Dockerfile").read_text(encoding="utf-8")
     assert "RUN python -I scripts/verifier_heif.py tests/donnees/photo.heic" in dockerfile
     assert (API / "tests" / "donnees" / "photo.heic").is_file()
-    assert not (API / ".dockerignore").exists(), "la photo témoin doit entrer dans l'image"
+    #  Qu'elle ENTRE dans l'image malgré `api/.dockerignore` : test_contexte_images.py (#2963).

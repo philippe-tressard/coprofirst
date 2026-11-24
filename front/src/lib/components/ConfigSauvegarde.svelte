@@ -114,7 +114,8 @@
 					⚠️ <strong>{String(heure_execution).padStart(2, '0')} h</strong> croise une autre tâche :
 					la
 					<strong>bascule</strong>
-					entre les deux Raspberry Pi tourne à 02 h, et la <strong>maintenance hebdomadaire</strong>
+					entre les deux nœuds de la référence tourne à 02 h, et la
+					<strong>maintenance hebdomadaire</strong>
 					(purge et VACUUM de la base) le dimanche à 03 h. Une sauvegarde qui démarre pendant l’une ou
 					l’autre lit une base en cours de réorganisation. Préférez une heure creuse{SEPARATEUR.tiret}01
 					h ou 04 h.

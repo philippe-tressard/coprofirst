@@ -316,6 +316,11 @@ def atteint(rel: str, nom: str, cibles: set[str], *, modules=None, profondeur: i
         vus.add((rel, nom))
         module, fonction = _fonction(index, rel, nom)
         if fonction is None:
+            #  Un nom RÉEXPORTÉ (`from app.utils.llm_connexion import tester` dans
+            #  `utils/llm.py`) : on suit l'import jusqu'à la définition (#3005).
+            source = _portee_des_noms(module, index).get(nom) if module else None
+            if source and source != (rel, nom) and source[1]:
+                a_voir.append((*source, niveau))
             continue
         portee = _portee_des_noms(module, index)
         for appel in (n for n in ast.walk(fonction) if isinstance(n, ast.Call)):

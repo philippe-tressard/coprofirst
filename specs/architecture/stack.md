@@ -174,29 +174,17 @@ volumes:
 
 ### CI/CD
 
-- **Déploiement :** `git pull` + `docker compose up -d --build` sur le Pi (déclenché manuellement ou via webhook GitHub/Gitea).
-- **Gitea** (optionnel) : instance Git auto-hébergée sur le Pi si l'équipe ne veut pas dépendre de GitHub.
-- **Watchtower** (optionnel) : mise à jour automatique des images Docker en production.
+> Section réécrite le 24/11/2026 (#2989) : la spécification d'origine décrivait un seul Pi, un `git pull` et une construction sur place. Ce qui est vrai se lit à sa source.
+
+- **Images :** chaque commit de `main` publie ses images signées (`ghcr.io`, étiquette `sha-<commit>`, `.github/workflows/images.yml`) ; aucune image ne se construit sur un Pi, sauf en secours.
+- **Déploiement de la référence :** `scripts/exploitation/auto-deploy.sh` (cron, toutes les 5 minutes) tire les images de la CI et démarre l'application par `servir_images` (`scripts/lib/lib-servir.sh`), sur le nœud actif seulement. La conduite d'une mise en production : skill `mep-precheck`.
+- **Autre installation :** elle suit son bail auprès du registre et se met à jour par `deploiement/standard/mise-a-jour.sh`.
 
 ---
 
-## Prérequis d'installation (résumé)
+## Prérequis d'installation
 
-```bash
-# 1. Sur le Pi (Raspberry Pi OS 64-bit)
-sudo apt update && sudo apt install -y docker.io docker-compose-plugin
-
-# 2. Cloner le dépôt
-git clone https://github.com/philippe-tressard/coprofirst.git
-cd coprofirst
-
-# 3. Configurer l'environnement
-cp .env.example .env
-# éditer .env : SECRET_KEY, domaine, SMTP...
-
-# 4. Lancer
-docker compose up -d
-```
+Une installation se fait par le guide `deploiement/standard/LISEZMOI.md`, jamais par un `docker compose` lancé à la main : sur un nœud de la haute disponibilité, un démarrage sans liste de services démarre aussi la base (règle d'or des données, `CLAUDE.md`). Le développement local : « Démarrage rapide » du `README.md`.
 
 ---
 
