@@ -248,7 +248,7 @@ body {
 	--color-voile-sur-plein-survol: rgba(255, 255, 255, 0.6);
 	--color-sur-plein-secondaire: rgba(255, 255, 255, 0.75); /* second texte sur l'aplat */
 	--color-hachure-sur-plein: rgba(255, 255, 255, 0.28); /* les hachures d'une pastille retenue */
-	--color-ombre-defilement: rgb(26 26 46 / 0.14); /* l'ombre qui dit « ça défile » */
+	--color-ombre-defilement: rgba(26, 26, 46, 0.14); /* l'ombre qui dit « ça défile » */
 	/*  Un fond NEUTRE posé sur la surface blanche — l'encart d'une rubrique qui
 	    n'a pas d'état à dire (« La demande », maquette G du 16/10/2026). Le
 	    `--color-bg` de la page est trop chaud pour un bloc dans une carte. */
