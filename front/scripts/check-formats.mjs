@@ -41,9 +41,15 @@ const EXCEPTIONS = {};
  *  - `.toFixed(` — l'arrondi d'une taille ou d'un nombre, point décimal compris ;
  *  - `/ 1024`, `/ (1024 * 1024)` — le changement d'échelle d'un octet ;
  *  - `.toLocaleString('fr-FR')` ou `.toLocaleString()` — un nombre groupé à la
- *    main (celui d'une DATE passe par `#lib/date`, qui épingle `LOCALE`).
+ *    main (celui d'une DATE passe par `#lib/date`, qui épingle `LOCALE`) ;
+ *  - `} %` — un pourcentage composé derrière une interpolation (`{x} %`,
+ *    `${x} %`, `{x}&nbsp;%`) : `fmtPourcent` (un taux déjà calculé) ou
+ *    `fmtPartEnPourcent` (une part d'un tout) posent l'espace insécable, et
+ *    six écrans l'écrivaient sécable (#2944, 24/11/2026). Le modulo `a % b`
+ *    suit une parenthèse ou un nom, jamais une accolade : il n'est pas lu.
  */
-const COPIE = /\.toFixed\s*\(|\/\s*\(?\s*1024\b|\.toLocaleString\s*\(\s*(?:\)|['"]fr-FR['"]\s*\))/;
+const COPIE =
+	/\.toFixed\s*\(|\/\s*\(?\s*1024\b|\.toLocaleString\s*\(\s*(?:\)|['"]fr-FR['"]\s*\))|\}(?:\s|&nbsp;|\\u00a0)+%/;
 
 export const fautes = lignesPortant(COPIE);
 
@@ -62,6 +68,14 @@ const CAS_COMPORTEMENT = [
 	['fmtNombre', [0], '0'],
 	['fmtNombre', [0.5], '0,5'],
 	['fmtNombre', [1234567], `1${NBSP}234${NBSP}567`],
+	//  Le pourcentage : l'espace est INSÉCABLE, et la part passe par le taux (#2944).
+	['fmtPourcent', [57], '57\u00a0%'],
+	['fmtPourcent', [null], '—'],
+	['fmtPourcent', [12.5], '12,5\u00a0%'],
+	['fmtPourcent', [33.3, 1], '33,3\u00a0%'],
+	['fmtPartEnPourcent', [34, 10000], '0,34\u00a0%'],
+	['fmtPartEnPourcent', [1, 3, 1], '33,3\u00a0%'],
+	['fmtPartEnPourcent', [5, 0], '—'],
 	['fmtOctets', [null], '—'],
 	['fmtOctets', [undefined], '—'],
 	['fmtOctets', [0], '0 o'],
@@ -125,6 +139,15 @@ process.exit(
 				["\t<strong>{r.index.toLocaleString('fr-FR')}</strong>", 1],
 				['\t{((p.total / diviseur) * 100).toFixed(1)}%', 1],
 				['\tn.toLocaleString()', 1],
+				//  Les pourcentages composés à la main (#2944).
+				['\t<td class="nombre">{fmtNombre(c.part)} %</td>', 1],
+				["\t{l.taux == null ? '—' : `${fmtNombre(l.taux)} %`}", 1],
+				["\tconst pourcentage = (l) => (l.taux == null ? '—' : `${l.taux} %`);", 1],
+				['\t)}&nbsp;%)', 1],
+				//  Un pourcentage formaté, un modulo, une largeur CSS : jamais signalés.
+				['\t<td class="nombre">{fmtPourcent(c.part)}</td>', 0],
+				['\tindex = (index + 1) % photos.length;', 0],
+				['\tstyle="left:{finPos}%"', 0],
 				//  Les formes voulues, jamais signalées.
 				['\t{fmtOctets(l.taille_octets)}', 0],
 				['\t{fmtNombre(r.index)}', 0],
@@ -135,10 +158,11 @@ process.exit(
 				//  Un commentaire qui cite la forme refusée.
 				['\t// on écrivait (n / 1024).toFixed(1)', 0],
 			],
-			ok: 'Tailles et nombres : formatés par fmtOctets / fmtNombre seulement',
-			ko: 'format(s) de taille ou de nombre écrit(s) à la main',
+			ok: 'Tailles, nombres et pourcentages : formatés par #lib/utils seulement',
+			ko: 'format(s) de taille, de nombre ou de pourcentage écrit(s) à la main',
 			conseil:
-				'Employer `fmtOctets(n)` (tailles) ou `fmtNombre(n)` (nombres) de `#lib/utils`. ' +
+				'Employer `fmtOctets(n)` (tailles), `fmtNombre(n)` (nombres), `fmtPourcent(taux)` ou ' +
+				'`fmtPartEnPourcent(n, total)` (pourcentages) de `#lib/utils`. ' +
 				'Un écart légitime se déclare dans EXCEPTIONS de scripts/check-formats.mjs, avec sa raison.',
 		}),
 );

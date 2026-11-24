@@ -14,7 +14,7 @@
   formulaire, et un décompte en cours ne doit pas se lire comme un résultat.
 -->
 <script lang="ts">
-	import { fmtNombre } from '#lib/utils.ts';
+	import { fmtNombre, fmtPourcent } from '#lib/utils.ts';
 	export let options: {
 		id: number;
 		libelle: string;
@@ -54,7 +54,7 @@
 			<div class="result-bar-wrap">
 				<div class="result-bar" style="width:{pct(opt.nb_votes ?? 0)}%"></div>
 			</div>
-			<div class="result-pct">{pct(opt.nb_votes ?? 0)} %</div>
+			<div class="result-pct">{fmtPourcent(pct(opt.nb_votes ?? 0))}</div>
 			<div class="result-votes">{fmtNombre(opt.nb_votes)}</div>
 		</div>
 		{#if opt.champ_libre && opt.reponses_libres?.length}

@@ -9,7 +9,7 @@
 	 * un copropriétaire du conseil compte sous les deux —, donc leurs lignes ne
 	 * s'additionnent pas, et l'écran le dit. La règle de calcul : `utils/adoption.py`.
 	 */
-	import { fmtNombre } from '#lib/utils.ts';
+	import { fmtNombre, fmtPourcent } from '#lib/utils.ts';
 	import PanneauTelemetrie from '#lib/components/PanneauTelemetrie.svelte';
 	import type { Adoption, LigneAdoption } from '#lib/api/index.ts';
 
@@ -30,7 +30,7 @@
 			: []
 	) satisfies { titre: string; lignes: LigneAdoption[] }[];
 
-	const pourcentage = (l: LigneAdoption) => (l.taux == null ? '—' : `${l.taux} %`);
+	const pourcentage = (l: LigneAdoption) => fmtPourcent(l.taux);
 </script>
 
 <PanneauTelemetrie

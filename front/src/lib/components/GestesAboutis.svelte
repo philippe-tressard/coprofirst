@@ -9,7 +9,7 @@
 	 * s'affiche pas. Le compte est fait sans compte ni page
 	 * (`api/app/utils/gestes_formulaire.py`).
 	 */
-	import { fmtNombre } from '#lib/utils.ts';
+	import { fmtNombre, fmtPourcent } from '#lib/utils.ts';
 	import PanneauTelemetrie from '#lib/components/PanneauTelemetrie.svelte';
 	import { GESTES_MESURES, type GesteMesure } from '#lib/aboutissement.ts';
 	import type { GesteAbouti } from '#lib/api/index.ts';
@@ -54,7 +54,7 @@
 						<td>{l.libelle}</td>
 						<td class="nombre">{fmtNombre(l.ouvertures)}</td>
 						<td class="nombre">{fmtNombre(l.envois)}</td>
-						<td class="nombre">{l.taux == null ? '—' : `${fmtNombre(l.taux)} %`}</td>
+						<td class="nombre">{fmtPourcent(l.taux)}</td>
 					</tr>
 				{/each}
 			</tbody>

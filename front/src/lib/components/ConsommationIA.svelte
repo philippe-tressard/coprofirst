@@ -24,7 +24,7 @@
 	} from '#lib/api/index.ts';
 	import { messageErreur } from '#lib/erreurs.ts';
 	import { fmtMonthYear } from '#lib/date.ts';
-	import { fmtMontant, fmtNombre } from '#lib/utils.ts';
+	import { fmtMontant, fmtNombre, fmtPourcent } from '#lib/utils.ts';
 
 	let donnees: ConsommationIA | null = null;
 	let chargement = true;
@@ -79,10 +79,9 @@
 						<li>
 							<span>{l.libelle}</span>
 							<span class="muted">
-								{fmtNombre(l.appels)} / {fmtNombre(l.appels_mois)} appels ({part(
-									l.appels,
-									l.appels_mois,
-								)}&nbsp;%)
+								{fmtNombre(l.appels)} / {fmtNombre(l.appels_mois)} appels ({fmtPourcent(
+									part(l.appels, l.appels_mois),
+								)})
 							</span>
 							<span
 								class="jauge"
