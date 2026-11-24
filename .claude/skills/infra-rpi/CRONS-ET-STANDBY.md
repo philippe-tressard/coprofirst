@@ -16,7 +16,8 @@ produite, compare, puis les détruit — même après un échec. **Sur le STANDB
 uniquement** : il refuse de démarrer si des conteneurs `hostachy` tournent.
 
     scp scripts/exploitation/banc-volumes.sh scripts/lib/lib-volumes.sh \
-        ptressard@<standby>:/tmp/ && ssh ptressard@<standby> 'cd /tmp && bash banc-volumes.sh'
+        scripts/lib/lib-applicatifs.sh scripts/lib/lib-image-utilitaire.sh \
+        infra/Dockerfile.utilitaire ptressard@<standby>:/tmp/ && ssh ptressard@<standby> 'cd /tmp && bash banc-volumes.sh'
 
 À rejouer après toute modification de `lib-volumes.sh`. Il n'était cité nulle
 part jusqu'au #1050 : un banc qu'on ne retrouve pas ne se rejoue pas, et on le

@@ -203,7 +203,8 @@ SSH_CIBLE="$EXPORT_SSH_USER@$SOURCE_IP"
 # root, elle est antérieure et nécessaire au modèle de déploiement. On en RETIRE
 # une (la règle sudoers devient inutile). Le montage est `:ro` et ne porte que le
 # volume des sauvegardes.
-LIRE="docker run --rm -v 5hostachy_backups:/b:ro alpine"
+[ -n "$IMAGE_UTILITAIRE" ] || { log "ERREUR: image utilitaire illisible (infra/Dockerfile.utilitaire) — état INCONNU."; exit 1; }
+LIRE="docker run --rm -v 5hostachy_backups:/b:ro $IMAGE_UTILITAIRE"
 
 # On établit d'abord qu'on a PU regarder. Sans cette étape, une panne d'accès rend
 # une liste vide, qui se lit comme « aucune sauvegarde » — un KO déguisé en
@@ -213,8 +214,8 @@ if ! $SSH_CMD "$SSH_CIBLE" "$LIRE true" >/dev/null 2>&1; then
   if ! $SSH_CMD "$SSH_CIBLE" "docker info" >/dev/null 2>&1; then
     log "ERREUR: docker inaccessible pour $EXPORT_SSH_USER sur $SOURCE_NOEUD — état INCONNU."
     log "        Le compte doit appartenir au groupe docker (id -nG)."
-  elif ! $SSH_CMD "$SSH_CIBLE" "docker image inspect alpine" >/dev/null 2>&1; then
-    log "ERREUR: image alpine absente sur $SOURCE_NOEUD et non téléchargeable — état INCONNU."
+  elif ! $SSH_CMD "$SSH_CIBLE" "docker image inspect $IMAGE_UTILITAIRE" >/dev/null 2>&1; then
+    log "ERREUR: image $IMAGE_UTILITAIRE absente sur $SOURCE_NOEUD et non téléchargeable — état INCONNU."
   else
     log "ERREUR: lecture du volume 5hostachy_backups impossible sur $SOURCE_NOEUD — état INCONNU."
   fi

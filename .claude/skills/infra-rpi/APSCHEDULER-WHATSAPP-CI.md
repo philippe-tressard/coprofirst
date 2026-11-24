@@ -41,7 +41,8 @@ alerte quand sa fenêtre de rattrapage s'épuise sans envoi réussi.
 - Reconnexion QR : Admin → WhatsApp → **bouton Statut** (affiche le QR si déconnecté)
 - Session corrompue (`creds.json` vide) : vider le volume + redémarrer le bridge
   ```bash
-  docker run --rm -v 5hostachy_whatsapp_auth:/data alpine sh -c 'rm -rf /data/*'
+  cd /opt/5hostachy && . scripts/lib/lib-image-utilitaire.sh
+  docker run --rm -v 5hostachy_whatsapp_auth:/data "$(image_utilitaire)" sh -c 'rm -rf /data/*'
   cd /opt/5hostachy && docker compose up -d whatsapp-bridge
   ```
 - `bascule.sh` ne propage jamais un `creds.json` vide vers le peer
