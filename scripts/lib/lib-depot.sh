@@ -95,3 +95,32 @@ verdict_suite_complete() {
         *)       echo INCONNU ;;
     esac
 }
+
+# ── Le pré-check couvre-t-il ce qui part ? (#2908) — PURE ─────────────────────
+#  `precheck-mep.sh` écrit `precheck-mep.ok` = « <sha couvert> <epoch> » quand il
+#  autorise. Deux lecteurs, une règle : le hook `pre-push` (vers `dev`/`main`) et
+#  `conduire-mep.sh`, qui fusionnait un lot sans jamais lire cette trace — le
+#  pré-check, « seul filtre entre un lot et la production », n'y tenait que par la
+#  consigne.
+#  Au-delà de 2 h, l'état des RPi a pu changer. Un autre commit n'est couvert que si
+#  son ARBRE est celui du commit vérifié (un merge qui ne change rien, #2245) —
+#  mesuré par l'appelant : « oui », « non », ou vide quand il n'a pas pu le mesurer.
+AGE_MAX_PRECHECK_S=7200
+
+# verdict_trace_precheck contenu_de_la_trace sha_qui_part maintenant arbres_egaux
+#   → « OK » | « REFUS: <raison> »
+verdict_trace_precheck() {
+    _vt_sha=""; _vt_quand=""
+    [ -n "${2:-}" ] || { echo "REFUS: commit qui part illisible"; return; }
+    [ -n "${1:-}" ] || { echo "REFUS: aucun pré-check enregistré"; return; }
+    read -r _vt_sha _vt_quand _ <<EOT
+$1
+EOT
+    case "$_vt_quand" in ''|*[!0-9]*) echo "REFUS: trace de pré-check illisible"; return ;; esac
+    _vt_age=$(( ${3:-0} - _vt_quand ))
+    [ "$_vt_age" -gt "$AGE_MAX_PRECHECK_S" ] && {
+        echo "REFUS: pré-check trop ancien ($(( _vt_age / 60 )) min) — l'état des RPi a pu changer"; return; }
+    [ "$_vt_sha" = "$2" ] && { echo OK; return; }
+    [ "${4:-}" = oui ] && { echo OK; return; }
+    echo "REFUS: pré-check passé sur $(printf '%s' "$_vt_sha" | cut -c1-7)…, or c'est $(printf '%s' "$2" | cut -c1-7)… qui part"
+}
