@@ -108,7 +108,9 @@ def synthese_erreurs(session: Session, depuis: date) -> list[dict]:
     ]
 
 
-def purger_releves_du_navigateur(session: Session, modele: type[SQLModel], aujourd_hui: date) -> int:
+def purger_releves_du_navigateur(
+    session: Session, modele: type[SQLModel], aujourd_hui: date
+) -> int:
     """Retire les lignes de plus de `CONSERVATION_JOURS` d'un relevé ; rend leur nombre.
 
     Une règle pour les trois relevés du navigateur — erreurs (`ErreurNavigateur`),

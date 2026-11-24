@@ -129,4 +129,3 @@ def synthese_mesures(session: Session, depuis: date) -> dict:
         ],
         "pages": pages[:PAGES_AFFICHEES],
     }
-

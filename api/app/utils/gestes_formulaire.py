@@ -103,4 +103,3 @@ def synthese_gestes(session: Session, depuis: date) -> list[dict]:
         }
         for geste, ouvertures, envois in lignes
     ]
-
