@@ -20,6 +20,7 @@ from sqlmodel import select
 from app.models.core import HistoriqueMaintenance
 from app.routers.admin import rapports_scripts
 from app.routers.admin.rapports_scripts import BattementTache, maintenance_battement
+from tests.conftest import requete_de_test
 
 DEPUIS = datetime(2026, 9, 27, 15, 6, 0)
 
@@ -44,7 +45,12 @@ def _ligne(noeud: str, cree_le: datetime) -> HistoriqueMaintenance:
 def test_le_battement_avance_le_DERNIER_controle_sans_creer_de_ligne(session):
     session.add(_ligne("rpi1", DEPUIS))
     session.commit()
-    maintenance_battement(BattementTache(tache="reliability", noeud="rpi1"), None, session)
+    maintenance_battement(
+        requete_de_test("/admin/maintenance/battement"),
+        BattementTache(tache="reliability", noeud="rpi1"),
+        None,
+        session,
+    )
     lignes = session.exec(select(HistoriqueMaintenance)).all()
     assert len(lignes) == 1, "un battement a créé une ligne : la table serait pleine en cinq heures"
     assert lignes[0].cree_le == DEPUIS, "« constats depuis » ne doit pas bouger"
@@ -57,7 +63,12 @@ def test_il_prolonge_la_plus_RECENTE_du_bon_noeud(session):
     autre = _ligne("rpi2", DEPUIS)
     session.add_all([ancienne, recente, autre])
     session.commit()
-    maintenance_battement(BattementTache(tache="reliability", noeud="rpi1"), None, session)
+    maintenance_battement(
+        requete_de_test("/admin/maintenance/battement"),
+        BattementTache(tache="reliability", noeud="rpi1"),
+        None,
+        session,
+    )
     session.refresh(ancienne), session.refresh(recente), session.refresh(autre)
     assert recente.terminee_le > DEPUIS
     assert ancienne.terminee_le == datetime(2026, 9, 26, 10, 0), (
@@ -69,7 +80,12 @@ def test_il_prolonge_la_plus_RECENTE_du_bon_noeud(session):
 def test_rien_a_prolonger_rend_404(session):
     """Le script efface alors sa mémoire, et renvoie un rapport complet au passage suivant."""
     with pytest.raises(HTTPException) as err:
-        maintenance_battement(BattementTache(tache="reliability", noeud="rpi1"), None, session)
+        maintenance_battement(
+            requete_de_test("/admin/maintenance/battement"),
+            BattementTache(tache="reliability", noeud="rpi1"),
+            None,
+            session,
+        )
     assert err.value.status_code == 404
 
 
@@ -88,6 +104,7 @@ def test_le_battement_rafraichit_les_CHIFFRES_des_constats(session):
     session.add(ligne)
     session.commit()
     maintenance_battement(
+        requete_de_test("/admin/maintenance/battement"),
         BattementTache(
             tache="reliability", noeud="rpi1", details=APRES, erreur="Site public KO (HTTP 503)"
         ),
@@ -110,7 +127,12 @@ def test_un_battement_SANS_constats_garde_ceux_de_la_ligne(session):
     ligne.erreur = "Site public KO (HTTP 502)"
     session.add(ligne)
     session.commit()
-    maintenance_battement(BattementTache(tache="reliability", noeud="rpi1"), None, session)
+    maintenance_battement(
+        requete_de_test("/admin/maintenance/battement"),
+        BattementTache(tache="reliability", noeud="rpi1"),
+        None,
+        session,
+    )
     session.refresh(ligne)
     assert json.loads(ligne.details) == AVANT
     assert ligne.erreur == "Site public KO (HTTP 502)"
@@ -124,7 +146,10 @@ def test_le_battement_porte_la_DUREE_du_passage(session):
     session.add(ligne)
     session.commit()
     maintenance_battement(
-        BattementTache(tache="reliability", noeud="rpi1", duree_secondes=24), None, session
+        requete_de_test("/admin/maintenance/battement"),
+        BattementTache(tache="reliability", noeud="rpi1", duree_secondes=24),
+        None,
+        session,
     )
     session.refresh(ligne)
     assert ligne.duree_secondes == 24, "l'écran garderait la durée du premier relevé"
@@ -136,6 +161,11 @@ def test_un_battement_SANS_duree_garde_celle_de_la_ligne(session):
     ligne.duree_secondes = 31
     session.add(ligne)
     session.commit()
-    maintenance_battement(BattementTache(tache="reliability", noeud="rpi1"), None, session)
+    maintenance_battement(
+        requete_de_test("/admin/maintenance/battement"),
+        BattementTache(tache="reliability", noeud="rpi1"),
+        None,
+        session,
+    )
     session.refresh(ligne)
     assert ligne.duree_secondes == 31
