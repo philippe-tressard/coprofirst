@@ -72,9 +72,11 @@ MARGE_BASE_S = 120
 #: Le nom, dans l'exécution, de chaque job requis — confronté à `ci.yml` par
 #: `test_ci_arbre_deja_vert.py`. `tranches` : le préfixe des variantes d'une matrice,
 #: qui doivent TOUTES avoir réussi ; `etape` : l'étape qui doit avoir tourné.
+#: L'étape s'appelait « Run pytest » avant #2979 (24/11/2026) : une exécution de
+#: cette époque ne compte plus, et l'arbre qu'elle jugeait est rejoué — le sens sûr.
 JOBS_REQUIS: dict[str, dict[str, str]] = {
     "lint-backend": {"nom": "Lint Python (Ruff)"},
-    "test-backend": {"nom": "Tests Python (pytest)", "etape": "Run pytest"},
+    "test-backend": {"nom": "Tests Python (pytest)", "etape": "Lancer pytest"},
     "test-scripts": {"nom": "Scripts d'infra (syntaxe + self-tests)"},
     "build-frontend": {"nom": "Build SvelteKit"},
     "e2e-frontend": {
@@ -323,7 +325,7 @@ def _selftest() -> int:
     ok = {"conclusion": "success"}
     jobs = [
         {**ok, "name": "Lint Python (Ruff)"},
-        {**ok, "name": "Tests Python (pytest)", "steps": [{**ok, "name": "Run pytest"}]},
+        {**ok, "name": "Tests Python (pytest)", "steps": [{**ok, "name": "Lancer pytest"}]},
         {**ok, "name": "Tests de navigateur (Playwright)"},
         {**ok, "name": "Tests de navigateur — Chromium 1/4"},
         {**ok, "name": "Tests de navigateur — WebKit, mise en page"},
@@ -333,7 +335,7 @@ def _selftest() -> int:
         return juger(job, execution, liste, arbre_exe, base, arbre, depot)
 
     sans_pytest = [
-        {**x, "steps": [{"name": "Run pytest", "conclusion": "skipped"}]}
+        {**x, "steps": [{"name": "Lancer pytest", "conclusion": "skipped"}]}
         if x["name"] == "Tests Python (pytest)"
         else x
         for x in jobs
