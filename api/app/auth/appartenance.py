@@ -33,8 +33,9 @@ C'est ce que `standards/03` §1 demande : une règle d'autorisation ne vit pas c
 un routeur. Le lieu ne supprime pas la divergence — il la rend **visible**, et
 c'est la seule chose qui empêche la troisième règle d'être écrite au hasard.
 
-🔒 `api/tests/test_appartenance_source_unique.py` refuse qu'une comparaison entre
-un champ d'objet et `user.id` gouverne une levée HTTP hors de `auth/`.
+🔒 `api/tests/test_appartenance_source_unique.py` refuse qu'une comparaison
+(`==`, `!=`, `in`, `not in`) à l'identité du compte courant — reconnu par son type ou
+sa dépendance d'auth, quel que soit son nom — gouverne une levée HTTP hors de `auth/` (#2940).
 
 ## Deux questions, deux fonctions — ne pas les remélanger
 
@@ -51,10 +52,11 @@ from __future__ import annotations
 from typing import Any, Callable
 
 from fastapi import HTTPException
-from sqlmodel import Session
+from sqlmodel import Session, select
 
 from app.auth.deps import est_auteur, est_moderateur, est_rattache_au_lot
-from app.models.core import LocationBail, Lot, RoleUtilisateur, Utilisateur
+from app.models.core import LocationBail, Lot, RoleUtilisateur, StatutUtilisateur, Utilisateur
+from app.utils.comptes import condition_hors_comptes_techniques
 from app.utils.recuperer import ou_404
 
 
@@ -103,6 +105,30 @@ def exiger_lot_du_bailleur(session: Session, lot_id: int, user: Utilisateur) -> 
         journaliser_securite("bail_hors_de_ses_lots", acteur_id=user.id, detail=f"lot={lot_id}")
         raise HTTPException(status_code=403, detail=f"Le lot {lot.numero} n'est pas le vôtre")
     return lot
+
+
+def clause_locataire_designable():
+    """Clause SQL « ce compte peut être désigné locataire d'un bail » (#2153, claude-config#656).
+
+    Un compte LOCATAIRE, jamais un compte technique (#1985). C'est le périmètre de
+    la recherche ouverte au bailleur (`search-locataire`) et de ses suggestions ;
+    désigner un compte (`creer-multi`, `PATCH /baux/{id}`) demande la même chose
+    par `est_locataire_designable` — une seule écriture de la règle.
+    """
+    return (Utilisateur.statut == StatutUtilisateur.locataire) & condition_hors_comptes_techniques()
+
+
+def est_locataire_designable(session: Session, compte_id: int) -> bool:
+    """Ce compte est-il de ceux que la recherche rendrait au bailleur ? — le PRÉDICAT.
+
+    Appelé par la recherche (adresse exacte) et par les deux routes qui désignent
+    le locataire d'un bail : hors de ce périmètre, la route répond comme pour un
+    compte inexistant.
+    """
+    trouve = session.exec(
+        select(Utilisateur.id).where(Utilisateur.id == compte_id, clause_locataire_designable())
+    ).first()
+    return trouve is not None
 
 
 def exiger_lots_proposes_au_locataire(

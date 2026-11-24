@@ -3,19 +3,29 @@
 `GET /masquages` liste mes masques (Profil), `POST /masquages` en pose un depuis une
 publication, `DELETE /masquages/{auteur_id}` le retire. La règle — qui masque, qui ne
 se masque pas, où le filtre s'applique — vit dans `utils/masquage`.
+
+🔒 Le geste ne vise que l'auteur d'une publication signée que le lecteur lit
+(`auteur_lu_par`) ; un autre compte répond comme un compte absent. Il a sa limite
+de débit (`LIMITE_PREFERENCE` : un choix pour soi seul, qui se défait).
 """
 
 from datetime import datetime
 
-from fastapi import APIRouter, Depends, HTTPException, Response
+from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from pydantic import BaseModel
 from sqlmodel import Session, select
 
-from app.auth.deps import get_current_user
+from app.auth.deps import est_moderateur, get_current_user
 from app.database import get_session
 from app.models.core import Utilisateur
 from app.models.masquages import MasquageAuteur
-from app.utils.masquage import masques_de, motif_de_refus
+from app.utils.limiter import LIMITE_PREFERENCE, limiter
+from app.utils.masquage import (
+    REFUS_MODERATEUR_CIBLE,
+    auteur_lu_par,
+    masques_de,
+    motif_de_refus,
+)
 from app.utils.noms import nom_auteur
 from app.utils.recuperer import ou_404, ou_rien
 
@@ -57,15 +67,22 @@ def lister_masquages(
 
 
 @router.post("", response_model=MasquageRead, status_code=201)
+@limiter.limit(LIMITE_PREFERENCE)
 def masquer(
+    request: Request,
     body: MasquageCreate,
     session: Session = Depends(get_session),
     user: Utilisateur = Depends(get_current_user),
 ):
-    auteur = ou_404(session, Utilisateur, body.auteur_id, "Compte")
-    motif = motif_de_refus(user, auteur)
+    motif = motif_de_refus(user, body.auteur_id)
     if motif:
         raise HTTPException(422, motif)
+    #  Un compte dont ce lecteur ne lit aucune publication signée se lit comme
+    #  absent : même réponse, aucun nom (`utils/masquage`).
+    identifiant = body.auteur_id if auteur_lu_par(session, user, body.auteur_id) else None
+    auteur = ou_404(session, Utilisateur, identifiant, "Compte")
+    if est_moderateur(auteur):
+        raise HTTPException(422, REFUS_MODERATEUR_CIBLE)
     #  Le geste se rejoue sans doublon : un second appui rend le masque posé.
     masque = _le_mien(session, user, auteur.id)
     if masque is None:

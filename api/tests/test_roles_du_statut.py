@@ -24,6 +24,7 @@ from app.routers.admin.profils import DemandeProfilAction, traiter_demande_profi
 from app.routers.admin.utilisateurs import AdminUserUpdate, modifier_utilisateur
 from tests.aides_base import compte
 from tests.aides_sources import modules_app
+from tests.conftest import requete_de_test
 
 
 def _changer(session, user, statut, cs):
@@ -85,7 +86,14 @@ def test_la_regle_ne_s_ecrit_qu_une_fois():
 
 
 def _par_la_fiche(session, user, statut, admin):
-    modifier_utilisateur(user.id, AdminUserUpdate(statut=statut), BackgroundTasks(), session, admin)
+    modifier_utilisateur(
+        requete_de_test("/admin/utilisateurs/1", "PATCH"),
+        user.id,
+        AdminUserUpdate(statut=statut),
+        BackgroundTasks(),
+        session,
+        admin,
+    )
     session.refresh(user)
 
 

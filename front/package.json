@@ -1,6 +1,6 @@
 {
 	"name": "hostachy-front",
-	"version": "3.122.6",
+	"version": "3.124.0",
 	"private": true,
 	"imports": {
 		"#lib": "./src/lib/index.js",
@@ -68,7 +68,7 @@
 		"lint:etats": "node scripts/check-etats.mjs",
 		"lint:options-publication": "node scripts/check-options-publication.mjs",
 		"lint:manuels": "node scripts/check-manuels.mjs",
-		"lint:pages": "node scripts/check-pages.mjs",
+		"lint:pages": "node scripts/check-pages.mjs && node scripts/check-descriptifs-pages.mjs --selftest && node scripts/check-descriptifs-pages.mjs",
 		"lint:ci": "node scripts/check-ci-complete.mjs",
 		"lint:a11y": "node scripts/check-a11y.mjs",
 		"lint:icones": "node scripts/check-icones.mjs",
@@ -84,7 +84,6 @@
 		"lint:version-servie": "node scripts/check-version-servie.mjs",
 		"lint:poids-ouverture": "node scripts/check-poids-ouverture.mjs --selftest && node scripts/check-poids-ouverture.mjs",
 		"lint:largeur-saisie": "node scripts/check-largeur-saisie.mjs",
-		"lint:each-key": "node scripts/check-each-key.mjs",
 		"lint:classe-relayee": "node scripts/check-classe-relayee.mjs",
 		"lint:cadre-geste": "node scripts/check-cadre-geste.mjs",
 		"lint:manuel-menus": "node scripts/check-manuel-menus.mjs",

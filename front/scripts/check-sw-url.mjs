@@ -42,6 +42,7 @@
 import { readFileSync, readdirSync, statSync, existsSync } from 'node:fs';
 import { dirname, join, relative } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
+import { buildDeCetteSource, CODE_INCONNU } from './lib-build-a-jour.mjs';
 
 const RACINE = join(dirname(fileURLToPath(import.meta.url)), '..');
 const CLIENT = join(RACINE, 'build', 'client');
@@ -323,6 +324,7 @@ function mesurer() {
 		);
 		return 1;
 	}
+	if (!buildDeCetteSource(join(RACINE, 'build', 'index.js'), 'lint:sw')) return CODE_INCONNU; // #2976
 
 	const chemins = collecter(CLIENT);
 	const fichiers = chemins.map((p) => ({

@@ -2,7 +2,7 @@
 
 Ce que l'on peut vérifier mécaniquement l'est ici. Ce qui relève du jugement
 (« le manuel décrit-il encore fidèlement l'application ? ») reste une étape du
-pré-check MEP — cf. l'étape 0 bis, point 0e, de `.claude/skills/mep-precheck`.
+pré-check MEP — cf. l'étape 0 bis, exigence E3, de `.claude/skills/mep-precheck`.
 
 POURQUOI : la synchronisation du manuel entre `docs/` et `front/static/` était une
 simple case à cocher dans la checklist avant commit. Elle a tenu jusqu'ici, mais une
@@ -174,7 +174,8 @@ def _etape_0_bis(skill: str) -> tuple[int | None, list[str]]:
     section = m.group(0)
     annonce = re.search(r"\*\*(\w+)\*\* exigences", section)
     compte = _NOMBRES_EN_LETTRES.get(annonce.group(1).lower()) if annonce else None
-    lignes = re.findall(r"^\| (0[a-z]) \| \*\*([^*|—]+)", section, re.MULTILINE)
+    #  E1, E2… depuis #2934 : « 0c » à « 0e » désignaient aussi trois points du script.
+    lignes = re.findall(r"^\| (E\d+) \| \*\*([^*|—]+)", section, re.MULTILINE)
     return compte, [f"{code} {nom.split(',')[0].strip()}" for code, nom in lignes]
 
 
@@ -198,7 +199,7 @@ def test_etape_0_bis_annonce_autant_d_exigences_qu_elle_en_tabule():
 
 
 def test_etape_0_bis_n_est_tabulee_qu_une_fois():
-    """Les exigences 0c–0e ne s'écrivent qu'au tableau de l'étape 0 bis (#122).
+    """Les exigences E1–E3 ne s'écrivent qu'au tableau de l'étape 0 bis (#122).
 
     La seconde copie, en fin de fichier, portait d'autres outils dans sa colonne
     « Automatisé par » et un autre compte en titre : deux tableaux pour une liste.
@@ -210,8 +211,7 @@ def test_etape_0_bis_n_est_tabulee_qu_une_fois():
     assert lignes, "le tableau de l'étape 0 bis est vide ou illisible"
     for ligne in lignes:
         code, nom = ligne.split(" ", 1)
-        # Le code seul ne suffit pas : les points 0a–0d du script réemploient
-        # « 0c » et « 0d » pour autre chose. C'est l'exigence qui ne se recopie pas.
+        # Le code et le nom ensemble : c'est l'exigence qui ne se recopie pas.
         n = len(re.findall(rf"^\| {code} \| \*\*{re.escape(nom)}", skill, re.MULTILINE))
         assert n == 1, (
             f"l'exigence « {ligne} » est tabulée {n} fois dans mep-precheck/SKILL.md — un seul tableau"
@@ -250,12 +250,14 @@ def test_blame_ignore_revs_ne_nomme_que_des_commits_de_l_historique():
         return subprocess.run(["git", "-C", str(_RACINE), *args], capture_output=True, text=True)
 
     peu_profond = git("rev-parse", "--is-shallow-repository")
-    if peu_profond.returncode != 0 or peu_profond.stdout.strip() != "false":
-        import pytest
-
-        pytest.skip(
-            "INCONNU : clone partiel ou sans git — l'appartenance à l'historique n'est pas mesurable ici"
-        )
+    #  ÉCHEC, plus un saut (#2952) : la CI clone en profondeur 1, et le rejeu ne joue
+    #  plus pytest — sauté, ce contrôle ne se serait mesuré NULLE PART. Le jour où le
+    #  fichier porte un SHA, le job qui joue la suite doit cloner l'historique.
+    assert peu_profond.returncode == 0 and peu_profond.stdout.strip() == "false", (
+        "INCONNU : clone partiel ou sans git — l'appartenance des SHA de "
+        "`.git-blame-ignore-revs` à l'historique n'est pas mesurable. Donner "
+        "`fetch-depth: 0` à l'`actions/checkout` du job qui joue la suite."
+    )
     absents = [s for s in shas if git("merge-base", "--is-ancestor", s, "HEAD").returncode != 0]
     assert not absents, (
         f"Ces commits ne sont pas dans l'historique de HEAD : {absents}. "

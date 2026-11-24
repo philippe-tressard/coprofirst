@@ -48,15 +48,41 @@ ADMISES = frozenset(
 )
 
 
-def _compatible(pourquoi: str) -> str:
-    """Le statut d'une exception dont la compatibilité est TRANCHÉE (#1726).
+#: Les validations de l'AUTEUR, tracées : la date de l'analyse, et où la décision est
+#: écrite. Une exception ne se dit « validée par l'auteur » que si son analyse est ici.
+VALIDATIONS_DE_L_AUTEUR = {
+    "08/10/2026": (
+        "passage du projet à l'AGPL-3.0-or-later (#1726) : les exceptions d'alors, "
+        "analysées contre la nouvelle licence"
+    ),
+    "24/11/2026": (
+        "psycopg et lightningcss (#3058) : nouvelle analyse — tous deux redistribués sans "
+        "modification dans les images publiques, texte de leur licence livré avec eux — "
+        "puis réponse de l'auteur à la recommandation de valider les deux exceptions : "
+        "« Fait ce que tu préconises »"
+    ),
+}
 
-    Le projet passe sous AGPL-3.0-or-later le 08/10/2026. Les exceptions dont la
-    compatibilité était « À VALIDER » avec l'ancienne licence ont été analysées
-    contre la nouvelle, et l'analyse a été validée par l'auteur. Elle n'est pas
-    un avis juridique : le motif est écrit pour être relu.
+
+def _compatible(pourquoi: str, *, analyse: str) -> str:
+    """Le statut d'une exception dont la compatibilité est analysée.
+
+    🔴 #2992 (audit du 23/11/2026) : la date « 08/10/2026, validée par l'auteur »
+    était écrite ICI, pour toutes — psycopg (entré le 09/10) et lightningcss (le 25/10)
+    portaient donc une validation antérieure à leur arrivée. Chaque exception dit
+    désormais SA date d'analyse (`analyse`, sans défaut), et la validation n'est dite
+    que si elle est tracée dans `VALIDATIONS_DE_L_AUTEUR`. Ce n'est pas un avis
+    juridique : le motif est écrit pour être relu.
     """
-    return f"compatible avec l'AGPL-3.0-or-later ({pourquoi}) — analyse du 08/10/2026, validée par l'auteur"
+    if analyse in VALIDATIONS_DE_L_AUTEUR:
+        return (
+            f"compatible avec l'AGPL-3.0-or-later ({pourquoi}) — analyse du {analyse}, "
+            "validée par l'auteur"
+        )
+    return (
+        f"jugée compatible avec l'AGPL-3.0-or-later ({pourquoi}) — analyse du {analyse}, "
+        "validation de l'auteur non tracée"
+    )
 
 
 # ── Exceptions nominatives ──────────────────────────────────────────────────
@@ -67,6 +93,7 @@ EXCEPTIONS = (
     {
         "source": "whatsapp-bridge",
         "paquets": ("libsignal",),
+        "entree": "2026-10-02",
         "licences": ("GPL-3.0",),
         "motif": (
             "Protocole de chiffrement Signal, tiré par `baileys` (seule bibliothèque "
@@ -75,13 +102,15 @@ EXCEPTIONS = (
             "front, avec lesquels il ne communique que par HTTP."
         ),
         "statut": _compatible(
-            "la GPLv3 et l'AGPLv3 se combinent l'une avec l'autre (§13 de chacune) ; "
-            "programme distinct, joint par HTTP"
+            analyse="08/10/2026",
+            pourquoi="la GPLv3 et l'AGPLv3 se combinent l'une avec l'autre (§13 de chacune) ; "
+            "programme distinct, joint par HTTP",
         ),
     },
     {
         "source": "whatsapp-bridge",
         "paquets": ("@img/sharp-libvips-*", "@img/sharp-win32-*", "@img/sharp-wasm32"),
+        "entree": "2026-10-02",
         "licences": (
             "LGPL-3.0-or-later",
             "Apache-2.0 AND LGPL-3.0-or-later",
@@ -92,11 +121,14 @@ EXCEPTIONS = (
             "(traitement d'images). Copyleft faible ; une seule variante de plateforme "
             "est installée dans l'image (Linux musl). Même conteneur que libsignal."
         ),
-        "statut": _compatible("la LGPL-3.0-or-later l'est par construction"),
+        "statut": _compatible(
+            analyse="08/10/2026", pourquoi="la LGPL-3.0-or-later l'est par construction"
+        ),
     },
     {
         "source": "front",
         "paquets": ("caniuse-lite",),
+        "entree": "2026-10-02",
         "licences": ("CC-BY-4.0",),
         "motif": (
             "Table de compatibilité des navigateurs lue par `browserslist` au moment "
@@ -104,13 +136,15 @@ EXCEPTIONS = (
             "l'attribution."
         ),
         "statut": _compatible(
-            "la CC-BY-4.0 est compatible avec la GPLv3 ; outil de construction, non "
-            "distribué ; attribution portée par cet inventaire"
+            analyse="08/10/2026",
+            pourquoi="la CC-BY-4.0 est compatible avec la GPLv3 ; outil de construction, non "
+            "distribué ; attribution portée par cet inventaire",
         ),
     },
     {
         "source": "front",
         "paquets": ("lightningcss", "lightningcss-*"),
+        "entree": "2026-10-25",
         "licences": ("MPL-2.0",),
         "motif": (
             "Minifieur CSS de Vite 8 (#2205), dépendance directe de `vite` : il n'est pas "
@@ -119,13 +153,15 @@ EXCEPTIONS = (
             "(un par système) sont des paquets optionnels, dont un seul est installé."
         ),
         "statut": _compatible(
-            "la MPL-2.0 admet la GPL et l'AGPL comme « Secondary Licenses » ; outil de "
-            "construction, présent dans node_modules de l'image sans être modifié"
+            analyse="24/11/2026",
+            pourquoi="la MPL-2.0 admet la GPL et l'AGPL comme « Secondary Licenses » ; outil de "
+            "construction, présent dans node_modules de l'image sans être modifié",
         ),
     },
     {
         "source": "api",
         "paquets": ("psycopg", "psycopg-binary"),
+        "entree": "2026-10-09",
         "licences": ("LGPL-3.0-only",),
         "motif": (
             "Pilote PostgreSQL (DI-7, #1759 ; tests depuis P2-5, #1747), employé tel "
@@ -134,34 +170,46 @@ EXCEPTIONS = (
             "violée en `IntegrityError` — pg8000, sous BSD, ne le faisait pas."
         ),
         "statut": _compatible(
-            "la LGPL-3.0 permet l'usage d'une bibliothèque par une œuvre sous GPLv3 ou "
-            "AGPLv3 (§4 et §5 de la LGPL), qui la distribue avec sa licence et son source"
+            analyse="24/11/2026",
+            pourquoi="la LGPL-3.0 permet l'usage d'une bibliothèque par une œuvre sous GPLv3 ou "
+            "AGPLv3 (§4 et §5 de la LGPL), qui la distribue avec sa licence et son source",
         ),
     },
     {
         "source": "api",
         "paquets": ("certifi",),
+        "entree": "2026-10-02",
         "licences": ("MPL-2.0",),
         "motif": (
             "Magasin de certificats racine (tiré par httpx). Copyleft faible au niveau "
             "du fichier ; utilisé sans modification."
         ),
-        "statut": _compatible("la MPL-2.0 admet la GPL et l'AGPL comme « Secondary Licenses »"),
+        "statut": _compatible(
+            analyse="08/10/2026",
+            pourquoi="la MPL-2.0 admet la GPL et l'AGPL comme « Secondary Licenses »",
+        ),
     },
     {
         "source": "api",
         "paquets": ("pyphen",),
-        "licences": ("GPL-2.0-or-later | LGPL-2.0-or-later | MPL-1.1 (classifieurs multiples)",),
+        "entree": "2026-10-02",
+        "licences": (
+            "GPL-2.0-or-later | LGPL-2.0-or-later | MPL-1.1 (classifieurs multiples)",
+        ),
         "motif": (
             "Césure des mots, tirée par WeasyPrint (documents PDF). Le paquet se dit "
             "« GPL 2.0+/LGPL 2.1+/MPL 1.1 tri-license » (fichier LICENSE installé) ; "
             "ses dictionnaires viennent de LibreOffice sous GPL, LGPL et/ou MPL."
         ),
-        "statut": _compatible("par son option GPL-2.0-or-later ou LGPL-2.1-or-later"),
+        "statut": _compatible(
+            analyse="08/10/2026",
+            pourquoi="par son option GPL-2.0-or-later ou LGPL-2.1-or-later",
+        ),
     },
     {
         "source": "api",
         "paquets": ("dkimpy",),
+        "entree": "2026-10-02",
         "licences": ("BSD-like",),
         "motif": (
             "Vérification DKIM des réponses par courriel. Les métadonnées disent "
