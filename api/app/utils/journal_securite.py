@@ -134,6 +134,8 @@ _NIVEAUX: dict[str, int] = {
     "ecran_retire": logging.INFO,
     "connexion_leurre": logging.WARNING,
     "cle_maintenance_leurre": logging.WARNING,
+    #  Une clé partagée présentée et fausse : compté par l'audit de la nuit (S6).
+    "cle_maintenance_refusee": logging.WARNING,
 }
 
 

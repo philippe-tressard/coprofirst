@@ -45,7 +45,7 @@ import secrets
 from datetime import timedelta
 from typing import Optional
 
-from fastapi import BackgroundTasks, HTTPException
+from fastapi import BackgroundTasks, HTTPException, Request
 from sqlmodel import Session, select
 
 from app.auth.adresse_compte import compte_par_adresse, normaliser_adresse
@@ -56,6 +56,7 @@ from app.utils import horloge
 from app.utils.config_site import config_site
 from app.utils.journal_securite import journaliser_securite
 from app.utils.liens import adresse_du_site, nom_site
+from app.utils.limiter import compter_tentative_secret
 
 #: La validité d'un lien de vérification d'adresse — **écrite une seule fois**.
 #:
@@ -168,6 +169,7 @@ def demander_changement_adresse(
     nouvelle_adresse: Optional[str],
     mot_de_passe: Optional[str],
     background_tasks: BackgroundTasks,
+    request: Request,
 ) -> Optional[str]:
     """Demande que l'adresse de `cible` devienne `nouvelle_adresse` — rend celle-ci, ou None.
 
@@ -182,6 +184,9 @@ def demander_changement_adresse(
         return None
     if not forme_adresse_valide(nouvelle):
         raise HTTPException(400, "Adresse e-mail invalide.")
+    #  La TENTATIVE se compte, pas l'enregistrement : un formulaire réenregistré sans
+    #  changement d'adresse n'éprouve rien (rendu plus haut), et n'est pas limité.
+    compter_tentative_secret(request)
     if not verify_password(mot_de_passe or "", acteur.hashed_password or ""):
         journaliser_securite("connexion_refusee", cible_id=acteur.id, detail="mot de passe actuel")
         raise HTTPException(400, MOT_DE_PASSE_INCORRECT)
