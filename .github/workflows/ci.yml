@@ -728,6 +728,7 @@ jobs:
           # Les phases de bascule qui l'emploient ÉCRIVENT — leur seule preuve
           # est le journal du lendemain. La forme, elle, se contrôle ici (#582).
           bash scripts/lib/lib-volumes.sh           --selftest
+          bash scripts/lib/lib-image-utilitaire.sh  --selftest
           bash scripts/exploitation/boot-role-guard.sh   --selftest
           # Le failover (#1997, #2000) : décider, PUIS isoler l'ancien actif sous
           # son verrou de déploiement, PUIS promouvoir — `health-watch.sh
@@ -1141,6 +1142,14 @@ jobs:
       - name: Balisage des manuels bien formé
         working-directory: front
         run: npm run lint:manuels
+
+      # Garde-fou de volume (#3008) : le manuel, chaque section et chaque carte
+      # d'écran sous leur plafond de mots, qui ne fait que baisser. L'arbitrage du
+      # 07/09/2026 le voulait réduit à « Démarrer » ; il était passé de 3 042 à
+      # 27 137 mots sans que rien ne mesure la somme.
+      - name: Volume du manuel sous son plafond
+        working-directory: front
+        run: npm run lint:manuel-volume
 
       # Garde-fou dates : aucun formatage sans `timeZone` épinglé. Placé AVANT le
       # build (échoue en ~1 s, sans attendre la compilation). Pendant front du

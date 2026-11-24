@@ -23,6 +23,7 @@
 -->
 <script lang="ts">
 	import { SEPARATEUR } from '#lib/separateurs.ts';
+	import { anneeDe } from '#lib/date.ts';
 	import { onMount } from 'svelte';
 	import { config as configApi } from '#lib/api/index.ts';
 	import { loadSiteConfig, getSiteNom, siteNomStore, configStore } from '#lib/stores/pageConfig.ts';
@@ -36,7 +37,7 @@
 	const _siteNom = getSiteNom();
 	$: siteNom = $siteNomStore;
 	$: siteUrl = $configStore['site_url'] ?? '/';
-	const year = new Date().getFullYear();
+	const year = anneeDe();
 
 	let customHtml = '';
 	onMount(async () => {
