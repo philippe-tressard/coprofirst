@@ -3,8 +3,11 @@
 
   Extrait de `routes/(app)/sondages/[id]/+page.svelte` le 28/09/2026 (#1329) :
   la page faisait 510 lignes et portait dix-sept attributs `style`. Le bloc
-  part avec ses règles, à l'identique. Le TOTAL est calculé par la page, qui
-  l'affiche aussi (« 12 votes ») : le recalculer ici en ferait deux écritures.
+  part avec ses règles, à l'identique.
+
+  La PART de chaque option (en %) est SERVIE par l'API (`part`, #3060) : elle se
+  calculait ici (`Math.round`), et chaque app l'aurait recalculée avec son propre
+  arrondi. L'écran la lit, il ne la recompose pas.
 
   Masqués jusqu'à la clôture, les résultats ne sont pas des barres vides : l'API
   n'envoie pas les décomptes, et un « 0 vote » se lirait « personne n'a voté ».
@@ -20,18 +23,13 @@
 		libelle: string;
 		champ_libre?: boolean;
 		nb_votes?: number;
+		part?: number;
 		reponses_libres?: string[];
 	}[] = [];
 	export let monVote: number | null = null;
-	export let total = 0;
 	export let visibles = false;
 	/** Le sondage est encore ouvert : le décompte peut bouger. */
 	export let provisoires = false;
-
-	function pct(nb: number) {
-		if (total === 0) return 0;
-		return Math.round((nb / total) * 100);
-	}
 </script>
 
 {#if !visibles}
@@ -52,9 +50,9 @@
 				{#if opt.id === monVote}<span class="badge badge-blue mon-vote">Mon vote ✓</span>{/if}
 			</div>
 			<div class="result-bar-wrap">
-				<div class="result-bar" style="width:{pct(opt.nb_votes ?? 0)}%"></div>
+				<div class="result-bar" style="width:{opt.part ?? 0}%"></div>
 			</div>
-			<div class="result-pct">{fmtPourcent(pct(opt.nb_votes ?? 0))}</div>
+			<div class="result-pct">{fmtPourcent(opt.part)}</div>
 			<div class="result-votes">{fmtNombre(opt.nb_votes)}</div>
 		</div>
 		{#if opt.champ_libre && opt.reponses_libres?.length}

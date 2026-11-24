@@ -149,8 +149,9 @@ class SondageUpdate(AssisteIACorrection):
 class OptionFiche(BaseModel):
     """Une option sur la FICHE d'un sondage.
 
-    `nb_votes` et `reponses_libres` sont ABSENTS — pas à zéro — quand les
+    `nb_votes`, `part` et `reponses_libres` sont ABSENTS — pas à zéro — quand les
     résultats ne sont pas visibles : « 0 vote » se lirait « personne n'a voté ».
+    `part` est le pour-cent des votes, arrondi par `utils/pourcentages` (#3060).
     La route rend donc sans les champs non posés (`response_model_exclude_unset`).
     """
 
@@ -159,6 +160,7 @@ class OptionFiche(BaseModel):
     ordre: int
     champ_libre: bool = False
     nb_votes: Optional[int] = None
+    part: Optional[int] = None
     reponses_libres: Optional[List[str]] = None
 
 
