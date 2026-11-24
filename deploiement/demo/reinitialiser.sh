@@ -122,7 +122,7 @@ case "$(decider_remise "$(lire_env MODE_DEMO)" "$(moteur_de_url "$URL")")" in
         exit 1 ;;
 esac
 
-COMPOSE=(docker compose -f docker-compose.yml -f deploiement/standard/compose.images.yml)
+definir_compose  # lib-installation.sh
 #  🔴 `-u app` (#2546) : `--entrypoint` remplace `start.sh`, donc aussi sa descente
 #  vers `app` (`setpriv`). Le conteneur de l'API est DURCI (#2368) : resté root, il
 #  n'aurait ni DAC_OVERRIDE ni FOWNER, et ne pourrait supprimer AUCUN fichier de
