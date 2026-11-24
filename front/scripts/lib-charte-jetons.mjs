@@ -31,9 +31,39 @@ export function jetonsDe(socle) {
 	return { couleurs, tailles };
 }
 
+/**
+ *  Le texte sans ses commentaires HTML, par BALAYAGE — jamais par une regex.
+ *
+ *  `replace(/<!--[\s\S]*?-->/g, '')` laissait passer un `<!--` reformé par le retrait
+ *  lui-même (`<!<!---->--`), ce que CodeQL refuse (js/incomplete-multi-character-
+ *  sanitization) : la regex, déplacée ici par #2946, revenait en alerte neuve. Une
+ *  passe se répète jusqu'à ce que rien ne change — un retrait ne reforme jamais de
+ *  commentaire —, et un `<!--` sans fin emporte le reste, comme dans un navigateur.
+ */
+export function sansCommentairesHtml(source) {
+	for (let texte = source; ;) {
+		const suivant = unePasseSansCommentaires(texte);
+		if (suivant === texte) return texte;
+		texte = suivant;
+	}
+}
+
+function unePasseSansCommentaires(source) {
+	let sortie = '';
+	let i = 0;
+	for (;;) {
+		const debut = source.indexOf('<!--', i);
+		if (debut < 0) return sortie + source.slice(i);
+		sortie += source.slice(i, debut);
+		const fin = source.indexOf('-->', debut + 4);
+		if (fin < 0) return sortie;
+		i = fin + 3;
+	}
+}
+
 /** Le CSS d'un composant : ses blocs `<style>` et ses attributs `style="…"`. */
 export function stylesDe(source) {
-	const sans = source.replace(/<!--[\s\S]*?-->/g, '');
+	const sans = sansCommentairesHtml(source);
 	const blocs = [...sans.matchAll(/<style[^>]*>([\s\S]*?)<\/style>/g)].map((m) => m[1]);
 	const attributs = [...sans.matchAll(/\bstyle="([^"]*)"/g)].map((m) => m[1]);
 	return [...blocs, ...attributs].join('\n').replace(/\/\*[\s\S]*?\*\//g, '');

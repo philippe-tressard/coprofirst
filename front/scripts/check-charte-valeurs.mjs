@@ -47,6 +47,7 @@ import {
 	resoudre,
 	stylesDe,
 	stylesDeFeuille,
+	sansCommentairesHtml,
 	sansVoilesSurPhoto,
 	VOILES_SUR_PHOTO,
 } from './lib-charte-jetons.mjs';
@@ -128,6 +129,8 @@ if (process.argv.includes('--selftest')) {
 	cas('couleurs du bloc et de l’attribut, pas des commentaires', v.couleurs, ['#dc2626', '#fff']);
 	cas('tailles en rem du bloc et de l’attribut', v.tailles, ['0.85', '.8']);
 	cas('une variable de charte ne compte pas', valeursEnDur('.b{color:var(--x)}').couleurs, []);
+	//  Un commentaire HTML que le retrait reformerait ne survit pas (CodeQL, #3087).
+	cas('commentaire HTML reformé, puis sans fin', sansCommentairesHtml('a<!<!---->--b<!-- c'), 'a');
 	//  🔴 #2946 : 22 couleurs en notation fonctionnelle passaient sous le relevé.
 	cas(
 		'rgb(), rgba(), hsl() comptent comme l’hexadécimal',

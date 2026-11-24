@@ -6,6 +6,8 @@
  *  entière et sans dépendance — une table de remplacements et la fonction qui les
  *  relève ; le contrôle l'importe et la réexporte.
  */
+
+import { sansCommentairesHtml } from './lib-charte-jetons.mjs';
 /**
  *  ## Ce qui est INTERDIT, sans plafond (arbitré le 27/09/2026, sur maquette)
  *
@@ -99,9 +101,7 @@ const RGB_ETAT =
  *  composée en JavaScript rend autant qu'un `<style>`.
  */
 export function interditsDe(source) {
-	const code = source
-		.replace(DEFINITION_CATEGORIELLE, '')
-		.replace(/<!--[\s\S]*?-->/g, '')
+	const code = sansCommentairesHtml(source.replace(DEFINITION_CATEGORIELLE, ''))
 		.replace(/\/\*[\s\S]*?\*\//g, '')
 		.replace(/(^|[^:'"])\/\/.*$/gm, '$1');
 	const trouves = [];
