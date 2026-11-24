@@ -27,12 +27,7 @@ _SKILLS = _RACINE / ".claude" / "skills"
 
 #: Les skills dont la description n'est pas tenue ici, et pourquoi. Une entrée
 #: qui ne sert plus (la description couvre la table) fait échouer le contrôle.
-EXCEPTIONS = {
-    "security-audit": (
-        "description en anglais, à réécrire par le lot de l'audit de sécurité du "
-        "23/11/2026, qui tient cette skill"
-    ),
-}
+EXCEPTIONS: dict[str, str] = {}
 
 
 def _table() -> list[tuple[str, str]]:
