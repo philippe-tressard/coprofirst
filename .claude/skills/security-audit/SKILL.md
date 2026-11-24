@@ -272,11 +272,11 @@ l'historique git la garde (`standards/14`). Trente-trois fichiers en portaient l
   inventés : un nom de personne hors de la liste fait échouer la CI. Une liste
   noire republierait les vrais noms, compilés. Ses limites — formes repérées et
   ce qu'il ne voit pas — sont écrites dans son en-tête.
-- Sa portée : code, tests, **migrations** (`api/alembic`) et **documents**
-  (`docs/`, `specs/`, `infra/`, `.claude/skills/`, `.github/`, `.md` de la
-  racine). Les deux derniers n'y sont que depuis #1544 : la docstring d'une
-  migration recopiait une formule d'appel avec deux noms du syndic. Un dossier
-  public qui n'y figure pas n'est **pas** contrôlé — l'ajouter à `PORTEE`.
+- Sa portée : **tout fichier texte suivi par git** (`git ls-files`), moins les
+  exclusions nommées de `NON_LUS` — attribution légale, `package-lock.json`,
+  binaires (#2961). Elle était une liste de dossiers, et un dossier neuf
+  échappait au contrôle jusqu'à ce qu'on pense à l'ajouter (#1544, #2961) : un
+  dossier de premier niveau ni lu ni exclu nommément fait désormais échouer.
 - Un nom se cherche et se remplace **sans tenir compte de la casse** (v2.89.2 en avait laissé trois).
 - Ce qu'aucun contrôle ne lit est public aussi : **message de commit, titre et
   corps d'un ticket ou d'une PR**. Y décrire le cas sans le nom (« un
@@ -440,7 +440,8 @@ refuse la copie.
   `utils/visibility/fichiers.exiger_fichier_lisible`, appelée par `/auth/verifier-acces`
   (`forward_auth` de Caddy) et par la route de l'installation commune. Le fichier se lit si
   l'un des objets qui le citent (`PORTEURS`) se lit par son prédicat ; sans porteur, par son
-  auteur seul (`FichierRecu`) ; avatars, résidence et logo par toute session (`TOUTE_SESSION`).
+  auteur seul (`FichierRecu`) ; avatars, résidence et logo par toute session (`TOUTE_SESSION`) ;
+  un dossier hors de `DOSSIERS_SERVIS` (la racine comprise) : refusé à tous (claude-config#637).
   Une colonne qui cite un fichier se nomme dans `photos.COLONNES_DE_FICHIERS` et a son porteur.
   🔒 `test_acces_fichiers_porteur.py`.
 - **Un fichier se situe par `utils/stockage`** (#1748) : `stockage()` — `chemin(clé)`,

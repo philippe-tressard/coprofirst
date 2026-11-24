@@ -17,7 +17,7 @@
 	//  la table des libellés vivait dans `prestataires/+page.svelte` et qu'il n'y
 	//  avait pas accès. Une table qui vit dans UN écran, les autres s'en passent.
 	import { libelleEquipement } from '#lib/stores/equipements.ts';
-	import { fmtDate } from '#lib/date.ts';
+	import { fmtDate, fmtJourMoisChiffres } from '#lib/date.ts';
 	import NoteEtoiles from '#lib/components/NoteEtoiles.svelte';
 	import type { ReleveRenouvellements } from '#lib/api/index.ts';
 	import { MOIS_LABELS, contratsDuReleve } from '#lib/reporting.ts';
@@ -127,7 +127,7 @@
 								title="Fin : {fmtDate(c.dateFin.toISOString())}"
 							>
 								<span class="frise-marker-label">
-									{c.dateFin.getDate()}/{c.dateFin.getMonth() + 1}
+									{fmtJourMoisChiffres(c.dateFin)}
 								</span>
 							</div>
 						{:else}

@@ -22,6 +22,8 @@
  *
  * RESTE AUTORISÉ :
  *   - `toISOString()` seul → sérialisation UTC des payloads d'API, c'est correct ;
+ *     sa forme TRONQUÉE, `toISOString().slice(0, 10)`, est le jour UTC : elle est
+ *     refusée par `scripts/check-jour-paris.mjs` (#2944), lancé avec celui-ci ;
  *   - `toLocaleString()` sur un NOMBRE → pas une date, et pas ce contrôle : un nombre
  *     ou une taille passe par `fmtNombre` / `fmtOctets` (`scripts/check-formats.mjs`,
  *     lancé avec celui-ci par `npm run lint:dates`) ;

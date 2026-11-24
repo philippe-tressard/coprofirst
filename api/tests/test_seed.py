@@ -207,3 +207,19 @@ def test_l_operateur_initial_est_un_compte_a_part(caplog):
             "/auth/login", json={"email": "operateur@localhost", "password": trouve.group(1)}
         )
         assert r.status_code == 200, r.text
+
+
+def test_les_comptes_initiaux_naissent_avec_un_mot_de_passe_a_changer(base):
+    """Le mot de passe du journal est TEMPORAIRE (#3019) : le seed marque les deux comptes
+    initiaux, que l'API ne laisse ensuite que changer leur mot de passe
+    (`test_mot_de_passe_a_changer.py`)."""
+    import app.seed as module_seed
+
+    with Session(base) as session:
+        module_seed._admin_initial(session)
+        session.commit()
+        marques = {u.email: u.mot_de_passe_a_changer for u in session.exec(select(Utilisateur))}
+    assert marques == {
+        module_seed.ADRESSE_ADMIN_INITIAL: True,
+        module_seed.ADRESSE_OPERATEUR_INITIAL: True,
+    }

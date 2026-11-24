@@ -57,6 +57,9 @@ class UserRead(NomServi):
     roles: list[str] = []
     actif: bool
     email_verifie: bool = False
+    #  Le mot de passe est temporaire (#3019) : le site et les apps mènent au changement
+    #  et n'ouvrent rien d'autre — l'API refuse le reste (`auth/mot_de_passe_a_changer`).
+    mot_de_passe_a_changer: bool = False
     onboarding_complete: bool
     onboarding_etape: int
     photo_url: Optional[str] = None
@@ -103,8 +106,9 @@ class UserRead(NomServi):
     #  et les apps LISENT ce champ ; aucun client ne recompose la règle. Fermé par défaut.
     acces_menu: list[str] = []
     last_seen_actualites: Optional[datetime] = None
-    #  Les délégations ACTIVES où ce compte est l'aidant — c'est ce qui ouvre la page
-    #  Délégations à l'aidant (`Nav.svelte`). Typées depuis #2525 : des `dict` au contrat.
+    #  Les délégations ACTIVES où ce compte est l'aidant : les personnes qu'il aide.
+    #  L'entrée « Délégations » ne les lit plus — `acces_menu` en décide, en attente
+    #  comprise (#3001). Typées depuis #2525 : des `dict` au contrat.
     delegations_aidant: list[DelegationAidant] = []
     cree_le: datetime
     derniere_connexion: Optional[datetime] = None
@@ -127,6 +131,7 @@ class UserRead(NomServi):
         u,
         batiment_nom: Optional[str] = None,
         delegations_aidant: list[DelegationAidant] | None = None,
+        aidant_designe: bool = False,
     ) -> "UserRead":
         from app.auth.deps import est_moderateur
         from app.auth.operateur import roles_effectifs
@@ -145,7 +150,11 @@ class UserRead(NomServi):
             data.batiment_nom = batiment_nom
         if delegations_aidant is not None:
             data.delegations_aidant = delegations_aidant
-        data.acces_menu = acces_du_menu(u, data.roles or [], bool(data.delegations_aidant))
+        #  `aidant_designe` : une délégation active ou EN ATTENTE le désigne
+        #  (`delegations_actives.est_aidant_designe`, #3001) — défaut fermé.
+        data.acces_menu = acces_du_menu(
+            u, data.roles or [], bool(data.delegations_aidant) or aidant_designe
+        )
         return data
 
 

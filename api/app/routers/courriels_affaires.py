@@ -1,6 +1,6 @@
 """Les courriels reçus à l'adresse des affaires — ce que la relève en a fait.
 
-Espace CS › Courriels. Une ligne par message traité (`utils/courriel_journal`),
+Espace CS › Courriels affaires. Une ligne par message traité (`utils/courriel_journal`),
 les plus récents d'abord, dans la limite du paramètre du site.
 
 ## Qui lit quoi (05/10/2026)
@@ -26,7 +26,7 @@ from __future__ import annotations
 
 from datetime import datetime
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Request
 from pydantic import BaseModel, Field
 from sqlalchemy import func
 from sqlmodel import Session, select
@@ -37,6 +37,7 @@ from app.models.core import RoleUtilisateur, Ticket, Utilisateur
 from app.models.courriel import CourrielAClasser
 from app.utils import courriel_a_classer as a_classer
 from app.utils.courriel_fil import repere_ecrit
+from app.utils.limiter import LIMITE_CLASSEMENT_COURRIEL, limiter
 from app.utils.recuperer import ou_404, present_ou_404
 from app.utils.courriel_journal import (
     derniers_releves,
@@ -151,7 +152,9 @@ def _geste(session: Session, faire) -> Classement:
 
 
 @router.post("/a-classer/{item_id}/rattacher", response_model=Classement)
+@limiter.limit(LIMITE_CLASSEMENT_COURRIEL)
 def rattacher(
+    request: Request,
     item_id: int,
     corps: Rattachement,
     user: Utilisateur = Depends(require_cs_or_admin),
@@ -170,7 +173,9 @@ def rattacher(
 
 
 @router.post("/a-classer/{item_id}/creer", response_model=Classement)
+@limiter.limit(LIMITE_CLASSEMENT_COURRIEL)
 def creer(
+    request: Request,
     item_id: int,
     user: Utilisateur = Depends(require_cs_or_admin),
     session: Session = Depends(get_session),

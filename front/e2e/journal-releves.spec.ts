@@ -1,5 +1,5 @@
 /*
- *  **Le journal des messages relevés se lit dans Espace CS › Courriels (#1447).**
+ *  **Le journal des messages relevés se lit dans Espace CS › Courriels affaires (#1447).**
  *
  *  Le 28/09/2026, un message a été ignoré sans qu'on puisse dire pourquoi ; le
  *  05/10/2026, un transfert refusé (numéro d'affaire mal tapé) n'était lisible que
@@ -48,7 +48,7 @@ const RELEVES = [
 	}),
 ];
 
-test('Espace CS › Courriels : une pliure par message, verdict et motif dessous @mise-en-page', async ({
+test('Espace CS › Courriels affaires : une pliure par message, verdict et motif dessous @mise-en-page', async ({
 	page,
 }) => {
 	await simulerApi(page, (chemin) => {
@@ -133,11 +133,13 @@ test('Paramétrage › SMTP : le journal renvoie vers Espace CS, le nombre affic
 		return undefined;
 	});
 	await page.goto('/admin?onglet=smtp');
-	await expect(page.getByRole('link', { name: 'Espace CS › Courriels' })).toHaveAttribute(
+	await expect(page.getByRole('link', { name: 'Espace CS › Courriels affaires' })).toHaveAttribute(
 		'href',
 		'/espace-cs/courriels',
 	);
-	await expect(page.getByLabel('Messages affichés dans Espace CS › Courriels')).toBeVisible();
+	await expect(
+		page.getByLabel('Messages affichés dans Espace CS › Courriels affaires'),
+	).toBeVisible();
 	await expect(page.locator('.jv-liste')).toHaveCount(0);
 	//  Les signataires délégués (#2554) se règlent dans la même grille.
 	const delegues = page.getByLabel('Signataires délégués');

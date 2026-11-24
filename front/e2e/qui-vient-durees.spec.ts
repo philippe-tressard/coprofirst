@@ -113,7 +113,7 @@ test('un écran de premier niveau poste ses données affichées, une fois (#1846
 	//  Un onglet est une navigation : il ouvre un nouvel écran à mesurer, qui
 	//  n'appelle pas la mesure — il ne doit rien produire, jamais 0.
 	await page
-		.getByRole('tablist')
+		.getByRole('navigation', { name: 'Onglets' })
 		.getByRole('link', { name: /Kanban/ })
 		.click();
 	await expect(page).toHaveURL(/kanban/);

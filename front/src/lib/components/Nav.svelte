@@ -140,7 +140,12 @@
 
 	<div class="nav-section">
 		{#each allNav as item (item.href)}
-			<a href={item.href} class="nav-item" class:active={isActive(item.href)}>
+			<a
+				href={item.href}
+				class="nav-item"
+				class:active={isActive(item.href)}
+				aria-current={isActive(item.href) ? 'page' : undefined}
+			>
 				<span class="nav-icon"><Icon name={item.icon} size={18} /></span>
 				<span class="nav-label">{item.label}</span>
 			</a>
@@ -148,7 +153,12 @@
 	</div>
 
 	<div class="nav-footer">
-		<a href="/profil" class="nav-item" class:active={isActive('/profil')}>
+		<a
+			href="/profil"
+			class="nav-item"
+			class:active={isActive('/profil')}
+			aria-current={isActive('/profil') ? 'page' : undefined}
+		>
 			<span class="nav-icon"><Icon name="user" size={18} /></span>
 			<span class="nav-label">{$currentUser?.prenom ?? t['/profil']}</span>
 		</a>
@@ -189,14 +199,24 @@
 	<div class="overlay-menu">
 		<div class="overlay-nav">
 			{#each allNav as item (item.href)}
-				<a href={item.href} class="overlay-item" class:active={isActive(item.href)}>
+				<a
+					href={item.href}
+					class="overlay-item"
+					class:active={isActive(item.href)}
+					aria-current={isActive(item.href) ? 'page' : undefined}
+				>
 					<span class="nav-icon"><Icon name={item.icon} size={20} /></span>
 					<span>{item.label}</span>
 				</a>
 			{/each}
 		</div>
 		<div class="overlay-footer">
-			<a href="/profil" class="overlay-item" class:active={isActive('/profil')}>
+			<a
+				href="/profil"
+				class="overlay-item"
+				class:active={isActive('/profil')}
+				aria-current={isActive('/profil') ? 'page' : undefined}
+			>
 				<span class="nav-icon"><Icon name="user" size={20} /></span>
 				<span>{$currentUser?.prenom ?? t['/profil']}</span>
 			</a>
@@ -294,7 +314,7 @@
 		right: 0;
 		bottom: 0;
 		left: 0;
-		background: rgba(0, 0, 0, 0.35);
+		background: var(--color-voile-menu);
 		z-index: 199;
 	}
 

@@ -17,7 +17,7 @@ Un message **authentifié** (DKIM, `courriel_authenticite`) dont l'expéditeur e
 désigne ni affaire ni relance. Un inconnu reste refusé ou ignoré : la file n'est
 pas une boîte de réception, et un prospectus n'y entre pas.
 
-## Les trois gestes — Espace CS › Courriels
+## Les trois gestes — Espace CS › Courriels affaires
 
 - **Rattacher** à une affaire ouverte : le message entre au fil comme un
   transfert (« Mail reçu de X …, transféré par Y »), pièces jointes comprises ;

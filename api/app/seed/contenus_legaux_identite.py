@@ -18,6 +18,8 @@ juriste avant toute copropriété pilote. Notamment :
 Séparé de `contenus_legaux.py`, qui atteint 500 lignes (modularité, rang 1).
 """
 
+from app.seed.contenus_legaux_destinataires import QUI_LIT_QUOI
+
 from app.utils.plateforme import NOM_PLATEFORME
 
 #: 🔴 La marque du MODÈLE, en tête des deux textes (#2065, condition de la
@@ -71,10 +73,12 @@ RESPONSABLE_TRAITEMENT = (
     "transmet au syndicat toute demande d'une personne concernée qui lui parviendrait.</p>"
 )
 
+#: Qui lit quoi (#2917) : la phrase d'origine — « accessibles uniquement » au conseil et
+#: à l'administrateur — était fausse ; `QUI_LIT_QUOI` la remplace.
 DESTINATAIRES = (
-    "<h2>4. Destinataires</h2><p>Les données "
-    "sont accessibles uniquement aux membres du conseil syndical et à l'administrateur. "
-    "L'opérateur nommé au point 1 et l'hébergeur n'y ont qu'un accès technique, pour la "
+    "<h2>4. Destinataires</h2><p>"
+    + QUI_LIT_QUOI
+    + " L'opérateur nommé au point 1 et l'hébergeur n'y ont qu'un accès technique, pour la "
     "seule exécution du service. Elles ne "
     "sont ni cédées à des tiers, ni commercialisées, ni utilisées à des fins "
     "publicitaires.</p>"

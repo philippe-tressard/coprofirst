@@ -23,7 +23,11 @@
  *  ## Ce qu'il refuse
  *
  *  Un NŒUD DE TEXTE qui commence par « Chargement » dans le balisage d'un
- *  `.svelte`, hors d'`EtatListe.svelte`. La forme conforme :
+ *  `.svelte`, hors d'`EtatListe.svelte` — et, depuis #2975 (24/11/2026), un
+ *  paragraphe dont le texte seul finit par « … » : quatre attentes s'écrivaient
+ *  sous un autre mot (« Vérification en cours… », « Redirection… »,
+ *  « Composition du message… », « Lecture des usages… »), quatre classes locales
+ *  pour un même état, et le contrôle ne lisait que « Chargement ». La forme conforme :
  *
  *    <EtatListe chargement />                                  ← « Chargement… »
  *    <EtatListe chargement messageChargement="Chargement des reportings…" />
@@ -47,11 +51,20 @@ import { neutraliserCommentaires } from './lib-commentaires.mjs';
 const RACINE = 'src';
 const SOURCE = 'lib/components/EtatListe.svelte';
 const TEXTE = />\s*Chargement[^<{]*</g;
+//  Une attente sous un autre mot (#2975) : un paragraphe dont le texte seul finit
+//  par « … » — « Vérification en cours… », « Lecture des usages… ». Une phrase qui
+//  porte une expression (`{n}`) ou une balise n'est pas lue, ni un paragraphe sur
+//  plusieurs lignes (une énumération en prose : « … une clé de charges… ») : c'est
+//  un texte, pas un état. L'ellipse en trois points compte aussi.
+const ATTENTE = /<p\b[^>]*>[^<{\n]*(?:…|\.\.\.)[ \t]*<\/p>/g;
 const EMPLOI = /<EtatListe\b[^>]*\bchargement\b/;
 
 /**  Les états d'attente écrits à la main dans une source. PURE. */
 export function attentesManuelles(source) {
-	return (neutraliserCommentaires(source).match(TEXTE) ?? []).length;
+	const code = neutraliserCommentaires(source);
+	//  Un « <p>Chargement…</p> » répond aux deux motifs : il ne compte qu'une fois.
+	const autres = (code.match(ATTENTE) ?? []).filter((p) => !/>\s*Chargement/.test(p));
+	return (code.match(TEXTE) ?? []).length + autres.length;
 }
 
 if (process.argv.includes('--selftest')) {
@@ -71,6 +84,20 @@ if (process.argv.includes('--selftest')) {
 	t('libellé de bouton', 0, "<button>{envoi ? 'Chargement…' : label}</button>");
 	t('message d’échec en script', 0, "<script>e = 'Chargement impossible';</script>");
 	t('commentaire ignoré', 0, '<!-- <p>Chargement…</p> -->');
+	//  🔴 Les quatre attentes écrites sous un autre mot (#2975).
+	t('vérification', 1, '<p class="attente">Vérification en cours…</p>');
+	t('redirection', 1, '<p class="muted">Redirection vers vos accès…</p>');
+	t('composition', 1, '<p class="apercu-attente">Composition du message…</p>');
+	t('lecture', 1, '\t\t\t<p class="aide">Lecture des usages…</p>');
+	t('compté une fois', 1, '<p class="muted">Chargement...</p>');
+	//  ✅ Une phrase qui finit par « … » mais porte une valeur : un texte, pas une attente.
+	t('phrase avec valeur', 0, '<p>Et {n} autres…</p>');
+	t('phrase avec balise', 0, '<p>Voir <a href="/x">la suite</a>…</p>');
+	t(
+		'prose sur plusieurs lignes',
+		0,
+		'<p class="muted">\n\tUn lot sans propriétaire, une place…\n</p>',
+	);
 	console.log(ko ? '== ÉCHECS ==' : '== TOUS OK ==');
 	process.exit(ko);
 }
@@ -115,7 +142,7 @@ if (!ancre || emplois === 0) {
 }
 
 if (fautifs.length) {
-	console.error(`\n✗ ${fautifs.length} fichier(s) écrivent leur propre « Chargement… » :\n`);
+	console.error(`\n✗ ${fautifs.length} fichier(s) écrivent leur propre attente :\n`);
 	for (const f of fautifs) console.error(`  ${f}`);
 	console.error(
 		'\n  → `<EtatListe chargement />`, ou `messageChargement="…"` pour un message\n' +

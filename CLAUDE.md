@@ -142,7 +142,9 @@ Chaque notion a **une** porte ; le détail, les pièges et les exceptions sont d
   (`front/tables-clients.json`) et constantes de l'API publiées pour elles
   (`api/app/contrat/constantes-clients.json`) : générés, jamais édités ; un retrait s'annonce dans
   `RETRAITS` — et jamais tant qu'une version publiée d'une app s'en sert : son contrat est
-  figé dans `app/contrat/circulation/` (🔒 `test_contrat_versions_en_circulation.py`, #2744).
+  figé dans `app/contrat/circulation/` ; une version publiée — piste de test comprise — porte
+  une étiquette `vX.Y.Z` dans son dépôt, et la CI refuse celle qui n'est pas déclarée
+  (🔒 `test_contrat_versions_en_circulation.py`, `check_versions_en_circulation.py`, #2744, #2919).
   Une règle d'affichage que le site et l'app montrent se calcule dans l'API.
 
 ### Migrations Alembic

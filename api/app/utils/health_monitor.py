@@ -123,7 +123,7 @@ def _check_backups(session: Session) -> list[str]:
     if age > timedelta(hours=25):
         heures = int(age.total_seconds() / 3600)
         issues.append(
-            f"Dernière sauvegarde réussie il y a {heures}h (> 25h). Vérifier Admin → Sauvegardes."
+            f"Dernière sauvegarde réussie il y a {heures}h (> 25h). Vérifier Admin › Exploitation › Maintenance, tâche « Sauvegarde quotidienne »."
         )
 
     # Dernière sauvegarde en échec ?
@@ -167,8 +167,8 @@ def _check_archive_locale() -> list[str]:
     if not chemins:
         return [
             f"Aucun fichier de sauvegarde présent sur ce nœud ({repertoire}), "
-            f"alors que l'historique en annonce. Le volume `backups` n'est pas "
-            f"répliqué entre les RPi : vérifier Admin → Sauvegardes."
+            f"alors que l'historique en annonce. Le volume `backups` n'est pas répliqué entre "
+            f"les RPi : vérifier Admin › Exploitation › Maintenance, tâche « Sauvegarde quotidienne »."
         ]
 
     recent = chemins[-1]
@@ -345,7 +345,7 @@ def _check_reference_copro(session: Session) -> list[str]:
         "syndic partent sans elle.\n"
         "Le syndic identifie ses dossiers par cette référence ; sans elle, tickets "
         "et publications transmis sortent de son tri par affaire.\n"
-        "À renseigner dans Admin → Configuration du site → Référence de copropriété."
+        "À renseigner dans Admin › Copropriété › Identité, champ « Référence syndic de la copropriété »."
     ]
 
 
@@ -386,7 +386,7 @@ def _send_alert(to: str, issues: list[str], session: Session) -> None:
     doublant un moteur d'envoi qui existait à côté. Quatre conséquences, toutes
     silencieuses : l'alerte n'apparaissait pas dans `historique_email` (donc
     l'envoi le plus critique du système était le seul dont on ne pouvait pas
-    vérifier le départ), elle n'était pas modifiable depuis Admin → Emails, elle
+    vérifier le départ), elle n'était pas modifiable depuis Admin › Présentation › Modèles e-mail, elle
     ignorait `smtp_ssl_tls` en ne gérant que STARTTLS, et les deux modèles
     prévus pour elle — `sauvegarde_echec` et `alerte_espace_disque` — dormaient
     en base sans que rien ne les envoie.

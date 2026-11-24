@@ -10,7 +10,7 @@
   Le verdict est une pastille `.badge-*` de la charte — son contraste est
   mesuré par `lint:charte-valeurs` — et non plus une teinte écrite en ligne.
 
-  `pliable` (05/10/2026, Espace CS › Courriels) : chaque ligne devient une
+  `pliable` (05/10/2026, Espace CS › Courriels affaires) : chaque ligne devient une
   pliure — objet, verdict et date en tête ; l'expéditeur, le motif et le lien
   dessous. C'est un `<details>` natif : le clavier, le lecteur d'écran et
   « un seul ouvert à la fois » (`unSeulDetailsOuvert`, posé par le layout) sont

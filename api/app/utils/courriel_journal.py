@@ -1,8 +1,8 @@
 """Le journal des messages relevés — ce que la relève a décidé, et pourquoi (#1447).
 
 Une ligne par message traité (`courriel_boite.traiter`), écrite dans la même
-transaction que le verdict. Elle se lit dans Espace CS › Courriels (depuis le
-05/10/2026 — elle était réservée à l'admin, sous Paramétrage › SMTP, et un
+transaction que le verdict. Elle se lit dans Espace CS › Courriels affaires (depuis le
+05/10/2026 — elle était réservée à l'admin, sous Admin › Services › Courriel, et un
 transfert refusé pour un numéro mal tapé y est resté invisible au conseil), et se
 purge chaque dimanche (`maintenance.purger`).
 
@@ -54,7 +54,7 @@ def journaliser_releve(
 
 
 #: Combien de lignes l'onglet « Courriels » d'Espace CS en montre : un paramètre
-#: du site, réglé dans Paramétrage › SMTP (05/10/2026). 20 par défaut — de quoi
+#: du site, réglé dans Admin › Services › Courriel (05/10/2026). 20 par défaut — de quoi
 #: relire la semaine, sans en faire un second historique de la boîte.
 CLE_AFFICHES = "courriels_affiches"
 AFFICHES_PAR_DEFAUT = 20

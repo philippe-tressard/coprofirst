@@ -143,11 +143,26 @@ export const FAMILLES = [
  */
 const APLAT_DE_PERIMETRE =
 	'aplat de pastille sous un texte --color-sur-plein : le couple ne dépend pas du thème';
+const BLANC_SUR_APLAT = 'blanc translucide sur un aplat, qui reste foncé au sombre';
+const OMBRE_NOIRE = 'ombre noire, lisible sur les deux fonds — valeur d’avant #2946';
 export const IDENTIQUES = {
 	'--color-text-inverse': 'texte clair sur l’aplat primaire, qui reste foncé',
 	'--color-sur-plein': 'texte sur un aplat, qui reste foncé au sombre',
 	'--color-sur-voile': 'texte sur un voile noir, sombre dans les deux thèmes',
 	'--color-sur-accent': 'texte sur l’or, qui ne change pas',
+	//  Les jetons d'usage de #2946 (24/11/2026) : des valeurs sorties telles quelles de
+	//  leur composant, qui ne suivaient pas le thème — elles ne le suivent toujours pas.
+	'--color-voile-menu':
+		'voile noir sous le menu mobile : il assombrit la page dans les deux thèmes',
+	'--color-voile-sur-plein': BLANC_SUR_APLAT,
+	'--color-voile-sur-plein-survol': BLANC_SUR_APLAT,
+	'--color-sur-plein-secondaire': BLANC_SUR_APLAT,
+	'--color-hachure-sur-plein': BLANC_SUR_APLAT,
+	'--color-ombre-defilement':
+		'ombre de défilement d’un tableau, valeur d’avant #2946 gardée au sombre (non retravaillée)',
+	'--shadow-modale': OMBRE_NOIRE,
+	'--shadow-survol-carte': OMBRE_NOIRE,
+	'--shadow-medaillon': OMBRE_NOIRE,
 	...Object.fromEntries(
 		[...Array.from({ length: 12 }, (_, i) => `--teinte-${i + 1}`), '--teinte-copropriete'].map(
 			(n) => [n, APLAT_DE_PERIMETRE],

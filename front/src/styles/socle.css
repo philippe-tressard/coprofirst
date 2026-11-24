@@ -238,6 +238,17 @@ body {
 	--color-sur-plein-discret: rgba(255, 255, 255, 0.55);
 	/* Le voile sous une fenêtre modale — plus dense au sombre. */
 	--color-voile-modale: rgba(0, 0, 0, 0.45);
+	/*  Les voiles et les teintes translucides d'un USAGE (#2946, 24/11/2026) : ils
+	    s'écrivaient en `rgba()` dans leur composant, hors du relevé de la charte.
+	    Valeurs reprises telles quelles — aucun rendu n'a changé — et identiques aux
+	    deux thèmes, comme elles l'étaient. Un voile posé sur une PHOTO, lui, reste
+	    dans son composant, déclaré (`VOILES_SUR_PHOTO`, `lib-charte-jetons.mjs`). */
+	--color-voile-menu: rgba(0, 0, 0, 0.35); /* sous le menu ouvert du mobile */
+	--color-voile-sur-plein: rgba(255, 255, 255, 0.3); /* un bouton clair sur l'aplat */
+	--color-voile-sur-plein-survol: rgba(255, 255, 255, 0.6);
+	--color-sur-plein-secondaire: rgba(255, 255, 255, 0.75); /* second texte sur l'aplat */
+	--color-hachure-sur-plein: rgba(255, 255, 255, 0.28); /* les hachures d'une pastille retenue */
+	--color-ombre-defilement: rgba(26, 26, 46, 0.14); /* l'ombre qui dit « ça défile » */
 	/*  Un fond NEUTRE posé sur la surface blanche — l'encart d'une rubrique qui
 	    n'a pas d'état à dire (« La demande », maquette G du 16/10/2026). Le
 	    `--color-bg` de la page est trop chaud pour un bloc dans une carte. */
@@ -255,6 +266,10 @@ body {
 	--radius: 0.5rem;
 	--shadow-sm: 0 1px 3px rgba(30, 58, 95, 0.1);
 	--shadow: 0 4px 12px rgba(30, 58, 95, 0.12);
+	/*  Trois ombres d'usage, valeurs reprises de leur composant (#2946). */
+	--shadow-modale: 0 8px 32px rgba(0, 0, 0, 0.18);
+	--shadow-survol-carte: 0 2px 8px rgba(0, 0, 0, 0.1);
+	--shadow-medaillon: 0 1px 2px rgba(0, 0, 0, 0.18);
 	/*  La GOUTTIÈRE d'une carte d'affaire — date, puis nature (maquette B,
 	    10/10/2026). Un jeton et non un chiffre, parce que DEUX écrans s'alignent
 	    sur elle : la carte, et la colonne des libellés des filtres au-dessus

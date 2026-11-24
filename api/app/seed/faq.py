@@ -7,6 +7,14 @@ installation en service, où le conseil syndical a pu tout retoucher.
 pas déjà : c'est la voie à suivre pour enrichir la FAQ après coup.
 
 Format : (catégorie, question, réponse, ordre).
+
+🔴 **Aucun fait propre à une résidence** (#2926, 23/11/2026) : la FAQ initiale
+avait été écrite pour la première copropriété servie — l'emplacement de ses
+conteneurs, ses horaires de travaux, une étude en cours, un numéro de dépannage
+d'un seul département — et elle partait telle quelle sur toute installation
+neuve, où ces réponses étaient fausses. Une réponse livrée vaut partout, ou dit
+où la règle locale se lit (règlement de copropriété, conseil syndical).
+🔒 `test_faq_ecrans_cites.py` refuse lieu, horaire et numéro de téléphone.
 """
 
 #: La catégorie qui parle du logiciel lui-même. Elle s'appelait « 📱 Application
@@ -25,7 +33,7 @@ FAQ_INITIALE = [
     (
         "🗑\ufe0f Tri des déchets",
         "Où sont les conteneurs à verre ?",
-        "Les conteneurs à verre (vert) sont situés à l'entrée du parking, côté est. Merci de ne pas y déposer de vaisselle, vitres ou miroirs.",
+        "Le verre d'emballage — bouteilles, pots et bocaux, sans bouchon ni couvercle — va dans les conteneurs à verre ; leur emplacement est indiqué par le règlement intérieur de la résidence ou par le conseil syndical. Merci de ne pas y déposer de vaisselle, vitres ou miroirs.",
         2,
     ),
     (
@@ -49,7 +57,7 @@ FAQ_INITIALE = [
     (
         "🚗 Stationnement",
         "Y a-t-il des bornes de recharge électrique ?",
-        "Une étude de faisabilité est en cours pour l'installation de bornes IRVE. Consultez la rubrique Résidence pour suivre l'avancement du projet.",
+        "Pour une borne sur votre propre place, adressez-vous au syndic, qui vous indique la démarche. Un équipement collectif se décide en assemblée générale ; s'il y en a un en projet, son avancement se suit dans la rubrique Résidence.",
         6,
     ),
     (
@@ -61,19 +69,19 @@ FAQ_INITIALE = [
     (
         "🔨 Travaux",
         "Quelles sont les plages horaires autorisées pour les travaux ?",
-        "Les travaux bruyants sont autorisés du lundi au vendredi de 8h à 12h et de 14h à 19h, le samedi de 9h à 12h et de 15h à 18h. Pas de travaux le dimanche.",
+        "Les jours et heures des travaux bruyants sont fixés par le règlement de copropriété et par l'arrêté de la commune ou de la préfecture sur le bruit : c'est le plus restrictif des deux qui s'applique. En cas de doute, demandez au conseil syndical.",
         8,
     ),
     (
         "📞 Contacts d'urgence",
         "Qui contacter en cas de fuite d'eau ?",
-        "En priorité, coupez l'eau au robinet d'arrêt de votre lot. Pour une fuite en parties communes, appelez immédiatement le syndic ou le gardien.",
+        "En priorité, coupez l'eau au robinet d'arrêt de votre lot. Pour une fuite en parties communes, appelez immédiatement le syndic, ou le gardien si la résidence en a un.",
         9,
     ),
     (
         "📞 Contacts d'urgence",
         "Numéros d'urgence importants",
-        "SAMU : 15 | Pompiers : 18 | Police secours : 17 | Urgence européen : 112 | Urgences EDF/ENEDIS : 09 72 67 50 00",
+        "SAMU : 15 | Pompiers : 18 | Police secours : 17 | Urgence européen : 112 | Dépannage électricité ou gaz : le numéro de votre distributeur figure sur votre facture d'énergie.",
         10,
     ),
     (
@@ -94,7 +102,7 @@ FAQ_COMPLEMENTAIRE = [
     (
         CATEGORIE_APPLICATION,
         "Pourquoi mes anciennes affaires n'apparaissent plus dans la liste principale ?",
-        "Les affaires résolues ou annulées passent automatiquement dans l'onglet <strong>🗂️ Archives</strong> de la page Affaires, après un délai fixé par le conseil syndical. Cela garde la liste principale centrée sur les demandes encore actives, sans rien perdre : tout reste consultable dans les archives.",
+        "Les affaires résolues ou annulées passent automatiquement dans l'onglet <strong>📁 Archives</strong> de la page Affaires, après un délai réglé par l'administrateur de la copropriété. Cela garde la liste principale centrée sur les demandes encore actives, sans rien perdre : tout reste consultable dans les archives.",
         13,
     ),
     (

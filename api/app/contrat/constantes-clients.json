@@ -1,6 +1,6 @@
 {
   "format": 1,
-  "version": "1.5.0",
+  "version": "1.6.0",
   "constantes": {
     "appareilsParCanal": {
       "source": "api/app/utils/canaux_audience.py#APPAREILS_PAR_CANAL",
@@ -170,6 +170,11 @@
         "motif": "\\.(jpe?g|png|webp|gif|avif|bmp|tiff?|heic|heif)$",
         "ignorerCasse": true
       }
+    },
+    "motifMotDePasseAChanger": {
+      "source": "api/app/auth/mot_de_passe_a_changer.py#MOTIF",
+      "quoi": "le `detail.code` du 403 qu'un compte au mot de passe temporaire reçoit partout sauf `GET /auth/me` et `POST /auth/change-password` : mener au changement (#3019)",
+      "valeur": "mot_de_passe_a_changer"
     },
     "noteMax": {
       "source": "api/app/utils/avis.py#NOTE_MAX",

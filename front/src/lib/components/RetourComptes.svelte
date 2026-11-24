@@ -9,7 +9,7 @@
 	 * (`require_admin` sur le tableau de bord). Les règles de calcul :
 	 * `api/app/utils/retour_comptes.py`.
 	 */
-	import { fmtNombre } from '#lib/utils.ts';
+	import { fmtNombre, fmtPourcent } from '#lib/utils.ts';
 	import PanneauTelemetrie from '#lib/components/PanneauTelemetrie.svelte';
 	import { fmtDate } from '#lib/date.ts';
 	import type { RetourComptes } from '#lib/api/index.ts';
@@ -93,7 +93,7 @@
 					<tr class="taux">
 						<td>Taux de retour</td>
 						<td class="nombre">
-							{arrivants.taux == null ? '—' : `${fmtNombre(arrivants.taux)} %`}
+							{fmtPourcent(arrivants.taux)}
 						</td>
 					</tr>
 				</tbody>

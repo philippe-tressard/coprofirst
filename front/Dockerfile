@@ -14,6 +14,12 @@ RUN --mount=type=cache,target=/root/.npm \
 
 COPY . .
 RUN npm run build
+#  Les dépendances de CONSTRUCTION quittent `node_modules` avant la copie (#3061,
+#  24/11/2026) : vite, lightningcss, svelte… partaient dans l'image publique alors
+#  que `node build` ne les charge jamais (adapter-node les a fondues dans `build/`).
+#  Vérifié : mêmes réponses, à l'octet, avec 24 paquets au lieu de 336.
+#  🔒 `api/tests/test_images_sans_dependances_de_construction.py`.
+RUN npm prune --omit=dev --legacy-peer-deps
 
 FROM node:26-alpine AS runner
 #  Le gestionnaire de paquets QUITTE l'image d'exécution (#2377, 31/10/2026) :

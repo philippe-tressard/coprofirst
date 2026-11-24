@@ -1,5 +1,5 @@
 /*
- *  **Un courriel qu'aucune affaire ne désigne se classe dans Espace CS › Courriels (#2555).**
+ *  **Un courriel qu'aucune affaire ne désigne se classe dans Espace CS › Courriels affaires (#2555).**
  *
  *  Le 05/11/2026, « Re: Portillon Hostachy » d'un membre du conseil était refusé —
  *  « rien ne permet de dire à quel ticket » — alors que l'affaire du portillon était
@@ -43,7 +43,7 @@ const CLASSE = {
 	a_classer: { id: 2, statut: 'cree', apercu: '', suggestions: [] },
 };
 
-test('Espace CS › Courriels : un message à classer se rattache à l’affaire proposée @mise-en-page', async ({
+test('Espace CS › Courriels affaires : un message à classer se rattache à l’affaire proposée @mise-en-page', async ({
 	page,
 }) => {
 	await simulerApi(page, (chemin) => {
@@ -139,7 +139,9 @@ test('Espace CS › Courriels : un message à classer se rattache à l’affaire
 	await expect(lignes.nth(1).getByRole('button', { name: 'Créer une affaire' })).toHaveCount(0);
 });
 
-test('Espace CS › Courriels : un autre numéro se tape, Entrée le rattache', async ({ page }) => {
+test('Espace CS › Courriels affaires : un autre numéro se tape, Entrée le rattache', async ({
+	page,
+}) => {
 	await simulerApi(page, (chemin) => {
 		if (chemin === '/api/courriels-affaires') return { limite: 20, messages: [A_CLASSER] };
 		if (chemin.startsWith('/api/courriels-affaires/a-classer/'))
