@@ -50,11 +50,13 @@
 		const now = Date.now();
 		if (now < dStart) return { pct: 0, label: 'À venir', active: false };
 		if (now > dEnd) return { pct: 100, label: 'Terminé', active: false };
-		const pct = Math.round(((now - dStart) / (dEnd - dStart)) * 100);
+		//  L'avancement d'une intervention dans le temps, à l'instant : ni un
+		//  pourcentage de votes ni une règle servie (`pct` des sondages, #3060).
+		const avancement = Math.round(((now - dStart) / (dEnd - dStart)) * 100);
 		// `fmtTime` épingle Europe/Paris ; les `toLocaleTimeString` qui étaient ici
 		// n'indiquaient aucun fuseau et suivaient donc celui du navigateur — juste
 		// par coïncidence pour un résident en France, faux en déplacement.
-		return { pct, label: `En cours (${fmtTime(debut)}–${fmtTime(fin)})`, active: true };
+		return { pct: avancement, label: `En cours (${fmtTime(debut)}–${fmtTime(fin)})`, active: true };
 	}
 </script>
 
