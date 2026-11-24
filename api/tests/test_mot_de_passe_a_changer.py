@@ -21,6 +21,7 @@ from __future__ import annotations
 
 import logging
 import re
+from pathlib import Path
 
 import pytest
 from fastapi.testclient import TestClient
@@ -134,6 +135,17 @@ def test_la_table_des_routes_admises_est_la_decision():
 
     assert set(ROUTES_ADMISES) == ADMISES
     assert publie == MOTIF
+
+
+def test_le_site_reconnait_le_meme_motif():
+    """Le site en tient une copie (front et API ne partagent aucun fichier, #335) : elle
+    doit être celle-ci, sinon le refus n'y mène plus au changement."""
+    source = (
+        Path(__file__).resolve().parents[2] / "front" / "src" / "lib" / "mot-de-passe-temporaire.ts"
+    ).read_text(encoding="utf-8")
+    copie = re.search(r"MOTIF_MOT_DE_PASSE_A_CHANGER = '([^']+)'", source)
+    assert copie, "le site ne déclare plus MOTIF_MOT_DE_PASSE_A_CHANGER — cas zéro"
+    assert copie.group(1) == MOTIF
 
 
 def test_changer_son_mot_de_passe_leve_le_drapeau_et_ouvre_tout(moteur, caplog):

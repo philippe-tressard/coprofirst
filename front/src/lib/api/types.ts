@@ -17,6 +17,8 @@ export interface User {
 	role: string;
 	roles: string[]; // multi-rôles cumulables
 	actif: boolean;
+	/** Mot de passe TEMPORAIRE (#3019) : l'écran mène au changement, l'API refuse le reste. */
+	mot_de_passe_a_changer?: boolean;
 	opt_out_telemetrie?: boolean;
 	// Modération de la Communauté. Ces champs étaient absents de l'interface
 	// alors que `UserRead` les renvoie et que la page Sondages s'en sert pour
