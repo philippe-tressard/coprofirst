@@ -80,7 +80,7 @@ jobs:
         if: failure()
         env:
           GH_TOKEN: ${{ github.token }}
-        run: python3 "$GITHUB_WORKSPACE/scripts/ci/signaler_echec_ci.py" --signaler
+        run: python3 "${GITHUB_WORKSPACE:-$(git rev-parse --show-toplevel)}/scripts/ci/signaler_echec_ci.py" --signaler
 
   construire:
     name: Construire ${{ matrix.service.nom }} (${{ matrix.plateforme }})
@@ -158,7 +158,7 @@ jobs:
         if: failure()
         env:
           GH_TOKEN: ${{ github.token }}
-        run: python3 "$GITHUB_WORKSPACE/scripts/ci/signaler_echec_ci.py" --signaler
+        run: python3 "${GITHUB_WORKSPACE:-$(git rev-parse --show-toplevel)}/scripts/ci/signaler_echec_ci.py" --signaler
 
   publier:
     name: Publier ${{ matrix.service }}
@@ -233,7 +233,7 @@ jobs:
         if: failure()
         env:
           GH_TOKEN: ${{ github.token }}
-        run: python3 "$GITHUB_WORKSPACE/scripts/ci/signaler_echec_ci.py" --signaler
+        run: python3 "${GITHUB_WORKSPACE:-$(git rev-parse --show-toplevel)}/scripts/ci/signaler_echec_ci.py" --signaler
 
   verifier-front:
     name: Le pied de page de l'image affiche sa version
@@ -277,7 +277,7 @@ jobs:
         if: failure()
         env:
           GH_TOKEN: ${{ github.token }}
-        run: python3 "$GITHUB_WORKSPACE/scripts/ci/signaler_echec_ci.py" --signaler
+        run: python3 "${GITHUB_WORKSPACE:-$(git rev-parse --show-toplevel)}/scripts/ci/signaler_echec_ci.py" --signaler
   publier-version:
     name: Publier la version (release et archive)
     needs: [version, verifier-front]
@@ -314,4 +314,4 @@ jobs:
         if: failure()
         env:
           GH_TOKEN: ${{ github.token }}
-        run: python3 "$GITHUB_WORKSPACE/scripts/ci/signaler_echec_ci.py" --signaler
+        run: python3 "${GITHUB_WORKSPACE:-$(git rev-parse --show-toplevel)}/scripts/ci/signaler_echec_ci.py" --signaler

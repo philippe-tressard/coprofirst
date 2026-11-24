@@ -109,7 +109,7 @@ jobs:
         if: failure()
         env:
           GH_TOKEN: ${{ github.token }}
-        run: python3 "$GITHUB_WORKSPACE/scripts/ci/signaler_echec_ci.py" --signaler
+        run: python3 "${GITHUB_WORKSPACE:-$(git rev-parse --show-toplevel)}/scripts/ci/signaler_echec_ci.py" --signaler
   lint-backend:
     name: Lint Python (Ruff)
     needs: arbre
@@ -314,7 +314,7 @@ jobs:
         if: failure()
         env:
           GH_TOKEN: ${{ github.token }}
-        run: python3 "$GITHUB_WORKSPACE/scripts/ci/signaler_echec_ci.py" --signaler
+        run: python3 "${GITHUB_WORKSPACE:-$(git rev-parse --show-toplevel)}/scripts/ci/signaler_echec_ci.py" --signaler
 
 
       #  La marque de l'arbre jugé vert (#2632) : la dernière étape, donc posée
@@ -408,7 +408,7 @@ jobs:
         if: failure()
         env:
           GH_TOKEN: ${{ github.token }}
-        run: python3 "$GITHUB_WORKSPACE/scripts/ci/signaler_echec_ci.py" --signaler
+        run: python3 "${GITHUB_WORKSPACE:-$(git rev-parse --show-toplevel)}/scripts/ci/signaler_echec_ci.py" --signaler
 
 
       #  La marque de l'arbre jugé vert (#2632) : la dernière étape, donc posée
@@ -1032,7 +1032,7 @@ jobs:
         if: failure()
         env:
           GH_TOKEN: ${{ github.token }}
-        run: python3 "$GITHUB_WORKSPACE/scripts/ci/signaler_echec_ci.py" --signaler
+        run: python3 "${GITHUB_WORKSPACE:-$(git rev-parse --show-toplevel)}/scripts/ci/signaler_echec_ci.py" --signaler
 
 
       #  La marque de l'arbre jugé vert (#2632) : la dernière étape, donc posée
@@ -2853,7 +2853,7 @@ jobs:
         if: failure()
         env:
           GH_TOKEN: ${{ github.token }}
-        run: python3 "$GITHUB_WORKSPACE/scripts/ci/signaler_echec_ci.py" --signaler
+        run: python3 "${GITHUB_WORKSPACE:-$(git rev-parse --show-toplevel)}/scripts/ci/signaler_echec_ci.py" --signaler
 
 
       #  La marque de l'arbre jugé vert (#2632) : la dernière étape, donc posée
@@ -3087,7 +3087,7 @@ jobs:
         if: failure()
         env:
           GH_TOKEN: ${{ github.token }}
-        run: python3 "$GITHUB_WORKSPACE/scripts/ci/signaler_echec_ci.py" --signaler
+        run: python3 "${GITHUB_WORKSPACE:-$(git rev-parse --show-toplevel)}/scripts/ci/signaler_echec_ci.py" --signaler
   e2e-verdict:
     name: Tests de navigateur (Playwright)
     needs: [arbre, e2e-frontend]
@@ -3132,7 +3132,7 @@ jobs:
         if: failure()
         env:
           GH_TOKEN: ${{ github.token }}
-        run: python3 "$GITHUB_WORKSPACE/scripts/ci/signaler_echec_ci.py" --signaler
+        run: python3 "${GITHUB_WORKSPACE:-$(git rev-parse --show-toplevel)}/scripts/ci/signaler_echec_ci.py" --signaler
 
 
       - name: Marque « arbre jugé vert »
