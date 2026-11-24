@@ -205,3 +205,24 @@ class StockageDisque:
 def stockage() -> StockageDisque:
     """Le stockage de la copropriété servie."""
     return StockageDisque(contexte.courante().racine_fichiers)
+
+
+def creer_les_racines() -> None:
+    """La racine des fichiers de CHAQUE copropriété servie, au démarrage de l'API : celle
+    de la configuration, ou chacune de la déclaration d'une installation commune (#3108).
+
+    `app/main.py` appelait `stockage().racine` nu : hors `contexte.dans(...)`, il lève
+    `HorsCopropriete` sur une installation commune, et l'application ne se chargeait
+    sur AUCUNE. Une déclaration qui ne sert pas (absente, vide, invalide) n'empêche pas
+    le démarrage : l'API répond, `/health` dit 503, et la déclaration corrigée est
+    relue sans redémarrer. 🔒 `tests/test_demarrage_commune.py`.
+    """
+    from app.installation_commune.declaration import DeclarationInvalide
+
+    try:
+        servies = contexte.coproprietes()
+    except DeclarationInvalide:
+        return
+    for copro in servies:
+        with contexte.dans(copro):
+            stockage().racine.mkdir(parents=True, exist_ok=True)
