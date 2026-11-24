@@ -49,8 +49,9 @@ sont interdits :
 - **Jamais `docker compose up|stop|down` sans liste de services** : sur le standby il
   arrêterait la réplique, sur un nœud rétrogradé il relancerait un primaire (#1997). Les
   listes : `$SERVICES_APPLICATIFS`, `$SERVICE_BASE`, `$SERVICES_DU_NOEUD`
-  (`lib-applicatifs.sh`). 🔒 `test_applicatifs_source_unique.py` (scripts **et** consignes,
-  #2706).
+  (`lib-applicatifs.sh`). 🔒 `test_applicatifs_source_unique.py` (scripts, consignes **et**
+  documents versionnés `*.md`, lus par `git ls-files` ; un démarrage complet gardé se déclare
+  dans `DOCUMENTS_SANS_LISTE`, #2706 #2939).
 - **Un nœud ne sert que sur un rôle relu à l'instant** : `servir_images` (`lib-servir.sh`,
   auto-deploy et `MaJ-Hostachy.sh`) relit `.active` avant chaque démarrage, et le failover
   isole l'ancien actif sous son verrou de déploiement, `.active` réécrit dans le même appel
@@ -89,6 +90,10 @@ Les arbitrages d'interface sont numérotés dans `.claude/skills/ux-patterns/ARB
    servir : `Icon.svelte` (SVG codé en dur) et `QRCode.svelte` (SVG produit localement par
    `qrcode-generator`, jamais interpolé). Toute nouvelle exception s'ajoute ici avec sa
    raison.
+
+   Un HTML complet montré tel qu'il partira (aperçu d'un courriel, d'une affiche) passe par un
+   `<iframe srcdoc>` au bac à sable VIDE (`sandbox=""`, aucun jeton d'ouverture), jamais par
+   `{@html}` (🔒 `npm run lint:ilots-clairs`, #2945).
 2. **Dates, montants, nombres** : jamais un format réimplémenté dans une page. `#lib/date.ts`
    (`fmtDate`, `fmtDatetime`, `fmtMonthYear`…), `#lib/utils.ts` (`fmtMontant`, `fmtOctets`,
    `fmtNombre`) ; le lieu d'un contenu est SERVI (`perimetre_libelle`), côté API `app/utils/dates_fr.py`. Un nombre ou un mois que
@@ -157,7 +162,8 @@ Chaque notion a **une** porte ; le détail, les pièges et les exceptions sont d
   existante : en créer une nouvelle.
 - **Jamais de f-string dans `op.execute()` pour une valeur** → `text(...).bindparams(...)`.
   Un identifiant s'interpole depuis une constante du fichier, dit en commentaire.
-  🔒 `test_migrations.py` ; Ruff `S608` sur `api/app/`.
+  🔒 `test_migrations.py`, qui lit les deux chaînes (`aides_migrations.CHAINES`) ; Ruff `S608`
+  sur `api/app/` et sur les deux chaînes de migrations (`api/ruff.toml`, #2948).
 - `start.sh` a `set -e` : une migration qui plante bloque le conteneur.
 - **Une migration reste compatible avec la version précédente du code** (#1757) : revenir
   en arrière n'est qu'un changement d'image, sans restaurer la base. **Ajouter, puis
@@ -183,7 +189,14 @@ porte, `deps._appareil_autorise`, qui relit à chaque requête la table des rout
 portée, `auth/jetons_appareil.PORTEES` — défaut fermé ; ouvrir une route à un appareil est une
 ligne de cette table (🔒 `test_jetons_appareil.py` balaie toutes les routes, chaque portée). La délégation n'en a pas : elle est en **lecture seule**
 (#1534) — l'aidant lit ce que lit la personne aidée, par `utils/delegations_actives`.
-🔒 `test_autorisation.py` refuse une dépendance qu'aucune route ne prend. Les
+🔒 `test_autorisation.py` refuse une dépendance qu'aucune route ne prend.
+
+Deux portes authentifient sans session : la **clé partagée** des tâches planifiées
+(`auth/cle_maintenance.exiger_cle_maintenance`) et la **signature d'une installation**
+(`registre/gardes.exiger_signature`). Une route montée sans dépendance est publique, à clé ou
+signée — chaque dispense est déclarée dans `test_autorisation.py`. Le refus « réservé au
+conseil » s'écrit `deps.exiger_moderateur(user, motif)` ; tout autre refus hors d'`auth/` se
+déclare (🔒 `test_autorisation_regles_locales.py`, #2911 #2942). Les
 **prédicats** disent sans refuser ; ils s'appellent, jamais ne se redérivent :
 
 | Prédicat | La question |
@@ -212,7 +225,9 @@ Le détail de chacune : `security-audit` §11.
 
 - JWT HS256 en cookies `httponly=True`, `secure=settings.cookie_secure`,
   `samesite="strict"` ; CORS en liste explicite, jamais `["*"]` avec `credentials=True` ;
-  limitation de débit (slowapi) sur `/auth/*`.
+  limitation de débit (slowapi) sur `/auth/*` et sur toute route qui éprouve un secret — mot
+  de passe ou clé partagée —, une constante par intention (`utils/limiter`) ; 🔒
+  `test_limites_debit_auth.py` relève ces routes par ce qu'elles appellent.
 - **Réglages** : `PUT /config` n'écrit qu'une clé déclarée dans `utils/reglages`, une clé
   n'appartient qu'à un onglet, un réglage écrivable est lu ; qui règle quoi :
   `docs/carte-reglages.md`, générée (🔒 `test_reglages_liste_blanche.py`,
@@ -222,8 +237,10 @@ Le détail de chacune : `security-audit` §11.
 - **Le compte d'une adresse** : `auth/adresse_compte` (🔒
   `test_adresse_compte_source_unique.py`, qui refuse une comparaison sur `Utilisateur.email`). **Changer d'adresse est une demande** :
   `utils/verification_adresse.demander_changement_adresse` (🔒 `test_changement_adresse.py`).
-- **Journal de sécurité** : `utils/journal_securite.journaliser_securite` pour tout geste de
-  `GESTES_SENSIBLES`, jamais un `logger` local ; **jamais de donnée personnelle dans une
+- **Journal de sécurité** : `utils/journal_securite.journaliser_securite`, jamais un `logger`
+  local ; toute fonction qui y écrit est déclarée, avec sa raison, dans `GESTES_SENSIBLES`
+  (`api/tests/aides_gestes_sensibles.py` : la table vit dans les tests), et toute entrée y
+  écrit (#2941) ; **jamais de donnée personnelle dans une
   ligne de journal** (un identifiant, jamais une adresse, un mot de passe ou un jeton) ;
   niveau `WARNING`, jamais `ERROR` (🔒 `test_journal_securite.py`).
 - **HTML d'un utilisateur côté serveur** : `utils/html_sur` (🔒 `test_html_sur.py`).
@@ -257,7 +274,8 @@ Le détail de chacune : `security-audit` §11.
 
 - La CI (`.github/workflows/ci.yml`) joue à chaque PR : pytest sur PostgreSQL, lints du
   front et du backend, Playwright (bureau et mobile, Chromium et WebKit), self-tests des
-  scripts d'infra. Les checks requis se lisent dans la protection de `main`.
+  scripts d'infra. Les checks requis se lisent dans la protection de `main`. En CI, un test
+  SAUTÉ fait échouer la suite (`scripts/ci/mesure-postgresql.sh`, `issue_sauts`, #2952).
 - **Rejouer la CI en local** : `REJEU_PROPRIETAIRE="<lot> #<ticket>" bash
   scripts/poste/rejouer-ci.sh --attendre` (sur le Mac, `--venv` et `TESTS_BASE_URL`). Le
   rejeu s'arrête à la phase rapide ; pytest et Playwright sont confiés à la CI de la PR
@@ -324,8 +342,10 @@ commit …`. Avant de réécrire un fichier partagé : `git worktree list` (`sta
   apportées. Le pré-check remplace la relecture. Aucune MEP sans avoir chargé
   `mep-precheck`.
 - **Ordre d'un lot** : rejeu → pousser la branche → PR vers `dev` → CI verte → pré-check
-  (`bash scripts/poste/precheck-mep.sh`) → MEP par `bash scripts/poste/conduire-mep.sh`
-  (fusion sur checks verts et état `CLEAN`, version du train, PR `dev → main`, fenêtre de
+  (`bash scripts/poste/precheck-mep.sh`) → MEP par `bash scripts/poste/conduire-mep.sh`, qui
+  refuse un lot dont la tête n'est pas couverte par un pré-check de moins de 2 h passé dans la
+  copie d'où l'on conduit (`lib-depot.verdict_trace_precheck`, lue aussi par le hook
+  `pre-push`, #2908) (fusion sur checks verts et état `CLEAN`, version du train, PR `dev → main`, fenêtre de
   bascule, `dev` recréée, `Déployé:` sur l'actif, `--post-mep`). Après lui, une copie restée
   sur `dev` se réaligne (`checkout -B dev origin/main`).
 - **La fusion n'est pas la MEP** : `auto-deploy.sh` tire les images de la CI puis
