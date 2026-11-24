@@ -7,8 +7,10 @@ Deux natures de service, et deux chemins pour leurs correctifs :
 - un service **tiré** (`image:` sans `build:`, aujourd'hui PostgreSQL) tourne sur
   l'image publiée elle-même.
 
-Les Dockerfile se lisent par `instructions_dockerfile` et `etape_finale` : deux
-contrôles d'images (npm retiré, paquets du système à jour) jugent l'étape finale.
+Les Dockerfile se lisent par `instructions_dockerfile`, `etapes` et `etape_finale` :
+trois contrôles d'images (npm retiré, paquets du système à jour, dépendances de
+construction élaguées) jugent l'étape finale ; `services_node` dit lesquelles
+partent d'une image Node.
 
 `services_construits` vivait dans `test_images_publiees.py` ; le contrôle de
 suivi des images (`test_images_compose_suivies.py`) en a besoin aussi, et un
@@ -83,3 +85,28 @@ def etape_finale(source: str) -> list[tuple[str, str]]:
     instructions = instructions_dockerfile(source)
     debuts = [i for i, (mot, _) in enumerate(instructions) if mot == "FROM"]
     return instructions[debuts[-1] :] if debuts else []
+
+
+def etapes(source: str) -> list[tuple[str, list[tuple[str, str]]]]:
+    """Chaque étape, dans l'ordre : (son nom `AS …`, ou son rang ; ses instructions, `FROM` compris)."""
+    resultat: list[tuple[str, list[tuple[str, str]]]] = []
+    for mot, arg in instructions_dockerfile(source):
+        if mot == "FROM":
+            nom = re.search(r"\bAS\s+(\S+)", arg, re.I)
+            resultat.append((nom.group(1) if nom else str(len(resultat)), []))
+        if resultat:
+            resultat[-1][1].append((mot, arg))
+    return resultat
+
+
+def services_node() -> dict[str, str]:
+    """Service → Dockerfile, pour chaque image construite dont l'étape finale part de node:."""
+    retenus = {}
+    for nom, (_, fichier) in services_construits().items():
+        etape = etape_finale((RACINE / fichier).read_text(encoding="utf-8"))
+        image = (
+            next((t for t in etape[0][1].split() if not t.startswith("--")), "") if etape else ""
+        )
+        if image.startswith("node:"):
+            retenus[nom] = fichier
+    return retenus
