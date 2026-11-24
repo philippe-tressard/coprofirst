@@ -80,4 +80,32 @@ const livre = controler({
 		'« Ma résidence », jamais le nom de celle-ci.',
 });
 
-process.exit(Math.max(code, livre));
+//  🔴 Le manuel servi vaut pour TOUTE installation (#2924, 23/11/2026). Il
+//  décrivait l'infrastructure de la référence — ses deux Raspberry Pi, « Les deux
+//  nœuds », un chemin du poste de l'exploitant (`C:\Backup\…`), « v2.118.1 · RPi1 »
+//  — et ses bâtiments (« Bât. 1 (D) » à « Bât. 4 (A) »). Ce qui ne vaut que pour la
+//  référence vit dans `docs/` (non servi) : `docs/redondance-rpi5.md`.
+const REFERENCE =
+	/Raspberry|\bRPi\s?\d?\b|\b[A-Z]:\\|Bât\.(?:&nbsp;|\s)*\d+(?:&nbsp;|\s)*\([A-Z]\)/;
+const manuel = controler({
+	racine: 'static',
+	extensions: ['.html'],
+	temoin: null,
+	fautes: lignesPortant(REFERENCE),
+	cas: [
+		['les deux Raspberry&nbsp;Pi sont ensemble la référence', 1],
+		['par exemple «&nbsp;v2.118.1 · RPi1&nbsp;»', 1],
+		['les copie toutes dans <code>C:\\Backup\\archives-affaires</code>', 1],
+		['«&nbsp;Bât.&nbsp;1&nbsp;(D)&nbsp;» à «&nbsp;Bât.&nbsp;4&nbsp;(A)&nbsp;»', 1],
+		['entre parenthèses, «&nbsp;Bât.&nbsp;1 (D)&nbsp;»', 1],
+		['«&nbsp;Bât.&nbsp;1 › Logement › Terrasses Balcons&nbsp;»', 0],
+		['une ligne par tâche, détaillée serveur par serveur', 0],
+	],
+	ok: "Manuel servi : rien de propre à l'infrastructure ni aux bâtiments de la référence",
+	ko: 'ligne(s) du manuel servi propres à la référence (Raspberry, RPi, C:\\, Bât. N (lettre))',
+	conseil:
+		'Le manuel est servi par chaque installation : un exemple neutre, et ce qui ne vaut ' +
+		'que pour la référence dans `docs/` (non servi), par exemple `docs/redondance-rpi5.md`.',
+});
+
+process.exit(Math.max(code, livre, manuel));
