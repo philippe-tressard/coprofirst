@@ -14,9 +14,11 @@ La refonte de #651 a fait le choix inverse : **le manuel ne cite plus ces valeur
 du tout**. Il est passé de 3 111 à environ 1 100 lignes, sur arbitrage —
 *« beaucoup trop complexe et trop long ; seule la partie Démarrer est
 suffisante »*. Le détail vit dans l'application, où il ne peut pas se périmer.
-Le manuel a regrossi depuis : il démarre en trois étapes, puis décrit chaque écran
-sous ses « En savoir plus » (#2925). Ce contrôle n'en dépend pas — il ne mesure
-pas une longueur, il refuse une valeur recopiée.
+Le manuel a regrossi depuis : il démarre en trois étapes, puis décrit chaque écran,
+le détail de ceux des résidents sous leur « En savoir plus » (#2925) ; ceux du
+conseil et de l'administration n'en ont plus (#3008), et sa longueur est plafonnée
+par `lint:manuel-volume`. Ce contrôle-ci n'en dépend pas — il ne mesure pas une
+longueur, il refuse une valeur recopiée.
 
 Les deux anciens contrôles ont donc perdu leur objet, et un contrôle dont la
 cible a disparu est **vert en ne mesurant plus rien**. Les supprimer sans rien

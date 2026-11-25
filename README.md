@@ -58,8 +58,10 @@
 
 ## Manuel utilisateur
 
-Le **manuel utilisateur** décrit chaque écran : ce qu'il contient, les gestes
-qu'il permet et qui peut le voir — [docs/manuel-utilisateur.html](docs/manuel-utilisateur.html).
+Le **manuel utilisateur** décrit chaque écran : ce qu'il contient et qui peut le
+voir, et pour ceux des résidents les gestes qu'il permet ; le détail des outils du
+conseil et de l'administration vit dans l'application —
+[docs/manuel-utilisateur.html](docs/manuel-utilisateur.html).
 L'application le sert aussi elle-même, à l'adresse `/manuel-utilisateur.html`.
 
 ## Stack technique
