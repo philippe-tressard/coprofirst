@@ -1,0 +1,16 @@
+# Les outils Python de la CI, épinglés UNE fois (#2962, 24/11/2026).
+#
+# Lus par les workflows (`pip install -r scripts/ci/outils/requirements.txt`), par
+# le rejeu du poste (`lib-ci-prevol.sh`, qui suit les `-r`) et par la session cloud
+# (`.claude/cloud/setup.sh`). Dependabot (`pip`, dossier `/scripts/ci/outils`)
+# propose leurs montées : avant, ils étaient épinglés dans des lignes de commande
+# qu'aucun proposeur ne lisait, et `pip-audit` l'était deux fois (ci.yml et la veille).
+#
+# Monter une version = un lot qui relit ce qu'elle change :
+# - ruff : son style de formatage change chaque année → `ruff format api/` dans le même lot ;
+# - pip-audit : relire le rapport de `api/scripts/check_audit_python.py` ;
+# - reuse : la CI lit `reuse lint --json`, dont le format suit la version.
+# 🔒 `api/tests/test_ci_installations_epinglees.py`.
+ruff==0.15.8
+pip-audit==2.10.1
+reuse==6.2.0

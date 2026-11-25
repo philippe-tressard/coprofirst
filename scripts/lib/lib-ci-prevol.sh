@@ -316,8 +316,8 @@ ci_prevol_cas() {
   t "venv — aucun annoncé"            "$(ci_venv_etat "" c:/python)" ""
   t "venv — celui qui répond"         "$(ci_venv_etat c:/v c:/v)" ""
   t "venv — le Python du poste répond à sa place" "$(ci_venv_etat c:/v c:/python314 | cut -c1-5)" "REFUS"
-  t "installations — les quatre formes de ci.yml" "$(printf '@@STEP\tlint\t-\tA\trun\t-\t-\t-\n@@RUN\npip install ruff==0.15.8\n@@END\n@@STEP\tlint\t-\tB\trun\t-\t-\t-\n@@RUN\npython -m pip install reuse==6.2.0\npython -m reuse lint\n@@END\n@@STEP\ttest\t-\tC\trun\tapi\t-\t-\n@@RUN\npip install -r requirements-dev.txt\n@@END\n@@STEP\tx\t-\tD\trun\t-\t-\t-\n@@RUN\n# pip install rien\necho pip install non\n@@END\n' \
-    | ci_installations_python | paste -sd'|' -)" "-	ruff==0.15.8|-	reuse==6.2.0|api	-r requirements-dev.txt"
+  t "installations — les quatre formes de ci.yml" "$(printf '@@STEP\tlint\t-\tA\trun\t-\t-\t-\n@@RUN\npip install outil==1.0\n@@END\n@@STEP\tlint\t-\tB\trun\t-\t-\t-\n@@RUN\npython -m pip install autre==2.0\npython -m autre lint\n@@END\n@@STEP\ttest\t-\tC\trun\tapi\t-\t-\n@@RUN\npip install -r requirements-dev.txt\n@@END\n@@STEP\tx\t-\tD\trun\t-\t-\t-\n@@RUN\n# pip install rien\necho pip install non\n@@END\n' \
+    | ci_installations_python | paste -sd'|' -)" "-	outil==1.0|-	autre==2.0|api	-r requirements-dev.txt"
   #  🔴 Un `wait` NU attend aussi le veilleur du verrou (#2225), qui ne finit
   #  qu'avec le rejeu : le pré-vol ne rendait plus la main (24/10/2026).
   t "aucun wait nu dans le rejeu (le veilleur ne finit qu'avec lui)" \
