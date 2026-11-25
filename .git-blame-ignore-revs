@@ -15,4 +15,10 @@
 # (`mep-precheck`, piège 4). `test_documentation.py` refuse un SHA absent de
 # l'historique.
 #
-# (aucun commit pour l'instant)
+# v3.126.3 — fins de ligne CRLF → LF de 159 fichiers (#2964), MEP dédiée.
+# ⚠️ Exception déclarée à la règle ci-dessus : ce squash porte AUSSI le garde-fou
+# du lot (`.gitattributes`, `scans_fichiers.py`, `ci.yml`, `.prettierrc`,
+# `.prettierignore`, skill `user-manual` : 6 fichiers, ~100 lignes). Leur blame
+# saute à la version d'avant ; 159 fichiers attribués à une conversion coûtaient
+# plus. Lire ces six-là par `git log -p -- <fichier>`.
+f8c76e5f3effe5b68b52738af3bc238ce81ff788
