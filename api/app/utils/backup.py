@@ -30,13 +30,9 @@ from app.utils.noeud import noeud_courant
 #  copropriété écrivait `hostachy_backup_…`, le nom de la nôtre chez elle. Il est
 #  écrit ici, et `scripts/lib/lib-export-hors-site.sh` le relit (même valeur,
 #  tenue par `test_sauvegarde_hors_site_plateforme.py`).
+#  L'ancien préfixe n'est plus LU depuis #2659 : constaté le 25/11/2026, plus aucune
+#  archive ne le portait, ni sur les deux nœuds ni dans la copie hors site.
 PREFIXE_ARCHIVE = "sauvegarde_copropriete_"
-#  L'ancien préfixe n'est plus jamais ÉCRIT, il reste LU : les archives déjà sur
-#  disque (nœuds, copie hors site) le portent jusqu'à leur rotation. Ni la rotation
-#  ni la santé ne doivent les ignorer — ni les garder à tort. À retirer quand plus
-#  aucune archive ne le porte (#2659).
-PREFIXE_HISTORIQUE = "hostachy_backup_"
-PREFIXES_LUS = (PREFIXE_ARCHIVE, PREFIXE_HISTORIQUE)
 _FORMAT_HORODATAGE = "%Y%m%d_%H%M%S"
 _SUFFIXE_ARCHIVE = ".tar.gz"
 #  🔴 Le nom ÉCRIT son fuseau (#1611). Il portait l'horloge UTC sans le dire :
@@ -88,14 +84,14 @@ def nom_archive(instant: datetime, prefixe: str = PREFIXE_ARCHIVE, qui: str = ""
 
 
 def horodatage_archive(
-    nom_fichier: str, prefixe: str | tuple[str, ...] = PREFIXES_LUS
+    nom_fichier: str, prefixe: str | tuple[str, ...] = PREFIXE_ARCHIVE
 ) -> datetime | None:
     """Date de création (UTC naïf) lue dans le nom d'une archive, ou None si illisible.
 
     Deux formats coexistent pendant la rétention (#1611) : `…_HHMMSS_paris` (heure de
     Paris, converti ici) et `…_HHMMSS` (l'ancien, déjà en UTC). Un suffixe de fuseau
     inconnu est refusé : lire autre chose en UTC serait deviner. `prefixe` : un seul,
-    ou plusieurs — par défaut ceux de la résidence, l'écrit et l'historique (#2653).
+    ou plusieurs — par défaut celui de la résidence (#2653, #2659).
     Le nom de la résidence (`<qui>_`, #2667) est facultatif : lu s'il est conforme,
     ignoré pour la date.
 
@@ -227,14 +223,16 @@ def run_backup(history_id: int | None = None):
         session.commit()
 
 
-def archives(dossier: str | os.PathLike, prefixes: tuple[str, ...] = PREFIXES_LUS) -> list[str]:
+def archives(
+    dossier: str | os.PathLike, prefixes: tuple[str, ...] = (PREFIXE_ARCHIVE,)
+) -> list[str]:
     """Les archives de `dossier` portant l'un des `prefixes`, de la plus ancienne à la
     plus récente — l'ordre que lisent la rotation et le contrôle de santé.
 
-    🔴 Triées par l'horodatage LU, jamais par le nom (#2653) : avec deux préfixes,
-    l'ordre alphabétique n'est plus l'ordre chronologique — après un retour à l'image
-    d'avant, qui réécrit l'historique, la rotation aurait effacé la plus récente et la
-    santé aurait jugé une ancienne. Un nom illisible va en FIN, comme le rangeait le
+    🔴 Triées par l'horodatage LU, jamais par le nom (#2653) : un nom avec ou sans le
+    nom de la résidence (`<qui>_`, #2667) ne se range pas dans l'ordre du temps par
+    ses lettres — la rotation aurait effacé la plus récente, et la santé aurait jugé
+    une ancienne. Un nom illisible va en FIN, comme le rangeait le
     tri alphabétique : la santé le dit non conforme (INCONNU, jamais OK) au lieu de
     juger une archive datée qui le précède.
     """

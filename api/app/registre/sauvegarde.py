@@ -16,7 +16,7 @@ n'est pas une sauvegarde.
 
 - Archives : `<BACKUP_DIR>/plateforme/plateforme_backup_<AAAAMMJJ_HHMMSS>_paris.tar.gz`,
   à part de celles de la résidence (rien ne les mêle : rotation, contrôle de
-  fraîcheur et copie hors site lisent `backup.PREFIXES_LUS` à la racine).
+  fraîcheur et copie hors site lisent `backup.PREFIXE_ARCHIVE` à la racine).
 - On en garde `BACKUP_KEEP_VERSIONS`.
 - Un échec prévient l'OPÉRATEUR (`sante_plateforme.alerter`, #1814) — jamais une
   copropriété : le registre n'est pas une donnée de la résidence (§4.11, règle 7).
