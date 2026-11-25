@@ -51,80 +51,18 @@ modèle ne déclare plus la table ou la colonne retirée.
 from __future__ import annotations
 
 import ast
-import json
 import re
 from dataclasses import dataclass
 from pathlib import Path
 
-from tests.aides_migrations import VERSIONS
-
-_RACINE = Path(__file__).resolve().parents[2]
-
-#: Les contractions annoncées : la cible (`table` ou `table.colonne`), la version
-#: du code qui a CESSÉ d'en dépendre, et pourquoi. Une entrée s'écrit au premier
-#: temps, avec la version de ce lot ; la migration qui retire vient dans un lot
-#: suivant. Une entrée reste après la migration : c'est la trace du retrait.
-CONTRACTIONS: dict[str, tuple[str, str]] = {
-    "ticket.non_relancable": (
-        "2.130.5",
-        "la relance syndic propose toute affaire suivie depuis v2.130.2 (#1796) ; "
-        "le champ quitte le modèle, la 0272 lui donne un défaut (#1797)",
-    ),
-    "ticket.non_relancable_motif": ("2.130.5", "le motif du marquage retiré (#1797)"),
-    "document.fichier_chemin": (
-        "2.142.7",
-        "le fichier se situe par sa clé depuis v2.142.3 (0283) ; le chemin absolu "
-        "n'est plus ni lu ni écrit, la 0284 lui donne un défaut (#1816)",
-    ),
-    "diagnostic_rapport.fichier_chemin": ("2.142.7", "même règle que le document (#1816)"),
-    "annonce_hall.pdf_chemin": ("2.142.7", "même règle que le document (#1816)"),
-    #  Réglages écrits ou déclarés, jamais lus (#2059) : le code cesse d'en dépendre, la 0307
-    #  donne un défaut aux colonnes NOT NULL ; le retrait vient dans une version ultérieure.
-    "config_sauvegarde.frequence": (
-        "3.11.0",
-        "la sauvegarde est quotidienne depuis la 0139, rien ne lisait la fréquence (#2059)",
-    ),
-    "config_sauvegarde.jour_semaine": ("3.11.0", "même règle que la fréquence (#2059)"),
-    "config_sauvegarde.jour_mois": ("3.11.0", "même règle que la fréquence (#2059)"),
-    "modele_email.corps_texte": (
-        "3.11.0",
-        "le texte brut d'un modèle n'a jamais servi à l'envoi (#2059)",
-    ),
-    "copropriete.assurance_compagnie": (
-        "3.11.0",
-        "la fiche lit l'assurance sur le contrat depuis #490 ; la colonne ne sert plus (#2059)",
-    ),
-    "copropriete.assurance_numero_police": ("3.11.0", "même règle (#2059)"),
-    "copropriete.assurance_echeance": ("3.11.0", "même règle (#2059)"),
-    #  Même famille, premier temps de #2182 : la 0310 donne un défaut à la colonne NOT NULL.
-    "config_sauvegarde.active": (
-        "3.13.8",
-        "la sauvegarde ne se coupe plus depuis #2060, rien ne lit ni n'écrit l'interrupteur (#2182)",
-    ),
-    #  Premier temps de la contraction de #3011 : le code ne lit et n'écrit plus que
-    #  `prix_centimes`, la 0353 vide `prix` ; le champ servi `prix` se calcule.
-    "petite_annonce.prix": (
-        "3.125.9",
-        "le prix se lit et s'écrit en centimes entiers ; la colonne en euros flottants est vide (#3011)",
-    ),
-}
-
-#: La preuve, lue SUR LA PRODUCTION, qu'un retrait ne perd rien (#2937) :
-#: `{cible: "JJ/MM/AAAA — requête jouée sur la base servie → résultat"}`. La requête
-#: se joue sur l'actif (`docker exec hostachy_postgres psql …`), donc au poste : une
-#: session cloud ne l'écrit pas. Vide tant qu'aucun retrait n'est en cours.
-PREUVES_SANS_PERTE: dict[str, str] = {
-    "petite_annonce.prix": (
-        "25/11/2026 — rpi1 (actif), v3.126.0, alembic 0353 : select count(*), count(prix), "
-        "count(prix_centimes) from petite_annonce → 4|0|1 (la 0353 a reporté chaque prix "
-        "dans prix_centimes, puis vidé prix ; 0 écart relevé avant elle)"
-    ),
-}
-
-#: La règle de la preuve naît avec #2937 : les retraits d'avant (0308, 0311) sont en
-#: production depuis v3.13 et n'ont pas à la produire après coup. Seuil fixe, jamais
-#: relevé — une migration neuve porte un numéro plus grand.
-PREUVE_EXIGEE_APRES = 346
+from tests.aides_contractions import (
+    CONTRACTIONS,
+    PREUVE_EXIGEE_APRES,
+    PREUVES_SANS_PERTE,
+    tables_et_colonnes_des_modeles,
+    version_du_lot,
+)
+from tests.aides_migrations import CHAINES
 
 #: Les gestes qui PERDENT des données, et donc exigent leur preuve.
 PERTES = frozenset({"drop_table", "drop_column"})
@@ -280,43 +218,30 @@ def _numero(chemin: Path) -> int | None:
 
 
 def migrations() -> dict[str, tuple[int, str]]:
-    """Chaque migration : son nom de fichier → (numéro, source)."""
-    trouvees = {
-        p.name: (_numero(p), p.read_text(encoding="utf-8"))
-        for p in sorted(VERSIONS.glob("*.py"))
-        if _numero(p) is not None
-    }
-    assert trouvees, "aucune migration lue : la portée est cassée"
+    """Chaque migration des DEUX chaînes : `<chaîne>/<fichier>` → (numéro, source)."""
+    trouvees = {}
+    for chaine, dossier in CHAINES.items():
+        lues = {
+            f"{chaine}/{p.name}": (_numero(p), p.read_text(encoding="utf-8"))
+            for p in sorted(dossier.glob("*.py"))
+            if _numero(p) is not None
+        }
+        assert lues, f"aucune migration lue dans la chaîne `{chaine}` : la portée est cassée"
+        trouvees |= lues
     return trouvees
 
 
 def _preuve_exigee(fichier: str) -> bool:
-    """Une migration écrite après la règle (ou un cas forgé, sans numéro)."""
-    numero = _numero(Path(fichier))
-    return numero is None or numero > PREUVE_EXIGEE_APRES
+    """Une migration écrite après la règle de SA chaîne (ou un cas forgé, sans numéro).
+
+    `fichier` : `<chaîne>/<nom>` ; un nom nu est de la chaîne d'une copropriété."""
+    chaine, _, nom = fichier.rpartition("/")
+    numero = _numero(Path(nom))
+    return numero is None or numero > PREUVE_EXIGEE_APRES[chaine or "copropriete"]
 
 
 def _version(texte: str) -> tuple[int, ...]:
     return tuple(int(x) for x in texte.split("."))
-
-
-def version_du_lot() -> str:
-    return json.loads((_RACINE / "front" / "package.json").read_text(encoding="utf-8"))["version"]
-
-
-def tables_et_colonnes_des_modeles() -> set[str]:
-    """`table` et `table.colonne` de chaque modèle SQLModel enregistré."""
-    from sqlmodel import SQLModel
-
-    #  `app.models.core` et non `app.models` : c'est lui qui charge tous les modules
-    #  de modèles, comme `alembic/env.py` (CLAUDE.md, #1157).
-    import app.models.core  # noqa: F401 — enregistre les tables
-
-    cibles: set[str] = set()
-    for nom, table in SQLModel.metadata.tables.items():
-        cibles.add(nom)
-        cibles |= {f"{nom}.{c.name}" for c in table.columns}
-    return cibles
 
 
 def ecarts(
@@ -451,8 +376,18 @@ def test_la_regle_refuse_et_admet_ce_qu_il_faut():
     #  Les retraits d'avant la règle ne la produisent pas après coup ; un neuf, si.
     assert not ecarts("0308_x.py", retrait, annonce, "2.120.0", {"facture"}, {})
     assert ecarts(
-        f"{PREUVE_EXIGEE_APRES + 1:04d}_x.py", retrait, annonce, "2.120.0", {"facture"}, {}
+        f"{PREUVE_EXIGEE_APRES['copropriete'] + 1:04d}_x.py",
+        retrait,
+        annonce,
+        "2.120.0",
+        {"facture"},
+        {},
     )
+    #  #3098 : le seuil est celui de la chaîne. Une 0007 du registre retire sans preuve :
+    #  refusée, bien que 7 < 346 ; ses migrations d'avant la règle ne la produisent pas.
+    assert ecarts("plateforme/0007_x.py", retrait, annonce, "2.120.0", {"facture"}, {})
+    assert not ecarts("plateforme/0006_x.py", retrait, annonce, "2.120.0", {"facture"}, {})
+    assert not ecarts("copropriete/0308_x.py", retrait, annonce, "2.120.0", {"facture"}, {})
     #  Un renommage ne perd rien : il n'exige pas de preuve.
     renommage = [Geste("rename_table", "avant", 4)]
     assert not ecarts("m.py", renommage, {"avant": ("2.119.0", "x")}, "2.120.0", set(), {})
@@ -475,3 +410,34 @@ def test_le_releve_des_modeles_dit_ce_que_le_code_declare():
     assert {"evenement", "utilisateur.communaute_interdit"} <= modeles
     assert "evenement.archivee" not in modeles, "retirée par la 0250 : le relevé est faux"
     assert "utilisateur.sondage_interdit" not in modeles, "renommée par la 0070"
+
+
+def test_le_controle_lit_les_deux_chaines_et_le_registre():
+    """Témoin de portée (#3098) : la chaîne `plateforme` et ses modèles sont lus."""
+    noms = set(migrations())
+    assert any(n.startswith("copropriete/") for n in noms)
+    assert "plateforme/0005_canaux_et_vagues.py" in noms
+    assert {"installation", "version_disponible"} <= tables_et_colonnes_des_modeles()
+
+
+def test_une_table_annoncee_au_dernier_train_ne_se_retire_qu_au_suivant():
+    """La version d'une annonce est la dernière posée par un train (#2631) : un retrait
+    dans le même train est refusé, dans le suivant admis — avec sa preuve."""
+    retrait = [Geste("drop_table", "canal_distribution", 3)]
+    annonce = {"canal_distribution": CONTRACTIONS["canal_distribution"]}
+    preuve = {"canal_distribution": "jj/mm/aaaa — select … → …"}
+    meme_train = CONTRACTIONS["canal_distribution"][0]
+    assert ecarts("plateforme/0007_x.py", retrait, annonce, meme_train, set(), preuve)
+    suivant = ".".join(meme_train.split(".")[:-1] + [str(int(meme_train.split(".")[-1]) + 1)])
+    assert not ecarts("plateforme/0007_x.py", retrait, annonce, suivant, set(), preuve)
+
+
+def test_une_table_annoncee_reste_lisible_dans_les_sauvegardes_d_avant():
+    """Chaque table annoncée est déclarée retirée à l'import, et réciproquement (#3098) :
+    sans quoi chaque sauvegarde d'avant son retrait serait refusée à la restauration."""
+    from app.utils.import_copropriete import TABLES_RETIREES
+
+    annoncees = {c for c in CONTRACTIONS if "." not in c}
+    assert annoncees == set(TABLES_RETIREES), (
+        f"CONTRACTIONS annonce {sorted(annoncees)}, l'import écarte {sorted(TABLES_RETIREES)}"
+    )
