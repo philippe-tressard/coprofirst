@@ -369,6 +369,7 @@ jobs:
           #  Historique COMPLET (~34 Mio) : `test_documentation` vérifie que chaque SHA
           #  de `.git-blame-ignore-revs` est dans l'historique, ce qu'un clone en
           #  profondeur 1 ne dit pas — INCONNU, au premier SHA posé (#2964, 25/11/2026).
+          #  🔒 test_ci_historique_complet.py (et `postgresql.yml`, qui joue la même suite).
           fetch-depth: 0
 
       - name: Installer Python
