@@ -1,0 +1,5 @@
+#  Fins de ligne : LF partout, déclarées ici plutôt que convertir au fil de l'eau
+#  (`standards/10` §2, #2964). `text=auto` laisse git reconnaître un binaire ; un
+#  `.gitattributes` plus proche prime — celui des conditions (`-text`) protège leurs
+#  empreintes. 🔒 étape « Aucun fichier CRLF ni mixte » de `ci.yml`.
+* text=auto eol=lf
