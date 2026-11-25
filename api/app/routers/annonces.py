@@ -3,7 +3,7 @@
 import json
 from app.utils.masquage import auteurs_masques, garder
 from app.utils import horloge
-from app.utils.prix_annonce import poser_prix, prix_centimes, prix_euros
+from app.utils.prix_annonce import poser_prix, prix_euros
 from typing import List, Optional
 
 from fastapi import APIRouter, Depends, File, HTTPException, Request, UploadFile
@@ -103,9 +103,8 @@ def _enrich(annonce: PetiteAnnonce, user: Utilisateur, session: Session) -> dict
     reponses = _reponses_for(annonce.id, session, user)
     return {
         **annonce.model_dump(),
-        #  Les deux colonnes du prix se lisent par leur règle, jamais brutes (#3011).
+        #  Le prix en euros se calcule depuis les centimes : l'app iOS 1.0 le lit (#3011).
         "prix": prix_euros(annonce),
-        "prix_centimes": prix_centimes(annonce),
         "photos": json.loads(annonce.photos_json),
         #  Le périmètre sort en LISTE de codes, jamais en JSON brut : c'est ce que
         #  `PerimetrePicker` et `perimetreLabel` lisent côté front. Le `or` couvre les
@@ -155,7 +154,7 @@ def _enrich(annonce: PetiteAnnonce, user: Utilisateur, session: Session) -> dict
 def est_gratuite(annonce: PetiteAnnonce) -> bool:
     """Un DON sans prix se lit « Gratuit » — un prix posé, même sur un don, se lit
     tel quel (la règle de la carte, servie depuis #2506)."""
-    return prix_centimes(annonce) is None and annonce.type_annonce == TypeAnnonce.don
+    return annonce.prix_centimes is None and annonce.type_annonce == TypeAnnonce.don
 
 
 class AnnonceRead(AvecPerimetreLibelle):
@@ -338,7 +337,7 @@ def update_annonce(
             maj[axe] = json.dumps(maj[axe], ensure_ascii=False) if maj[axe] else None
     #  ⚠️ `perimetre_cible` vidé retombe donc sur `None`, que `_enrich` relit
     #  comme `["résidence"]` : le défaut du champ, et non une annonce sans lieu.
-    #  Le prix s'écrit dans ses deux colonnes, euros et centimes (#3011).
+    #  Le prix saisi en euros s'écrit en centimes (#3011).
     if "prix" in maj:
         poser_prix(annonce, maj.pop("prix"))
     for field, value in maj.items():
