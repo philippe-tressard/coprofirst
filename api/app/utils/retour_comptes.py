@@ -46,6 +46,7 @@ from app.models.telemetrie import DerniereVisite, TelemetryEvent
 from app.utils import horloge
 from app.utils.comptes import valide_le
 from app.utils.noms import nom_affiche
+from app.utils.pourcentages import part_en_pourcent
 from app.utils.roles_libelles import libelle_statut
 
 #: Les seuils de dormance, en jours, du plus court au plus long.
@@ -157,7 +158,7 @@ def _arrivants(session: Session, mesures: list[Utilisateur], maintenant: datetim
         "revenus": revenus,
         "jamais_revenus": jamais,
         "en_attente": attente,
-        "taux": round(100 * revenus / connus) if connus else None,
+        "taux": part_en_pourcent(revenus, connus, vide=None),
     }
 
 

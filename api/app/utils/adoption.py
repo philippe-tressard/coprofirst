@@ -40,6 +40,7 @@ from sqlmodel import Session, select
 from app.models.copropriete import Batiment
 from app.models.core import PresenceMensuelle, TelemetryEvent, Utilisateur
 from app.utils.batiments import libelle_batiment_ou
+from app.utils.pourcentages import part_en_pourcent
 from app.utils.roles_libelles import libelle_role, libelle_statut
 
 
@@ -65,7 +66,7 @@ def _ligne(libelle: str, comptes: list[Utilisateur], actifs: set[int]) -> dict:
         "libelle": libelle,
         "actifs": venus,
         "comptes": len(comptes),
-        "taux": round(100 * venus / len(comptes)) if comptes else None,
+        "taux": part_en_pourcent(venus, len(comptes), vide=None),
     }
 
 
