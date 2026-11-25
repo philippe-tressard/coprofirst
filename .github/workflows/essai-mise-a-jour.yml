@@ -23,6 +23,12 @@ on:
         description: "Version à installer (X.Y.Z, sans « v »)"
         required: true
         type: string
+      mode:
+        description: "propre (une copropriété) ou commune (deux, #3007 — <de> 3.123.1 ou plus)"
+        required: false
+        type: choice
+        options: [propre, commune]
+        default: propre
 
 concurrency:
   group: essai-mise-a-jour
@@ -38,7 +44,7 @@ permissions:
 
 jobs:
   essai:
-    name: ${{ inputs.de }} → ${{ inputs.vers }}
+    name: ${{ inputs.de }} → ${{ inputs.vers }} (${{ inputs.mode || 'propre' }})
     runs-on: ubuntu-24.04
     timeout-minutes: 30
     steps:
@@ -54,6 +60,7 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           DE: ${{ inputs.de }}
           VERS: ${{ inputs.vers }}
+          MODE: ${{ inputs.mode || 'propre' }}
         run: |
           case "$DE$VERS" in *[!0-9.]*) echo "::error::versions attendues en X.Y.Z"; exit 1 ;; esac
-          bash scripts/ci/essai-mise-a-jour.sh "$DE" "$VERS"
+          bash scripts/ci/essai-mise-a-jour.sh "$DE" "$VERS" "$MODE"
