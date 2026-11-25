@@ -36,6 +36,7 @@ from app.utils.canaux_audience import (
     rang_appareil,
     rang_canal,
 )
+from app.utils.pourcentages import part_en_pourcent
 
 #: (canal, appareil) — l'appareil `None` quand il n'est pas précisé (#2774).
 Acces = tuple[str, Optional[str]]
@@ -160,10 +161,6 @@ def visiteurs_par_canal(session: Session, conditions: list) -> dict[str, int]:
     )
 
 
-def _pourcent(part: int, total: int) -> int:
-    return round(100 * part / total) if total else 0
-
-
 def servir(
     par_page: ParPage, top_pages: list[dict], visiteurs: Optional[dict[str, int]]
 ) -> list[dict]:
@@ -194,7 +191,7 @@ def servir(
             "canal": canal,
             "libelle": libelle_canal(canal),
             "vues": totaux[canal],
-            "part": _pourcent(totaux[canal], ensemble),
+            "part": part_en_pourcent(totaux[canal], ensemble),
             "visiteurs": None if visiteurs is None else visiteurs.get(canal, 0),
             "appareils": _appareils(canal, par_appareil[canal], totaux[canal]),
         }
@@ -210,7 +207,7 @@ def _appareils(canal: str, vues: dict[Optional[str], int], total: int) -> list[d
             "appareil": appareil or APPAREIL_NON_PRECISE,
             "libelle": libelle_appareil(appareil),
             "vues": vues[appareil],
-            "part": _pourcent(vues[appareil], total),
+            "part": part_en_pourcent(vues[appareil], total),
         }
         for appareil in sorted(vues, key=lambda a: rang_appareil(canal, a))
         if vues[appareil]

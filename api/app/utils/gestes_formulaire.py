@@ -43,6 +43,7 @@ from sqlmodel import Session, select
 
 from app.models.telemetrie import GesteFormulaire
 from app.utils import horloge
+from app.utils.pourcentages import part_en_pourcent
 
 #: Les deux actions d'un geste — celles que `TelemetryEvent.action` prévoyait
 #: (« view | click | submit ») sans qu'aucun écran les envoie. ⚠️ Tenues à la
@@ -99,7 +100,7 @@ def synthese_gestes(session: Session, depuis: date) -> list[dict]:
             "geste": geste,
             "ouvertures": ouvertures,
             "envois": envois,
-            "taux": round(100 * envois / ouvertures) if ouvertures else None,
+            "taux": part_en_pourcent(envois, ouvertures, vide=None),
         }
         for geste, ouvertures, envois in lignes
     ]
