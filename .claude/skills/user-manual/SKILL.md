@@ -44,12 +44,9 @@ cp docs/manuel-utilisateur.html front/static/manuel-utilisateur.html
 `docs/` est la source, `front/static/` la copie servie, à l'octet près
 (`test_documentation.py` échoue si elles diffèrent).
 
-⚠️ **Ne jamais éditer le manuel avec `sed -i`** : il est versionné en **CRLF**, et
-`sed` le réécrit en LF — le diff passe de quelques lignes à plusieurs milliers, et
-la relecture devient impossible (vécu le 27/09/2026 en éprouvant un contrôle :
-3 432 lignes). Éditer avec l'outil d'édition, ou en Python en lecture et écriture
-binaires ; pour éprouver un contrôle, muter une copie. Vérifier après coup :
-`git diff --stat`.
+Le manuel est en LF, comme tout le dépôt depuis #2964 (il était en CRLF, et un
+`sed -i` le convertissait : 3 432 lignes de diff le 27/09/2026). Pour éprouver un
+contrôle, muter une copie. Vérifier après coup : `git diff --stat`.
 
 ## Un nom par objet — celui de l'écran
 
