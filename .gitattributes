@@ -3,3 +3,10 @@
 #  `.gitattributes` plus proche prime — celui des conditions (`-text`) protège leurs
 #  empreintes. 🔒 étape « Aucun fichier CRLF ni mixte » de `ci.yml`.
 * text=auto eol=lf
+
+#  Fichiers d'un poste Windows (`cmd.exe`, PowerShell) : jamais convertis, leurs octets
+#  restent ceux qui ont été écrits — un `cmd.exe` lit mal un saut de ligne qu'on lui change.
+*.bat -text
+*.cmd -text
+*.ps1 -text
+*.psm1 -text
