@@ -152,8 +152,11 @@ ENV_VERSION=$(sed -n 's/^COPROFIRST_VERSION=//p' .env | tail -1)
 #  Sur une installation commune, le site d'une copropriété (`/etc/hosts` du runner).
 SITE=http://localhost; [ "$MODE" = propre ] || SITE="http://$HOTE_A"
 SERVIE=$(node "$RACINE/front/scripts/check-version-servie.mjs" --site "$SITE" 2>/dev/null | tail -1 || true)
-VOLUMES=$(ls "$SAUV"/coprofirst_*_vers_"$VERS"_*.tar.gz 2>/dev/null | grep -v -- '-base\.tar\.gz$' | grep . >/dev/null && echo oui || echo non)
-BASE=$(ls "$SAUV"/*-base.tar.gz >/dev/null 2>&1 && echo oui || echo non)
+VOLUMES=$(ls "$SAUV"/coprofirst_*_vers_"$VERS"_*.tar.gz 2>/dev/null | grep -vE -- "$EXPORT_DE_BASE" | grep . >/dev/null && echo oui || echo non)
+#  Une base par copropriété : une sur une installation propre, A et B sur une commune.
+NB_BASES=1; [ "$MODE" = propre ] || NB_BASES=$BASES_ESSAI_COMMUNE
+# shellcheck disable=SC2046 # un nom par fichier : ils ne portent ni espace ni joker
+BASE=$([ "$(compter_exports_base $(ls "$SAUV" 2>/dev/null))" = "$NB_BASES" ] && echo oui || echo non)
 TEMOIN=$(se_connecte)
 ls -la "$SAUV"
 VERDICT=$(verdict_essai "$REUSSIE" "$ENV_VERSION" "$SERVIE" "$VERS" "$VOLUMES" "$BASE" "$TEMOIN")

@@ -155,6 +155,17 @@ constater_commune() {
     verdict_commune "$caddy" "$front" "$code_a" "$contenu" "$code_b" "$front_a" "$front_b"
 }
 
+# ── Les exports de base d'une sauvegarde avant mise à jour ────────────────────
+#  Un export par base (`mise-a-jour.sh`, `export_de`) : `<archive>-base.tar.gz` sur
+#  une installation propre ; sur une commune, `<archive>-base-<identifiant>.tar.gz`
+#  par copropriété. L'essai ne cherchait que le premier : sur une commune, la
+#  sauvegarde complète était lue « pas d'export » (run 45561020043, 25/11/2026).
+EXPORT_DE_BASE='-base(-[a-z0-9-]+)?\.tar\.gz$'
+#  A et B : une base chacune.
+BASES_ESSAI_COMMUNE=2
+#  $@ noms de fichiers → le nombre d'exports de base parmi eux.
+compter_exports_base() { printf '%s\n' "$@" | grep -cE -- "$EXPORT_DE_BASE" || true; }
+
 # ── Autotest : en DERNIER, une fois toutes les fonctions définies ─────────────
 if [ "${BASH_SOURCE[0]}" = "$0" ] && [ "${1:-}" = "--selftest" ]; then
     st=0
@@ -175,10 +186,17 @@ if [ "${BASH_SOURCE[0]}" = "$0" ] && [ "${1:-}" = "--selftest" ]; then
     j "l'essai seul échoue"       "ECHEC:pas d'export"                      "ECHEC:pas d'export" OK
     j "la commune seule échoue"   "ECHEC:installation commune : front B"    OK          "ECHEC:front B"
     j "les deux échouent"         "ECHEC:x;installation commune : y"        "ECHEC:x"   "ECHEC:y"
+    e() { local r; r=$(compter_exports_base "${@:3}")
+          [ "$r" = "$2" ] && echo "PASS  $1 → $r" || { echo "FAIL  $1  attendu=$2 obtenu=$r"; st=1; }; }
+    v=coprofirst_3.125.7_vers_3.125.8_20261125_063110
+    e "installation propre"               1  "$v.tar.gz" "$v-base.tar.gz"
+    e "commune : une par copropriété"     2  "$v.tar.gz" "$v-base-essai-a.tar.gz" "$v-base-essai-b.tar.gz"
+    e "l'archive des volumes seule"       0  "$v.tar.gz"
+    e "un nom qui finit en -base ailleurs" 0 "$v-base.tar.gz.part" "notes-base.txt"
     h=$(hote_de "http://75011-essai-a.localhost/")
     [ "$h" = 75011-essai-a.localhost ] && echo "PASS  hôte d'une adresse → $h" || { echo "FAIL  hôte d'une adresse : $h"; st=1; }
     #  Le module entier s'est chargé : chaque fonction dont l'essai a besoin existe.
-    for f in verdict_commune joindre_verdicts hote_de code_sous installer_commune constater_commune; do
+    for f in verdict_commune joindre_verdicts compter_exports_base hote_de code_sous installer_commune constater_commune; do
         [ "$(type -t "$f")" = function ] && echo "PASS  $f définie" || { echo "FAIL  $f absente après chargement"; st=1; }
     done
     [ "$st" -eq 0 ] && echo "lib-essai-commune : tous les cas passent."
