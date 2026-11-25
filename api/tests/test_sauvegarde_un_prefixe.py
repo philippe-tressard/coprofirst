@@ -21,6 +21,10 @@ import pytest
 from app.config import get_settings
 from app.utils import backup, health_monitor, horloge
 from app.utils.backup import PREFIXE_ARCHIVE, archives, horodatage_archive, nom_archive
+from tests.aides_horloge import il_y_a_jours
+
+#: Une ancienneté se pose en jours civils (`il_y_a_jours`) : rejouée à l'heure hostile.
+pytestmark = pytest.mark.usefixtures("heure_hostile")
 
 RACINE = Path(__file__).resolve().parents[2]
 LIB = RACINE / "scripts" / "lib" / "lib-export-hors-site.sh"
@@ -74,7 +78,7 @@ def test_le_module_ne_porte_plus_l_ancien_prefixe():
 
 def test_la_liste_ignore_l_ancien_prefixe(dossier):
     neuve = nom_archive(horloge.maintenant())
-    poser(dossier, ancien(horloge.maintenant() - timedelta(days=1)), neuve)
+    poser(dossier, ancien(il_y_a_jours(1)), neuve)
     assert [os.path.basename(c) for c in archives(dossier)] == [neuve]
 
 
