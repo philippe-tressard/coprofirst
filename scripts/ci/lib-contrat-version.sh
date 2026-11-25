@@ -8,9 +8,10 @@
 #    · openapi.json       — le schéma de l'API, exporté DE L'IMAGE PUBLIÉE de la
 #                           version, sans réseau (`docker run --network none`) :
 #                           c'est le contrat de ce qui est servi ;
-#    · pages.ts           — les onglets du site, encore joint ; l'iOS ne le lit plus
-#                           (il lit la table `pages` de tables-clients.json), l'Android
-#                           ne le lit pas ; son retrait de la release : #2686 ;
+#    · pages.ts ne part PLUS (25/11/2026, #2686) : l'iOS le refuse comme source
+#                           (`INTERDITS` de son `scripts/generer.py`) et lit la table
+#                           `pages` de tables-clients.json ; l'Android ne recopie que
+#                           ses `PIECES` (`scripts/importer-contrat.sh`) ;
 #    · socle.css et palette-sombre.css ne partent PLUS (17/11/2026, #2686) : leurs
 #                           jetons sont publiés par tables-clients.json (`jetonsCharte`,
 #                           `jetonsCharteSombre`, `palettesResolues`), et ni l'iOS (main
@@ -33,10 +34,6 @@
 # =============================================================================
 
 # ── Ce que la release emporte, en plus du schéma ──────────────────────────────
-FICHIERS_CONTRAT=(
-    front/src/lib/pages.ts
-)
-
 #: Joints DÈS qu'ils existent au commit : un commit d'avant leur naissance
 #: (rattrapage d'une version) n'en a pas. `npm run lint:tables-clients` exige,
 #: lui, que la référence existe et soit à jour à chaque PR.
@@ -70,19 +67,18 @@ preparer_contrat() {
         echo "Contrat d'API : aucun avant #2456 à ce commit — rien à joindre."
         return 0
     fi
-    for f in "${FICHIERS_CONTRAT[@]}"; do
-        git show "$commit:$f" > "$sortie/$(basename "$f")" \
-            || { echo "::error::$f absent de $commit" >&2; return 1; }
-    done
+    local joints=0
     for f in "${FICHIERS_CONTRAT_DEPUIS[@]}"; do
         git cat-file -e "$commit:$f" 2>/dev/null || continue
         git show "$commit:$f" > "$sortie/$(basename "$f")" || return 1
+        joints=$((joints + 1))
     done
     #  L'exportateur DU COMMIT, pas celui du dépôt courant (rattrapage d'une version).
     #  `mktemp -d` naît en 0700 au compte du runner : l'image, qui lit sous `app`,
     #  ne le traverserait pas (#2489, release de v3.58.0 non publiée).
     outils=$(mktemp -d) && chmod 0755 "$outils"
-    git show "$commit:scripts/ci/exporter_openapi.py" > "$outils/exporter_openapi.py" || return 1
+    git show "$commit:scripts/ci/exporter_openapi.py" > "$outils/exporter_openapi.py" \
+        || { echo "::error::scripts/ci/exporter_openapi.py absent de $commit" >&2; return 1; }
     chmod 0644 "$outils/exporter_openapi.py"
     schema=$(mktemp -d) && chmod 0777 "$schema"   # l'image écrit sous `app`
     exporter_dans_image "$image" "$outils" "$schema" \
@@ -95,7 +91,7 @@ preparer_contrat() {
         return 1
     fi
     cp "$schema/openapi.json" "$sortie/openapi.json"
-    echo "Contrat d'API $attendu : openapi.json et ${#FICHIERS_CONTRAT[@]} fichiers joints."
+    echo "Contrat d'API $attendu : openapi.json et $joints fichiers joints."
 }
 
 if [ "${BASH_SOURCE[0]}" = "$0" ] && [ "${1:-}" = "--selftest" ]; then
@@ -106,7 +102,6 @@ if [ "${BASH_SOURCE[0]}" = "$0" ] && [ "${1:-}" = "--selftest" ]; then
         cd "$DEPOT" && git init -q && git config user.name t && git config user.email t@example.org
         git commit -q --allow-empty -m avant
         mkdir -p front/src/lib front/src/styles api/app/contrat scripts/ci
-        for f in "${FICHIERS_CONTRAT[@]}"; do echo "// $f" > "$f"; done
         echo '{"version": "1.2.0"}' > "$REFERENCE_CONTRAT"
         echo 'exportateur' > scripts/ci/exporter_openapi.py
         git add -A && git commit -q -m contrat
@@ -115,7 +110,7 @@ if [ "${BASH_SOURCE[0]}" = "$0" ] && [ "${1:-}" = "--selftest" ]; then
         mkdir -p LICENSES && echo '{}' > front/src/lib/icones-svg.json && echo 'version = 1' > REUSE.toml
         for l in ISC MIT CC0-1.0; do echo "$l" > "LICENSES/$l.txt"; done
         git add -A && git commit -q -m tables
-        git rm -q front/src/lib/pages.ts && git commit -q -m incomplet
+        git rm -q scripts/ci/exporter_openapi.py && git commit -q -m incomplet
     )
     commit() { (cd "$DEPOT" && git rev-parse "HEAD~$1"); }
     #  L'image simulée : elle écrit le schéma qu'on lui demande d'écrire.
@@ -129,9 +124,9 @@ if [ "${BASH_SOURCE[0]}" = "$0" ] && [ "${1:-}" = "--selftest" ]; then
         rm -rf "$s"
     }
     echo "== self-test : le contrat d'API joint à une version =="
-    essai "contrat complet : neuf fichiers"                   ok    "$(commit 1)"
-    essai "d'avant les tables et constantes : deux fichiers"  ok    "$(commit 2)"
-    essai "un fichier manque au commit : refusé"              refus "$(commit 0)"
+    essai "contrat complet : huit fichiers"                  ok    "$(commit 1)"
+    essai "d'avant les tables et constantes : le schéma seul" ok    "$(commit 2)"
+    essai "l'exportateur manque au commit : refusé"         refus "$(commit 0)"
     essai "commit d'avant le contrat : rien à joindre"        ok    "$(commit 3)"
     SCHEMA_SIMULE='{"info": {"version": "1.1.0"}, "servers": [{"url": "/api"}], "paths": {"/x": {}}}'
     essai "schéma d'une autre version que la référence : refusé" refus "$(commit 1)"
@@ -151,8 +146,9 @@ if [ "${BASH_SOURCE[0]}" = "$0" ] && [ "${1:-}" = "--selftest" ]; then
     s=$(mktemp -d); exporter_dans_image() { echo "$SCHEMA_SIMULE" > "$3/openapi.json"; }
     SCHEMA_SIMULE='{"info": {"version": "1.2.0"}, "servers": [{"url": "/api"}], "paths": {"/x": {}}}'
     (cd "$DEPOT" && preparer_contrat "$(commit 1)" image "$s") >/dev/null
-    #  #2686 : les feuilles brutes de la charte ne partent plus (tables-clients.json les publie).
-    if [ "$(cd "$s" && ls | LC_ALL=C sort | tr '\n' ' ')" = "CC0-1.0.txt ISC.txt MIT.txt REUSE.toml constantes-clients.json icones-svg.json openapi.json pages.ts tables-clients.json " ]; then
+    #  #2686 : ni les feuilles brutes de la charte ni pages.ts ne partent (tables-clients.json
+    #  les publie) — un retour de l'un d'eux dans la liste fait échouer cette ligne.
+    if [ "$(cd "$s" && ls | LC_ALL=C sort | tr '\n' ' ')" = "CC0-1.0.txt ISC.txt MIT.txt REUSE.toml constantes-clients.json icones-svg.json openapi.json tables-clients.json " ]; then
         echo "PASS  les noms joints : $(cd "$s" && ls | tr '\n' ' ')"
     else echo "FAIL  noms joints : $(ls "$s")"; fail=1; fi
     rm -rf "$DEPOT" "$s"
