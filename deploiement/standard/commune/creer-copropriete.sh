@@ -103,7 +103,8 @@ DECISION=$(decider_nouvelle "$ROLE" "$BASE" "$(dans_env "$VAR_BASE")" "$(dans_en
 
 # ── 3–4. La base, le rôle, les secrets ────────────────────────────────────────
 MDP=$(openssl rand -hex 32); SECRET=$(openssl rand -hex 32)
-RAISON=$(base_creer psql_installation "$ROLE" "$BASE" "$MDP" non non) \
+RAISON=$(base_creer psql_installation "$ROLE" "$BASE" "$MDP" non non \
+          && base_autoriser_differer psql_installation "$ROLE") \
     || { journal "✗ PostgreSQL : $RAISON — .env et déclaration inchangés."; exit 1; }
 journal "Rôle et base $BASE créés, fermés aux autres rôles."
 umask 077

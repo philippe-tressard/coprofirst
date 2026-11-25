@@ -52,3 +52,20 @@ base_creer() {
     fi
     return 0
 }
+
+# ── Le droit de différer les clés pendant un import (#3113) ───────────────────
+#  Réimporter une archive dont les tables se citent en cycle — la vérification de
+#  chaque sauvegarde — suspend les clés le temps de la transaction
+#  (`api/app/dialecte.differer_cles_etrangeres`) : PostgreSQL le réserve au
+#  superutilisateur, ou au rôle qui a reçu CE droit (PostgreSQL ≥ 15). Sans lui, la
+#  copropriété n'a aucune sauvegarde valide, et sa mise à jour ne passe jamais.
+#  Ce que le droit permet : suspendre les déclencheurs de SES sessions, donc dans sa
+#  seule base. Idempotent. Le registre ne le reçoit pas : ses tables n'ont pas de
+#  cycle (`registre/sauvegarde.CLES_DIFFEREES`).
+#  $1 commande psql · $2 rôle (validé par l'appelant, [a-z0-9_]) → 0, ou 1 avec la raison.
+#  🔒 api/tests/test_droit_differer_cles.py l'exécute sous un vrai rôle.
+base_autoriser_differer() {
+    local psql="$1" util="$2"
+    "$psql" -c "GRANT SET ON PARAMETER session_replication_role TO $util;" >/dev/null \
+        || { echo "droit de différer les clés non accordé"; return 1; }
+}
