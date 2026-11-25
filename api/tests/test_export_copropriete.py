@@ -12,9 +12,7 @@ Ce que ces tests tiennent :
 
 from __future__ import annotations
 
-import io
 import json
-import tarfile
 from datetime import datetime
 
 import pytest
@@ -24,7 +22,12 @@ from app.models.core import ConfigSite, FaqItem, RoleUtilisateur, Utilisateur
 from app.utils import export_copropriete as ex
 from app.utils import import_copropriete as im
 from tests.aides_base import adresse_de_test, moteur_de_test
-from tests.aides_export import base_peuplee, copropriete_et_batiment
+from tests.aides_export import (
+    alterer_archive,
+    archive_d_une_autre_version,
+    base_peuplee,
+    copropriete_et_batiment,
+)
 
 
 def test_l_aller_retour_rend_le_meme_contenu(tmp_path):
@@ -52,23 +55,14 @@ def test_l_aller_retour_rend_le_meme_contenu(tmp_path):
         assert ex.empreinte_table(par_nom[nom], relu[nom]) == attendu["empreinte"], nom
 
 
-def _alterer(archive, sortie, table, remplacer):
-    with tarfile.open(archive, "r:gz") as a, tarfile.open(sortie, "w:gz") as b:
-        for membre in a.getmembers():
-            donnees = a.extractfile(membre).read()
-            if membre.name == f"tables/{table}.jsonl":
-                donnees = remplacer(donnees)
-            info = tarfile.TarInfo(membre.name)
-            info.size = len(donnees)
-            b.addfile(info, io.BytesIO(donnees))
-
-
 def test_une_archive_alteree_est_refusee_et_la_cible_reste_vide(tmp_path):
     source = base_peuplee()
     archive = tmp_path / "export.tar.gz"
     ex.exporter(source, archive)
     alteree = tmp_path / "alteree.tar.gz"
-    _alterer(archive, alteree, "faq_item", lambda d: d.replace("sous-sol".encode(), b"grenier"))
+    alterer_archive(
+        archive, alteree, "faq_item", lambda d: d.replace("sous-sol".encode(), b"grenier")
+    )
 
     cible = moteur_de_test()
     with pytest.raises(im.ImportRefuse, match="faq_item"):
@@ -82,7 +76,7 @@ def test_une_ligne_perdue_est_refusee(tmp_path):
     archive = tmp_path / "export.tar.gz"
     ex.exporter(source, archive)
     amputee = tmp_path / "amputee.tar.gz"
-    _alterer(archive, amputee, "config_site", lambda d: d.split(b"\n", 1)[1])
+    alterer_archive(archive, amputee, "config_site", lambda d: d.split(b"\n", 1)[1])
     with pytest.raises(im.ImportRefuse, match="config_site : 1 ligne"):
         im.importer(amputee, moteur_de_test())
 
@@ -249,7 +243,9 @@ def test_l_import_en_ligne_de_commande_verifie_et_le_dit(tmp_path):
         assert r.returncode == 0, r.stderr[-500:]
         assert "Importé et vérifié" in r.stdout
         alteree = tmp_path / "alteree.tar.gz"
-        _alterer(archive, alteree, "faq_item", lambda d: d.replace("sous-sol".encode(), b"grenier"))
+        alterer_archive(
+            archive, alteree, "faq_item", lambda d: d.replace("sous-sol".encode(), b"grenier")
+        )
         r = _ligne_de_commande("importer", str(alteree), autre)
         assert r.returncode != 0 and "IMPORT REFUSÉ" in r.stderr
     finally:
@@ -265,7 +261,9 @@ def test_verifier_une_archive_en_ligne_de_commande(tmp_path):
     assert r.returncode == 0, r.stderr[-500:]
     assert "Archive vérifiée" in r.stdout
     alteree = tmp_path / "alteree.tar.gz"
-    _alterer(archive, alteree, "faq_item", lambda d: d.replace("sous-sol".encode(), b"grenier"))
+    alterer_archive(
+        archive, alteree, "faq_item", lambda d: d.replace("sous-sol".encode(), b"grenier")
+    )
     r = _ligne_de_commande("verifier", str(alteree))
     assert r.returncode != 0 and "ARCHIVE REFUSÉE" in r.stderr
     assert sorted(p.name for p in tmp_path.iterdir()) == ["alteree.tar.gz", "e.tar.gz"], (
@@ -338,31 +336,14 @@ def test_un_separateur_unicode_dans_un_texte_ne_coupe_pas_la_ligne(tmp_path):
 #  ces tests la fabriquent ainsi, manifeste recalculé.
 
 
-def _autre_version(archive, sortie, table, transformer):
-    """Réécrit `tables/<table>.jsonl` par `transformer(ligne)`, et son manifeste avec."""
-    with tarfile.open(archive, "r:gz") as a:
-        membres = {m.name: a.extractfile(m).read() for m in a.getmembers()}
-    lignes = [transformer(li) for li in im.lignes_jsonl(membres[f"tables/{table}.jsonl"])]
-    membres[f"tables/{table}.jsonl"] = "".join(
-        json.dumps(li, ensure_ascii=False, separators=(",", ":")) + "\n" for li in lignes
-    ).encode()
-    manifeste = json.loads(membres["manifeste.json"])
-    par_nom = {t.name: t for t in ex.tables()}
-    manifeste["tables"][table]["empreinte"] = ex.empreinte_table(par_nom[table], lignes)
-    membres["manifeste.json"] = json.dumps(manifeste, ensure_ascii=False).encode()
-    with tarfile.open(sortie, "w:gz") as b:
-        for nom, donnees in membres.items():
-            info = tarfile.TarInfo(nom)
-            info.size = len(donnees)
-            b.addfile(info, io.BytesIO(donnees))
-
-
 def test_une_colonne_retiree_du_modele_est_ecartee_et_nommee(tmp_path):
     source = base_peuplee()
     archive = tmp_path / "export.tar.gz"
     ex.exporter(source, archive)
     ancienne = tmp_path / "ancienne.tar.gz"
-    _autre_version(archive, ancienne, "faq_item", lambda li: {**li, "retiree_depuis": "x"})
+    archive_d_une_autre_version(
+        archive, ancienne, "faq_item", lambda li: {**li, "retiree_depuis": "x"}
+    )
 
     cible = moteur_de_test(cles_etrangeres=True)
     bilan = im.importer(ancienne, cible)
@@ -377,7 +358,7 @@ def test_une_colonne_absente_de_l_archive_recoit_son_defaut(tmp_path):
     archive = tmp_path / "export.tar.gz"
     ex.exporter(source, archive)
     ancienne = tmp_path / "ancienne.tar.gz"
-    _autre_version(
+    archive_d_une_autre_version(
         archive, ancienne, "faq_item", lambda li: {k: v for k, v in li.items() if k != "ordre"}
     )
 
@@ -395,6 +376,6 @@ def test_une_archive_alteree_reste_refusee_avant_toute_ecriture(tmp_path):
     archive = tmp_path / "export.tar.gz"
     ex.exporter(source, archive)
     alteree = tmp_path / "alteree.tar.gz"
-    _alterer(archive, alteree, "faq_item", lambda d: d.replace(b'"ordre":0', b'"ordre":7'))
+    alterer_archive(archive, alteree, "faq_item", lambda d: d.replace(b'"ordre":0', b'"ordre":7'))
     with pytest.raises(im.ImportRefuse, match="faq_item : contenu différent du manifeste"):
         im.importer(alteree, moteur_de_test())

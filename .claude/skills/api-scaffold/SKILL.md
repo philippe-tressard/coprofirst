@@ -179,7 +179,7 @@ ici. Ce qui n'est écrit que là :
   `docker exec hostachy_postgres psql -U coprofirst -d coprofirst -Atc "select
   count(*) from <table> where <colonne> is not null"`, ou la comparaison avec la
   colonne qui la reprend —, puis écrire date, requête et résultat dans
-  `PREUVES_SANS_PERTE` (`test_migrations_compatibles.py`), qui refuse le retrait sans
+  `PREUVES_SANS_PERTE` (`tests/aides_contractions.py`) — `test_migrations_compatibles.py` refuse le retrait sans
   elle. Une session sans SSH (cloud) donne la requête dans sa PR et ne fusionne pas.
 - Corriger un texte **livré** en base (FAQ, modèle d'e-mail) : `utils/textes_livres.remplacer_si_intact` — il ne touche que les lignes intactes. Recopié quinze fois avant le 24/09/2026 ; `test_textes_livres.py` refuse la seizième copie.
 

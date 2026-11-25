@@ -95,26 +95,6 @@ class VersionDisponible(TablePlateforme, table=True):
     lue_le: NaiveDatetime = Field(default_factory=horloge.maintenant)
 
 
-class CanalDistribution(TablePlateforme, table=True):
-    """Un CANAL-BRANCHE (`replica`, `special-<nom>`) — PLUS LU depuis #2210.
-
-    Une installation suit désormais Urgence ou une version choisie (`registre/canaux`).
-    La table reste le temps qu'une image précédente puisse la lire (migrations
-    compatibles sur une version) ; elle se retire dans un second temps.
-    """
-
-    __tablename__ = "canal_distribution"
-
-    id: Optional[int] = Field(default=None, primary_key=True)
-    nom: str = Field(unique=True, max_length=60)
-    version: Optional[str] = Field(default=None, max_length=40)
-    #: ce que reçoit une vague dont le tour n'est pas venu
-    version_precedente: Optional[str] = Field(default=None, max_length=40)
-    #: quand `version` a changé — l'instant d'où se comptent les vagues
-    avance_le: Optional[NaiveDatetime] = None
-    cree_le: NaiveDatetime = Field(default_factory=horloge.maintenant)
-
-
 class ContactInstallation(TablePlateforme, table=True):
     """L'administrateur d'une installation — données PERSONNELLES (contrat, `personnel=True`)."""
 

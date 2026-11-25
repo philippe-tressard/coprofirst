@@ -36,6 +36,16 @@ from app.utils.export_copropriete import (
 # ── L'import, vérifié ─────────────────────────────────────────────────────────
 
 
+#: Les tables RETIRÉES d'un modèle, que des sauvegardes d'avant portent encore :
+#: écartées et nommées au bilan, jamais une erreur — comme une colonne retirée (#1799).
+#: Une table inconnue NON déclarée reste refusée : c'est celle d'un code plus récent.
+#: Une entrée par table annoncée dans `CONTRACTIONS` (`tests/aides_contractions.py`),
+#: et réciproquement : 🔒 `test_migrations_compatibles.py`, `test_tables_retirees.py`.
+TABLES_RETIREES: dict[str, str] = {
+    "canal_distribution": "registre — canal-branche plus lu depuis #2210, retiré (#3098)",
+}
+
+
 class ImportRefuse(Exception):
     """La base cible ne porte pas EXACTEMENT ce que l'archive annonce."""
 
@@ -52,6 +62,8 @@ class Bilan:
     #: « table.colonne » que le modèle porte et que l'archive n'a pas (ajoutée
     #: depuis) : la base leur donne leur défaut.
     colonnes_par_defaut: list[str] = field(default_factory=list)
+    #: Tables que l'archive porte et que le modèle a retirées (`TABLES_RETIREES`).
+    tables_ecartees: list[str] = field(default_factory=list)
 
 
 def _verifier_contre_manifeste(table, lignes: list[dict], attendu: dict) -> None:
@@ -163,10 +175,11 @@ def importer(
         if manifeste.get("format") != FORMAT:
             raise ImportRefuse(f"format {manifeste.get('format')} inconnu (attendu {FORMAT})")
         par_nom = {t.name: t for t in tables(metadata)}
-        inconnues = sorted(set(manifeste["tables"]) - set(par_nom))
+        hors_modele = set(manifeste["tables"]) - set(par_nom)
+        inconnues = sorted(hors_modele - set(TABLES_RETIREES))
         if inconnues:
             raise ImportRefuse(f"tables absentes des modèles de ce code : {inconnues}")
-        bilan = Bilan()
+        bilan = Bilan(tables_ecartees=sorted(hors_modele))
         with moteur.connect() as connexion, connexion.begin():
             #  Huit tables se citent en cycle (copropriété, bâtiment, lot…) : aucun
             #  ordre d'écriture ne satisfait leurs clés ligne à ligne. Elles se
@@ -235,6 +248,8 @@ def resume(bilan: Bilan) -> list[str]:
         f"Importé et vérifié : {bilan.tables} tables, {bilan.lignes} lignes, "
         f"{bilan.fichiers} fichiers."
     ]
+    if bilan.tables_ecartees:
+        lignes.append(f"Tables retirées du modèle, écartées : {', '.join(bilan.tables_ecartees)}.")
     if bilan.colonnes_ecartees:
         lignes.append(
             f"Colonnes retirées du modèle, écartées : {', '.join(bilan.colonnes_ecartees)}."

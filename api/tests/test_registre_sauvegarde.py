@@ -23,6 +23,7 @@ from app.registre.modeles import IDENTIFIANT_REFERENCE, Installation
 from app.utils import backup, sante_plateforme
 from app.utils.import_copropriete import ImportRefuse
 from tests.aides_base import adresse_de_test, moteur_de_test
+from tests.aides_export import ajouter_table
 from tests.aides_registre import registre_allume
 
 
@@ -128,6 +129,38 @@ def test_ni_l_epreuve_ni_la_restauration_ne_different_les_cles(registre, alertes
     (archive,) = sauvegarde.dossier().glob("plateforme_backup_*.tar.gz")
     bilan = sauvegarde.restaurer(archive, moteur_de_test(schema=False))
     assert bilan.lignes >= 1
+
+
+#: La ligne que portent les sauvegardes du registre faites avant #3098 — lue sur la
+#: production le 25/11/2026 (`select … from canal_distribution`, rpi1).
+CANAL_D_AVANT = {
+    "id": 1,
+    "nom": "replica",
+    "version": "3.11.7",
+    "version_precedente": "3.6.1",
+    "avance_le": "2026-10-23T01:50:00.302868",
+    "cree_le": "2026-10-18T01:50:00.285538",
+}
+
+
+def test_une_sauvegarde_d_avant_le_retrait_de_canal_distribution_se_restaure(
+    registre, tmp_path, monkeypatch
+):
+    """#3098 : le modèle quitte le registre, ses sauvegardes d'avant la portent encore.
+    Restaurées par le vrai chemin (`restaurer`, clés non différées), elles passent : la
+    table est écartée et nommée. Témoin : sans la déclaration, la même est refusée."""
+    from app.utils import import_copropriete
+
+    ancienne = tmp_path / "plateforme_backup_avant_3098.tar.gz"
+    ajouter_table(sauvegarde.sauvegarder(), ancienne, "canal_distribution", [CANAL_D_AVANT])
+
+    bilan = sauvegarde.restaurer(ancienne, moteur_de_test(schema=False))
+    assert bilan.tables_ecartees == ["canal_distribution"]
+    assert bilan.ecarts == [] and bilan.lignes >= 1
+
+    monkeypatch.setattr(import_copropriete, "TABLES_RETIREES", {})
+    with pytest.raises(ImportRefuse, match="canal_distribution"):
+        sauvegarde.restaurer(ancienne, moteur_de_test(schema=False))
 
 
 def test_une_archive_de_la_residence_n_est_pas_un_registre(registre, tmp_path, monkeypatch):
