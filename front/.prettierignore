@@ -13,7 +13,7 @@ package-lock.json
 
 # ── Manuels : documents denses écrits à la main ────────────────────────────────
 # `prettier --write` les réécrirait de bout en bout pour un diff énorme et sans
-# valeur, et ils sont versionnés en CRLF (un reformatage les repasserait en LF).
+# valeur.
 # ⚠️ Leur bonne formation N'EST PAS abandonnée pour autant : `npm run lint:manuels`
 # (scripts/check-manuels.mjs) les passe au même parseur, sans exiger la mise en
 # forme, et tourne en CI. Un ignore qui éteint le seul contrôle qui voyait un
