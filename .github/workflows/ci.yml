@@ -134,9 +134,9 @@ jobs:
         # ÉPINGLÉ depuis le 24/09/2026 (#1048) : `ruff format --check` compare le
         # code au style de LA version installée, et Ruff change son style de
         # formatage chaque année. Non épinglé, le job passerait au rouge un
-        # matin sans qu'un octet du dépôt ait bougé. Monter la version = un
-        # lot dédié : `pip install ruff==X`, `ruff format api/`, commit seul.
-        run: pip install ruff==0.15.8
+        # matin sans qu'un octet du dépôt ait bougé. La version vit dans
+        # `scripts/ci/outils/requirements.txt` (#2962), que Dependabot lit.
+        run: pip install -r scripts/ci/outils/requirements.txt
 
       # 🔴 PREMIÈRE MESURE DES DÉPENDANCES PYTHON (#537, 20/08/2026).
       #
@@ -151,8 +151,9 @@ jobs:
         # ÉPINGLÉ le 02/10/2026 (#1584) : le verdict d'audit dépendait du jour où
         # l'outil se résolvait. 🔒 `test_ci_installations_epinglees.py` refuse tout
         # `pip install` non épinglé dans ce fichier. Monter la version = un lot
-        # dédié, qui relit le rapport de `check_audit_python.py`.
-        run: pip install pip-audit==2.10.1
+        # dédié, qui relit le rapport de `check_audit_python.py`. La version :
+        # `scripts/ci/outils/requirements.txt` (#2962).
+        run: pip install -r scripts/ci/outils/requirements.txt
 
       # La première exécution a trouvé une vulnérabilité RÉELLE : PYSEC-2026-3552
       # sur `cryptography` 49.0.0 — un oracle de Bleichenbacher sur le
@@ -188,9 +189,9 @@ jobs:
         # relire avant de pousser. Le module, lui, s'appelle partout pareil.
         #
         # ÉPINGLÉ le 02/10/2026 (#1543) : l'étape suivante lit `reuse lint --json`,
-        # dont le format suit la version de l'outil.
+        # dont le format suit la version de l'outil (`scripts/ci/outils/requirements.txt`).
         run: |
-          python -m pip install reuse==6.2.0
+          python -m pip install -r scripts/ci/outils/requirements.txt
           python -m reuse lint
 
       # `reuse lint` vérifie qu'une licence est DÉCLARÉE pour chaque fichier, pas

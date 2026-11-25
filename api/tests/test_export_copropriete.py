@@ -23,29 +23,12 @@ from sqlmodel import Session, select
 from app.models.core import ConfigSite, FaqItem, RoleUtilisateur, Utilisateur
 from app.utils import export_copropriete as ex
 from app.utils import import_copropriete as im
-from tests.aides_base import adresse_de_test, compte, moteur_de_test
-
-
-def _base_peuplee():
-    moteur = moteur_de_test()
-    with Session(moteur) as s:
-        compte(s, prenom="Élodie", nom="D'Aubigné", role=RoleUtilisateur.conseil_syndical)
-        compte(s, prenom="Zoé", nom="Martin", actif=False)
-        s.add(ConfigSite(cle="site_nom", valeur="Résidence « Les Tilleuls »"))
-        s.add(ConfigSite(cle="vide", valeur=""))
-        s.add(
-            FaqItem(
-                categorie="Vie pratique",
-                question="Où sont les poubelles ?",
-                reponse="Au sous-sol — porte B.",
-            )
-        )
-        s.commit()
-    return moteur
+from tests.aides_base import adresse_de_test, moteur_de_test
+from tests.aides_export import base_peuplee, copropriete_et_batiment
 
 
 def test_l_aller_retour_rend_le_meme_contenu(tmp_path):
-    source = _base_peuplee()
+    source = base_peuplee()
     archive = tmp_path / "export.tar.gz"
     manifeste = ex.exporter(source, archive)
     assert manifeste["tables"]["utilisateur"]["lignes"] == 2
@@ -81,7 +64,7 @@ def _alterer(archive, sortie, table, remplacer):
 
 
 def test_une_archive_alteree_est_refusee_et_la_cible_reste_vide(tmp_path):
-    source = _base_peuplee()
+    source = base_peuplee()
     archive = tmp_path / "export.tar.gz"
     ex.exporter(source, archive)
     alteree = tmp_path / "alteree.tar.gz"
@@ -95,7 +78,7 @@ def test_une_archive_alteree_est_refusee_et_la_cible_reste_vide(tmp_path):
 
 
 def test_une_ligne_perdue_est_refusee(tmp_path):
-    source = _base_peuplee()
+    source = base_peuplee()
     archive = tmp_path / "export.tar.gz"
     ex.exporter(source, archive)
     amputee = tmp_path / "amputee.tar.gz"
@@ -109,7 +92,7 @@ def test_les_fichiers_voyagent_avec_leur_empreinte(tmp_path):
     (televerses / "photos").mkdir(parents=True)
     (televerses / "photos" / "fuite.jpg").write_bytes(b"\xff\xd8\xff photo")
     archive = tmp_path / "export.tar.gz"
-    manifeste = ex.exporter(_base_peuplee(), archive, fichiers=televerses)
+    manifeste = ex.exporter(base_peuplee(), archive, fichiers=televerses)
     assert [f["chemin"] for f in manifeste["fichiers"]] == ["photos/fuite.jpg"]
 
     restaures = tmp_path / "restaures"
@@ -119,7 +102,7 @@ def test_les_fichiers_voyagent_avec_leur_empreinte(tmp_path):
 
 
 def test_verifier_restauration_dit_qu_une_base_se_restaure(tmp_path):
-    manifeste, bilan = im.verifier_restauration(_base_peuplee(), tmp_path)
+    manifeste, bilan = im.verifier_restauration(base_peuplee(), tmp_path)
     assert bilan.ecarts == [] and bilan.tables == len(manifeste["tables"])
     assert list(tmp_path.iterdir()) == [], "rien ne reste derrière la vérification"
 
@@ -132,7 +115,7 @@ def test_une_valeur_sans_forme_neutre_leve():
 
 
 def test_le_manifeste_nomme_ce_qu_il_ne_porte_pas(tmp_path):
-    moteur = _base_peuplee()
+    moteur = base_peuplee()
     from sqlalchemy import text
 
     with moteur.begin() as c:
@@ -154,7 +137,7 @@ def http_admin(monkeypatch, tmp_path):
 
     #  Partagée : le client de test lit depuis un autre fil, et une base en mémoire
     #  non partagée y serait vide.
-    monkeypatch.setattr(app.database, "engine", _base_peuplee())
+    monkeypatch.setattr(app.database, "engine", base_peuplee())
 
     #  La sauvegarde et la racine des fichiers : celle-ci se demande au contexte
     #  de copropriété (#1744), qui relit les réglages à chaque appel.
@@ -258,7 +241,7 @@ def _ligne_de_commande(*arguments: str):
 def test_l_import_en_ligne_de_commande_verifie_et_le_dit(tmp_path):
     """Le geste de DI-7 : une archive, une base cible neuve, et un verdict lisible."""
     archive = tmp_path / "e.tar.gz"
-    ex.exporter(_base_peuplee(), archive)
+    ex.exporter(base_peuplee(), archive)
     cible, retirer = adresse_de_test()
     autre, retirer_autre = adresse_de_test()
     try:
@@ -277,7 +260,7 @@ def test_l_import_en_ligne_de_commande_verifie_et_le_dit(tmp_path):
 def test_verifier_une_archive_en_ligne_de_commande(tmp_path):
     """La sauvegarde d'une réplique avant sa mise à jour (DI-4) : réimportée à côté, jamais en place."""
     archive = tmp_path / "e.tar.gz"
-    ex.exporter(_base_peuplee(), archive)
+    ex.exporter(base_peuplee(), archive)
     r = _ligne_de_commande("verifier", str(archive))
     assert r.returncode == 0, r.stderr[-500:]
     assert "Archive vérifiée" in r.stdout
@@ -299,22 +282,9 @@ def test_verifier_une_archive_en_ligne_de_commande(tmp_path):
 #  `moteur_de_test`). Ici, la cible les vérifie, comme la production.
 
 
-def _copropriete_et_batiment(moteur, *, copropriete_id=None):
-    from app.models.copropriete import Batiment, Copropriete
-
-    with Session(moteur) as s:
-        if copropriete_id is None:
-            copro = Copropriete(nom="Résidence d'essai", adresse="1 rue de l'Essai")
-            s.add(copro)
-            s.commit()
-            copropriete_id = copro.id
-        s.add(Batiment(copropriete_id=copropriete_id, numero="A"))
-        s.commit()
-
-
 def test_des_tables_en_cycle_s_importent_clefs_actives(tmp_path):
-    source = _base_peuplee()
-    _copropriete_et_batiment(source)
+    source = base_peuplee()
+    copropriete_et_batiment(source)
     archive = tmp_path / "export.tar.gz"
     ex.exporter(source, archive)
     ordre = [t.name for t in ex.tables()]
@@ -331,8 +301,8 @@ def test_des_tables_en_cycle_s_importent_clefs_actives(tmp_path):
 
 
 def test_une_ligne_sans_parent_est_refusee_et_la_cible_reste_vide(tmp_path):
-    source = _base_peuplee()  # clés désactivées : l'orphelin peut s'y écrire
-    _copropriete_et_batiment(source, copropriete_id=99)
+    source = base_peuplee()  # clés désactivées : l'orphelin peut s'y écrire
+    copropriete_et_batiment(source, copropriete_id=99)
     archive = tmp_path / "export.tar.gz"
     ex.exporter(source, archive)
 
@@ -346,7 +316,7 @@ def test_une_ligne_sans_parent_est_refusee_et_la_cible_reste_vide(tmp_path):
 def test_un_separateur_unicode_dans_un_texte_ne_coupe_pas_la_ligne(tmp_path):
     """U+2028 et U+0085 restent tels quels dans le JSON : `splitlines()` coupait là."""
     texte = "Avant pendant\u0085après\nfin"
-    source = _base_peuplee()
+    source = base_peuplee()
     with Session(source) as s:
         s.add(FaqItem(categorie="Vie pratique", question="Séparateurs ?", reponse=texte))
         s.commit()
@@ -388,7 +358,7 @@ def _autre_version(archive, sortie, table, transformer):
 
 
 def test_une_colonne_retiree_du_modele_est_ecartee_et_nommee(tmp_path):
-    source = _base_peuplee()
+    source = base_peuplee()
     archive = tmp_path / "export.tar.gz"
     ex.exporter(source, archive)
     ancienne = tmp_path / "ancienne.tar.gz"
@@ -403,7 +373,7 @@ def test_une_colonne_retiree_du_modele_est_ecartee_et_nommee(tmp_path):
 
 
 def test_une_colonne_absente_de_l_archive_recoit_son_defaut(tmp_path):
-    source = _base_peuplee()
+    source = base_peuplee()
     archive = tmp_path / "export.tar.gz"
     ex.exporter(source, archive)
     ancienne = tmp_path / "ancienne.tar.gz"
@@ -421,7 +391,7 @@ def test_une_colonne_absente_de_l_archive_recoit_son_defaut(tmp_path):
 
 def test_une_archive_alteree_reste_refusee_avant_toute_ecriture(tmp_path):
     """Recalculer le manifeste est la forme d'une AUTRE version ; l'altérer sans, une fraude."""
-    source = _base_peuplee()
+    source = base_peuplee()
     archive = tmp_path / "export.tar.gz"
     ex.exporter(source, archive)
     alteree = tmp_path / "alteree.tar.gz"

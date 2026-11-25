@@ -15,6 +15,13 @@ installe. Une exception se NOMME dans `EXCEPTIONS` avec sa raison, et une except
 qui ne sert plus fait échouer le test : une liste qu'on ne nettoie pas finit par
 tout autoriser.
 
+DEPUIS #2962 (24/11/2026) : TOUS les workflows, plus seulement `ci.yml` — la veille
+nocturne épinglait `pip-audit` une seconde fois, à la main. Les outils de la CI
+(`ruff`, `pip-audit`, `reuse`) s'épinglent UNE fois, dans
+`scripts/ci/outils/requirements.txt`, que Dependabot (`pip`) lit ; un même paquet
+épinglé deux fois est refusé. `jscpd` (un paquet npm) vit dans les
+`devDependencies` du front, version exacte, et `clones_python.py` l'y lit.
+
 CE QU'IL NE LIT PAS : les `uses:` — `test_ci_actions_epinglees.py` (#1584) — ni la
 protection de branche, qui se règle chez GitHub et non dans le dépôt.
 """
@@ -27,12 +34,25 @@ from tests.conftest import racine_depot
 
 RACINE = racine_depot()
 WORKFLOW = RACINE / ".github" / "workflows" / "ci.yml"
+WORKFLOWS = sorted((RACINE / ".github" / "workflows").glob("*.yml"))
+OUTILS = RACINE / "scripts" / "ci" / "outils" / "requirements.txt"
+DEPENDABOT = RACINE / ".github" / "dependabot.yml"
+FRONT = RACINE / "front" / "package.json"
 
 #: Installations non épinglées tolérées : clé = nom du paquet, valeur = la raison.
 #: Vide, et c'est voulu : elle ne fait que baisser.
 EXCEPTIONS: dict[str, str] = {}
 
 _INSTALL = re.compile(r"\bpip3?\s+install\b(?P<reste>.*)$")
+#: Ce qui suit la commande n'est plus à elle : `&&`, `;`, `|`, une redirection, `}`.
+_FIN_DE_COMMANDE = re.compile(r"\s*(?:&&|\|\||[;|}]|\d?>).*$")
+
+
+def _arguments(reste: str) -> list[str]:
+    """Les arguments de `pip install`, la ligne coupée à la fin de la commande."""
+    return shlex.split(_FIN_DE_COMMANDE.sub("", reste), comments=True)
+
+
 _EPINGLE = re.compile(r"^[A-Za-z0-9_.\-]+(\[[A-Za-z0-9_,.\-]+\])?==[^=\s]+$")
 
 
@@ -71,7 +91,7 @@ def installations_non_epinglees(texte: str, base: Path) -> list[tuple[int, str, 
         if not trouve:
             continue
         try:
-            jetons = shlex.split(trouve.group("reste"), comments=True)
+            jetons = _arguments(trouve.group("reste"))
         except ValueError:
             fautes.append((numero, ligne.strip(), "ligne illisible"))
             continue
@@ -119,6 +139,7 @@ def test_le_detecteur_voit_et_ne_voit_que_le_non_epingle(tmp_path):
         "pip install -q --no-deps pip-audit==2.10.1",
         "pip install 'uvicorn[standard]==0.53.0'",
         "pip install -r exigences.txt",
+        "{ pip install -r exigences.txt >/dev/null && cd api && python x.py; } > f 2>&1",
         "# pip install pip-audit",
         "echo rien d'installé ici",
     )
@@ -163,3 +184,117 @@ def test_la_ci_declare_ses_droits_en_lecture_seule():
     assert droits == ["contents: read"], (
         f"droits du workflow élargis : {droits} — une écriture se déclare dans le job qui en a besoin"
     )
+
+
+# ── Tous les workflows, un épinglage par outil (#2962) ─────────────────────────
+
+
+def _epinglages(texte: str, base: Path) -> list[str]:
+    """Les paquets épinglés par les `pip install` de `texte`, `-r` suivis compris."""
+    noms = []
+    for _n, ligne in _lignes_de_code(texte):
+        trouve = _INSTALL.search(ligne)
+        if not trouve:
+            continue
+        jetons = _arguments(trouve.group("reste"))
+        for i, jeton in enumerate(jetons):
+            if jeton in ("-r", "--requirement") and i + 1 < len(jetons):
+                cible = jetons[i + 1].replace("$GITHUB_WORKSPACE/", "")
+                fichier = next(
+                    (c for c in (base / cible, base / "api" / cible) if c.is_file()), None
+                )
+                if fichier is not None:
+                    noms += _noms_du_fichier(fichier)
+            elif _EPINGLE.match(jeton) and (i == 0 or jetons[i - 1] not in ("-r", "--requirement")):
+                noms.append(jeton.split("==")[0].split("[")[0].lower())
+    return noms
+
+
+def _noms_du_fichier(chemin: Path) -> list[str]:
+    noms = []
+    for ligne in chemin.read_text(encoding="utf-8").splitlines():
+        nue = ligne.split(" #")[0].strip()
+        if nue.startswith("-r "):
+            noms += _noms_du_fichier((chemin.parent / nue[3:].strip()).resolve())
+        elif nue and not nue.startswith("#"):
+            noms.append(nue.split("==")[0].split("[")[0].lower())
+    return noms
+
+
+def test_aucun_workflow_n_installe_sans_version():
+    assert len(WORKFLOWS) >= 5, "les workflows ne sont pas lus en entier"  # cas zéro
+    refus = []
+    for flux in WORKFLOWS:
+        refus += [
+            f"{flux.name} l.{n} : {p} — {r}"
+            for n, p, r in installations_non_epinglees(flux.read_text(encoding="utf-8"), RACINE)
+            if p not in EXCEPTIONS
+        ]
+    assert not refus, refus
+
+
+def test_un_outil_de_ci_s_epingle_une_seule_fois():
+    """Deux épinglages du même outil divergent à la première montée : la veille jugeait
+    déjà avec la version de `ci.yml` parce qu'on l'y avait recopiée à la main."""
+    par_flux = {
+        flux.name: set(_epinglages(flux.read_text(encoding="utf-8"), RACINE)) for flux in WORKFLOWS
+    }
+    en_ligne = []
+    for flux in WORKFLOWS:
+        for _n, ligne in _lignes_de_code(flux.read_text(encoding="utf-8")):
+            trouve = _INSTALL.search(ligne)
+            if trouve:
+                en_ligne += [j for j in _arguments(trouve.group("reste")) if _EPINGLE.match(j)]
+    assert not en_ligne, (
+        f"outil(s) épinglé(s) dans une ligne de commande : {en_ligne} — le ranger dans "
+        f"{OUTILS.relative_to(RACINE)}, que Dependabot lit"
+    )
+    noms = _noms_du_fichier(OUTILS)
+    assert len(noms) == len(set(noms)), f"un outil épinglé deux fois dans {OUTILS.name} : {noms}"
+    assert {"ruff", "pip-audit", "reuse"} <= set(noms), noms
+    assert any("pip-audit" in v for v in par_flux.values()), (
+        "plus aucun workflow n'installe pip-audit"
+    )
+
+
+def test_dependabot_lit_les_outils_de_la_ci():
+    import yaml
+
+    blocs = [
+        b
+        for b in yaml.safe_load(DEPENDABOT.read_text(encoding="utf-8"))["updates"]
+        if b["package-ecosystem"] == "pip"
+    ]
+    dossiers = {d for b in blocs for d in (b.get("directories") or [b["directory"]])}
+    assert "/" + OUTILS.parent.relative_to(RACINE).as_posix() in dossiers, dossiers
+
+
+def test_jscpd_s_epingle_dans_le_front_et_nulle_part_ailleurs(tmp_path):
+    import json
+    import subprocess
+
+    version = json.loads(FRONT.read_text(encoding="utf-8"))["devDependencies"].get("jscpd", "")
+    assert re.fullmatch(r"\d+\.\d+\.\d+", version), (
+        f"jscpd doit être épinglé en version EXACTE dans front/package.json (lu : {version!r}) : "
+        "le compte des clones change d'une version à l'autre"
+    )
+    import sys
+
+    sys.path.insert(0, str(RACINE / "scripts" / "ci"))
+    import clones_python
+
+    assert clones_python.jscpd_epingle() == f"jscpd@{version}"
+    #  Témoin : une plage ou un manifeste sans jscpd rendent INCONNU, jamais une version supposée.
+    for contenu in (
+        '{"devDependencies": {"jscpd": "^5.4.0"}}',
+        '{"devDependencies": {}}',
+        "illisible",
+    ):
+        faux = tmp_path / "package.json"
+        faux.write_text(contenu, encoding="utf-8")
+        assert clones_python.jscpd_epingle(faux) is None, contenu
+    recopies = subprocess.run(
+        ["git", "grep", "-n", "-E", r"jscpd@[0-9]", "--", "scripts", ".github", ".claude/cloud"],
+        cwd=RACINE, capture_output=True, text=True,
+    ).stdout.strip()  # fmt: skip
+    assert not recopies, f"version de jscpd recopiée : {recopies}"

@@ -202,7 +202,8 @@ Arbitrages du jour, pris dans le lot :
   vérification CSRF de SvelteKit n'a rien à comparer ;
 - **créer une copropriété** : `deploiement/standard/commune/creer-copropriete.sh`
   — rôle et base fermée aux autres rôles (gestes partagés avec le registre,
-  `deploiement/standard/lib-bases.sh`), secret neuf dans `.env`, API recréée, base
+  `deploiement/standard/lib-bases.sh`), rôle sans superpouvoir qui reçoit le seul
+  droit de différer ses clés, sans quoi aucune sauvegarde ne se vérifie (#3113), secret neuf dans `.env`, API recréée, base
   préparée et semée AVANT d'être déclarée ; une copropriété neuve demande donc une
   recréation de l'API (son environnement), la déclaration seule se relit à chaud ;
 - **sauvegardes par copropriété** : `contexte.dossier_des_sauvegardes()` —
