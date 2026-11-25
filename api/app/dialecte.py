@@ -68,7 +68,10 @@ def differer_cles_etrangeres(conn) -> None:
     `session_replication_role = replica` suspend leurs déclencheurs le temps de la
     transaction : l'appelant DOIT relever lui-même les orphelins avant de valider
     (`import_copropriete.lignes_sans_parent`).
-    ⚠️ Exige un rôle superutilisateur — celui de l'image l'est.
+    ⚠️ Exige un rôle superutilisateur — celui de l'image l'est —, ou le droit
+    `SET ON PARAMETER session_replication_role` : chaque copropriété d'une
+    installation commune le reçoit à sa création (`lib-bases.base_autoriser_differer`,
+    #3113).
     """
     conn.execute(text("SET LOCAL session_replication_role = replica"))
 
