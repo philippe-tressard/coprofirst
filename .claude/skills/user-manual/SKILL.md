@@ -105,11 +105,11 @@ style sont mortes : ne pas s'en servir de modèle.
 ### La fiche d'un écran — `ecran-card`
 
 ```html
-<div class="ecran-card" data-page="/prestataires" data-acces="cs">
+<div class="ecran-card" data-page="/tickets" data-acces="tous">
   <span class="ecran-icone" aria-hidden="true"><svg …/></span>
-  <h3>Prestataires</h3>
+  <h3>Affaires</h3>
   <p>Ce que l'écran permet, en une ou deux phrases.</p>
-  <span class="ecran-acces ecran-acces-cs">Conseil syndical</span>
+  <span class="ecran-acces ecran-acces-tous">Tous</span>
   <ul class="ecran-profils">
     <li data-onglet="kanban" data-reserve="nonLocataire"><span class="profil">Locataire</span> …</li>
   </ul>
@@ -128,7 +128,11 @@ style sont mortes : ne pas s'en servir de modèle.
 
 La classe `ecran-acces-<public>` colore l'étiquette ; elle suit `data-acces`.
 Le détail d'un onglet se range dans `ecran-detail`, une puce par geste : son nom à
-l'écran en gras, puis ce qu'il fait.
+l'écran en gras, puis ce qu'il fait. **Les fiches des outils du conseil et de
+l'administration — Prestataires, Espace CS, Admin — n'en ont pas** (décision du
+25/11/2026, #3008) : ceux qui s'en servent ont l'écran sous les yeux, et leur détail
+vit dans l'application (aide d'écran, descriptif d'onglet). Leur plafond de mots est
+leur résumé : `lint:manuel-volume` refuse qu'on y remette un détail.
 
 ### Les autres structures lues par une machine
 
