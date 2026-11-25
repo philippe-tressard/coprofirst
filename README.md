@@ -158,8 +158,7 @@ L'application est accessible sur `http://localhost`.
 > partage (`tables-clients.json` : onglets, statuts, jetons de la charte, palettes),
 > les constantes de l'API (`constantes-clients.json`) et le catalogue d'icônes
 > (`icones-svg.json`) : un client hors du navigateur (les apps iOS et Android) en
-> génère son code. La liste brute des onglets (`pages.ts`) y reste jointe tant que
-> l'app iOS la lit (#2686). Une installation dit le contrat
+> génère son code. Aucune source brute du site n'y est plus jointe (#2686). Une installation dit le contrat
 > qu'elle sert par `GET /config` (`version_contrat`) ; le schéma n'est jamais servi
 > par le site (`api/app/contrat`).
 
