@@ -365,6 +365,12 @@ jobs:
       TESTS_BASE_URL: postgresql+psycopg://essai:essai@localhost:5432/essai
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          #  Historique COMPLET (~34 Mio) : `test_documentation` vérifie que chaque SHA
+          #  de `.git-blame-ignore-revs` est dans l'historique, ce qu'un clone en
+          #  profondeur 1 ne dit pas — INCONNU, au premier SHA posé (#2964, 25/11/2026).
+          #  🔒 test_ci_historique_complet.py (et `postgresql.yml`, qui joue la même suite).
+          fetch-depth: 0
 
       - name: Installer Python
         uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7
