@@ -10,8 +10,8 @@ Ce que ces tests figent :
 - `<qui>` vient de la BASE (`site_nom`, réduit en `[a-z0-9-]`) ou du CONTEXTE (son
   identifiant, `principale` sur une installation propre) — jamais du code : la garde
   de #2653 reste vraie ;
-- trois formes se lisent pendant la rétention : l'historique, le neuf sans nom, le
-  neuf avec ;
+- deux formes se lisent : sans le nom de la résidence, et avec (l'ancien préfixe
+  n'est plus lu depuis #2659) ;
 - le nom n'est ni un critère de tri ni de rotation : une résidence renommée voit ses
   anciennes archives tourner sous leur ancien nom ; et la rotation d'une copropriété
   ne touche jamais le dossier d'une autre.
@@ -30,7 +30,6 @@ from app.utils import backup, health_monitor, horloge
 from app.utils.backup import (
     LONGUEUR_QUI,
     PREFIXE_ARCHIVE,
-    PREFIXE_HISTORIQUE,
     archives,
     horodatage_archive,
     nom_archive,
@@ -110,16 +109,14 @@ def test_un_qui_hors_forme_est_refuse_a_l_ecriture():
             nom_archive(INSTANT, qui=qui)
 
 
-# ── Les trois formes se lisent ───────────────────────────────────────────────
+# ── Les deux formes se lisent ────────────────────────────────────────────────
 
 
-def test_les_trois_formes_se_datent():
+def test_les_deux_formes_se_datent():
     avec = nom_archive(INSTANT, qui="les-tilleuls")
     assert avec == f"{PREFIXE_ARCHIVE}les-tilleuls_20261110_040000_paris.tar.gz"
     sans = nom_archive(INSTANT)
-    ancien = sans.replace(PREFIXE_ARCHIVE, PREFIXE_HISTORIQUE, 1)
     assert horodatage_archive(avec) == horodatage_archive(sans) == INSTANT
-    assert horodatage_archive(ancien) == INSTANT
 
 
 def test_un_nom_illisible_au_milieu_rend_none():

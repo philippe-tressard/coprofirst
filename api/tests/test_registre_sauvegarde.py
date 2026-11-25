@@ -60,7 +60,7 @@ def test_l_archive_porte_le_registre_et_rien_de_la_residence(registre, alertes):
 
 
 def test_les_archives_de_la_residence_ne_sont_pas_melees(registre, alertes):
-    """Rotation, fraîcheur et copie hors site de la résidence lisent `backup.PREFIXES_LUS`
+    """Rotation, fraîcheur et copie hors site de la résidence lisent `backup.PREFIXE_ARCHIVE`
     à la racine : celles du registre vivent dans un sous-dossier, sous un autre nom."""
     sauvegarde.run_sauvegarde_plateforme()
     racine = sauvegarde.dossier().parent

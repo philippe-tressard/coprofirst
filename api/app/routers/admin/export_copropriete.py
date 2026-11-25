@@ -27,7 +27,7 @@ from app.utils.journal_securite import journaliser_securite
 router = APIRouter()
 
 #: Préfixe des archives d'export : distinct de celui des sauvegardes
-#: (`backup.PREFIXES_LUS`), que leur rotation ne doit ni compter ni effacer.
+#: (`backup.PREFIXE_ARCHIVE`), que leur rotation ne doit ni compter ni effacer.
 PREFIXE = "export_copropriete_"
 #: Les exports gardés dans le volume des sauvegardes — les plus récents.
 GARDER = 3

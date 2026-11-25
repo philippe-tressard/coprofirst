@@ -201,11 +201,11 @@ cloudflared` tel quel dans une réponse, un ticket ou un journal : masquer d'abo
   `backup.horodatage_archive` relit les deux formats en UTC naïf — c'est le seul parseur.
   « Restaurer celle de 02:00 » se lit donc au suffixe : sans `_paris`, ajouter deux
   heures (une l'hiver) pour l'heure de Paris.
-- **Le préfixe ne nomme pas la résidence** (#2653) : écrit `backup.PREFIXE_ARCHIVE`,
-  l'ancien `hostachy_backup_` reste LU (`PREFIXES_LUS`) jusqu'à la rotation de la
-  dernière archive qui le porte (#2659). Deux préfixes mêlés : l'ordre des noms n'est
-  plus celui du temps — on trie par l'horodatage lu (`backup.archives`, `trier_archives`
-  côté poste), jamais par `sorted(glob(…))` ni `ls | sort`.
+- **Le préfixe ne nomme pas la résidence** (#2653) : `backup.PREFIXE_ARCHIVE`, seul lu
+  depuis #2659 — l'ancien `hostachy_backup_` ne l'est plus (constaté le 25/11/2026 : plus
+  aucune archive ne le portait). L'ordre des noms n'est pas celui du temps — on trie par
+  l'horodatage lu (`backup.archives`, `trier_archives` côté poste), jamais par
+  `sorted(glob(…))` ni `ls | sort`.
   Depuis #2667, le nom dit aussi la RÉSIDENCE : `<préfixe><qui>_<horodatage>`, `<qui>`
   = `site_nom` réduit (`backup.qui_nomme_l_archive`), sinon l'identifiant du contexte
   (`principale` sur les RPi). Ni tri ni rotation ne le lisent (`cle_archive` côté poste) :
