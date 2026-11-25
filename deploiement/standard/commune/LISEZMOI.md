@@ -63,6 +63,21 @@ s'affiche : à transmettre à l'administrateur de la copropriété —, crée so
 de fichiers et, en dernier, l'ajoute à la déclaration. Rien n'est réutilisé en
 silence : un rôle, une base ou une variable déjà là arrêtent tout.
 
+Son rôle n'est pas superutilisateur ; il reçoit le seul droit dont sa sauvegarde a
+besoin : différer les clés le temps d'un réimport, dans sa base
+(`lib-bases.base_autoriser_differer`, #3113). Sans ce droit, chaque sauvegarde de la
+copropriété est refusée à sa vérification, et la mise à jour nocturne s'arrête
+(« sauvegarde avant mise à jour impossible ou invalide : rien n'est changé »).
+
+⚠️ **Une copropriété créée par une version jusqu'à 3.125.6** n'a pas reçu ce droit,
+et sa mise à jour est conduite par l'ancien script : le poser une fois, depuis le
+dossier de l'installation. Le rôle est l'utilisateur de son URL dans `.env`
+(`postgresql+psycopg://<rôle>:…`) :
+
+```bash
+docker compose exec -T postgres psql -U coprofirst -d coprofirst -c "GRANT SET ON PARAMETER session_replication_role TO <rôle>"
+```
+
 ## Déclarer les copropriétés
 
 1. Copier `coproprietes.exemple.json` dans le volume des données de l'API
