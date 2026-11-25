@@ -47,7 +47,7 @@ from app.utils import export_copropriete as ex
 from app.utils import import_copropriete as im
 from tests.aides_base import url_des_tests
 from tests.aides_compose import RACINE
-from tests.test_export_copropriete import _base_peuplee, _copropriete_et_batiment
+from tests.aides_export import base_peuplee, copropriete_et_batiment
 
 LIB_BASES = RACINE / "deploiement" / "standard" / "lib-bases.sh"
 CREER = RACINE / "deploiement" / "standard" / "commune" / "creer-copropriete.sh"
@@ -81,8 +81,8 @@ def role_de_copropriete():
 
 @pytest.fixture
 def archive_a_cycles(tmp_path):
-    source = _base_peuplee()
-    _copropriete_et_batiment(source)
+    source = base_peuplee()
+    copropriete_et_batiment(source)
     archive = tmp_path / "export.tar.gz"
     ex.exporter(source, archive)
     ordre = [t.name for t in ex.tables()]
