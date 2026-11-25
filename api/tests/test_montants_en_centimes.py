@@ -4,10 +4,10 @@
 rien ne refusait la suivante. Ce fichier tient :
 
 - la liste FIGÉE des colonnes flottantes de la base, chacune avec ce qu'elle
-  mesure — aucune n'est un montant, hors `petite_annonce.prix`, déclarée pour la
-  durée de l'expansion (elle sort à la contraction de #3011, et son entrée avec) ;
-- la conversion euros ↔ centimes (`utils/montants`) et la règle de lecture de
-  l'expansion (`utils/prix_annonce`).
+  mesure — aucune n'est un montant (`petite_annonce.prix` en est sortie avec la
+  contraction de #3011 : le modèle ne la déclare plus) ;
+- la conversion euros ↔ centimes (`utils/montants`) et l'écriture du prix
+  (`utils/prix_annonce`).
 """
 
 from __future__ import annotations
@@ -18,7 +18,7 @@ from sqlmodel import SQLModel
 import app.models.core  # noqa: F401 — enregistre toutes les tables
 from app.models.communaute import PetiteAnnonce
 from app.utils.montants import en_centimes, en_euros
-from app.utils.prix_annonce import poser_prix, prix_centimes, prix_euros
+from app.utils.prix_annonce import poser_prix, prix_euros
 
 #: (table, colonne) → ce qu'elle mesure. 🔴 Un montant n'y entre pas : il s'écrit
 #: en centimes entiers. Une entrée dont la colonne n'existe plus doit sortir.
@@ -26,9 +26,6 @@ FLOTTANTES = {
     ("lot", "superficie"): "une surface en m², pas un montant",
     ("user_lot", "quote_part"): "des millièmes de copropriété, pas un montant",
     ("historique_telemetrie", "duree_secondes"): "une durée, pas un montant",
-    ("petite_annonce", "prix"): (
-        "MONTANT — expansion de #3011 : `prix_centimes` fait foi, la colonne sort à la contraction"
-    ),
 }
 
 
@@ -63,24 +60,11 @@ def test_en_centimes_ne_perd_pas_un_centime():
     assert en_euros(1999) == 19.99 and en_euros(None) is None
 
 
-def test_poser_prix_ecrit_les_deux_colonnes():
+def test_le_prix_s_ecrit_et_se_lit_en_centimes():
+    """Le prix saisi en euros s'écrit en centimes ; le champ servi `prix` s'en calcule."""
     annonce = PetiteAnnonce(titre="t", description="d", auteur_id=1)
     poser_prix(annonce, 19.99)
-    assert (annonce.prix_centimes, annonce.prix) == (1999, 19.99)
+    assert annonce.prix_centimes == 1999 and prix_euros(annonce) == 19.99
     poser_prix(annonce, None)
-    assert (annonce.prix_centimes, annonce.prix) == (None, None)
-
-
-def test_la_lecture_prefere_l_ancienne_colonne_quand_elle_dit_autre_chose():
-    """Après un retour arrière, l'ancien code corrige `prix` seule : la saisie la plus
-    récente est là, et elle l'emporte sur des centimes restés d'avant."""
-    annonce = PetiteAnnonce(titre="t", description="d", auteur_id=1, prix=25.0, prix_centimes=1999)
-    assert prix_centimes(annonce) == 2500 and prix_euros(annonce) == 25.0
-    #  Une annonce posée par l'ancien code, jamais reprise : les centimes manquent.
-    annonce = PetiteAnnonce(titre="t", description="d", auteur_id=1, prix=12.5)
-    assert prix_centimes(annonce) == 1250
-    #  Les deux s'accordent : la nouvelle colonne fait foi.
-    annonce = PetiteAnnonce(titre="t", description="d", auteur_id=1, prix=19.99, prix_centimes=1999)
-    assert prix_centimes(annonce) == 1999
-    annonce = PetiteAnnonce(titre="t", description="d", auteur_id=1)
-    assert prix_centimes(annonce) is None and prix_euros(annonce) is None
+    assert annonce.prix_centimes is None and prix_euros(annonce) is None
+    assert "prix" not in PetiteAnnonce.model_fields, "l'ancienne colonne ne se déclare plus"

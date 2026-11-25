@@ -178,7 +178,7 @@ def test_un_don_sans_prix_est_gratuit_une_vente_sans_prix_non(session: Session):
     vente = PetiteAnnonce(titre="Table", description="…", type_annonce="vente", auteur_id=auteur.id)
     don = PetiteAnnonce(titre="Vélo", description="…", type_annonce="don", auteur_id=auteur.id)
     don_prix = PetiteAnnonce(
-        titre="Lampe", description="…", type_annonce="don", prix=5, auteur_id=auteur.id
+        titre="Lampe", description="…", type_annonce="don", prix_centimes=500, auteur_id=auteur.id
     )
     session.add_all([vente, don, don_prix])
     session.commit()
