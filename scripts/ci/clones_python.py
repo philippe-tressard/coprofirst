@@ -37,6 +37,7 @@ Usage : python scripts/ci/clones_python.py
 from __future__ import annotations
 
 import json
+import re
 import pathlib
 import shutil
 import subprocess
@@ -50,11 +51,22 @@ import tempfile
 #: a cessé d'être identique quand l'annuaire a pris ses règles de saisie.
 PLAFOND_CLONES = 5
 
-#: ÉPINGLÉ : le compte change d'une version à l'autre de l'outil. Monter la
-#: version = un lot dédié, qui relit le plafond.
-JSCPD = "jscpd@5.4.0"
-
 RACINE = pathlib.Path(__file__).resolve().parents[2]
+
+
+def jscpd_epingle(manifeste: pathlib.Path = RACINE / "front" / "package.json") -> str | None:
+    """`jscpd@X.Y.Z`, lu dans les `devDependencies` du front (#2962), ou `None`.
+
+    ÉPINGLÉ en version EXACTE : le compte change d'une version à l'autre de l'outil.
+    La version vit dans le manifeste que Dependabot (npm) et l'audit lisent, jamais
+    ici ; une montée est un lot dédié, qui relit le plafond. Une plage (`^5.4.0`) ou
+    un manifeste illisible rendent `None` : la mesure est alors INCONNUE.
+    """
+    try:
+        version = json.loads(manifeste.read_text("utf-8"))["devDependencies"]["jscpd"]
+    except (OSError, KeyError, ValueError, TypeError):
+        return None
+    return f"jscpd@{version}" if re.fullmatch(r"\d+\.\d+\.\d+", str(version)) else None
 
 
 def verdict(compte: int | None, plafond: int = PLAFOND_CLONES) -> tuple[int, str]:
@@ -76,12 +88,12 @@ def verdict(compte: int | None, plafond: int = PLAFOND_CLONES) -> tuple[int, str
 
 def mesurer(cible: str = "app", dans: pathlib.Path = RACINE / "api") -> int | None:
     """Lance jscpd sur `cible` (par défaut `api/app`) et rend le nombre de clones, ou `None`."""
-    npx = shutil.which("npx")
-    if npx is None:
+    npx, jscpd = shutil.which("npx"), jscpd_epingle()
+    if npx is None or jscpd is None:
         return None
     with tempfile.TemporaryDirectory() as sortie:
         commande = [
-            npx, "--yes", JSCPD, cible, "--min-tokens", "50", "--format", "python",
+            npx, "--yes", jscpd, cible, "--min-tokens", "50", "--format", "python",
             "--reporters", "json", "--output", sortie, "--silent",
         ]  # fmt: skip
         try:

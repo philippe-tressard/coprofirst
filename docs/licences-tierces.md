@@ -50,7 +50,7 @@ Compilés dans l'image, jamais pris en roue PyPI — `pillow-heif` : ses roues P
 
 Icônes de `front/src/lib/icones-svg.json` qui ne viennent pas de Lucide — `balcony` : absente de Lucide — dessinée pour le projet le 10/11/2026; `stairs` : absente de Lucide — présumée dessinée pour le projet, à confirmer par l'auteur; `whatsapp` : Simple Icons.
 
-## Dépendances — `front` (569 paquets)
+## Dépendances — `front` (578 paquets)
 
 | Paquet | Licence | Déclaré | Admise |
 |---|---|---|---|
@@ -440,6 +440,15 @@ Icônes de `front/src/lib/icones-svg.json` qui ne viennent pas de Lucide — `ba
 | `isexe` | `ISC` | devDependencies | oui |
 | `jake` | `Apache-2.0` | devDependencies | oui |
 | `js-tokens` | `MIT` | devDependencies | oui |
+| `jscpd` | `MIT` | devDependencies | oui |
+| `jscpd-darwin-arm64` | `MIT` | devDependencies (optionnel) | oui |
+| `jscpd-darwin-x64` | `MIT` | devDependencies (optionnel) | oui |
+| `jscpd-linux-arm64-gnu` | `MIT` | devDependencies (optionnel) | oui |
+| `jscpd-linux-arm64-musl` | `MIT` | devDependencies (optionnel) | oui |
+| `jscpd-linux-x64-gnu` | `MIT` | devDependencies (optionnel) | oui |
+| `jscpd-linux-x64-musl` | `MIT` | devDependencies (optionnel) | oui |
+| `jscpd-windows-arm64-msvc` | `MIT` | devDependencies (optionnel) | oui |
+| `jscpd-windows-x64-msvc` | `MIT` | devDependencies (optionnel) | oui |
 | `jsesc` | `MIT` | devDependencies | oui |
 | `json-schema-traverse` | `MIT` | devDependencies | oui |
 | `json-stable-stringify-without-jsonify` | `MIT` | devDependencies | oui |
