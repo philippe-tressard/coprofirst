@@ -100,21 +100,15 @@ verdict_export_base() { # $1 = résumé
 # tenues par `test_sauvegarde_hors_site_plateforme.py`. Un préfixe hors de cette
 # liste est refusé : il viendrait de l'appelant, pas d'une décision.
 #
-# La résidence a DEUX préfixes pendant la transition de #2653 : l'écrit, qui ne
-# nomme pas la résidence, et l'historique, que portent les archives déjà sur disque
-# jusqu'à leur rotation — lu, jamais écrit. Mêmes valeurs que `backup.PREFIXE_ARCHIVE`
-# et `backup.PREFIXE_HISTORIQUE`. Le second se retire avec #2659.
+# La résidence a UN préfixe, qui ne la nomme pas (#2653) : même valeur que
+# `backup.PREFIXE_ARCHIVE`. L'ancien n'est plus lu depuis #2659 (25/11/2026 : plus
+# aucune archive ne le portait, ni sur les nœuds ni dans la copie hors site).
 PREFIXE_RESIDENCE="sauvegarde_copropriete_"
-PREFIXE_RESIDENCE_HISTORIQUE="hostachy_backup_"
 PREFIXE_PLATEFORME="plateforme_backup_"
 DOSSIER_PLATEFORME="plateforme"
-nom_valide() { # $1 = nom candidat · $2 = préfixe (défaut : ceux de la résidence) → 0 si acceptable
-  local n=${1:-} prefixe=${2:-}
-  if [ -z "$prefixe" ]; then
-    nom_valide "$n" "$PREFIXE_RESIDENCE" || nom_valide "$n" "$PREFIXE_RESIDENCE_HISTORIQUE"
-    return
-  fi
-  case "$prefixe" in "$PREFIXE_RESIDENCE"|"$PREFIXE_RESIDENCE_HISTORIQUE"|"$PREFIXE_PLATEFORME") ;; *) return 1 ;; esac
+nom_valide() { # $1 = nom candidat · $2 = préfixe (défaut : celui de la résidence) → 0 si acceptable
+  local n=${1:-} prefixe=${2:-$PREFIXE_RESIDENCE}
+  case "$prefixe" in "$PREFIXE_RESIDENCE"|"$PREFIXE_PLATEFORME") ;; *) return 1 ;; esac
   [ -n "$n" ] || return 1
   [[ "$n" =~ ^${prefixe}[A-Za-z0-9._-]+\.tar\.gz$ ]] || return 1
   case "$n" in */*|*'\'*|*..*) return 1 ;; esac
@@ -128,15 +122,14 @@ nom_valide() { # $1 = nom candidat · $2 = préfixe (défaut : ceux de la résid
 cle_archive() { # $1 = nom → clé
   local cle=${1:-}
   cle=${cle#"$PREFIXE_RESIDENCE"}
-  cle=${cle#"$PREFIXE_RESIDENCE_HISTORIQUE"}
   [[ "$cle" =~ ^[a-z0-9][a-z0-9-]{0,39}_([0-9]{8}_.*)$ ]] && cle=${BASH_REMATCH[1]}
   printf '%s' "$cle"
 }
 
 # ── PURE : l'ordre CHRONOLOGIQUE d'une série d'archives ──────────────────────
-# 🔴 #2653 : avec deux préfixes, l'ordre alphabétique n'est plus l'ordre du temps —
-# tout `hostachy_…` passerait avant tout `sauvegarde_…`, faux dès qu'un retour à
-# l'image d'avant réécrit l'historique. Le tri porte sur le nom SANS son préfixe
+# 🔴 #2653 : l'ordre alphabétique n'est pas l'ordre du temps — un nom qui porte
+# celui de la résidence (#2667) se range autrement qu'un nom qui ne le porte pas,
+# et une résidence renommée change de lettres. Le tri porte sur le nom SANS son préfixe
 # (l'horodatage, `_paris`
 # compris, comme `backup.archives`) ; à horodatage égal, le nom départage. Le nom
 # de la résidence n'entre pas dans le tri (`cle_archive`, #2667).
@@ -251,7 +244,7 @@ jours_manquants() { # $1=jours_a_couvrir $2=date_du_jour(AAAAMMJJ) puis noms sur
   #  ligne — un motif sur la liste entière enjamberait deux lignes.
   local n jours=" "
   while IFS= read -r n; do
-    case "$n" in "$PREFIXE_RESIDENCE"*|"$PREFIXE_RESIDENCE_HISTORIQUE"*) ;; *) continue ;; esac
+    case "$n" in "$PREFIXE_RESIDENCE"*) ;; *) continue ;; esac
     jours="$jours$(cle_archive "$n" | cut -c1-8) "
   done <<< "$noms"
   _jour_present() { case "$jours" in *" $1 "*) return 0 ;; esac; return 1; }

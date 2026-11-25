@@ -41,12 +41,6 @@ _SOURCE = APP / "utils" / "liens.py"
 #: `utils/plateforme.py` n'y est plus depuis le 09/10/2026 (#1772) : le dépôt
 #: porte le nom du logiciel, et son adresse ne nomme plus la résidence.
 EXCEPTIONS_HOSTACHY: dict[str, tuple[int, str]] = {
-    "utils/backup.py": (
-        1,
-        "`PREFIXE_HISTORIQUE` : le préfixe des archives DÉJÀ sur disque, lu jamais écrit "
-        "(#2653), que la rotation, la santé et la copie hors site reconnaissent — retiré "
-        "avec #2659",
-    ),
     "utils/whatsapp.py": (
         1,
         "`hostachy_whatsapp` : le nom du CONTENEUR du bridge (`container_name` du "

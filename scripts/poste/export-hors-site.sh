@@ -223,8 +223,8 @@ if ! $SSH_CMD "$SSH_CIBLE" "$LIRE true" >/dev/null 2>&1; then
 fi
 
 # Ici seulement une liste vide est un FAIT : la lecture a réussi.
-#  Les deux préfixes de la résidence (#2653), puis l'ordre du temps, jamais celui des lettres.
-ARCHIVE=$($SSH_CMD "$SSH_CIBLE"   "$LIRE sh -c 'ls -1 /b/${PREFIXE_RESIDENCE}*.tar.gz /b/${PREFIXE_RESIDENCE_HISTORIQUE}*.tar.gz 2>/dev/null'" 2>/dev/null   | tr -d '\r' | sed 's#.*/##' | trier_archives | tail -1)
+#  Le préfixe de la résidence (#2653), puis l'ordre du temps, jamais celui des lettres.
+ARCHIVE=$($SSH_CMD "$SSH_CIBLE"   "$LIRE sh -c 'ls -1 /b/${PREFIXE_RESIDENCE}*.tar.gz 2>/dev/null'" 2>/dev/null   | tr -d '\r' | sed 's#.*/##' | trier_archives | tail -1)
 if [ -z "$ARCHIVE" ]; then
   log "ERREUR: aucune archive sur $SOURCE_NOEUD — la sauvegarde de 03:00 ne produit rien."
   exit 1

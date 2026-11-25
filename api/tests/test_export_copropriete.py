@@ -201,7 +201,8 @@ def test_on_ne_garde_que_les_derniers_exports(http_admin, monkeypatch):
     sauvegardes.mkdir()
     for i in range(5):
         (sauvegardes / f"{routes.PREFIXE}2026010{i}_000000_paris.tar.gz").write_bytes(b"x")
-    #  Les deux préfixes des sauvegardes (#2653) : ni l'un ni l'autre n'est compté.
+    #  Une sauvegarde de la résidence, et un nom d'avant #2653 : ni l'une ni l'autre
+    #  n'est comptée, ni effacée.
     sauvegardes_residence = [
         "hostachy_backup_20260101_000000_paris.tar.gz",
         "sauvegarde_copropriete_20260101_000000_paris.tar.gz",

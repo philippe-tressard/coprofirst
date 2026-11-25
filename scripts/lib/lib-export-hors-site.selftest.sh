@@ -35,11 +35,11 @@
   # La veille et l'avant-veille présentes, sur une fenêtre de 2 jours : rien ne
   # manque. C'est le cas nominal, et il doit rendre une chaîne VIDE — un
   # contrôle qui crie sur une série complète est désarmé dans la semaine.
-  SERIE_OK=$'hostachy_backup_20260904_020000.tar.gz\nhostachy_backup_20260903_020000.tar.gz'
+  SERIE_OK=$'sauvegarde_copropriete_20260904_020000.tar.gz\nsauvegarde_copropriete_20260903_020000.tar.gz'
   check "série complète → rien" "" "$(printf '%s' "$SERIE_OK" | jours_manquants 2 20260905)"
   # Un trou au milieu : c'est le seul cas qui compte, et c'est celui qu'une
   # simple présence d'archive ne voit pas.
-  SERIE_TROU=$'hostachy_backup_20260904_020000.tar.gz'
+  SERIE_TROU=$'sauvegarde_copropriete_20260904_020000.tar.gz'
   check "un jour manque"    "20260903" "$(printf '%s' "$SERIE_TROU" | jours_manquants 2 20260905)"
   # 🔴 LE CAS ZÉRO : aucune archive du tout. Une liste vide doit rendre TOUS les
   # jours, pas une chaîne vide — sinon « rien à signaler » et « je n'ai rien pu
@@ -49,10 +49,10 @@
   check "le jour même n'est pas exigé" "" "$(printf '%s' "$SERIE_OK" | jours_manquants 1 20260905)"
   # 🔴 Le faux « jour absent » du 29/09/2026 : export après 02:00, la rotation a
   # gardé J et J-1. Réclamer J-2 signalait chaque jour un trou qui n'en est pas un.
-  SERIE_AVEC_JOUR=$'hostachy_backup_20260929_020000.tar.gz\nhostachy_backup_20260928_020000.tar.gz'
+  SERIE_AVEC_JOUR=$'sauvegarde_copropriete_20260929_020000.tar.gz\nsauvegarde_copropriete_20260928_020000.tar.gz'
   check "le jour même présent → fenêtre J..J-1" "" "$(printf '%s' "$SERIE_AVEC_JOUR" | jours_manquants 2 20260929)"
   # …et un vrai trou dans cette fenêtre-là se voit toujours.
-  check "jour présent, veille absente" "20260928" "$(printf '%s' 'hostachy_backup_20260929_020000.tar.gz' | jours_manquants 2 20260929)"
+  check "jour présent, veille absente" "20260928" "$(printf '%s' 'sauvegarde_copropriete_20260929_020000.tar.gz' | jours_manquants 2 20260929)"
 
   # Le faux négatif du 04/08/2026 : `tar | grep -q` sous pipefail rendait
   # « absent » sur une archive contenant la base. Le listing est désormais
@@ -75,16 +75,16 @@
   #  que le bilan ne lit pas : la liste blanche pouvait céder sous un « TOUS OK ».
   tn() { local r=refuse; nom_valide "$2" ${4:+"$4"} && r=ok
          [ "$r" = "$3" ] && echo "PASS  $1" || { echo "FAIL  $1 : attendu=$3 obtenu=$r"; st_fail=1; }; }
-  tn "nom d'archive normal"      "hostachy_backup_2026-08-09_030000.tar.gz" ok
+  tn "nom d'archive normal"      "sauvegarde_copropriete_2026-08-09_030000.tar.gz" ok
   tn "nom vide"                  ""                                          refuse
   tn "chemin absolu"             "/etc/shadow"                               refuse
-  tn "remontée de répertoire"    "hostachy_backup_../../etc/shadow.tar.gz"   refuse
-  tn "sous-répertoire"           "hostachy_backup_a/b.tar.gz"                refuse
+  tn "remontée de répertoire"    "sauvegarde_copropriete_../../etc/shadow.tar.gz"   refuse
+  tn "sous-répertoire"           "sauvegarde_copropriete_a/b.tar.gz"                refuse
   tn "l'export seul, hors archive" "base-export.tar.gz"                       refuse
-  tn "substitution de commande"  'hostachy_backup_$(id).tar.gz'              refuse
+  tn "substitution de commande"  'sauvegarde_copropriete_$(id).tar.gz'              refuse
   #  Le registre des installations (#1896) : son préfixe, et lui seul, dans sa série.
   tn "archive du registre"       "plateforme_backup_20261014_033000_paris.tar.gz" ok "$PREFIXE_PLATEFORME"
-  tn "résidence prise pour le registre" "hostachy_backup_20261014_030000_paris.tar.gz" refuse "$PREFIXE_PLATEFORME"
+  tn "résidence prise pour le registre" "sauvegarde_copropriete_20261014_030000_paris.tar.gz" refuse "$PREFIXE_PLATEFORME"
   tn "registre pris pour la résidence"  "plateforme_backup_20261014_033000_paris.tar.gz" refuse
   tn "registre : remontée"       "plateforme_backup_../x.tar.gz"             refuse "$PREFIXE_PLATEFORME"
   tn "préfixe inconnu refusé"    "x_backup_1.tar.gz"                         refuse "x_backup_"
@@ -128,17 +128,17 @@
   # ── Le rattrapage se borne à la rétention (12/09/2026) ─────────────────────
   # Le cas réel : six archives anciennes sur l'autre nœud, deux conservées. On
   # ne tire QUE celles qui entreraient dans la rétention.
-  DIST=$'hostachy_backup_20260908_020000.tar.gz\nhostachy_backup_20260909_020000.tar.gz\nhostachy_backup_20260910_020000.tar.gz'
-  LOC=$'hostachy_backup_20260912_020000.tar.gz'
-  check "rattrapage borné à 2" "hostachy_backup_20260910_020000.tar.gz" \
+  DIST=$'sauvegarde_copropriete_20260908_020000.tar.gz\nsauvegarde_copropriete_20260909_020000.tar.gz\nsauvegarde_copropriete_20260910_020000.tar.gz'
+  LOC=$'sauvegarde_copropriete_20260912_020000.tar.gz'
+  check "rattrapage borné à 2" "sauvegarde_copropriete_20260910_020000.tar.gz" \
         "$(archives_a_rattraper 2 "$LOC" "$DIST")"
   # Rien à tirer quand le local porte déjà les plus récentes.
   check "rien à rattraper" "" \
-        "$(archives_a_rattraper 2 $'hostachy_backup_20260911_020000.tar.gz\nhostachy_backup_20260912_020000.tar.gz' "$DIST")"
+        "$(archives_a_rattraper 2 $'sauvegarde_copropriete_20260911_020000.tar.gz\nsauvegarde_copropriete_20260912_020000.tar.gz' "$DIST")"
   # Le distant plus récent que tout le local : les deux partent.
   check "les deux plus récentes viennent du pair" \
-        $'hostachy_backup_20260909_020000.tar.gz\nhostachy_backup_20260910_020000.tar.gz' \
-        "$(archives_a_rattraper 2 'hostachy_backup_20260101_020000.tar.gz' "$DIST")"
+        $'sauvegarde_copropriete_20260909_020000.tar.gz\nsauvegarde_copropriete_20260910_020000.tar.gz' \
+        "$(archives_a_rattraper 2 'sauvegarde_copropriete_20260101_020000.tar.gz' "$DIST")"
   # Même garde que la rotation : une valeur aberrante ne tire rien.
   check "keep=0 ne tire rien"  "" "$(archives_a_rattraper 0 "$LOC" "$DIST")"
   check "pair vide"            "" "$(archives_a_rattraper 2 "$LOC" '')"
@@ -147,10 +147,10 @@
   # `…_HHMMSS_paris` remplace `…_HHMMSS` (UTC) : le suffixe vient APRÈS les secondes,
   # donc le tri alphabétique reste chronologique et les lecteurs par JOUR lisent la
   # date de Paris. Anciennes et nouvelles archives coexistent pendant la rétention.
-  P5=hostachy_backup_20261005_040000_paris.tar.gz
-  P4=hostachy_backup_20261004_040000_paris.tar.gz
-  P6=hostachy_backup_20261006_040000_paris.tar.gz
-  U4=hostachy_backup_20261004_020000.tar.gz
+  P5=sauvegarde_copropriete_20261005_040000_paris.tar.gz
+  P4=sauvegarde_copropriete_20261004_040000_paris.tar.gz
+  P6=sauvegarde_copropriete_20261006_040000_paris.tar.gz
+  U4=sauvegarde_copropriete_20261004_020000.tar.gz
   tn "nom à l'heure de Paris"    "$P5" ok
   check "série à l'heure de Paris, complète" "" \
         "$(printf '%s\n%s' "$P5" "$P4" | jours_manquants 2 20261006)"
@@ -159,45 +159,34 @@
   # Le défaut d'origine : prise à 00:30 à Paris, l'archive porte le jour de PARIS (le
   # nom UTC portait la veille, et le jour semblait manquer).
   check "00:30 à Paris compte pour son jour" "" \
-        "$(printf '%s\n%s' hostachy_backup_20261005_003000_paris.tar.gz "$P4" | jours_manquants 2 20261006)"
+        "$(printf '%s\n%s' sauvegarde_copropriete_20261005_003000_paris.tar.gz "$P4" | jours_manquants 2 20261006)"
   # Mélange à la bascule : l'ancienne (UTC) précède la nouvelle (Paris), l'ordre tient.
   check "rotation : la plus ancienne (UTC) part d'abord" "$U4" \
         "$(printf '%s\n%s\n%s\n' "$U4" "$P5" "$P6" | archives_a_supprimer 2)"
   check "rattrapage : anciennes et nouvelles mêlées" "$P6" \
         "$(archives_a_rattraper 2 "$P5" "$(printf '%s\n%s' "$U4" "$P6")")"
 
-  # ── Deux préfixes pour la résidence (#2653) ────────────────────────────
-  # Le neuf est écrit, l'historique reste lu jusqu'à sa rotation. Les cas
-  # ci-dessus gardent `hostachy_backup_` : c'est l'historique qu'ils éprouvent.
+  # ── Un préfixe pour la résidence (#2653, #2659) ────────────────────────
   N6=sauvegarde_copropriete_20261006_040000_paris.tar.gz
   N7=sauvegarde_copropriete_20261007_040000_paris.tar.gz
   tn "nom neuf de la résidence"         "$N6" ok
   tn "nom neuf : remontée"              "sauvegarde_copropriete_../x.tar.gz" refuse
   tn "nom neuf pris pour le registre"   "$N6" refuse "$PREFIXE_PLATEFORME"
-  tn "historique nommé explicitement"   "$P5" ok "$PREFIXE_RESIDENCE_HISTORIQUE"
   check "le préfixe écrit ne nomme pas la résidence" "" \
         "$(printf '%s' "$PREFIXE_RESIDENCE" | grep -i 'hostachy' || true)"
-  # 🔴 Le piège : si les LETTRES décident, tout `hostachy_…` passe avant tout
-  # `sauvegarde_…`. Un retour à l'image d'avant écrit de nouveau l'historique, APRÈS
-  # des archives neuves : l'ordre doit rester celui du temps, sinon la rotation
-  # efface la plus récente et la santé juge une ancienne.
-  P7=hostachy_backup_20261007_040000_paris.tar.gz
-  check "tri mêlé : l'ordre du temps" "$(printf '%s\n%s\n%s\n%s' "$P4" "$N6" "$P7" "$N7")" \
-        "$(printf '%s\n%s\n%s\n%s\n' "$N7" "$N6" "$P7" "$P4" | trier_archives)"
-  check "rotation après un retour arrière : le plus récent reste" "$N6" \
-        "$(printf '%s\n%s\n%s\n' "$N6" "$P7" "$N7" | trier_archives | archives_a_supprimer 2)"
+  # 🔒 #2659 : l'ancien préfixe n'est plus LU — ni accepté, ni nommable, ni compté
+  # dans la continuité. Constaté le 25/11/2026 : plus aucune archive ne le portait.
+  H6=hostachy_backup_20261006_040000_paris.tar.gz
+  tn "ancien préfixe refusé"            "$H6" refuse
+  tn "ancien préfixe nommé : refusé"    "$H6" refuse "hostachy_backup_"
+  check "ancien préfixe : ne couvre aucun jour" "20261006" \
+        "$(printf '%s\n%s' "$N7" "$H6" | jours_manquants 2 20261007)"
   check "tri : doublons et lignes vides retirés" "$N6" "$(printf '%s\n\n%s\n' "$N6" "$N6" | trier_archives)"
-  check "rotation mêlée : l'historique part, le neuf reste" "$P4" \
-        "$(printf '%s\n%s\n%s\n' "$P4" "$P5" "$N6" | trier_archives | archives_a_supprimer 2)"
-  check "rattrapage mêlé : les plus récentes, quel que soit le préfixe" "$N7" \
-        "$(archives_a_rattraper 2 "$N6" "$(printf '%s\n%s' "$P5" "$N7")")"
-  check "série mêlée, complète" "" \
-        "$(printf '%s\n%s' "$N6" "$P5" | jours_manquants 2 20261007)"
   check "jour du neuf détenu : la fenêtre part du jour" "20261005" \
         "$(printf '%s\n%s' "$N7" "$N6" | jours_manquants 3 20261007)"
 
   # ── Le nom de la résidence dans le nom (#2667) ─────────────────────────
-  # Trois formes se lisent : l'historique, le neuf sans nom, le neuf avec. Le nom
+  # Deux formes se lisent : sans le nom de la résidence, et avec. Le nom
   # n'entre ni dans le tri ni dans la continuité ; une résidence renommée garde ses
   # anciennes archives dans la même série.
   Q7=sauvegarde_copropriete_les-tilleuls_20261007_040000_paris.tar.gz
@@ -206,13 +195,13 @@
   tn "nom de la résidence : remontée"   "sauvegarde_copropriete_../_20261007_040000.tar.gz" refuse
   check "clé : le nom s'écarte"         "20261007_040000_paris.tar.gz" "$(cle_archive "$Q7")"
   check "clé : sans nom, inchangée"     "20261006_040000_paris.tar.gz" "$(cle_archive "$N6")"
-  check "clé : historique"              "20261005_040000_paris.tar.gz" "$(cle_archive "$P5")"
-  check "tri des trois formes et d'un renommage" \
+  check "clé : sans nom, autre jour"    "20261005_040000_paris.tar.gz" "$(cle_archive "$P5")"
+  check "tri des deux formes et d'un renommage" \
         "$(printf '%s\n%s\n%s\n%s' "$P5" "$N6" "$Q7" "$Q8")" \
         "$(printf '%s\n%s\n%s\n%s\n' "$Q8" "$Q7" "$N6" "$P5" | trier_archives)"
-  check "rotation : l'ancien nom tourne comme les autres" "$P5"$'\n'"$N6" \
+  check "rotation : sans nom, tourne comme les autres" "$P5"$'\n'"$N6" \
         "$(printf '%s\n%s\n%s\n%s\n' "$P5" "$N6" "$Q7" "$Q8" | trier_archives | archives_a_supprimer 2)"
-  check "continuité : trois formes, aucun trou" "" \
+  check "continuité : deux formes, aucun trou" "" \
         "$(printf '%s\n%s\n%s\n%s' "$P5" "$N6" "$Q7" "$Q8" | jours_manquants 4 20261008)"
   check "continuité : un jour manque malgré les noms" "20261006" \
         "$(printf '%s\n%s\n%s' "$P5" "$Q7" "$Q8" | jours_manquants 4 20261008)"
@@ -232,7 +221,7 @@
   check "espace refusée"                     refus "$(nav 'affaires-a b.zip')"
   check "soulignement refusé"                refus "$(nav affaires-a_b.zip)"
   check "apostrophe refusée"                 refus "$(nav "affaires-a'b.zip")"
-  check "autre préfixe refusé"               refus "$(nav hostachy_backup_x.zip)"
+  check "autre préfixe refusé"               refus "$(nav sauvegarde_copropriete_x.zip)"
   SHA=$(printf 'a%.0s' $(seq 64))
   check "accusé : une archive" "{\"copies\":{\"affaires-p-2025-travaux.zip\":\"$SHA\"}}"         "$(printf 'affaires-p-2025-travaux.zip %s
 ' "$SHA" | charge_accuse_affaires)"
