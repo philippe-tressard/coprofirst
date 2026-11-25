@@ -13,4 +13,4 @@
 # 🔒 `api/tests/test_ci_installations_epinglees.py`.
 ruff==0.15.8
 pip-audit==2.10.1
-reuse==6.2.0
+reuse==6.3.0
