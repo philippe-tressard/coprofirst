@@ -15,6 +15,7 @@ from alembic.migration import MigrationContext
 from fastapi.testclient import TestClient
 from sqlmodel import Session, select
 
+from app.utils.import_copropriete import TABLES_RETIREES
 from app.main import app
 from app.registre import base, conditions, migrer, signature
 from app.registre.contrat import VERSION_CONTRAT
@@ -67,6 +68,9 @@ def _envoyer(corps: dict, privee=None, *, hote=HOTE, signature_fausse=False):
 def test_la_chaine_de_la_plateforme_pose_le_schema_des_modeles(plateforme):
     with plateforme.connect() as c:
         ecarts = compare_metadata(MigrationContext.configure(c), registre_plateforme.metadata)
+    #  Entre les deux temps d'une contraction (#3098), la chaîne pose encore une table
+    #  que le modèle a quittée : déclarée retirée, elle n'est pas un écart. Rien d'autre.
+    ecarts = [e for e in ecarts if not (e[0] == "remove_table" and e[1].name in TABLES_RETIREES)]
     assert ecarts == [], f"migrations et modèles divergent : {ecarts}"
 
 

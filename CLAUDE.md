@@ -169,8 +169,10 @@ Chaque notion a **une** porte ; le détail, les pièges et les exceptions sont d
   en arrière n'est qu'un changement d'image, sans restaurer la base. **Ajouter, puis
   retirer — jamais dans la même version** : une colonne neuve est nullable ou porte un
   `server_default` ; retirer, renommer, passer à `nullable=False` est un second temps,
-  annoncé dans `CONTRACTIONS` par le lot où le code cesse d'en dépendre. Pas de SQL brut
-  qui retire ou renomme. 🔒 `test_migrations_compatibles.py`.
+  annoncé dans `CONTRACTIONS` (`tests/aides_contractions.py`) par le lot où le code cesse
+  d'en dépendre ; une TABLE retirée se déclare aussi dans `import_copropriete.TABLES_RETIREES`,
+  sans quoi ses sauvegardes d'avant ne se restaurent plus (#3098). Pas de SQL brut qui
+  retire ou renomme. 🔒 `test_migrations_compatibles.py`, sur les deux chaînes.
 
 ### Dépendances d'auth
 | Dependency | Usage |
@@ -365,7 +367,7 @@ commit …`. Avant de réécrire un fichier partagé : `git worktree list` (`sta
   restant à faire. **Exception : un lot qui retire une colonne ou une table ne se fusionne
   pas depuis le cloud** — sa preuve sans perte se lit sur la production (`standards/06` §3) :
   la session donne la requête à jouer au poste, et `PREUVES_SANS_PERTE`
-  (`test_migrations_compatibles.py`) refuse le retrait sans elle (#2937). Environnement :
+  (`tests/aides_contractions.py`) refuse le retrait sans elle (#2937). Environnement :
   `.claude/cloud/LISEZMOI.md`.
 - `.env` non versionné · `SECRET_KEY` ≥ 32 caractères · `ENABLE_API_DOCS=false` en prod.
 
