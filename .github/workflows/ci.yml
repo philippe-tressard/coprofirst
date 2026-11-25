@@ -567,30 +567,21 @@ jobs:
         # 27 fichiers versionnés en portaient encore un le 01/08/2026 — dont deux
         # sources Python, douze pages Svelte et `.gitignore`. Aucun ne cassait
         # aujourd'hui ; rien ne garantissait que le prochain ne casserait pas.
-        # Les fins de ligne, elles, ne sont PAS contrôlées ici : le DÉPÔT est
-        # légitimement mixte CRLF/LF hors des scripts — un FICHIER ne l'est jamais
-        # (étape suivante).
+        # Les fins de ligne, elles, se contrôlent sur l'INDEX à l'étape suivante.
         #
         # Un seul processus pour tous les fichiers (#2231), mêmes motifs, même message.
         run: python scripts/ci/scans_fichiers.py bom '*.py' '*.ts' '*.js' '*.mjs' '*.svelte' '*.json' '*.yml' '*.yaml' '*.css' '*.html' '.gitignore'
 
-      - name: Aucun fichier à fins de ligne mixtes
-        # Le dépôt mêle des fichiers CRLF et des fichiers LF, et c'est assumé.
-        # Un FICHIER qui mêle les deux ne l'est nulle part (#1050) : c'est la
-        # trace d'une édition qui a réécrit une partie des lignes avec l'autre
-        # terminaison, et le prochain diff de ce fichier sera illisible. Il y en
-        # avait 32 le 19/09/2026, 4 le 25/09 — normalisés dans un commit seul.
-        # Ce contrôle garde le compte à zéro ; `verifier-fins-de-ligne.py`
-        # (pre-commit) refuse, lui, une conversion INVOLONTAIRE.
-        run: |
-          #  Le chemin suit une TABULATION : couper sur les espaces tronquerait un
-          #  nom qui en contient.
-          mixtes=$(git ls-files --eol | awk -F '\t' '$1 ~ /^i\/mixed/ { print $2 }')
-          [ -z "$mixtes" ] && exit 0
-          while IFS= read -r f; do
-            echo "::error file=$f::fins de ligne mixtes CRLF/LF — normaliser vers la terminaison majoritaire du fichier (commit dédié, ALLOW_EOL=1)"
-          done <<< "$mixtes"
-          exit 1
+      - name: Aucun fichier CRLF ni mixte
+        # Le dépôt est LF partout depuis #2964 (25/11/2026), déclaré dans le
+        # `.gitattributes` racine. Il était MIXTE : 159 fichiers en CRLF, que
+        # l'`.editorconfig` contredisait, et un lecteur ancré en fin de ligne
+        # trébuchait dessus (le site, le 24/11 : `$` ne s'arrête pas avant `\r`).
+        # Un fichier mixte, lui, était déjà refusé (#1050). Seul un fichier
+        # déclaré `-text` est épargné : les conditions, dont l'empreinte se
+        # prouve à l'octet. `verifier-fins-de-ligne.py` (pre-commit) refuse, lui,
+        # une conversion INVOLONTAIRE.
+        run: python scripts/ci/scans_fichiers.py index
 
       - name: Aucun caractère de contrôle invisible dans le code
         # 🔴 Un caractère de RECUL (U+0008) collé au milieu d'une expression
@@ -1137,8 +1128,8 @@ jobs:
       # masque. Seul un analyseur strict pouvait le dire, et le seul du dépôt
       # (`npm run lint`) n'était dans aucun job.
       # Ce contrôle valide sans exiger la mise en forme : les manuels sont dans
-      # `.prettierignore` (les reformater produirait un diff énorme et sans valeur,
-      # et les repasserait de CRLF en LF), mais c'était prettier qui voyait le
+      # `.prettierignore` (les reformater produirait un diff énorme et sans
+      # valeur), mais c'était prettier qui voyait le
       # défaut. Un ignore posé sans remplacer le contrôle qu'il éteint rend le
       # défaut invisible à nouveau.
       - name: Balisage des manuels bien formé
@@ -2071,9 +2062,8 @@ jobs:
         # c'est la faute de logique qu'on veut lire en premier, pas la virgule
         # mal placée. Un formatage rouge en tête de journal fait scroller.
         #
-        # ⚠️ `endOfLine: "auto"` dans `.prettierrc` — ce dépôt est légitimement
-        # MIXTE CRLF/LF, et un `lf` forcé aurait converti 200 fichiers en un
-        # commit illisible, exactement ce que `.githooks/pre-commit` refuse.
+        # `endOfLine: "lf"` dans `.prettierrc` : le dépôt est LF partout depuis
+        # #2964 (il était mixte, et `auto` évitait de convertir 200 fichiers).
         working-directory: front
         run: npm run lint:format
 

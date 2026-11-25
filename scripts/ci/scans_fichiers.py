@@ -16,12 +16,16 @@ messages `::error file=…` :
                    tabulation, le saut de ligne et le retour chariot (U+0000 à
                    U+001F, et U+007F) — le NUL compris, que `grep` classe binaire
                    et ne voit pas
+  index            un fichier de l'INDEX en CRLF ou mixte (`git ls-files --eol`),
+                   hors ceux qu'un `.gitattributes` déclare `-text` : le dépôt est
+                   LF partout depuis #2964
 
 Les motifs sont ceux de `git ls-files -- GLOB…` (pathspec git, `*` traverse les
 dossiers). Un scan qui ne couvre AUCUN fichier échoue : « rien trouvé » parce que
 rien n'a été lu n'est pas un vert (`standards/04` §2).
 
 Usage : scans_fichiers.py bom|crlf|controle GLOB…
+        scans_fichiers.py index
         scans_fichiers.py --selftest
 """
 import os
@@ -37,6 +41,7 @@ _CONTROLE = bytes(c for c in list(range(0, 32)) + [127] if c not in (9, 10, 13))
 MESSAGES = {
     'bom': "BOM UTF-8 en tête — {consigne}",
     'crlf': "fins de ligne CRLF — attendu LF (.editorconfig)",
+    'index': "fins de ligne {eol} dans l'index — le dépôt est LF partout (.gitattributes, #2964)",
     'controle': ("{n} caractère(s) de contrôle invisible(s) (U+0008, U+0000 et voisins)"
                  " — ils changent un motif sans se voir"),
 }
@@ -91,6 +96,36 @@ def scanner(mode, globs, racine='.', ecrire=print):
             ecrire(f"::error file={chemin}::{message}")
             etat = 1
     return etat
+
+
+def hors_lf(sortie_eol: str) -> list[tuple[str, str]]:
+    """(chemin, `crlf`|`mixed`) de chaque fichier de l'index qui n'est pas LF.
+
+    `sortie_eol` : la sortie de `git ls-files --eol` — `i/<eol> w/<eol> attr/<…>`,
+    une TABULATION, le chemin. Un fichier déclaré `-text` (les conditions, dont
+    l'empreinte se prouve à l'octet) n'est jamais converti : il est épargné."""
+    fautes = []
+    for ligne in sortie_eol.splitlines():
+        meta, _, chemin = ligne.partition('\t')
+        champs = meta.split()
+        if not champs or champs[0] not in ('i/crlf', 'i/mixed'):
+            continue
+        if any(c == 'attr/-text' or c == '-text' for c in champs[2:]):
+            continue
+        fautes.append((chemin, champs[0][2:]))
+    return fautes
+
+
+def scanner_index(racine='.', ecrire=print):
+    sortie = subprocess.run(['git', '-C', racine, 'ls-files', '--eol'], capture_output=True,
+                            text=True, encoding='utf-8', check=True).stdout
+    if not sortie.strip():
+        ecrire("::error::scan index : git ls-files --eol ne lit rien — rien n'a été vérifié")
+        return 2
+    fautes = hors_lf(sortie)
+    for chemin, eol in fautes:
+        ecrire(f"::error file={chemin}::" + MESSAGES['index'].format(eol=eol.upper()))
+    return 1 if fautes else 0
 
 
 def _selftest():
@@ -157,10 +192,39 @@ def _selftest():
         code, _ = jouer('bom', '*.py')
         attendre('bom : tout sain → 0', code, 0)
 
+    #  L'index (#2964) — règle pure, puis un dépôt jetable SANS `.gitattributes` :
+    #  dans le vrai dépôt git normalise à l'ajout, un témoin y passerait à tort.
+    attendre('index : crlf', hors_lf('i/crlf  w/crlf  attr/                 \ta.py'),
+             [('a.py', 'crlf')])
+    attendre('index : mixte', hors_lf('i/mixed w/mixed attr/\tb c.md'), [('b c.md', 'mixed')])
+    attendre('index : lf', hors_lf('i/lf    w/lf    attr/text=auto eol=lf \tc.py'), [])
+    attendre('index : -text épargné', hors_lf('i/crlf  w/crlf  attr/-text           \tv1.md'), [])
+    with tempfile.TemporaryDirectory() as dossier:
+        def git(*args):
+            subprocess.run(['git', '-C', dossier, '-c', 'user.name=t', '-c', 'user.email=t@t',
+                            '-c', 'core.autocrlf=false', *args], check=True, capture_output=True)
+
+        git('init', '-q')
+        for nom, contenu in {'sain.py': b'a\n', 'crlf.py': b'a\r\nb\r\n',
+                             'mixte.md': b'a\r\nb\n', 'garde/v1.md': b'a\r\n'}.items():
+            chemin = os.path.join(dossier, nom)
+            os.makedirs(os.path.dirname(chemin), exist_ok=True)
+            with open(chemin, 'wb') as f:
+                f.write(contenu)
+        with open(os.path.join(dossier, 'garde', '.gitattributes'), 'w') as f:
+            f.write('*.md -text\n')
+        git('add', '-A')
+        lignes = []
+        code = scanner_index(dossier, lignes.append)
+        texte = '\n'.join(lignes)
+        attendre('index : code', code, 1)
+        attendre('index : crlf et mixte nommés', ('crlf.py' in texte, 'mixte.md' in texte), (True, True))
+        attendre('index : lf et -text épargnés', ('sain.py' in texte, 'v1.md' in texte), (False, False))
+
     if echecs:
         print('FAIL scans_fichiers :', *echecs, sep='\n  ')
         return 1
-    print('OK scans_fichiers — bom, crlf, contrôle, cas zéro')
+    print('OK scans_fichiers — bom, crlf, contrôle, index, cas zéro')
     return 0
 
 
@@ -169,7 +233,9 @@ def main(argv):
     sys.stdout.reconfigure(encoding='utf-8')
     if argv[1:] == ['--selftest']:
         return _selftest()
-    if len(argv) < 3 or argv[1] not in MESSAGES:
+    if argv[1:] == ['index']:
+        return scanner_index()
+    if len(argv) < 3 or argv[1] not in MESSAGES or argv[1] == 'index':
         print(__doc__)
         return 64
     return scanner(argv[1], argv[2:])
