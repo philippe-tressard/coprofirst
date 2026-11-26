@@ -19,7 +19,7 @@ supprimait un compte, et le droit à l'effacement passait par courriel (#772).
 4. **Le traitement est la purge existante** (`suppression_compte.supprimer_compte`,
    celle de `DELETE /admin/utilisateurs/{id}`), inchangée. Ce qu'elle efface et ce
    qu'elle garde sans nom est dit à la personne AVANT qu'elle demande
-   (`CONSEQUENCES`), servi par l'API : le site et l'app iOS lisent le même texte.
+   (`CONSEQUENCES`), servi par l'API : le site et les apps lisent le même texte.
 5. **La démonstration accepte la demande et n'efface jamais** (`demo.est_demo`) :
    ses comptes sont partagés et publiés — la revue d'Apple y voit le geste aboutir.
 
@@ -55,16 +55,22 @@ from app.utils.suppression_compte import supprimer_compte
 #: `seed/contenus_legaux_suppression`) : il ne peut pas diverger.
 DELAI_TRAITEMENT_JOURS = DELAI_TRAITEMENT_DEMANDE_JOURS
 
-#: Ce que la personne lit AVANT de confirmer — le site et l'app iOS le lisent ici.
-#: Il dit ce que fait `supprimer_compte`, et rien d'autre : les contenus gardés
-#: sans nom sont ceux de `suppression_compte.CONTENUS_GARDES` (#1688, #1821).
+#: Ce que la personne lit AVANT de confirmer — le site et les apps le lisent ici.
+#: Il dit ce que fait `supprimer_compte`, et rien d'autre : ce qui part est
+#: `suppression_compte.CONTENUS_PERSONNELS`, ce qui reste sans nom
+#: `CONTENUS_GARDES` (#1688, #1821). 🔒 `test_consequences_suppression.py` rapproche
+#: chaque entrée des deux tables d'un mot de ce texte, ou déclare son omission (#3134).
 CONSEQUENCES: tuple[str, ...] = (
     "Votre compte et vos données personnelles sont effacés : profil, liens à vos lots, "
-    "badges et demandes, notifications, sessions, petites annonces, avis, délégations "
-    "et mandats.",
-    "Ce que vous avez écrit dans la vie collective de la résidence — affaires et leurs "
-    "messages, votes, soutiens, réponses dans les échanges, documents publiés — reste, "
-    "sans votre nom : il est attribué à « Ancien résident ».",
+    "demandes de badge et de modification, notifications, sessions et appareils, "
+    "petites annonces, avis, délégations et mandats, baux de vos lots, signalements et "
+    "masques, historique de navigation.",
+    "Les badges d'accès restent attachés à leur lot : seul le lien à votre nom est retiré.",
+    "Ce que vous avez écrit ou publié dans la vie collective de la résidence — affaires "
+    "et leurs messages, consultations et votes, idées et soutiens, réponses dans les échanges, documents "
+    "et rapports, règles de la résidence, annonces du hall, questions au règlement, "
+    "évaluations des prestataires — reste, sans votre nom : il est attribué à "
+    "« Ancien résident ».",
     "L'effacement est définitif. Vous pouvez retirer votre demande tant que "
     "l'administration ne l'a pas traitée.",
     f"L'administration de la résidence la traite sous {DELAI_TRAITEMENT_JOURS} jours au plus.",
