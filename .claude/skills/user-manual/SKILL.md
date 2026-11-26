@@ -110,10 +110,6 @@ style sont mortes : ne pas s'en servir de modèle.
   <ul class="ecran-profils">
     <li data-onglet="kanban" data-reserve="nonLocataire"><span class="profil">Locataire</span> …</li>
   </ul>
-  <details class="ecran-detail" name="en-savoir-plus">
-    <summary>En savoir plus</summary>
-    <div class="ecran-detail-corps"><ul><li><strong>Un geste</strong> — …</li></ul></div>
-  </details>
 </div>
 ```
 
@@ -124,12 +120,18 @@ style sont mortes : ne pas s'en servir de modèle.
 | `data-onglet` + `data-reserve` | un onglet réservé : son `id` et la valeur `reserve:` de `pages.ts`, sur le `<li>` de `ecran-profils` | `lint:manuel-profils` : chaque onglet réservé est annoncé ; une réserve que la page applique elle-même se déclare dans `RESERVES_ECRITES_DANS_LA_PAGE` |
 
 La classe `ecran-acces-<public>` colore l'étiquette ; elle suit `data-acces`.
-Le détail d'un onglet se range dans `ecran-detail`, une puce par geste : son nom à
-l'écran en gras, puis ce qu'il fait. **Les fiches des outils du conseil et de
-l'administration — Prestataires, Espace CS, Admin — n'en ont pas** (décision du
-25/11/2026, #3008) : ceux qui s'en servent ont l'écran sous les yeux, et leur détail
-vit dans l'application (aide d'écran, descriptif d'onglet). Leur plafond de mots est
-leur résumé : `lint:manuel-volume` refuse qu'on y remette un détail.
+
+**Aucune fiche n'a de bloc « En savoir plus »** (décision de Philippe du 26/11/2026,
+#3008 : « un manuel clair, simple et pas trop long pour éviter de faire peur aux
+users »). Une fiche dit en une ou deux phrases ce que contient l'écran, et nomme ses
+gestes principaux sous leur nom à l'écran ; le reste vit dans l'application (aide
+d'écran, descriptif d'onglet de `pages.ts`, FAQ). `lint:manuel-volume` refuse un
+`<details>` (plafond `blocs: 0`) et toute phrase de plus : ajouter, c'est retirer.
+
+**Le critère de relecture** : un résident doit lire le manuel sans avoir peur. Des
+phrases courtes, aucun mot technique (ni « instance », ni « extranet », ni nom de
+protocole), seulement l'essentiel de chaque écran. Ce qui ne sert qu'au conseil
+syndical tient en une phrase.
 
 ### Les autres structures lues par une machine
 
@@ -150,7 +152,7 @@ leur résumé : `lint:manuel-volume` refuse qu'on y remette un détail.
 | `npm run lint:manuel-menus` | une route du menu sans fiche, une fiche sans route, un public faux, deux maquettes qui divergent ou ne suivent pas l'ordre par défaut |
 | `npm run lint:manuel-profils` | un onglet réservé non annoncé, la table des sections ou des catégories qui diverge du code, une icône de carte non documentée — **et** un README qui énumère trois catégories ou plus, ou les compte (#1540) |
 | `npm run lint:manuels` | un balisage mal formé, dans `docs/` comme dans `front/static/` |
-| `npm run lint:manuel-volume` | un manuel, une section ou une carte d'écran au-dessus de son plafond de mots (`check-manuel-volume.regles.mjs`, qui ne fait que baisser : un texte qui maigrit baisse son plafond dans le même lot), une carte neuve sans plafond — arbitrage du 07/09/2026, #3008. Ajouter une phrase à une carte, c'est en retirer une autre |
+| `npm run lint:manuel-volume` | un manuel, une section ou une carte d'écran au-dessus de son plafond de mots (`check-manuel-volume.regles.mjs`, qui ne fait que baisser : un texte qui maigrit baisse son plafond dans le même lot), une carte neuve sans plafond, un bloc dépliable `<details>` (plafond `blocs: 0`, 26/11/2026) — arbitrage du 07/09/2026, #3008. Ajouter une phrase à une carte, c'est en retirer une autre |
 | `npm run lint:pictogrammes` | 🚨 dans le manuel : l'urgence se dit ⚡ |
 | `test_documentation.py` | les deux copies qui diffèrent, un numéro de version du manuel, un logo dessiné, les badges du README (Python, Node, CI) qui ne suivent plus l'image ni la CI |
 | `test_manuel_ne_recopie_rien.py` | une valeur dont le code est la source : taille de fichier, nombre de pièces jointes, extensions, délai en jours, énumération de catégories |
@@ -193,8 +195,8 @@ décrit-elle encore l'écran ? — n'est vérifié par rien : il se relit, écra
 <span class="pour-vous pour-vous-obligatoire">Obligatoire</span>  <!-- ou -facultatif, -conseil -->
 ```
 
-Le détail qui ne sert qu'à qui le cherche se range dans `details.ecran-detail`
-(`details.faq-item` existe dans la feuille de style, aucun chapitre ne l'emploie).
+Le détail qui ne sert qu'à qui le cherche ne s'écrit pas dans le manuel : il vit à
+l'écran. Le manuel n'a aucun bloc dépliable (`lint:manuel-volume`).
 
 ## Le README
 

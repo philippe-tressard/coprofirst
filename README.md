@@ -58,9 +58,9 @@
 
 ## Manuel utilisateur
 
-Le **manuel utilisateur** décrit chaque écran : ce qu'il contient et qui peut le
-voir, et pour ceux des résidents les gestes qu'il permet ; le détail des outils du
-conseil et de l'administration vit dans l'application —
+Le **manuel utilisateur** est court, et fait pour ne pas intimider : il démarre en
+trois étapes, puis dit en une ou deux phrases ce que contient chaque écran et qui
+peut le voir. Le détail de chaque écran vit dans l'application —
 [docs/manuel-utilisateur.html](docs/manuel-utilisateur.html).
 L'application le sert aussi elle-même, à l'adresse `/manuel-utilisateur.html`.
 

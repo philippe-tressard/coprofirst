@@ -74,12 +74,8 @@ _BADGE_APP_STORE = re.compile(
 _BALISES = re.compile(r"<[^>]+>")
 _ID = re.compile(r"""\bid\s*=\s*["']([^"']+)["']""", re.I)
 
-#: Ce qui remplace un bloc « En savoir plus » dans le PDF (voir `corps_du_manuel`).
-CLASSE_RENVOI = "renvoi-en-ligne"
-RENVOI_EN_LIGNE = "→ Le détail de cet écran est dans le manuel en ligne."
-
-#: Le manuel en ligne, tel que le front le sert : l'adresse que le PDF donne pour
-#: le détail qu'il ne porte pas.
+#: Le manuel en ligne, tel que le front le sert : l'adresse que le sommaire donne,
+#: celle de la version toujours à jour.
 CHEMIN_MANUEL_EN_LIGNE = "/manuel-utilisateur.html"
 
 
@@ -115,22 +111,13 @@ def lire_manuel(url: str = URL_MANUEL_INTERNE, timeout: float = 5.0) -> str:
 def corps_du_manuel(html: str) -> str:
     """Le contenu imprimable : le `<main>`, sans la navigation ni les scripts.
 
-    🔴 LE PDF DONNE L'ESSENTIEL, LE DÉTAIL RESTE EN LIGNE (23/10/2026).
+    🔴 LE PDF PORTE TOUT LE MANUEL (26/11/2026, #3008).
 
-    Les blocs « En savoir plus » portent 62 % du texte du manuel — 13 000 mots
-    sur 21 000, dont 5 000 pour la seule fiche Admin. Ouverts dans le PDF (choix
-    du 03/09/2026), ils en faisaient 33 pages, avec des fiches plus hautes qu'une
-    page. Demandé à l'écran : *« des paragraphes très longs, plus d'une page,
-    c'est trop : cela ne sera jamais lu »*, et un document divisé par deux.
-
-    Le bloc est donc RETIRÉ, et un renvoi prend sa place : le lecteur sait qu'il
-    y a davantage, et où le trouver (le sommaire donne l'adresse). Rien n'est
-    réécrit : le PDF reste une mise en page du manuel servi, il en garde la
-    partie toujours visible à l'écran — celle qu'on lit avant de déplier.
-
-    ⚠️ La balise est retirée À LA COMPOSITION, comme elle était ouverte avant : un
-    `display: none` dépendrait du moteur, et un bloc caché laisserait ses titres
-    au sommaire.
+    Les blocs « En savoir plus » en faisaient 62 % ; le PDF les retirait depuis le
+    23/10/2026, un renvoi à leur place. Le manuel n'en a plus aucun (« un manuel
+    clair, simple et pas trop long pour éviter de faire peur aux users ») :
+    `lint:manuel-volume` refuse qu'il en retrouve un, et le PDF imprime donc ce
+    que la page montre, sans rien retirer d'autre que « Un logiciel libre ».
     """
     trouve = _MAIN.search(html)
     corps = trouve.group(1) if trouve else html
@@ -138,12 +125,6 @@ def corps_du_manuel(html: str) -> str:
     #  Le badge de l'App Store est une image servie par le site : le PDF n'en charge
     #  aucune au rendu. Il y devient son texte alternatif, dans le même lien.
     corps = _BADGE_APP_STORE.sub(lambda m: m.group(1), corps)
-    corps = re.sub(
-        r"<details[^>]*>.*?</details>",
-        f'<p class="{CLASSE_RENVOI}">{RENVOI_EN_LIGNE}</p>',
-        corps,
-        flags=re.S | re.I,
-    )
     #  🔴 « UN LOGICIEL LIBRE » NE FIGURE PAS DEUX FOIS (05/09/2026).
     #
     #  Demandé à l'écran : *« le § Un logiciel libre est à déplacer à la fin, et
@@ -238,8 +219,8 @@ def _sommaire(releve: list[tuple[int, str, str]], site_url: str) -> str:
     Media que WeasyPrint implémente. Un numéro écrit à la main serait faux dès
     la première phrase ajoutée au manuel.
 
-    Il annonce aussi ce que le document NE porte pas — le détail de chaque écran —
-    et où le lire : c'est la page qu'on ouvre en premier.
+    Il dit aussi où lire la version toujours à jour, et que le détail est à
+    l'écran : c'est la page qu'on ouvre en premier.
     """
     if not releve:
         return ""
@@ -249,8 +230,8 @@ def _sommaire(releve: list[tuple[int, str, str]], site_url: str) -> str:
     )
     adresse = escape(site_url.rstrip("/") + CHEMIN_MANUEL_EN_LIGNE)
     avis = (
-        '<p class="sommaire-avis">Ce guide imprimé donne l’essentiel de chaque écran. '
-        "Le détail — chaque cas, chaque réglage — est dans le manuel en ligne : "
+        '<p class="sommaire-avis">Ce guide imprimé donne l’essentiel de chaque écran&nbsp;; '
+        "le détail est dans l’application, sur chaque écran. La version toujours à jour : "
         f"<strong>{adresse}</strong></p>"
     )
     return f'<section class="sommaire"><h2>Sommaire</h2>{avis}<ol>{lignes}</ol></section>'
