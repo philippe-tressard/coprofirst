@@ -409,11 +409,6 @@
     }
 
     .persona-intro { font-size: .82rem; color: var(--muted); margin-top: .35rem; }
-    .persona-detail { margin-top: .3rem; }
-    .persona-detail summary { cursor: pointer; font-weight: 600; font-size: .8rem; color: #2563eb; }
-    .persona-detail summary::before { content: '▸ '; }
-    .persona-detail[open] summary::before { content: '▾ '; }
-    .persona-detail p { font-size: .8rem; color: var(--muted); margin-top: .25rem; }
 
     .persona-card li::before {
       content: '-';
@@ -478,29 +473,6 @@
     }
     .ecran-icone svg { width: 100%; height: 100%; display: block; }
 
-    /*  « En savoir plus » : le détail ne s'ouvre que sur demande. Les outils du
-        conseil et de l'administration (Prestataires, Espace CS, Admin) n'en ont
-        plus (#3008, 25/11/2026) : ceux qui s'en servent ont l'écran sous les yeux,
-        et le détail vit dans l'application. Le manuel est plafonné
-        (`npm run lint:manuel-volume`) : un bloc neuf se paie d'un retrait. */
-    .ecran-detail {
-      margin-top: .6rem;
-      border-top: 1px dashed var(--border);
-      padding-top: .5rem;
-    }
-    .ecran-detail > summary {
-      cursor: pointer;
-      font-size: .8rem;
-      font-weight: 700;
-      color: #4f46e5;
-      list-style: none;
-    }
-    .ecran-detail > summary::-webkit-details-marker { display: none; }
-    .ecran-detail > summary::before { content: '▸ '; }
-    .ecran-detail[open] > summary::before { content: '▾ '; }
-    .ecran-detail-corps { font-size: .84rem; color: var(--muted); margin-top: .5rem; }
-    .ecran-detail-corps ul { margin: .4rem 0 .4rem 1.05rem; }
-    .ecran-detail-corps li { margin-bottom: .3rem; }
     /*  Ce que chaque PROFIL voit derrière une même entrée de menu (24/09/2026) :
         « Tous » y entrent, pas tous pour y voir la même chose. */
     .ecran-profils { list-style: none; margin: .5rem 0 0; display: grid; gap: .25rem; font-size: .8rem; }
@@ -815,48 +787,6 @@
        CATEGORY CHIPS (tickets)
     ═══════════════════════════════════════════ */
     /* ═══════════════════════════════════════════
-       FAQ ACCORDÉON
-    ═══════════════════════════════════════════ */
-    details.faq-item {
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: 10px;
-      margin-bottom: .75rem;
-      overflow: hidden;
-    }
-
-    details.faq-item summary {
-      padding: 1rem 1.25rem;
-      font-weight: 600;
-      font-size: .95rem;
-      cursor: pointer;
-      list-style: none;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      gap: 1rem;
-      user-select: none;
-    }
-
-    details.faq-item summary::after {
-      content: '›';
-      font-size: 1.4rem;
-      color: var(--muted);
-      transition: transform .2s;
-      flex-shrink: 0;
-    }
-
-    details.faq-item[open] summary::after { transform: rotate(90deg); }
-
-    details.faq-item .faq-body {
-      padding: 0 1.25rem 1rem;
-      font-size: .9rem;
-      color: var(--muted);
-      border-top: 1px solid var(--border);
-      padding-top: .9rem;
-    }
-
-    /* ═══════════════════════════════════════════
        TABLE
     ═══════════════════════════════════════════ */
     table {
@@ -1144,20 +1074,6 @@
         <div class="profil-card">
           <strong>Syndic</strong>
           <p>Reçoit les demandes qui lui sont adressées et y répond, par le site ou par courriel&nbsp;: sa réponse entre alors dans le fil de l’affaire.</p>
-          <details class="ecran-detail" name="en-savoir-plus">
-            <summary>En savoir plus</summary>
-            <div class="ecran-detail-corps"><ul>
-            <li><strong>Rattachement</strong> — la réponse se range dans son affaire grâce au numéro «&nbsp;Affaire #TK-…&nbsp;» de l’objet. Elle est <strong>datée de son envoi</strong> et ouverte par une ligne en italique&nbsp;: <em>Mail reçu de … le …</em>.</li>
-            <li><strong>Signature</strong> — elle n’est acceptée que si la messagerie du syndic la <strong>signe au nom de son domaine</strong> (signature DKIM), preuve qu’elle vient bien de lui. Sans cette signature, rien n’est écrit dans le fil et le conseil syndical est prévenu, avec le motif&nbsp;: aucune signature, une signature qui ne couvre qu’une partie du message ou utilise un algorithme trop ancien, un message modifié après avoir été signé. Une messagerie Microsoft&nbsp;365 qui signe au nom de son <strong>abonnement</strong> (<em>…onmicrosoft.com</em>) et non du domaine du cabinet est admise quand l’administration a déclaré ce signataire pour ce domaine — <em>Admin › Services › Courriel</em>, champ <strong>Signataires délégués</strong>, une ligne «&nbsp;domaine = signataire&nbsp;». Le refus le dit, et nomme le signataire à déclarer&nbsp;; une messagerie grand public (Gmail, Outlook…) n’est jamais admise.</li>
-            <li><strong>Transfert</strong> — le conseil syndical peut alors <strong>transférer</strong> le message à l’adresse des affaires, l’objet «&nbsp;Affaire #TK-…&nbsp;» conservé&nbsp;: c’est le message du syndic qui entre dans le fil, <em>Mail reçu de … transféré par …</em>.</li>
-            <li><strong>Sans compte</strong> — le gestionnaire du cabinet n’a pas besoin d’un compte sur le site&nbsp;: s’il figure, avec son adresse, dans la <strong>fiche du syndic</strong>, sa réponse entre au fil, signée <strong>Le syndic</strong>, son nom dans la ligne <em>Mail reçu de …</em>.</li>
-            <li><strong>Statut</strong> — une réponse du syndic, directe ou transférée, fait passer une affaire encore «&nbsp;Ouvert&nbsp;» à <strong>«&nbsp;Chez le syndic&nbsp;»</strong>.</li>
-            <li><strong>Qui peut répondre</strong> — l’auteur de l’affaire, le conseil syndical et le syndic. Le message de toute autre personne, même titulaire d’un compte, n’est pas ajouté au fil, et le conseil syndical en est prévenu.</li>
-            <li><strong>Pièces jointes</strong> — les documents (PDF, Word, Excel, texte) et les photos (JPEG, PNG, WebP, GIF, AVIF, BMP, TIFF et HEIC, celui de l’iPhone) joints au message entrent avec lui dans la suite, <strong>dix au plus</strong>&nbsp;; une pièce identique à une pièce déjà dans l’affaire n’y entre pas une seconde fois. Le logo, le bandeau, les icônes et la signature électronique de la signature du message sont laissés de côté — y compris une image intégrée au message que celui-ci affiche en petit. Un fichier d’un autre type (archive, programme…) ou refusé par le contrôle de sécurité est nommé à la fin de la suite, avec la raison&nbsp;; au-delà de dix, le conseil syndical est prévenu que les suivants restent dans la boîte de réception.</li>
-            <li><strong>Ce qui n’entre pas</strong> — rien pour une affaire close, ni un message du conseil qui ne fait que remercier.</li>
-            <li><strong>Assistant IA</strong> — si l’administration l’a activé, il débarrasse la réponse de la signature, des mentions légales et des lignes vides (marque ✨)&nbsp;; le texte reçu reste consultable sous <em>Message d’origine</em>.</li>
-            </ul></div>
-          </details>
         </div>
         <div class="profil-card">
           <strong>Un proche qui vous aide</strong>
@@ -1258,12 +1174,7 @@
             <ul>
               <li><strong>Mes lots &amp; accès</strong> — vos biens, vos diagnostics, vos badges et télécommandes</li>
               <li><strong>Affaires</strong> — signaler, suivre, et lire les actualités du conseil syndical (filtre <em>Actualité</em>)&nbsp;; ce qui est daté paraît sous le filtre <em>Calendrier</em></li>
-              <li><strong>Résidence</strong> — les documents de la copropriété
-                <details class="persona-detail" name="en-savoir-plus">
-                  <summary>Carnet d’entretien</summary>
-                  <p>Ce qui a été entretenu, réparé et contrôlé, rangé par équipement. Il se constitue tout seul — contrats, entretiens terminés, affaires résolues du bâti, chacune sous sa catégorie (Panne, Sinistre, Étude &amp; travaux… — le pictogramme, dont le nom s’affiche au survol) et son n° d’affaire et, pour une intervention, «&nbsp;sous contrat n°&nbsp;…&nbsp;» ou «&nbsp;hors contrat&nbsp;» — et signale les visites en retard. Chacun y lit ce que les affaires et le kanban lui montrent, et rien de plus&nbsp;: une affaire qu’il ne peut pas ouvrir — un sinistre, une affaire confidentielle ou adressée au seul conseil — n’y figure pas. La ligne d’une affaire dont la synthèse a été validée se déplie (🧾)&nbsp;: la synthèse, ses graphiques, puis un lien vers l’affaire. Il se filtre par périmètre et par <strong>année</strong> — «&nbsp;Toutes&nbsp;» par défaut, rien n’en est jamais retiré&nbsp;: le décret n°&nbsp;2001-477 date les travaux par leur année de réalisation et ne prévoit aucune durée de conservation. Les contrats en cours restent affichés quelle que soit l’année.</p>
-                </details>
-              </li>
+              <li><strong>Résidence</strong> — les documents de la copropriété et son carnet d’entretien</li>
             </ul>
           </div>
           <div class="persona-card">
@@ -1402,44 +1313,24 @@
         <div class="ecran-card" data-page="/tableau-de-bord" data-acces="tous">
           <span class="ecran-icone" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect width="7" height="9" x="3" y="3" rx="1"/><rect width="7" height="5" x="14" y="3" rx="1"/><rect width="7" height="9" x="14" y="12" rx="1"/><rect width="7" height="5" x="3" y="16" rx="1"/></svg></span>
           <h3>Accueil</h3>
-          <p>La première page après la connexion&nbsp;: ce qui vous concerne aujourd'hui, rassemblé en un écran.</p>
+          <p>La première page après la connexion&nbsp;: ce qui vous concerne aujourd’hui, rassemblé en un écran.</p>
+          <p>En haut, votre lot et vos rôles, puis des raccourcis&nbsp;: vos affaires, le prochain rendez-vous, les sondages, les consignes de la copropriété. Dessous, ce que le conseil syndical a épinglé, l’avancement des dossiers et le fil de ce qui a bougé récemment.</p>
           <span class="ecran-acces ecran-acces-tous">Tous</span>
           <ul class="ecran-profils">
-            <li><span class="profil">Chacun</span> n’y voit que ce que son profil lui ouvre&nbsp;: un locataire, ses affaires, les pannes de son bâtiment, et les actualités et affaires qui lui sont adressées.</li>
+            <li><span class="profil">Chacun</span> n’y voit que ce que son profil lui ouvre&nbsp;: deux personnes n’ont pas le même Accueil. Un locataire n’y a pas l’avancement des dossiers.</li>
           </ul>
-          <details class="ecran-detail" name="en-savoir-plus">
-            <summary>En savoir plus</summary>
-            <div class="ecran-detail-corps"><ul>
-            <li><strong>Le bandeau, tout en haut</strong> — après votre prénom&nbsp;: votre <strong>lot</strong> (bâtiment, type, étage) puis vos <strong>rôles</strong>. Tant qu'aucun lot ne vous est rattaché, il affiche votre bâtiment, la mention <em>sans lot</em> et l'étage que vous avez indiqué&nbsp;— vous n'y êtes donc jamais réduit à votre seul prénom. C'est le rappel de qui vous êtes pour le site, et donc de ce que vous voyez. Votre <strong>photo</strong>, à droite, ouvre votre <strong>profil</strong>&nbsp;; sans photo, elle porte un crayon.</li>
-            <li><strong>Les raccourcis</strong> — une rangée de pastilles sous le bandeau&nbsp;: <strong>Affaires</strong>, avec le nombre d’affaires en cours et, en rouge, celles qui sont <em>urgentes</em>&nbsp;; le <strong>prochain rendez-vous</strong> — sa date et son titre, qui ouvrent l’affaire —, absent quand rien n’est prévu&nbsp;; <strong>Sondages</strong>, avec ceux qui sont ouverts&nbsp;; pour le conseil syndical, <strong>Espace CS</strong>, dont le compteur orange «&nbsp;N relances&nbsp;» mène droit à la relance du syndic&nbsp;; pour l’administrateur, <strong>Admin</strong>. Au bout de la rangée, <strong>Consignes</strong> ouvre la fiche des consignes de la copropriété (encombrants, tri, stationnement, contacts…) — mise en avant pour un locataire, qui n’a pas d’autre accès aux règles de l’immeuble. Les actualités et les événements datés se retrouvent dans <strong>Affaires</strong>, sous les filtres <em>Actualité</em> et <em>Calendrier</em>.</li>
-            <li><strong>📌 Épinglé</strong> — ce que le conseil syndical veut garder sous les yeux&nbsp;: une actualité importante y reste tant qu'elle l'est. Une affaire résolue ou annulée en sort seule, 24&nbsp;heures après sa clôture.</li>
-            <li><strong>📋 Kanban</strong> (pas pour un locataire) — les dossiers en cours par étape&nbsp;: <strong>AG</strong>, <strong>CS</strong>, <strong>Syndic</strong>, <strong>Prestataire</strong>, <strong>Terminé</strong>. Ce sont les colonnes de l'onglet Kanban d'Affaires, reprises ici&nbsp;; une colonne vide se réduit à son titre, tourné à la verticale, où elle indique « Aucune affaire » sans qu'on ait à la déplier ; chaque colonne montre ses <strong>trois</strong> dossiers les plus récents et annonce le reste (« +2 / 5 »), l'onglet Kanban d'Affaires les portant tous ; les dossiers annulés n'y figurent pas — l'accueil montre ce qui avance. Une vue d'avancement, pas une liste de tâches à faire soi-même. Dans son en-tête, une légende discrète rappelle la couleur de chaque bâtiment — son numéro, suivi entre parenthèses de la lettre que lui donne le règlement de copropriété quand elle est saisie —, la couleur que portent les pastilles des dossiers.</li>
-            <li><strong>Fil d'activité</strong> — tout ce qui a bougé récemment&nbsp;: actualités, affaires, sondages, documents, questions au règlement, dans l'ordre du plus récent. La pastille <strong>Ce qui me concerne</strong> y garde ce qui vise vos bâtiments ou la circulation de vos lots, et tout ce qui ne vise aucun lieu&nbsp;; les urgences et les épinglés restent affichés. La dernière ligne d'une carte y est <strong>la même que sur la carte de l'affaire</strong>&nbsp;: catégorie, état, périmètre 🔹, qui la lit, ⚡&nbsp;Urgente, numéro, ✍️&nbsp;auteur et ✨ quand l'assistant IA a aidé à rédiger. Passé un certain temps, les entrées glissent dans les <strong>archives</strong>, dépliables en bas de page — rien ne disparaît. Chaque carte a, à gauche, l'<strong>heure</strong> puis sa <strong>rubrique</strong> (AFF., ANN., ACTU.…) dans sa couleur — le jour est l'intitulé du groupe («&nbsp;Aujourd'hui&nbsp;», «&nbsp;Hier&nbsp;»…)&nbsp;; au téléphone, cette colonne devient une ligne au-dessus du titre. Une affaire qui a une <strong>date</strong> (rubrique CAL.) y dit aussi <strong>quand elle a lieu</strong>, sous sa rubrique&nbsp;: le délai d'abord — «&nbsp;J-8&nbsp;», «&nbsp;Jour J&nbsp;», «&nbsp;En cours&nbsp;», «&nbsp;Passé&nbsp;» —, puis la date, ou ses deux dates quand elle s'étend sur plusieurs jours&nbsp;; une affaire close ne garde que la date. Un <strong>document</strong> dit, sous son titre, <strong>où il a été ajouté</strong> — par exemple «&nbsp;Document ajouté dans Résidence › Fiche, rubrique Plans&nbsp;», ou «&nbsp;Pièce jointe ajoutée à une affaire&nbsp;» — et sa carte y mène. Comme partout ailleurs, un clic n'importe où ouvre une carte, et seul son <strong>titre</strong> la referme&nbsp;: on peut lire et sélectionner son contenu sans la replier. Une <strong>affaire</strong> dépliée se lit comme dans la page Affaires, en <strong>étapes</strong> sur un rail, toujours dans cet ordre&nbsp;: <strong>La demande</strong>, <strong>La suite</strong>, les <strong>Comptes rendus</strong> des points CS / Syndic qui l'ont abordée, s'il y en a, et, quand l'affaire est close et que le conseil syndical a validé sa synthèse, <strong>La synthèse</strong> — elle s'ajoute à la carte sans la faire remonter dans le fil. Ici, c'est <strong>La suite</strong> qui est ouverte&nbsp;: elle montre d'abord ce qui vient d'arriver (les trois dernières entrées, chacune avec <strong>ses</strong> photos). Les autres étapes sont pliées sur une ligne qui en dit l'essentiel&nbsp;; un clic en ouvre une et replie l'autre. Une affaire toute neuve n'a pas encore de suite&nbsp;: sa demande est directement ouverte. Le fil se lit seulement&nbsp;: pour répondre ou corriger une entrée, «&nbsp;Voir l'affaire&nbsp;» ouvre la page Affaires.</li>
-          </ul>
-          <p class="ecran-note">Chaque bloc ne montre que ce que vous avez le droit de voir&nbsp;: deux personnes n'ont pas le même Accueil, et c'est voulu.</p></div>
-          </details>
         </div>
         <div class="ecran-card" data-page="/residence" data-acces="tous">
           <span class="ecran-icone" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 22V4a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v18Z"/><path d="M6 12H4a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h2"/><path d="M18 9h2a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2h-2"/><path d="M10 6h4"/><path d="M10 10h4"/><path d="M10 14h4"/><path d="M10 18h4"/></svg></span>
           <h3>Résidence</h3>
-          <p>Les documents communs — procès-verbaux, règlement, rapports —, la fiche de la copropriété, son <strong>carnet d'entretien</strong> et les <strong>questions au règlement de copropriété</strong>.</p>
+          <p>Les documents communs — procès-verbaux, règlement, plans, rapports —, la fiche de la copropriété et son <strong>carnet d’entretien</strong>&nbsp;: ce qui a été entretenu, réparé et contrôlé.</p>
+          <p>L’onglet <strong>Règlement</strong> répond à vos questions sur le règlement de copropriété («&nbsp;ai-je le droit de…&nbsp;?&nbsp;»)&nbsp;: l’assistant donne un avis, avec les passages du texte qui le justifient. C’est un avis indicatif&nbsp;; en cas de doute, interrogez le syndic.</p>
           <span class="ecran-acces ecran-acces-tous">Tous</span>
           <ul class="ecran-profils">
-            <li><span class="profil">Copropriétaire · bailleur</span> la fiche, les documents ouverts à leur profil, le carnet d’entretien et — si l’administration le leur a ouvert — l’onglet <strong>Règlement</strong>, où ils ne lisent que leurs propres questions.</li>
-            <li data-onglet="carnet" data-reserve="proprioOuCS"><span class="profil">Locataire</span> la fiche et les documents ouverts aux locataires — pas le <strong>carnet d’entretien</strong>, réservé aux copropriétaires et au conseil syndical.</li>
-            <li data-onglet="reglement" data-reserve="proprioOuCS"><span class="profil">Locataire · mandataire · syndic</span> pas l’onglet <strong>Règlement</strong>, réservé aux copropriétaires, au conseil syndical et à l’administration.</li>
+            <li><span class="profil">Copropriétaire · bailleur</span> la fiche, les documents, le carnet d’entretien et, si l’administration l’a ouvert, l’onglet <strong>Règlement</strong>, où chacun ne lit que ses propres questions.</li>
+            <li data-onglet="carnet" data-reserve="proprioOuCS"><span class="profil">Locataire</span> la fiche et les documents ouverts aux locataires&nbsp;; pas le <strong>carnet d’entretien</strong>.</li>
+            <li data-onglet="reglement" data-reserve="proprioOuCS"><span class="profil">Locataire · mandataire · syndic</span> pas l’onglet <strong>Règlement</strong>.</li>
           </ul>
-          <details class="ecran-detail" name="en-savoir-plus">
-            <summary>En savoir plus</summary>
-            <div class="ecran-detail-corps"><ul>
-            <li><strong>La fiche de la copropriété</strong> — ses informations, dont son <strong>exercice comptable</strong> (année civile, ou «&nbsp;de juillet à juin&nbsp;», réglé par l'administrateur sur la fiche&nbsp;: c'est sur lui que la synthèse d'une affaire close compare ses délais). Seul l'<strong>administrateur</strong> la modifie (le crayon en tête de la fiche)&nbsp;; le conseil syndical la lit, sans crayon.</li>
-            <li><strong>Le carnet d'entretien</strong> — ce qui a été entretenu, réparé et contrôlé, rangé par équipement. Chaque intervention ou affaire y est datée du jour de sa <strong>clôture</strong>&nbsp;: la corriger ensuite ne change pas cette date. Un contrat y est daté de son début&nbsp;; tant qu’il n’a pas commencé, sa date porte la mention <strong>À venir</strong>. Sous le titre d’une intervention ou d’une affaire, trois lignes en donnent un extrait&nbsp;: le récit <em>Ce qui s’est passé</em> de sa synthèse validée, sinon la demande. Quand des visites attendues ont dépassé leur échéance, l’encart d’avertissement en tête les <strong>nomme</strong> une à une — équipement, portée et retard —, avec un lien vers chacune (pour un contrat, le lien n’est offert qu’au conseil syndical, seul à lire les prestataires). Il est réservé aux copropriétaires, au conseil syndical et à l'administration&nbsp;; le reste de l'écran est ouvert à tous. En tête du carnet, le conseil syndical — et lui seul — trouve le bandeau replié <strong>📊 Bilan de l'exercice</strong>&nbsp;: les moyennes des affaires du carnet closes sur un exercice comptable, catégorie par catégorie. Le conseil syndical y dépose les plans, le règlement et les comptes-rendus d'AG&nbsp;: jusqu'à <strong>dix fichiers à la fois</strong>, un document par fichier — sans titre saisi, chaque document prend le nom de son fichier.</li>
-            <li><strong>Règlement</strong> — «&nbsp;ai-je le droit de…&nbsp;?&nbsp;»&nbsp;: posez la question, et l’assistant y répond <strong>en juriste</strong>, d’après le texte du règlement chargé sur cette page <strong>et les décisions d’assemblée générale</strong> validées par l’administration. L’onglet est ouvert au <strong>conseil syndical</strong> et à l’<strong>administration</strong>, et aux <strong>copropriétaires</strong> — occupants ou bailleurs — quand l’administration le leur ouvre (case <em>Ouvert aux copropriétaires</em>, dans <em>Admin › Services › Assistant IA</em>, décochée à la livraison)&nbsp;; ni les locataires, ni les mandataires, ni le syndic ne le voient. La réponse donne un <strong>verdict</strong> (<em>Oui</em>, <em>Non</em>, <em>Oui, sous conditions</em>, <em>Le règlement ne le prévoit pas</em>, <em>Incertain</em>) et une <strong>synthèse courte</strong>&nbsp;: trois ou quatre phrases qui disent ce qui s’applique au final, chacune suivie de son <strong>renvoi</strong> entre crochets — par exemple [R2] pour le règlement, [AG1] pour une assemblée. Dessous, <strong>Ce qui fonde l’avis</strong> liste chaque renvoi sur une ligne&nbsp;: l’acte, la <strong>rubrique</strong> (le chapitre et la section du règlement, ou la résolution de l’assemblée) et la page, avec ✓ quand l’extrait a été retrouvé&nbsp;; un clic sur une ligne ouvre la section qui le porte et amène à l’extrait. Le règlement n’a pas d’articles numérotés&nbsp;: la rubrique est le chemin de ses titres. Le détail tient en trois sections <strong>pliées</strong> à l’ouverture, dont une seule s’ouvre à la fois&nbsp;: <strong>Le règlement de copropriété</strong> et <strong>Les assemblées générales</strong> (chaque décision nommée par la date de son AG et le numéro de sa résolution) donnent le raisonnement en quelques puces, puis les <strong>extraits</strong> cités mot pour mot — l’acte, la rubrique et la page pour le règlement, l’assemblée, la résolution et la page du PV pour une décision —&nbsp;; <strong>Réserves</strong> dit ce que la loi impose par-dessus le règlement, ou une décision qui relève de l’assemblée générale. Un renvoi cité sans extrait derrière est signalé. Un avis posé avant cette présentation garde la sienne, section après section. Chaque extrait est <strong>recherché dans le texte</strong> par le site&nbsp;: retrouvé, il porte ✓ et sa page&nbsp;; non retrouvé mot pour mot, il porte ⚠️ et se vérifie. Comptez jusqu’à deux minutes&nbsp;: l’assistant lit tout le règlement. Dépliée, la réponse s’ouvre sur une <strong>mention en italique</strong>&nbsp;: la date de la question, le rappel que l’avis est indicatif et ne se substitue pas aux actes authentiques, et <strong>d’où vient le texte lu</strong> — par exemple «&nbsp;d’après la numérisation du règlement et de ses modificatifs&nbsp;», la provenance saisie par l’administration.<br>Sous <em>Texte du règlement</em>, l’<strong>administration seule</strong> lit la <strong>provenance</strong> du texte et les fichiers que l’assistant lit. Le crayon (<span class="ic" role="img" aria-label="Modifier"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/><path d="m15 5 4 4"/></svg></span>) ouvre le formulaire&nbsp;: la <strong>provenance</strong> (obligatoire — elle complète «&nbsp;d’après…&nbsp;» sous chaque réponse, et chaque question garde celle du moment où elle a été posée), puis les <strong>pièces jointes</strong> de tout le site&nbsp;: jusqu’à dix fichiers, ajoutés dès qu’on les choisit, retirés d’une croix, le <strong>Markdown</strong> (<code>.md</code>) accepté en plus des formats habituels&nbsp;; <em>Enregistrer</em> écrit la provenance, <em>Annuler</em> la laisse telle qu’elle était — sans retirer un fichier déjà joint, parti dès qu’on l’a choisi. L’assistant lit <strong>tous les fichiers Markdown</strong> joints, mis bout à bout dans l’ordre d’ajout&nbsp;; un PDF joint n’est pas lu. Ni le conseil syndical ni les copropriétaires ne voient ces fichiers&nbsp;: ils lisent «&nbsp;Le règlement de copropriété est disponible sur le site&nbsp;», avec un lien vers le règlement le plus récent de la Fiche. Joindre ou retirer un fichier ne change pas les réponses déjà données&nbsp;: elles disent «&nbsp;Texte remplacé depuis&nbsp;». Le même formulaire porte une seconde liste, <strong>Décisions d’AG</strong>&nbsp;: un fichier Markdown par assemblée, ses résolutions seules, sans nom de personne — l’assistant les lit après le règlement, de la plus ancienne à la plus récente. Une réponse donnée avant l’ajout des décisions n’a que sa réponse et ses extraits du règlement.<br>Sous <em>Transcription des PV d’AG</em>, l’<strong>administration seule</strong> voit chaque PV déposé dans la Fiche (rubrique Comptes-rendus d’AG) et l’état de sa transcription. Chaque matin, l’assistant transcrit <strong>d’office</strong> les PV déposés depuis moins de deux mois&nbsp;; un PV plus ancien se transcrit par <strong>Transcrire</strong> ✨. La transcription ne garde que les résolutions — intitulé, majorité, résultat du vote en tantièmes, texte de la décision mot pour mot —, sans feuille de présence ni nom de votant. Elle arrive <em>À relire</em>, et le gestionnaire du site en est averti par la cloche&nbsp;: le crayon l’ouvre dans sa ligne, on la vérifie contre le PV, on la corrige au besoin, puis <strong>Enregistrer</strong> la valide&nbsp;: elle entre dans les <em>Décisions d’AG</em>. Rien n’y entre sans cette relecture&nbsp;: le site vérifie qu’un extrait cité figure dans le texte lu, pas que ce texte dit ce que dit le PV. La croix rejette une transcription à relire ou en échec&nbsp;; le PV peut alors être transcrit à nouveau. Les réponses sont un avis indicatif&nbsp;: pour un copropriétaire, l’encart d’en-tête le rappelle, et l’invite à interroger un juriste ou le syndic en cas de doute.<br>Les questions posées restent dans l’historique, dépliables une à une&nbsp;: une question déjà posée ne se repaie pas. Un copropriétaire n’y lit que <strong>les siennes</strong>&nbsp;; le conseil syndical et l’administration les lisent toutes, avec leur auteur. Son <strong>auteur</strong> et l’<strong>administration</strong> peuvent effacer une question et sa réponse (<span class="ic" role="img" aria-label="Supprimer"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/><line x1="10" x2="10" y1="11" y2="17"/><line x1="14" x2="14" y1="11" y2="17"/></svg></span> sur la carte, après confirmation)&nbsp;; le conseil syndical n’efface pas la question d’un autre. La FAQ déjà publiée à partir d’elle reste. Chaque question paraît aussi dans le <strong>fil d’activité</strong> de l’accueil (rubrique <em>RÈGL.</em>, verdict en couleur), pour ceux-là seuls qui la lisent dans l’onglet — son auteur, le conseil syndical, l’administration&nbsp;; effacée, elle en disparaît, et un clic l’ouvre dépliée dans l’onglet. Le <strong>conseil syndical</strong> seul publie une réponse dans la <strong>FAQ</strong>&nbsp;: l’icône 📚 ouvre, dans la carte, la boîte d’une nouvelle question de FAQ, pré-remplie avec la question et la synthèse (sans ses renvois), à relire — en retirant ce qui désignerait qui l’a posée&nbsp;: une entrée de FAQ ne porte aucun auteur — et à ranger dans une catégorie&nbsp;; publiée, la carte dit «&nbsp;📚 Dans la FAQ&nbsp;». C’est un <strong>avis indicatif</strong>&nbsp;: il ne se substitue pas aux actes authentiques. L’usage s’active dans <em>Admin › Services › Assistant IA</em>, et ses limites d’appels valent pour chacun, conseil compris. L’ancienne adresse <em>Espace CS › Règlement</em> mène ici.</li>
-            <li><strong>Déposer des documents</strong> — le conseil syndical y dépose les plans, le règlement et les comptes-rendus d'AG&nbsp;: jusqu'à <strong>dix fichiers à la fois</strong>, un document par fichier — sans titre saisi, chaque document prend le nom de son fichier. Un règlement et un rapport de diagnostic demandent <strong>leur date</strong> — celle du document, pas celle du dépôt —&nbsp;: le formulaire propose celle du jour, à corriger s'il le faut, et la correction d'un document déposé sans date propose celle de son dépôt.</li>
-            <li><strong>La colonne de gauche des fiches</strong> — elle date chaque fiche par <strong>le document lui-même</strong>&nbsp;: la date de l'assemblée pour un compte-rendu d'AG (<em>AG</em>), la date du règlement (<em>RÈGL.</em>), celle du rapport le plus récent pour un diagnostic (<em>DIAG.</em>). Les plans (<em>PLAN</em>) et les règles &amp; recommandations (<em>RÈGL.</em>) n'y portent que leur rubrique, sans date.</li>
-            <li><strong>Les pièces jointes d’une fiche</strong> — en modifiant un plan, le règlement, un compte-rendu d’AG, un rapport de diagnostic ou une règle, le conseil syndical trouve la section <strong>Pièces jointes</strong>, la même que partout ailleurs&nbsp;: une seule liste de <strong>dix fichiers</strong> au plus, photos ou documents (la feuille de présence d’une AG, le nuancier d’une règle de couleur). Le <strong>fichier du document</strong> y figure en premier. Chaque fichier ajouté part dès qu’on le choisit, et sa croix le supprime, après confirmation. Une fiche garde toujours un fichier&nbsp;: retirer le premier fait passer le suivant à sa place — pour remplacer le fichier d’un plan, déposez le nouveau, puis retirez l’ancien. Une règle reçoit ses pièces jointes <strong>dès sa création</strong>. Les autres fichiers se lisent en dépliant la carte du document ou de la règle, sous la ligne d’un rapport de diagnostic, par ceux qui lisent la fiche — et seulement eux&nbsp;; supprimer la fiche supprime ses annexes.</li>
-            </ul></div>
-          </details>
         </div>
         <div class="ecran-card" data-page="/tickets" data-acces="tous">
           <span class="ecran-icone" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/><path d="M13 8H7"/><path d="M17 12H7"/></svg></span>
@@ -1449,41 +1340,20 @@
           <ul class="ecran-profils">
             <li><span class="profil">Copropriétaire · bailleur</span> ses affaires, celles de son périmètre (sauf 🛡️ confidentielles) et les actualités.</li>
             <li data-onglet="kanban" data-reserve="nonLocataire"><span class="profil">Locataire</span> ses propres affaires, les pannes de son bâtiment, les actualités et les affaires que le conseil lui adresse (en lecture seule)&nbsp;; pas l’onglet <strong>Kanban</strong>.</li>
-            <li><span class="profil">Conseil syndical</span> tout — c’est lui qui fait avancer le suivi&nbsp;; dans l’onglet <strong>Kanban</strong>, il fait glisser une carte d’une colonne à l’autre, et la colonne qui la recevrait se marque pendant le geste.</li>
+            <li><span class="profil">Conseil syndical</span> tout — c’est lui qui fait avancer le suivi, en faisant glisser les cartes d’une colonne à l’autre du <strong>Kanban</strong>.</li>
           </ul>
-          <details class="ecran-detail" name="en-savoir-plus">
-            <summary>En savoir plus</summary>
-            <div class="ecran-detail-corps"><ul>
-            <li><strong>Ce que lit un locataire</strong> — les autres affaires — travaux, contrats, sujets d’AG —, datées ou non, regardent les copropriétaires&nbsp;: ce qui le concerne lui parvient par une actualité. Il n’a pas l’onglet <strong>Kanban</strong>&nbsp;: le suivi des dossiers regarde les copropriétaires et le conseil.</li>
-            </ul></div>
-          </details>
         </div>
         <div class="ecran-card" data-page="/mon-lot" data-acces="tous">
           <span class="ecran-icone" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 18v3c0 .6.4 1 1 1h4v-3h3v-3h2l1.4-1.4a6.5 6.5 0 1 0-4-4Z"/><circle cx="16.5" cy="7.5" r=".5" fill="currentColor"/></svg></span>
           <h3>Mes lots &amp; accès</h3>
           <p>Vos lots, vos badges Vigik et télécommandes de parking, vos baux et vos diagnostics. Un bailleur y gère aussi ses locataires.</p>
+          <p>Un badge égaré se déclare d’un clic (<strong>Signaler perdu</strong>)&nbsp;; <strong>+&nbsp;Nouvel accès</strong> en demande un autre au syndic. Le copropriétaire y lit aussi sa part des charges selon le règlement, sans montant&nbsp;: ce qu’il paie, seuls les appels de fonds du syndic le disent.</p>
           <span class="ecran-acces ecran-acces-tous">Tous</span>
           <ul class="ecran-profils">
             <li><span class="profil">Copropriétaire</span> ses lots, ses diagnostics, ses badges et télécommandes.</li>
-            <li data-onglet="location" data-reserve="bailleur"><span class="profil">Copropriétaire bailleur</span> en plus, l’onglet <strong>Gestion locative</strong>&nbsp;: baux, locataires, inventaire de ce qui leur est remis.</li>
-            <li><span class="profil">Locataire</span> le lot qu’il loue, ses badges et télécommandes. Sans bail, il se rattache lui-même à son lot (voir «&nbsp;En savoir plus&nbsp;»).</li>
+            <li data-onglet="location" data-reserve="bailleur"><span class="profil">Copropriétaire bailleur</span> en plus, l’onglet <strong>Gestion locative</strong>&nbsp;: baux, locataires, et ce qui leur est remis (clés, badges, télécommandes).</li>
+            <li><span class="profil">Locataire</span> le lot qu’il loue, ses badges et télécommandes. Si son propriétaire n’a pas de compte, l’écran lui demande ce qu’il loue.</li>
           </ul>
-          <details class="ecran-detail" name="en-savoir-plus">
-            <summary>En savoir plus</summary>
-            <div class="ecran-detail-corps"><ul>
-            <li><strong>Où est votre lot</strong> — chaque lot dit, selon l’état descriptif du règlement, sa <strong>porte ou sa place</strong> («&nbsp;5 &amp; 6&nbsp;» pour un double emplacement), où il est <strong>situé</strong> et ce qui le <strong>dessert</strong>. C’est la règle du règlement&nbsp;: une cave ou une place est rattachée à la circulation qui la dessert, pas au bâtiment où vous habitez — vous payez une part de l’ascenseur que vous empruntez. Sous la carte, <strong>Voir sa colonne dans le tableau des charges ↑</strong> remonte au tableau et surligne un instant la colonne du lot.</li>
-            <li><strong>Mes charges selon le règlement</strong> — pour le copropriétaire (le locataire ne les voit pas&nbsp;: il ne paie pas les charges de copropriété), <strong>un seul tableau</strong>&nbsp;: une ligne par clé de charges, <strong>une colonne par lot</strong> («&nbsp;Logement 15&nbsp;», «&nbsp;Cave 417&nbsp;», «&nbsp;Place 450&nbsp;»), puis le <strong>total</strong> en dix-millièmes et le <strong>pourcentage</strong>&nbsp;; «&nbsp;—&nbsp;» quand un lot ne contribue pas à la clé. Sous chaque clé, <strong>ce qu’elle finance</strong> selon le règlement — «&nbsp;Escalier A&nbsp;» est l’escalier du bâtiment A du rez-de-chaussée aux étages, «&nbsp;Escalier A'&nbsp;» celui qui dessert les deux niveaux de sous-sol — et le nombre de lots qui y contribuent. Avec un seul lot, pas de colonne Total&nbsp;: sa colonne porte la part entière. Sur smartphone, au-delà de deux lots, chaque clé devient un bloc&nbsp;: son total, ce qu’elle finance, puis la part de chaque lot. Quand les parts d’une clé ne font pas son dénominateur (une division pas encore reportée dans les actes), une note le dit <strong>une fois</strong> sous le tableau&nbsp;: votre part, elle, est celle de l’acte. Le tableau suit votre <strong>appel de fonds</strong>&nbsp;: sous une clé, «&nbsp;Sur l’appel de fonds&nbsp;:&nbsp;…&nbsp;» donne son libellé chez le syndic quand le conseil syndical l’a renseigné, et les clés que le syndic n’appelle pas en ce moment passent dans le bloc replié <strong>«&nbsp;Prévues au règlement, non appelées actuellement&nbsp;»</strong>, avec votre part — elles ne sont pas cachées. Le tableau est <strong>informatif</strong>&nbsp;: ce que vous payez, seuls les appels de fonds et les comptes tenus par le syndic le disent, et aucun montant n’y figure. <strong>«&nbsp;Contacter le syndic&nbsp;»</strong>, sous le tableau, mène à ses coordonnées dans l’Annuaire. Les alertes «&nbsp;À savoir&nbsp;» restent sous chaque carte (désignation pas encore importée, place ou cave sans circulation, aucun tantième enregistré, niveau absent, numéro de porte ou de place absent — seulement si la copropriété numérote ce genre de lot, et à ne pas confondre avec le numéro de lot), sans jamais rien bloquer.</li>
-            <li><strong>Locataire sans bail</strong> — quand son propriétaire n’a pas de compte, le <strong>fichier des lots du syndic</strong> décide&nbsp;: s’il ne désigne qu’<strong>un</strong> appartement pour le nom de propriétaire donné à l’inscription, la <strong>validation du compte</strong> rattache le locataire d’office à tout ce que ce copropriétaire possède — appartement, cave, parking — et lui en remet les badges&nbsp;; le message de validation le dit, et le gestionnaire du site en est prévenu. Sinon (plusieurs appartements, lot déjà loué à un autre), l’onglet <strong>Mes lots</strong> lui pose jusqu’à trois questions, d’après le <strong>fichier des lots du syndic</strong> et le nom de propriétaire donné à l’inscription&nbsp;: <em>Résidez-vous dans l’appartement…&nbsp;?</em>, <em>Votre location comprend-elle une cave&nbsp;?</em>, <em>…une place de parking&nbsp;?</em> Chaque «&nbsp;Oui&nbsp;» le rattache <strong>tout de suite</strong> au lot et lui remet <strong>tous</strong> ses badges — les Vigik de l’appartement, les télécommandes du parking —, puis <strong>Enregistrer</strong>&nbsp;; une cave ou un parking qu’il ne loue pas se décoche. Le gestionnaire du site en est prévenu.</li>
-            <li><strong>Associer le compte du locataire</strong> — dans le formulaire d’un bail, <em>Associer un compte existant</em> retrouve un locataire inscrit sur le site, par son nom ou par son adresse e-mail exacte. Seuls les comptes de <strong>locataires</strong> y figurent, et leur adresse s’affiche <strong>masquée</strong> (<em>a***@example.com</em>)&nbsp;: la recherche n’est pas l’annuaire de la résidence. Le nom et le prénom du bail se remplissent d’office&nbsp;; l’adresse e-mail aussi quand vous l’avez cherchée en entier — sinon, saisissez-la si vous la connaissez. Les locataires qui ont déclaré votre nom à l’inscription vous sont proposés d’emblée.</li>
-            <li><strong>L'inventaire d'un bail</strong> — sous chaque bail, la liste de ce qui a été remis au locataire&nbsp;: clés, badges Vigik, télécommandes. Cliquez sur <strong>« + Ajouter un objet »</strong> pour en enregistrer un, sur <strong><span class="ic" role="img" aria-label="Modifier"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/><path d="m15 5 4 4"/></svg></span></strong> pour corriger une ligne (type, libellé, quantité, référence, date de remise).</li>
-            <li><strong>Le retour d'un objet</strong> — l'icône <strong><span class="ic" role="img" aria-label="Retour"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 14 4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 5.5 5.5a5.5 5.5 0 0 1-5.5 5.5H11"/></svg></span></strong> enregistre une restitution, ou marque l'objet perdu. C'est cet inventaire qui fait foi à la sortie du locataire&nbsp;: tenez-le à jour au fil des remises, pas seulement à la signature.</li>
-            <li>Sur un bail <strong>terminé</strong>, l'inventaire se lit encore mais ne se modifie plus.</li>
-            <li><strong>L'état d'un bail</strong> — un badge le dit, sur la carte du lot loué comme dans la gestion locative&nbsp;: <strong>Actif</strong> (vert), <strong>En cours de sortie</strong> (jaune&nbsp;: le préavis court, le locataire est encore là et ses accès fonctionnent) ou <strong>Terminé</strong> (gris). Un bail en cours de sortie compte comme un bail en cours&nbsp;; seul un bail terminé fige son inventaire.</li>
-            <li><strong>Vos badges</strong> — badges Vigik et télécommandes de parking, chacun sous son propre onglet, avec leur statut et la colonne <em>Accès</em>&nbsp;: ce que chacun ouvre. <strong>Signaler perdu</strong> désactive un badge égaré.<br>Un badge appartient à son <strong>lot</strong>&nbsp;: tous les copropriétaires du lot le voient ici — votre conjoint(e) exactement comme vous —, et votre locataire aussi quand il lui a été remis.<br>Un badge ne se supprime pas depuis cette page&nbsp;: il existe toujours quelque part, et le parc doit pouvoir dire qu'il circule. Signalez-le perdu, ou demandez au conseil syndical de corriger la ligne.</li>
-            <li><strong>Demander un nouvel accès</strong> — le bouton <strong>« + Nouvel accès »</strong>, en haut de page, adresse la demande au syndic (badge Vigik ou télécommande). Acceptée, elle pose le badge sur votre lot dès que son code est connu&nbsp;: il apparaît alors ici, chez vous comme chez les autres copropriétaires du lot.</li>
-            <li><strong>Déclarer un accès</strong> — le bouton <strong>« + Déclarer un accès »</strong>, si vous détenez un badge qui n'apparaît pas dans la liste&nbsp;: saisissez son code, il se rattache automatiquement à l'import du syndic quand il y figure.</li>
-            </ul></div>
-          </details>
         </div>
         <div class="ecran-card" data-page="/annuaire" data-acces="tous">
           <span class="ecran-icone" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></span>
@@ -1500,61 +1370,14 @@
         <div class="ecran-card" data-page="/sondages" data-acces="resident">
           <span class="ecran-icone" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 21a8 8 0 0 0-16 0"/><circle cx="10" cy="8" r="5"/><path d="M22 20c0-3.37-2-6.5-4-8a5 5 0 0 0-.45-8.3"/></svg></span>
           <h3>Communauté</h3>
-          <p>L'espace entre résidents. Réservé aux résidents : ni le syndic, ni un mandataire, ni un aidant n'y ont accès — sauf à l'onglet <strong>⭐ Avis</strong>, ouvert au syndic et au mandataire.</p>
+          <p>L’espace entre résidents&nbsp;: sondages, boîte à idées, petites annonces, et votre avis sur l’application (onglet <strong>⭐ Avis</strong>). Le syndic et le mandataire n’y ont que cet onglet.</p>
+          <p>Le drapeau signale au conseil syndical un contenu qui pose problème. Vous pouvez aussi masquer ce que publie une personne&nbsp;: elle n’en est pas avertie, et vous revenez sur ce choix dans votre profil.</p>
           <span class="ecran-acces ecran-acces-resident">Résidents</span>
           <ul class="ecran-profils">
             <li data-onglet="sondages" data-reserve="nonGestionnaire"><span class="profil">Syndic · mandataire</span> pas les <strong>Sondages</strong>,</li>
             <li data-onglet="idees" data-reserve="nonGestionnaire"><span class="profil">Syndic · mandataire</span> pas la <strong>Boîte à idées</strong>,</li>
-            <li data-onglet="annonces" data-reserve="nonGestionnaire"><span class="profil">Syndic · mandataire</span> pas les <strong>Petites annonces</strong>&nbsp;: l’onglet <strong>Avis</strong> seulement, où l’entrée Communauté les mène.</li>
+            <li data-onglet="annonces" data-reserve="nonGestionnaire"><span class="profil">Syndic · mandataire</span> pas les <strong>Petites annonces</strong>&nbsp;: l’onglet <strong>Avis</strong> seulement.</li>
           </ul>
-          <details class="ecran-detail" name="en-savoir-plus">
-            <summary>En savoir plus</summary>
-            <div class="ecran-detail-corps"><ul>
-            <li><strong>📊 Sondages</strong> — donner son avis sur une décision à venir. Un sondage se ferme à sa date d'échéance. Quand son auteur a laissé les résultats visibles avant la clôture, sa page montre dès l'ouverture les <strong>résultats provisoires</strong> — une barre par réponse, au-dessus des choix —, avant même de voter&nbsp;; sinon, ils n'apparaissent qu'à la clôture. Adresse&nbsp;: <code>/sondages</code></li>
-            <li><strong>💡 Boîte à idées</strong> — proposer une amélioration, soutenir celles des autres. Adresse&nbsp;: <code>/idees</code></li>
-            <li><strong>🏷️ Petites annonces</strong> — donner, prêter, vendre entre voisins. Adresse&nbsp;: <code>/annonces</code>. Décocher <em>Afficher mes coordonnées aux autres résidents</em> retire votre <strong>adresse</strong>&nbsp;; votre <strong>nom</strong> reste affiché, sur l’annonce comme dans le fil d’activité.</li>
-            <li><strong>⭐ Avis</strong> — votre avis sur l’application elle-même, pas sur la résidence. Adresse&nbsp;: <code>/avis</code>. Un avis par compte, que vous corrigez quand vous voulez&nbsp;: un titre, une <strong>note de 1 à 5 étoiles</strong>, puis la description. Sous 3 étoiles, l’écran demande <em>ce qui vous a manqué</em>&nbsp;: c’est ce qui fait progresser le site. À partir de 4 étoiles, il demande si vous acceptez que l’avis soit lu de tous et paraisse sur <strong>coprofirst.fr</strong>, le site de présentation de l’application&nbsp;: <strong>Oui</strong> ou <strong>Non</strong>, rien n’est coché d’avance. Seuls votre prénom, l’initiale de votre nom et votre rôle y paraîtraient, et vous pouvez changer d’avis à tout moment. Un problème ou un bogue ne s’écrit pas en avis&nbsp;: le lien en tête de l’onglet ouvre une affaire <em>Bogue</em>, suivie jusqu’à sa résolution. <strong>Sans votre accord, l’avis ne se lit que de vous et du conseil syndical</strong> (la carte porte alors <em>Auteur et conseil seulement</em>)&nbsp;; avec, de tous les comptes. Ce qui a manqué et votre réponse à la question ne se lisent que de vous et du gestionnaire du site. Le gestionnaire y répond (<em>Réponse de l’équipe</em>), retient ceux qui paraîtront sur coprofirst.fr, et les exporte. Vous pouvez retirer votre avis (bouton <em>Archiver</em>), le ressortir des Archives, ou l’y supprimer définitivement.</li>
-            <li><strong><span class="ic" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" x2="4" y1="22" y2="15"/></svg></span> Signaler un contenu</strong> — sur une idée, une annonce ou une réponse qui n'est pas la vôtre, mais aussi sur une affaire, sur l'une de ses suites, et sur la réponse de l'assistant IA à une question au règlement, le drapeau ouvre une fenêtre qui demande <strong>pourquoi</strong>&nbsp;: le motif est obligatoire, et part au conseil syndical avec le contenu visé. On ne signale que ce qu'on voit. Le conseil seul voit les signalements, avec un lien <em>Voir le contenu</em> pour le lire à sa place, et décide de les traiter ou de les écarter.</li>
-            <li><strong>Masquer ce que publie une personne</strong> — sur une réponse, un message dans une affaire (l'œil barré) ou une petite annonce (<em>🙈 Masquer ce que publie…</em>) d'un autre résident&nbsp;: après confirmation, vous ne voyez plus ses annonces, ses réponses ni ses messages dans les affaires. Rien n'est supprimé, et la personne n'en est pas avertie. Les affaires elles-mêmes restent, car elles concernent le bâtiment. Les idées et les sondages restent aussi&nbsp;: leur auteur n'est jamais affiché, et les retirer le trahirait. Le conseil syndical et l'administration voient tout, et ce qu'ils publient ne se masque pas. On revient sur ce choix dans le Profil, carte <em>Personnes masquées</em>.</li>
-          </ul>
-          <p><strong>À qui ça s'adresse.</strong> En déposant une idée ou une annonce, vous pouvez choisir
-          <em>Destinataires</em>&nbsp;: par exemple les copropriétaires occupants et bailleurs, ou seulement les locataires. Ceux qui
-          ne sont pas visés ne voient pas l'annonce ou l'idée du tout, et ne peuvent ni y répondre ni voter.
-          Si vous ne choisissez rien, tout le monde la voit&nbsp;— c'est le cas par défaut, et celui de toutes
-          les annonces et idées déjà déposées. Le conseil syndical, lui, voit tout&nbsp;: c'est ce qui lui
-          permet de corriger un ciblage posé par erreur. Sur la carte, la <strong>pastille bleue</strong>
-          <em>qui la lit</em> le rappelle — voir plus bas — avec un cadenas&nbsp;: un sondage, une idée ou une
-          annonce ciblés sur un bâtiment ne sont lus que dans ce bâtiment. Ce qui vise l’<strong>ascenseur</strong>, l’<strong>escalier</strong> ou les <strong>caves</strong> d’un bâtiment est lu aussi par qui y a une cave ou une place que cette circulation dessert, même sans y habiter&nbsp;— c’est le chemin qu’il emprunte et les charges qu’il paie&nbsp;; le hall, le toit et le reste du bâtiment restent à ses résidents. Une idée et un sondage ne disent pas
-          qui les a proposés&nbsp;; une petite annonce, si (✍️).</p>
-          <p><strong>Un sondage ciblé sur le groupe WhatsApp.</strong> Pour le conseil syndical,
-          la case <em>Partager sur le groupe</em> d’un sondage ciblé — un périmètre autre que toute la
-          copropriété, ou des destinataires autres que «&nbsp;Tous&nbsp;» — n’envoie au groupe que
-          <strong>la question, le périmètre et un lien</strong> vers le sondage&nbsp;: jamais sa
-          description, puisque le groupe est lu par toute la copropriété et que seuls les
-          destinataires peuvent lire le sondage et y voter (la question, elle, part&nbsp;: n’y rien
-          mettre de confidentiel). Le formulaire le dit sous la case, avant l’envoi.</p>
-          <p><strong>Des photos dès le dépôt.</strong> Une petite annonce se photographie au
-          moment où on la dépose&nbsp;: la section <em>Pièces jointes</em> du formulaire accepte
-          jusqu’à cinq photos, qui partent avec l’annonce. Si l’une d’elles est refusée, l’annonce
-          est publiée quand même et le message le dit&nbsp;— la photo s’ajoute ensuite depuis la
-          carte, par <em>Gérer les photos</em>.</p>
-          <p><strong>Corriger une erreur de saisie.</strong> Une idée et un sondage se modifient
-          après coup, comme une petite annonce&nbsp;: le crayon <span class="ic" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/><path d="m15 5 4 4"/></svg></span> sur la carte ouvre le formulaire
-          <strong>dans la carte elle-même</strong>, à la place de son contenu — l'objet ne bouge
-          pas de sa place dans la liste. Réservé à celui qui l'a déposé — le conseil syndical décide du statut
-          d'une idée, il ne réécrit pas la proposition de quelqu'un.
-          Une idée archivée et un sondage clôturé ne se corrigent plus.</p>
-          <p><strong>Ce qui ne se corrige pas, et pourquoi.</strong> Le périmètre et les
-          destinataires se choisissent au dépôt et n'apparaissent pas dans la fenêtre de
-          correction&nbsp;: les réduire ensuite retirerait l'idée ou le sondage à des voisins qui
-          l'ont déjà voté. Sur un sondage, les réponses proposées ne s'ajoutent ni ne se
-          suppriment non plus — seuls leurs libellés se corrigent, sans quoi les votes déjà
-          exprimés ne désigneraient plus la même chose.</p>
-          <p><strong>Ne pas confondre avec le périmètre.</strong> Le périmètre 🔹 dit <em>de quoi</em> il
-          s'agit (le bâtiment 3, le parking)&nbsp;; les destinataires disent <em>à qui</em> vous vous adressez.
-          Les deux se combinent. Quand un ciblage restreint quelque chose, il s'affiche sur la carte&nbsp;;
-          sinon rien ne s'affiche.</p></div>
-          </details>
         </div>
         <div class="ecran-card" data-page="/faq" data-acces="tous">
           <span class="ecran-icone" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><path d="M12 17h.01"/></svg></span>
@@ -1580,38 +1403,15 @@
         <div class="ecran-card" data-page="/delegations" data-acces="cs-ou-aidant">
           <span class="ecran-icone" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/><path d="M12 5 9.04 7.96a2.17 2.17 0 0 0 0 3.08c.82.82 2.13.85 3 .07l2.07-1.9a2.82 2.82 0 0 1 3.79 0l2.96 2.66"/><path d="m18 15-2-2"/><path d="m15 18-2-2"/></svg></span>
           <h3>Délégations</h3>
-          <p>Un proche — l’<strong>aidant</strong> — lit le site à la place d’une personne aidée, en lecture seule. La délégation se demande au <strong>conseil syndical</strong>&nbsp;: c’est lui, ou l’administrateur, qui la crée. La personne aidée n’a pas cette entrée dans son menu&nbsp;; l’aidant l’a — toujours pour un compte ouvert comme aidant, et pour un autre compte dès qu’une délégation acceptée le désigne.</p>
+          <p>Un proche — l’<strong>aidant</strong> — lit le site à la place d’une personne aidée, en lecture seule&nbsp;: il n’agit pas en son nom. La délégation se demande au <strong>conseil syndical</strong>, qui la crée&nbsp;; l’aidant l’accepte sur cette page, et elle se révoque à tout moment. Seuls l’aidant et le conseil ont cette entrée dans leur menu.</p>
           <span class="ecran-acces ecran-acces-cs-ou-aidant">CS &amp; aidants</span>
-          <details class="ecran-detail" name="en-savoir-plus">
-            <summary>En savoir plus</summary>
-            <div class="ecran-detail-corps"><ul>
-            <li><strong>Créer, accepter, révoquer</strong> — le conseil syndical ou l’administrateur crée la délégation&nbsp;: la personne aidée, l’aidant, un motif et, s’il le faut, une date de fin. Elle attend que l’aidant l’<strong>accepte</strong>, sur cette page. Elle se révoque à tout moment, par l’aidant, la personne aidée ou le conseil&nbsp;; la personne aidée, qui n’a pas l’entrée au menu, peut aussi le demander au conseil.</li>
-            <li><strong>Ce que lit l’aidant</strong> — tant que la délégation est active (acceptée, commencée et pas échue), ce qui est adressé à la personne aidée&nbsp;: une actualité aux copropriétaires occupants, s'il aide un occupant.</li>
-            <li><strong>Ce qu'il ne fait pas</strong> — ce n'est pas une procuration d'assemblée générale, et l’aidant n'agit pas au nom de la personne aidée. Un compte ouvert comme <strong>aidant</strong> — comme celui d'un <strong>mandataire</strong> ou du <strong>syndic</strong> — <strong>consulte</strong>&nbsp;: il n'ouvre pas d'affaire, ne vote pas et ne propose pas d'idée. Le conseil syndical peut lui ajouter un rôle s'il le faut.</li>
-            </ul></div>
-          </details>
         </div>
         <div class="ecran-card" data-page="profil" data-acces="tous">
           <span class="ecran-icone" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></span>
           <h3>Mon profil</h3>
-          <p>Vos informations, votre mot de passe, le thème de l’affichage, et le réglage de ce que vous recevez.</p>
+          <p>Vos informations, votre mot de passe, l’apparence de l’écran (claire ou sombre) et ce que vous recevez, par e-mail ou dans l’application. On l’ouvre par <strong>votre prénom</strong>, en bas du menu.</p>
+          <p>Vous y retrouvez aussi les personnes que vous avez masquées, et vos droits sur vos données&nbsp;: les consulter, refuser la mesure d’audience, ou demander la suppression de votre compte.</p>
           <span class="ecran-acces ecran-acces-tous">Tous</span>
-          <details class="ecran-detail" name="en-savoir-plus">
-            <summary>En savoir plus</summary>
-            <div class="ecran-detail-corps"><p>Accessible par <strong>votre prénom</strong>, en bas du menu — il n'a pas d'entrée propre.</p>
-          <ul>
-            <li><strong>Vos informations</strong> — nom, téléphone, adresse e-mail, mot de passe, et l’<strong>étage où vous habitez</strong>. Il est facultatif, sert à vous situer auprès de vos voisins, et se saisit avec la convention&nbsp;: <strong>0</strong> pour le rez-de-chaussée, <strong>2</strong> pour le 2<sup>e</sup>&nbsp;étage. Vient ensuite l’étage de <strong>chacun de vos logements</strong>. Cet étage décrit le <em>bien</em>&nbsp;: il apparaît sur les fiches et les affiches de la copropriété, et se modifie sans passer par le conseil syndical — contrairement au <strong>bâtiment</strong>, qui fait l’objet d’une demande. Quand vous n’avez qu’un seul logement, son étage vous est <strong>proposé</strong> dans le premier champ&nbsp;: inutile de ressaisir ce que le site connaît déjà. Si vous indiquez un étage différent de celui enregistré sur votre logement, l’écran vous le signale&nbsp;: c’est la valeur du <strong>logement</strong> qui continue de s’afficher dans l’annuaire, votre saisie est conservée, et le gestionnaire du site est prévenu pour vérifier laquelle des deux est la bonne. Seuls vos <strong>logements</strong> sont listés&nbsp;: une cave et un parking ont un niveau, pas un étage d’habitation, et se règlent depuis l’administration du patrimoine. Un compte auquel aucun logement n’est rattaché — un administrateur ou un opérateur du site, par exemple — n’a pas cette rubrique&nbsp;: elle ne liste que <em>vos</em> lots, jamais ceux de la résidence.</li>
-            <li><strong>Changer d’adresse e-mail</strong> — dès que l’adresse saisie diffère de celle du compte, votre <strong>mot de passe actuel</strong> vous est demandé. En enregistrant, un <strong>lien de confirmation</strong> part à la nouvelle adresse (valable 24&nbsp;heures) et un <strong>avis</strong> à l’actuelle. Tant que vous n’avez pas cliqué sur ce lien, votre adresse actuelle reste celle du compte&nbsp;: c’est toujours avec elle que vous vous connectez. Une fois le lien ouvert, la nouvelle la remplace. Si vous recevez cet avis sans avoir rien demandé, changez votre mot de passe sans attendre et prévenez le conseil syndical.</li>
-            <li><strong>Apparence</strong> — le <strong>thème</strong> de l’affichage&nbsp;: <strong>Automatique</strong> (au départ) suit le réglage clair ou sombre de votre téléphone ou de votre ordinateur, <strong>Clair</strong> et <strong>Sombre</strong> l’imposent. Le changement se voit aussitôt, sans recharger la page. Le choix vaut pour <strong>cet appareil</strong>&nbsp;: il est retenu par votre navigateur — l’écran de connexion le respecte déjà —, pas par votre compte&nbsp;; réglez-le sur chacun de vos appareils. Les aperçus d’une annonce du hall ou d’un courriel restent clairs, comme le papier et la messagerie qui les recevront, et une page imprimée garde toujours le thème clair. Dessous, la case <strong>Décor des jours de fête</strong> — présente seulement si l’administration a activé ce décor pour la résidence — le garde (au départ) ou l’éteint <strong>pour vous</strong>&nbsp;: le décor du coin de la page part ou revient aussitôt. Une phrase dit la fête en cours et jusqu’à quand, sinon la prochaine. Ce choix-là est retenu par <strong>votre compte</strong>&nbsp;: il vaut sur tous vos appareils.</li>
-            <li><strong>Saisie d’une affaire</strong> — comment s’ouvre le formulaire <em>Nouvelle affaire</em>&nbsp;: <strong>Essentielle</strong> (au départ, pour tout le monde, conseil syndical compris) ou <strong>Complète</strong>&nbsp;; la phrase d’aide dit celle qui s’applique aujourd’hui. Contrairement au thème, le choix vaut pour <strong>votre compte</strong>, sur tous vos appareils, et se voit aussitôt.</li>
-            <li><strong>Ce que j’affiche</strong> — la case <em>N’afficher que les contenus de mon ou mes bâtiments</em>, décochée au départ&nbsp;: décochée, vous voyez les actualités de toute la copropriété, sauf celles marquées confidentielles&nbsp;; cochée, seulement celles de votre bâtiment. C’est un choix d’affichage, pas une protection&nbsp;: ce qui ne vous est pas adressé reste fermé, quelle que soit la case.</li>
-            <li><strong>Notifications par e-mail</strong> et <strong>Notifications dans l'application</strong> (la cloche) — deux lignes chacune, <em>De mon ou mes bâtiments</em> et <em>Des autres bâtiments</em>. Les e-mails <strong>de votre bâtiment sont actifs au départ</strong>, ceux des autres non&nbsp;; la cloche sonne au départ pour les deux. Une <strong>actualité marquée ⚡&nbsp;Urgente</strong> par le conseil syndical ou l’administration — à sa publication, ou plus tard — fait sonner la cloche de chacun de ses lecteurs, selon ces mêmes lignes, une seule fois&nbsp;: «&nbsp;⚡&nbsp;» suivi de son titre. C’est la seule notification qui puisse aussi sonner sur un téléphone, quand l’administration l’a activé. Ce qui concerne votre <strong>compte</strong> — validation, rôle, demande traitée — vous parvient toujours, comme un e-mail qu’un auteur adresse au <strong>conseil syndical</strong> ou au <strong>syndic</strong> depuis sa Diffusion&nbsp;: il s’adresse à votre mandat, ce réglage ne l’arrête pas. Tant que vous n’avez pas touché à une ligne, l’écran l’indique par la mention <em>réglage par défaut</em>. Enregistrer, c’est en faire votre choix — la mention disparaît.</li>
-            <li><strong>Vos notifications reçues</strong> — la cloche mène à la page <em>Notifications</em>&nbsp;: <strong>Tout marquer lu</strong>, <strong>Marquer lu</strong> sur une ligne, la croix pour en supprimer une, et <strong>Supprimer les lues</strong>, qui retire d’un coup toutes celles déjà lues — après confirmation, car c’est définitif&nbsp;; les non lues restent. Le bouton n’apparaît que s’il y a des notifications lues. Une notification <strong>lue</strong> est aussi retirée d’elle-même douze mois après son arrivée&nbsp;; une non lue reste, quel que soit son âge.</li>
-            <li><strong>Personnes masquées</strong> — les résidents dont vous avez masqué ce qu'ils publient, chacun avec la date du masque, et le bouton <em>Ne plus masquer</em>, qui vous rend aussitôt leurs annonces, leurs réponses et leurs messages.</li>
-            <li><strong>Vos droits (RGPD)</strong> — consulter et exporter <strong>votre historique de navigation</strong> dans l'application, refuser cette mesure d'audience, et l'effacer. Comme le dit la politique de confidentialité, chaque page consultée y figure avec l'<strong>accès utilisé</strong> (site, app Apple, app Android) et le <strong>type d'appareil</strong> — téléphone, tablette, ordinateur, télévision, montre… —, jamais son modèle, la version de son système ni un identifiant qui lui serait propre. Le refus coupe aussi le signalement des erreurs rencontrées à l'écran, la mesure des durées d'affichage et le décompte des formulaires ouverts et envoyés, qui ne sont de toute façon pas rattachés à votre compte, et il efface le jour de votre dernière visite. Dessous, <strong>Supprimer mon compte</strong>&nbsp;: <em>Demander la suppression de mon compte</em> affiche ce qui sera effacé — votre compte et vos données personnelles — et ce qui reste, sans votre nom, de ce que vous avez écrit dans la vie collective de la résidence (affaires, messages, votes…), puis demande votre <strong>mot de passe</strong> et, si vous le souhaitez, un motif. Un accusé de réception vous est envoyé par courriel. L'administration de la résidence traite la demande dans le délai affiché, et peut la traiter le jour même&nbsp;; d'ici là, <em>Retirer ma demande</em> l'annule et votre compte est conservé. Une fois traitée, la suppression est définitive, et un dernier courriel vous le confirme. Le même geste existe dans l'application pour iPhone. Les autres droits — accès, rectification, portabilité et <strong>effacement</strong> — et les autres données que la copropriété détient sur vous (lots, accès, affaires) ne se règlent pas depuis cet écran&nbsp;: ils s'exercent en contactant le <strong>responsable de traitement</strong>, à l'adresse indiquée dans la <a href="/politique-de-confidentialite">politique de confidentialité</a> (cette adresse reste joignable sans compte, y compris pour demander la suppression d'un compte).</li>
-            <li><strong>Un compte inutilisé</strong> — un compte resté <strong>longtemps sans connexion</strong> reçoit un <strong>courriel d’avertissement</strong>, puis il est <strong>supprimé</strong> quelque temps plus tard avec les données qui lui sont rattachées. Ce que vous avez apporté à la vie commune — <strong>affaires</strong> et leur suivi, documents, sondages et votes, idées, réponses de la Communauté, notes des prestataires — <strong>reste</strong> à la copropriété, sous le nom «&nbsp;Ancien résident&nbsp;»&nbsp;; vos petites annonces et vos délégations partent avec le compte. Il en va de même lorsque l’administration supprime un compte. Pour le garder, il suffit de <strong>vous connecter</strong> avant la date indiquée dans le courriel&nbsp;; rester connecté sur votre appareil compte aussi. Les comptes d’administration ne sont jamais supprimés automatiquement. Un compte <strong>refusé</strong>, un compte <strong>désactivé</strong> et une inscription restée <strong>sans réponse</strong> sont supprimés eux aussi, passé un délai — sans courriel, puisqu’aucun de ces comptes ne permet de se connecter. Les durées sont celles qu’annonce la politique de confidentialité, qui seule les écrit.</li>
-          </ul></div>
-          </details>
         </div>
       </div>
 
@@ -1983,17 +1783,6 @@
 
   sections.forEach(s => observer.observe(s));
 
-  // Un seul « En savoir plus » déplié à la fois, comme sur le site. L'attribut
-  // `name` des blocs dépliables le fait nativement ; ceci couvre les navigateurs qui
-  // l'ignorent encore.
-  document.querySelectorAll('details[name]').forEach((d) => {
-    d.addEventListener('toggle', () => {
-      if (!d.open) return;
-      document.querySelectorAll('details[name="' + d.getAttribute('name') + '"]').forEach((autre) => {
-        if (autre !== d) autre.open = false;
-      });
-    });
-  });
 </script>
 
 </body>
