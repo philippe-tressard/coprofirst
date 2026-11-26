@@ -24,7 +24,10 @@
  *    un texte qui a maigri fait baisser son plafond, dans le même lot — sinon la
  *    place libérée se reprendrait en silence (le motif de `PLAFOND_CLONES`) ;
  * 3. une carte ou une section sans plafond déclaré est refusée, et un plafond
- *    qui ne désigne plus rien aussi.
+ *    qui ne désigne plus rien aussi ;
+ * 4. un bloc dépliable (`<details>`, l'ancien « En savoir plus ») est compté, et
+ *    son plafond est zéro depuis le 26/11/2026 : le détail d'un écran ne se
+ *    replie plus dans le manuel, il vit dans l'application.
  *
  * Une carte NEUVE se déclare à sa longueur, et la plus courte possible : le
  * détail d'un écran vit dans l'application (aides d'écran, FAQ), pas ici.
@@ -66,7 +69,7 @@ function element(html, debut, balise) {
 	return html.slice(debut);
 }
 
-/** `{ total, sections: {id: mots}, cartes: {data-page: mots} }` d'un manuel. */
+/** `{ total, blocs, sections: {id: mots}, cartes: {data-page: mots} }` d'un manuel. */
 export function mesurer(html) {
 	const propre = html.replace(/<(style|script)\b[^>]*>[\s\S]*?<\/\1>/gi, ' ');
 	const sections = {};
@@ -79,7 +82,8 @@ export function mesurer(html) {
 			m[0].match(/\bdata-page="([^"]+)"/)?.[1] ?? `(sans data-page, position ${m.index})`;
 		cartes[page] = compterMots(element(propre, m.index, 'div'));
 	}
-	return { total: compterMots(propre), sections, cartes };
+	const blocs = (propre.match(/<details\b/gi) ?? []).length;
+	return { total: compterMots(propre), blocs, sections, cartes };
 }
 
 /** Les écarts entre une mesure et des plafonds — une ligne par écart, vide si tout tient. */
@@ -101,6 +105,10 @@ export function juger(mesure, plafonds, marge = MARGE) {
 		}
 	};
 	comparer('manuel entier', mesure.total, plafonds.total);
+	if (mesure.blocs > (plafonds.blocs ?? 0))
+		ecarts.push(
+			`${mesure.blocs} bloc(s) dépliable(s) (<details>) pour un plafond de ${plafonds.blocs ?? 0} — le manuel n'a plus d'« En savoir plus » (#3008, 26/11/2026) : une ou deux phrases par écran, le détail à l'écran`,
+		);
 	for (const famille of ['sections', 'cartes']) {
 		const declares = plafonds[famille] ?? {};
 		for (const [cle, compte] of Object.entries(mesure[famille])) {
@@ -119,7 +127,7 @@ function autotest() {
 		'<style>.x{}</style><section id="a"><h2>Deux mots</h2>' +
 		'<div class="ecran-card" data-page="/p"><div>l’état d’un lot&nbsp;: trois</div></div></section>';
 	const m = mesurer(html);
-	const attendu = { total: 6, sections: { a: 6 }, cartes: { '/p': 4 } };
+	const attendu = { total: 6, blocs: 0, sections: { a: 6 }, cartes: { '/p': 4 } };
 	const fautes = [];
 	if (JSON.stringify(m) !== JSON.stringify(attendu))
 		fautes.push(`mesure ${JSON.stringify(m)} ≠ ${JSON.stringify(attendu)}`);
@@ -130,6 +138,12 @@ function autotest() {
 		['carte sans plafond', { total: 6, sections: { a: 6 }, cartes: {} }, 1],
 		['plafond orphelin', { total: 6, sections: { a: 6, b: 3 }, cartes: { '/p': 4 } }, 1],
 	];
+	const deplie = mesurer(
+		'<section id="a"><div class="ecran-card" data-page="/p"><details><summary>Plus</summary></details></div></section>',
+	);
+	if (deplie.blocs !== 1) fautes.push(`un <details> compté ${deplie.blocs} fois, 1 attendu`);
+	if (!juger({ ...m, blocs: deplie.blocs }, attendu, 2).some((e) => e.includes('dépliable')))
+		fautes.push("un bloc dépliable n'est pas refusé");
 	for (const [nom, plafonds, nb] of cas) {
 		const n = juger(m, plafonds, 2).length;
 		if (n !== nb) fautes.push(`cas « ${nom} » : ${n} écart(s), ${nb} attendu(s)`);
@@ -139,7 +153,7 @@ function autotest() {
 		process.exit(1);
 	}
 	console.log(
-		`✓ Autotest de check-manuel-volume : la mesure et ${cas.length} cas de jugement tiennent.`,
+		`✓ Autotest de check-manuel-volume : la mesure et ${cas.length + 1} cas de jugement tiennent.`,
 	);
 }
 
