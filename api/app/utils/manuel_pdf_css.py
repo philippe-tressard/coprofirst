@@ -42,15 +42,8 @@ body {{
 
 /*  🔴 CE QUE L'IMPRESSION IMPOSE, et que l'écran n'a pas. La barre latérale et
     les boutons d'action sont des gestes d'écran : sur le papier, ils ne mènent
-    nulle part. Le repli des blocs, lui, est levé À LA COMPOSITION (voir
-    `corps_du_manuel`) — pas ici : ce qui suit habille le résultat. */
+    nulle part. */
 .sidebar, .hero-actions, .aide-liens {{ display: none !important; }}
-.renvoi-en-ligne {{
-  margin: 1.5mm 0 0;
-  font-size: 7.5pt;
-  font-style: italic;
-  color: var(--muted);
-}}
 .sommaire-avis {{
   margin: 0 0 5mm;
   padding: 2.5mm 3.5mm;
@@ -90,8 +83,9 @@ body {{
     titre (signalé le 23/10/2026). Une grille se coupe entre deux rangées.
 
     ⚠️ `break-inside: avoid` sur chaque carte : une carte coupée se lirait en
-    deux morceaux. Il ne tient que parce que les cartes sont COURTES — les blocs
-    « En savoir plus » ne sont plus imprimés (`corps_du_manuel`). Une carte plus
+    deux morceaux. Il ne tient que parce que les cartes sont COURTES — le manuel n'a
+    plus aucun bloc « En savoir plus » (#3008), et `lint:manuel-volume` plafonne
+    chaque carte. Une carte plus
     haute qu'une page ne se couperait pas : elle déborderait, et son texte
     sortirait de la feuille, comme les fiches Admin et Conseil syndical
     jusqu'au 23/10/2026. */
@@ -273,7 +267,7 @@ li {{ margin-bottom: .8mm; }}
 .hero h1 {{ color: var(--navy); font-family: {FONT_SERIF}; }}
 .hero p, .hero-note {{ color: var(--muted); }}
 /*  🔴 LES SUR-TITRES SONT MASQUÉS, et c'est une correction de MON fait.
-    « Bienvenue sur votre extranet de résidence », « Guide express » : à l'écran
+    « Bienvenue sur le site de votre résidence », « Guide express » : à l'écran
     ce sont des accroches, posées au-dessus du vrai titre. Je les avais repeints
     en doré — ils devenaient alors les éléments les plus voyants de la page,
     alors qu'ils ne figurent pas au sommaire. Signalé à l'écran : *« bref c'est

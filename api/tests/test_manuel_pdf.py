@@ -106,33 +106,28 @@ def test_les_TREIZE_ecrans_sont_dans_le_PDF(document):
     assert document.count('class="ecran-card"') == 12
 
 
-# ── 🔴 Les blocs « En savoir plus » : retirés, et le retrait se dit ─────────
+# ── 🔴 Plus aucun bloc « En savoir plus » : le PDF imprime ce que la page montre ─
 
 
-def test_les_blocs_en_savoir_plus_sont_RETIRES_et_SIGNALES(document, manuel):
-    """Le PDF donne l'essentiel ; le détail reste en ligne (23/10/2026).
+def test_le_PDF_imprime_tout_le_manuel_qui_n_a_plus_de_bloc_deplie(document, manuel):
+    """Le manuel n'a plus aucun « En savoir plus » (#3008, 26/11/2026).
 
-    Ces blocs portaient 62 % du texte : ouverts dans le PDF (choix du
-    03/09/2026), ils en faisaient 33 pages, avec des fiches plus hautes qu'une
-    page, que le moteur ne coupe pas — leur texte sortait de la feuille. Demandé :
-    un document divisé par deux, sans paragraphe qu'on ne lira jamais.
+    Jusque-là, ces blocs portaient l'essentiel du texte et le PDF les retirait, un
+    renvoi « le détail est en ligne » à leur place (23/10/2026). Le manuel est
+    devenu court : chaque écran tient en une ou deux phrases, le détail est à
+    l'écran. Le PDF n'a donc plus rien à retirer ni à renvoyer.
 
-    🔴 Le compte vient de la SOURCE : l'invariant est que CHAQUE bloc du manuel
-    laisse un renvoi à sa place — un retrait muet laisserait croire au lecteur
-    qu'il a tout lu.
+    ⚠️ Ce test REMPLACE `test_les_blocs_en_savoir_plus_sont_RETIRES_et_SIGNALES`,
+    qui exigeait au moins cinq blocs dans la source : c'est la décision qui a
+    changé, pas le contrôle qui s'affaiblit. Que la source n'en retrouve pas un,
+    c'est `lint:manuel-volume` qui le refuse.
     """
+    assert "<details" not in manuel and "<summary" not in manuel
     assert "<details" not in document and "<summary" not in document
-    attendus = manuel.count("<details")
-    #  🔴 Cas zéro : sans bloc dans la source, la comparaison ne mesurerait rien.
-    assert attendus >= 5, f"le manuel ne porte plus que {attendus} bloc(s) dépliable(s)"
-    assert document.count(m.RENVOI_EN_LIGNE) == attendus, (
-        f"{attendus} bloc(s) dans le manuel, {document.count(m.RENVOI_EN_LIGNE)} renvoi(s) dans le PDF"
-    )
-    #  Témoins : du DÉTAIL (absent) et de l'ESSENTIEL de la même carte (présent).
-    assert "C'est cet inventaire qui fait foi" in manuel
-    assert "C'est cet inventaire qui fait foi" not in document
+    #  Le résumé d'une carte est imprimé — le cas zéro : on lit bien une carte.
+    assert "Vos lots, vos badges Vigik" in manuel
     assert "Vos lots, vos badges Vigik" in document
-    #  Le sommaire dit où lire le reste, à l'adresse du site.
+    #  Le sommaire dit où lire la version toujours à jour, à l'adresse du site.
     assert "https://5hostachy.fr" + m.CHEMIN_MANUEL_EN_LIGNE in document
 
 

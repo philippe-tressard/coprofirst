@@ -349,11 +349,10 @@ def test_le_controle_des_chemins_voit_un_onglet_disparu():
 
 _CHEMIN_ESPACE_CS = re.compile(r"\bEspace CS ?(?:›|→|&rarr;) ?([^\n]*)")
 _FRONT_SRC = _RACINE / "front" / "src"
-#: Un chemin qui nomme exprès un onglet DISPARU, avec sa raison.
-_CHEMINS_HISTORIQUES = {
-    "docs/manuel-utilisateur.html": "« L'ancienne adresse Espace CS › Règlement mène ici » : "
-    "l'onglet a quitté l'Espace CS, son adresse redirige",
-}
+#: Un chemin qui nomme exprès un onglet DISPARU, avec sa raison. Vide depuis le
+#: 26/11/2026 : la seule entrée (« L'ancienne adresse Espace CS › Règlement mène
+#: ici », dans le manuel) est partie avec les « En savoir plus » (#3008).
+_CHEMINS_HISTORIQUES: dict[str, str] = {}
 
 
 def chemins_espace_cs_inconnus(texte: str, onglets: set[str]) -> list[str]:
