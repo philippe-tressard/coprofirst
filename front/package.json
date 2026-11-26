@@ -1,6 +1,6 @@
 {
 	"name": "hostachy-front",
-	"version": "3.126.8",
+	"version": "3.126.9",
 	"private": true,
 	"imports": {
 		"#lib": "./src/lib/index.js",
