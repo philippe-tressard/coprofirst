@@ -12,7 +12,11 @@
 #  Seule exception : la ligne IGMP (`allow out to 224.0.0.0/24 proto igmp`) est
 #  la forme que `UFWCommandRule.get_command` d'ufw 0.36.2 écrit pour cette règle,
 #  lue dans sa source, pas relevée sur un banc — S5 la dirait « manquante » à la
-#  première pose si la forme servie différait. `ip6tables -S ufw6-after-output`
+#  première pose si la forme servie différait. La ligne 853 (repli DoT de
+#  cloudflared, 27/11/2026) non plus : elle prend la forme adresse-port-protocole
+#  de la ligne 8080, que S5 dit servie sur les deux nœuds en refus, et l'adresse
+#  nue des lignes des pairs.
+#  `ip6tables -S ufw6-after-output`
 #  (A6) est relevé au banc du 11/11/2026 (conteneur jetable sur le standby, ufw
 #  0.36.2-9, iptables 1.8.11) après `durcir-noeud.sh --sortant constat`.
 durcissement_sortant_selftest() {
@@ -40,6 +44,7 @@ ufw allow out 123/udp comment 'sortie 2367'
 ufw allow out 80/tcp comment 'sortie 2367'
 ufw allow out 443/tcp comment 'sortie 2367'
 ufw allow out 7844 comment 'sortie 2367'
+ufw allow out to 1.1.1.1 port 853 proto tcp comment 'sortie 2367'
 ufw allow out 587/tcp comment 'sortie 2367'
 $L993
 ufw allow out to 224.0.0.0/24 proto igmp comment 'sortie 2367'
@@ -110,6 +115,11 @@ New profiles: skip"
     "$(durcissement_sortant_regles hote | grep -cxF 'allow out to 172.16.0.0/12 port 8080 proto tcp')"
   v "liste : et ne s'ouvre pas aux conteneurs (portée hôte)" 0 \
     "$(durcissement_sortant_regles conteneurs | grep -c '172.16.0.0/12')"
+  v "liste : le repli DNS-over-TLS de cloudflared (1.1.1.1:853) est déclaré à l'hôte" 1 \
+    "$(durcissement_sortant_regles hote | grep -cxF 'allow out to 1.1.1.1 port 853 proto tcp')"
+  v "liste : 853 ne s'ouvre ni aux conteneurs ni vers une autre adresse" 0 \
+    "$( { durcissement_sortant_regles conteneurs; durcissement_sortant_regles hote \
+          | grep -vxF 'allow out to 1.1.1.1 port 853 proto tcp'; } | grep -cw 853)"
   v "liste : bloc after6.rules en ASCII (ufw plante sinon)" 0 \
     "$(durcissement_sortant_bloc6 | LC_ALL=C grep -c '[^ -~]')"
   v "liste : l'ICMPv6 de l'hôte = MLDv2 seul, vers ff02::16, limite de saut 1" 1 \

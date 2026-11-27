@@ -83,6 +83,7 @@ hote|allow out 123/udp|NTP : systemd-timesyncd, pool Debian
 tous|allow out 80/tcp|apt en http (deb.debian.org, archive.raspberrypi.com) ; les apt-get des images construites en secours (#1758)
 tous|allow out 443/tcp|HTTPS : ghcr.io et GitHub, Docker Hub, apt https (Docker, Cloudflare, NodeSource), sondes du site et DoH, IA, WhatsApp (mesuré), registre
 hote|allow out 7844|tunnel Cloudflare : QUIC en udp (mesuré), http2 en tcp en repli
+hote|allow out to 1.1.1.1 port 853 proto tcp|tunnel Cloudflare : le repli DNS-over-TLS de cloudflared (adresse codée en dur) pour la seule requête SRV de l'edge, quand le résolveur du nœud l'échoue (mesuré sur rpi2, 10 refus au démarrage du tunnel le 26/11/2026, #3147)
 tous|allow out 587/tcp|SMTP d'OVH (MAIL_PORT) : courriels de l'API, alertes des scripts
 tous|allow out 993/tcp|IMAP d'OVH : relève des réponses par courriel
 hote|allow out to 224.0.0.0/24 proto igmp|IGMP : les rapports d'adhésion multicast du noyau vers 224.0.0.22 (TTL 1, ne quitte pas le LAN ; mesuré sur rpi1, 14 en 24 h)
