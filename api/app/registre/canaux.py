@@ -44,8 +44,8 @@ et pour `scripts/ci/purge-paquets.sh`.
 ⚠️ Avant #2210, une installation suivait un canal-branche (`replica`, `special-…`)
 et une version épinglée à part : `suivi_de` relit encore ces valeurs, qu'une image
 précédente écrirait pendant un retour arrière (Urgence en Standard, ou la version
-épinglée en Fixe). Son modèle, `canal_distribution`, est retiré (#3098) ; ses sauvegardes d'avant se
-relisent (`import_copropriete.TABLES_RETIREES`).
+épinglée en Fixe). Sa table, `canal_distribution`, est retirée (#3098 : le modèle en v3.126.1,
+la table par la 0007 du registre) ; ses sauvegardes d'avant se relisent (`import_copropriete.TABLES_RETIREES`).
 """
 
 from __future__ import annotations
