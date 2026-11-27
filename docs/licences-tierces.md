@@ -828,7 +828,7 @@ Icônes de `front/src/lib/icones-svg.json` qui ne viennent pas de Lucide — `ba
 | `yargs` | `MIT` | dependencies | oui |
 | `yargs-parser` | `ISC` | dependencies | oui |
 
-## Dépendances — `api` (31 dépendances directes)
+## Dépendances — `api` (32 dépendances directes)
 
 Seules les dépendances **directes** de l'API sont figées ici : les transitives ne sont pas épinglées dans `api/requirements.txt`, et leur métadonnée de licence changerait ce document sans que le dépôt bouge. Elles sont jugées par la liste blanche à chaque passage de la CI, comme les directes.
 
@@ -843,6 +843,7 @@ Seules les dépendances **directes** de l'API sont figées ici : les transitives
 | `email-validator` | `Unlicense` | directe | oui |
 | `fastapi` | `MIT` | directe | oui |
 | `fastapi-mail` | `MIT` | directe | oui |
+| `fonttools` | `MIT` | directe | oui |
 | `httpx` | `BSD-3-Clause` | directe | oui |
 | `jinja2` | `BSD` | directe | oui |
 | `limits` | `MIT` | directe | oui |
