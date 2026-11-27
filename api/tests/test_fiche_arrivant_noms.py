@@ -104,14 +104,14 @@ def test_un_nom_qui_tient_reste_entier():
 
 
 def test_un_nom_qui_deborde_reste_entier_et_le_dit():
-    pose = noms.poser("M.", "Jean-Christophe", "Exemplaire", 14.5, PLACE_4)
-    assert pose == ("M. Jean-Christophe EXEMPLAIRE", False)
+    pose = noms.poser("M.", "Jean-Christophe", "Martineau", 14.5, PLACE_4)
+    assert pose == ("M. Jean-Christophe MARTINEAU", False)
 
 
 def test_un_nom_trop_long_passe_a_la_ligne_plutot_que_d_etre_coupe():
-    pose = noms.poser("Mme", "Marie", "De La Fontaine-Témoin-Exemplaire", 12.5, PLACE_4)
+    pose = noms.poser("Mme", "Anne", "Martin-Leroy Durandal Martineau", 12.5, PLACE_4)
     assert pose.tient is False
-    assert pose.texte == "Mme Marie DE LA FONTAINE-TÉMOIN-EXEMPLAIRE", "le nom est tronqué"
+    assert pose.texte == "Mme Anne MARTIN-LEROY DURANDAL MARTINEAU", "le nom est tronqué"
 
 
 # ── Ce que la fiche en fait ───────────────────────────────────────────────────
