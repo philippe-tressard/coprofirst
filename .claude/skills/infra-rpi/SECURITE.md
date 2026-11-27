@@ -146,6 +146,15 @@ Il rouvre l'hôte et les conteneurs jusqu'au prochain rechargement d'ufw ;
   ponts Docker (l'adresse du conteneur change à sa recréation), injoignable de
   l'extérieur. Un autre port publié joint depuis l'hôte se déclare de même, avec son
   port : la plage ne s'ouvre pas à tout.
+- **Le repli DNS-over-TLS de cloudflared** (27/11/2026, #3147) : quand le résolveur du
+  nœud échoue la requête SRV de l'edge (`_v2-origintunneld._tcp.argotunnel.com`),
+  cloudflared la rejoue en DoT vers une adresse codée en dur, `1.1.1.1:853`
+  (`dotServerAddr`, `edgediscovery/allregions/discovery.go`). S5 l'a vue refusée sur
+  rpi2 (« 10 1.1.1.1 853/tcp hôte ») : le tunnel redémarrait après un gel (#3148),
+  pendant une défaillance du DNS de la box. Déclaré : `allow out to 1.1.1.1 port 853
+  proto tcp`, portée hôte — une adresse, un port. Le repli ne rattrape que le SRV : les
+  adresses de l'edge restent résolues par le résolveur du nœud, sans qui le tunnel ne
+  démarre toujours pas.
 - Le banc qui a éprouvé la pose : un conteneur jetable `--cap-add NET_ADMIN` sur le
   standby (son propre espace réseau), ufw installé dedans, `durcir-noeud.sh --sortant`
   joué pour de vrai — refus, comportement (443 passe, 4444 refusé en 1 s), retour.
