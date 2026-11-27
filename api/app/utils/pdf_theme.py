@@ -72,6 +72,12 @@ _POLICE_LISIBLE = (
 _police_lisible_cache: str | None = None
 
 
+def fichier_police_lisible(graisse: int) -> Path:
+    """Le fichier d'Atkinson Hyperlegible de cette `graisse` (400 ou 700) — pour qui
+    MESURE un texte avant de le poser (la fiche d'accueil, #3144)."""
+    return _POLICES / next(nom for _, g, nom in _POLICE_LISIBLE if g == graisse)
+
+
 def police_lisible_css() -> str:
     """Les `@font-face` d'Atkinson Hyperlegible, fichiers en data-URI.
 

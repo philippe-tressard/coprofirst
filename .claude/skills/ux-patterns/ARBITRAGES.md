@@ -656,3 +656,11 @@ vers un numéro absent, et un `lint:*` ou un fichier de test de « Tenu par » q
 - **Écarté** : non retrouvé.
 - **Tenu par** : aucun garde-fou nommé.
 - **Historique** : entrée écrite le 23/11/2026 (#2980), d'après les composants.
+
+### n° 88 · en vigueur — Fiche d'accueil : cartes à bandeau, un nom par ligne
+27/11/2026 · #3144 · l'utilisateur, sur maquette (E4 « Bandeau de bâtiment », parmi cinq), puis sur la fiche d'une installation réelle · non écrit dans `SKILL.md` (document imprimé, pas un écran)
+- **Décidé** : le conseil et le syndic s'impriment en cartes blanches à bandeau, d'**une seule couleur** (la principale de la palette) — le bâtiment pour le conseil, la **fonction** du contact pour le syndic. Un membre du conseil s'écrit en trois lignes : nom, étage en toutes lettres (« 2ème étage »), puis son rôle en **vignette** (« Gestionnaire du site », « Président ») ; le contact principal du syndic porte la vignette « Interlocuteur principal ». Le cabinet et son adresse montent dans le titre de section. **Un nom tient sur une ligne** : taille commune au bloc, la plus grande où le plus long tient (14,5 px au plus, 12,5 px au moins) ; un nom qui ne tient pas — photo comprise — passe le prénom à son initiale (« M. J.-C. EXEMPLE ») ; s'il ne tient même pas abrégé, il passe à la ligne plutôt que d'être coupé. Les vignettes sont en 9 px, seule exception au plancher de 10,5 px de #2776.
+- **Pourquoi** : les noms du conseil « ne ressortaient pas, écrasés avec le reste » ; une maquette sur la fiche réelle a montré qu'en 14,5 px les noms longs passaient à la ligne, et qu'un nom coupé sur deux lignes se lit mal sur papier.
+- **Écarté** : une teinte par bâtiment (les couleurs du rang dans l'arbre — trop de couleurs sur une feuille) ; noms à 14,5 px quitte à passer à la ligne ; le mot « Étage » devant le numéro seul (« Étage 2ème ») ; le rôle en texte gris italique ; l'étoile ★ devant le contact principal ; un bandeau « Syndic » sur chaque carte ; une carte « Astreinte » (aucune donnée ne la nourrit).
+- **Tenu par** : `test_fiche_arrivant_noms.py` (taille, initiale, passage à la ligne, trois lignes, bandeau et vignette du syndic) ; `test_fiche_arrivant_lisible.py` (`SOUS_LE_PLANCHER`, le plancher des noms).
+- **Historique** : entrée écrite avec le lot.

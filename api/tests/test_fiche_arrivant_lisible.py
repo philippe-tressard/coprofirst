@@ -20,6 +20,7 @@ import pytest
 
 from app.utils import pdf_theme
 from app.utils.fiche_arrivant import decouper_titre, generer_fiche_arrivant
+from app.utils import fiche_arrivant_noms as noms
 from app.utils.fiche_arrivant_css import CSS
 
 #: Le plus petit corps admis sur la fiche, en px (≈ 7,9 pt). Avant #2776, les
@@ -51,11 +52,38 @@ def _taille(selecteur: str) -> float:
 # ── Le corps ──────────────────────────────────────────────────────────────────
 
 
+#: Les règles admises sous le plancher, et pourquoi. Une entrée qui ne sert plus fait
+#: échouer le contrôle : l'exception ne survit pas à ce qui la justifiait.
+SOUS_LE_PLANCHER = {
+    ".vignette": "le rôle d'un membre ou l'interlocuteur principal du syndic, en 9 px : "
+    "une indication secondaire, voulue discrète sur maquette (#3144) — jamais une consigne",
+}
+
+
+def _regles() -> list[tuple[str, str]]:
+    """(sélecteur, corps) de chaque règle de la feuille, commentaires retirés."""
+    sans_commentaires = re.sub(r"/\*.*?\*/", "", CSS, flags=re.S)
+    return [
+        (sel.strip(), corps)
+        for sel, corps in re.findall(r"([^{}]+)\{([^{}]*)\}", sans_commentaires)
+    ]
+
+
 def test_aucun_texte_de_la_fiche_sous_le_corps_minimal():
-    tailles = [float(t) for t in re.findall(r"font-size:\s*([\d.]+)px", CSS)]
+    tailles = [
+        (sel, float(t))
+        for sel, corps in _regles()
+        for t in re.findall(r"font-size:\s*([\d.]+)px", corps)
+    ]
     assert tailles, "la feuille ne fixe plus aucune taille : le contrôle ne voit rien"
-    trop_petites = sorted({t for t in tailles if t < CORPS_MINIMAL})
+    trop_petites = sorted(
+        {(sel, t) for sel, t in tailles if t < CORPS_MINIMAL and sel not in SOUS_LE_PLANCHER}
+    )
     assert not trop_petites, f"corps sous {CORPS_MINIMAL} px sur la fiche : {trop_petites}"
+    servies = {sel for sel, t in tailles if t < CORPS_MINIMAL}
+    assert set(SOUS_LE_PLANCHER) <= servies, (
+        f"exception sans objet : {set(SOUS_LE_PLANCHER) - servies} — la retirer"
+    )
 
 
 def test_les_consignes_s_impriment_en_gros_et_en_noir():
@@ -66,7 +94,10 @@ def test_les_consignes_s_impriment_en_gros_et_en_noir():
 
 def test_la_phrase_d_accueil_et_les_noms_restent_lisibles():
     assert _taille(".accueil") >= CORPS_CONSIGNES
-    assert _taille(".membre-nom") >= 13
+    #  La taille des noms se calcule (`fiche_arrivant_noms`, #3144) : la feuille n'en
+    #  porte que le défaut, et le calcul ne descend jamais sous son plancher.
+    assert "var(--taille-nom, 14.5px)" in CSS
+    assert noms.PLANCHER >= 12.5, "les noms du conseil rapetissent sous 12,5 px (9,4 pt)"
 
 
 # ── La police ─────────────────────────────────────────────────────────────────
@@ -119,7 +150,7 @@ def test_chaque_ligne_saisie_devient_une_puce():
     fiche = _fiche([("📦 1. Arrivée", "Première ligne\n\nDeuxième <strong>ligne</strong>")])
     assert "<li>Première ligne</li><li>Deuxième <strong>ligne</strong></li>" in fiche
     assert '<div class="regle-pictogramme">📦</div>' in fiche
-    assert '<span class="regle-numero">1.</span>Arrivée' in fiche
+    assert '<span class="regle-numero">1</span>Arrivée' in fiche
 
 
 def test_un_titre_sans_pictogramme_n_affiche_pas_de_case_vide():

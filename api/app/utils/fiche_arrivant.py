@@ -14,7 +14,16 @@ from typing import Optional
 from app.seed.consignes_arrivant import ACCUEIL_GABARIT
 from app.utils.consignes_arrivant import texte_en_html
 from app.utils.dates_fr import date_longue
-from app.utils.fiche_arrivant_css import CSS
+from app.utils import fiche_arrivant_noms as noms
+from app.utils.fiche_arrivant_css import (
+    CSS,
+    ECART_CARTES_PX,
+    ECART_SYNDIC_PX,
+    PHOTO_ECART_PX,
+    PHOTO_PX,
+    QR_PX,
+    place_nom,
+)
 from app.utils.liens import adresse_lisible
 from app.utils.palettes import recolorer
 from app.utils.pdf_theme import (
@@ -75,20 +84,30 @@ def decouper_titre(titre: str) -> tuple[str, str, str]:
 # ── Builders ─────────────────────────────────────────────────────────────────
 
 
-def _nom_complet(m: dict) -> str:
-    return f"{escape(m.get('genre', ''))} {escape(m.get('prenom', ''))} {escape(m.get('nom', '').upper())}".strip()
+def _nom(m: dict, taille: float, place: float, photo_html: str = "") -> str:
+    """Le nom d'une personne, sur UNE ligne : taille commune du bloc, prénom abrégé
+    s'il ne tient pas (`fiche_arrivant_noms`, #3144). Échappé ici."""
+    pose = noms.poser(m.get("genre", ""), m.get("prenom", ""), m.get("nom", ""), taille, place)
+    classe = "membre-nom" if pose.tient else "membre-nom long"
+    return f'<div class="{classe}">{photo_html}{escape(pose.texte)}</div>'
 
 
-def _build_cs_membre(m: dict) -> str:
-    """Un membre du conseil : nom, rôle et étage — sur une ligne lisible."""
+def _vignette(texte: str) -> str:
+    return f'<div class="vignette-ligne"><span class="vignette">{escape(texte)}</span></div>'
+
+
+def _build_cs_membre(m: dict, taille: float, place: float) -> str:
+    """Un membre du conseil, en trois lignes : nom, étage, puis son rôle en vignette."""
     is_president = m.get("est_president", False)
     is_gestionnaire = m.get("est_gestionnaire_site", False)
 
-    #  La photo du gestionnaire du site, comme avant #2776 ; les pastilles
-    #  d'initiales des autres membres sont parties : elles ne disaient rien que
-    #  le nom ne dise, et prenaient la largeur du corps agrandi.
+    #  La photo du gestionnaire du site, devant son nom ; les pastilles
+    #  d'initiales des autres membres sont parties (#2776) : elles ne disaient rien
+    #  que le nom ne dise.
     photo_uri = _photo_data_uri(m.get("photo_url")) if is_gestionnaire else None
     photo_html = f'<img class="membre-photo" src="{photo_uri}" alt="">' if photo_uri else ""
+    if photo_html:
+        place -= PHOTO_PX + PHOTO_ECART_PX
 
     role = "Gestionnaire du site" if is_gestionnaire else ("Président" if is_president else "")
 
@@ -96,15 +115,17 @@ def _build_cs_membre(m: dict) -> str:
     #  et il était faux en Python. Un conseiller du RDC n'avait donc AUCUN
     #  étage sur cette fiche — pas un étage faux, un étage absent.
     etage = m.get("etage")
-    details = [f"<b>{role}</b>"] if role else []
-    if etage is not None:
-        details.append(escape(f"Étage {etage_label(etage)}"))
-
+    etage_html = (
+        f'<div class="membre-detail">{escape(etage_label(etage, suffixe=True))}</div>'
+        if etage is not None
+        else ""
+    )
     return (
-        f'<div class="membre">{photo_html}<div>'
-        f'<div class="membre-nom">{_nom_complet(m)}</div>'
-        f'<div class="membre-detail">{" · ".join(details)}</div>'
-        "</div></div>"
+        '<div class="membre">'
+        + _nom(m, taille, place, photo_html)
+        + etage_html
+        + (_vignette(role) if role else "")
+        + "</div>"
     )
 
 
@@ -172,20 +193,31 @@ def _build_cs_section(cs_data: dict) -> str:
             except (ValueError, TypeError):
                 vote += f" — {ag_date}"
 
-    #  Quatre colonnes au plus : au-delà, les bâtiments passent à la ligne.
+    #  Quatre colonnes au plus : au-delà, les bâtiments passent à la ligne. Une
+    #  taille commune à tous les noms du conseil, la plus grande où le plus long
+    #  tient — photo NON comprise : un nom que la photo fait déborder abrège son
+    #  prénom plutôt que de rapetisser tous les autres (#3144).
     colonnes = min(len(by_bat), 4)
+    place = place_nom(colonnes, ecart=ECART_CARTES_PX)
+    taille = noms.taille_commune(
+        [
+            (noms.nom_complet(m.get("genre", ""), m.get("prenom", ""), m.get("nom", "")), place)
+            for m in membres
+        ]
+    )
     html = '<section class="annuaire-section">\n'
     html += f'  <div class="sec-titre"><h3>📇 Conseil syndical</h3><span class="muted">{escape(vote)}</span></div>\n'
-    html += f'  <div class="bats" style="grid-template-columns: repeat({colonnes}, 1fr)">\n'
+    html += f'  <div class="bats" style="grid-template-columns: repeat({colonnes}, 1fr); --taille-nom: {taille:g}px">\n'
     for _, entete, bat_membres in sorted(
         (_batiment_entete(bid, ms) for bid, ms in by_bat.items()),
         key=lambda t: t[0],
     ):
         html += '    <div class="bat">\n'
         html += f'      <div class="bat-label">{entete}</div>\n'
+        html += '      <div class="bat-corps">\n'
         for m in bat_membres:
-            html += f"      {_build_cs_membre(m)}\n"
-        html += "    </div>\n"
+            html += f"        {_build_cs_membre(m, taille, place)}\n"
+        html += "      </div>\n    </div>\n"
     html += "  </div>\n</section>\n"
     return html
 
@@ -205,11 +237,24 @@ def _build_syndic_section(syndic_data: dict) -> str:
         if qr_src:
             qr_html = f'<img class="qr-code" src="{qr_src}" alt="QR Extranet">'
 
+    #  Trois contacts par ligne au plus, comme avant #2776 ; le QR prend sa place
+    #  à droite de la rangée.
+    colonnes = max(1, min(len(membres), 3))
+    place = place_nom(
+        colonnes, ecart=ECART_SYNDIC_PX, reserve=QR_PX + ECART_SYNDIC_PX if qr_html else 0.0
+    )
+    taille = noms.taille_commune(
+        [
+            (noms.nom_complet(m.get("genre", ""), m.get("prenom", ""), m.get("nom", "")), place)
+            for m in membres
+        ]
+    )
+
     contacts = ""
     for m in membres:
-        fonction = m.get("fonction") or ("Gestionnaire" if m.get("est_principal") else "")
-        if m.get("est_principal"):
-            fonction = "★ " + fonction
+        #  La fonction dans le bandeau ; l'interlocuteur principal le dit en
+        #  vignette, sous son nom (#3144) — l'étoile qui le marquait est partie.
+        fonction = m.get("fonction") or ("Gestionnaire" if m.get("est_principal") else "Contact")
         lignes = []
         if m.get("email"):
             lignes.append(f"✉ {escape(m['email'])}")
@@ -217,21 +262,26 @@ def _build_syndic_section(syndic_data: dict) -> str:
             if tel.strip():
                 lignes.append(f"☎ {escape(tel.strip())}")
         contacts += (
-            '<div class="syndic-contact">'
-            + (f'<div class="syndic-fonction">{escape(fonction)}</div>' if fonction else "")
-            + f'<div class="syndic-personne">{_nom_complet(m)}</div>'
-            + "<br>".join(lignes)
-            + "</div>"
+            '<div class="bat">'
+            f'<div class="bat-label">{escape(fonction)}</div>'
+            '<div class="bat-corps">'
+            + _nom(m, taille, place)
+            + (_vignette("Interlocuteur principal") if m.get("est_principal") else "")
+            + (f'<div class="membre-detail">{"<br>".join(lignes)}</div>' if lignes else "")
+            + "</div></div>"
         )
 
-    #  Trois contacts par ligne au plus, comme avant #2776.
-    colonnes = max(1, min(len(membres), 3))
-    adresse_html = f'<div class="syndic-adresse">📍 {escape(adresse)}</div>' if adresse else ""
+    #  Le cabinet et son adresse montent dans le titre : les contacts gardent
+    #  toute la largeur, et leurs noms une ligne.
+    nom_html = f'<span class="syndic-titre-nom">{escape(nom)}</span>' if nom else ""
+    adresse_html = (
+        f'<span class="syndic-titre-adresse">📍 {escape(adresse)}</span>' if adresse else ""
+    )
     return (
-        '<section>\n  <div class="sec-titre"><h3>🏛 Syndic</h3></div>\n'
+        f'<section>\n  <div class="sec-titre"><h3>🏛 Syndic</h3>{nom_html}{adresse_html}</div>\n'
         '  <div class="syndic">'
-        f'<div><div class="syndic-nom">{escape(nom)}</div>{adresse_html}</div>'
-        f'<div class="syndic-contacts" style="grid-template-columns: repeat({colonnes}, 1fr)">{contacts}</div>'
+        '<div class="syndic-contacts" style="grid-template-columns: '
+        f'repeat({colonnes}, 1fr); --taille-nom: {taille:g}px">{contacts}</div>'
         f"{qr_html}</div>\n</section>\n"
     )
 
@@ -242,7 +292,7 @@ def _build_regle(titre: str, contenu: str) -> str:
     #  « Une ligne par consigne », dit l'aide de saisie : chaque ligne devient une
     #  puce. Le contenu arrive échappé ; un saut de ligne n'y coupe aucune balise.
     puces = "".join(f"<li>{ligne}</li>" for ligne in contenu.split("\n") if ligne.strip())
-    numero = f'<span class="regle-numero">{num}.</span>' if num else ""
+    numero = f'<span class="regle-numero">{num}</span>' if num else ""
     pictogramme = f'<div class="regle-pictogramme">{pic}</div>' if pic else ""
     classe = "regle" if pic else "regle sans-pictogramme"
     return (

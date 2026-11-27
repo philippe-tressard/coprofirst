@@ -70,4 +70,9 @@ markupsafe==3.0.4
 #  régulières. Roues abi3 (aarch64 compris), aucune bibliothèque système. MIT.
 nh3==0.3.8
 weasyprint==70.0
+#  Mesurer un nom dans la police embarquée avant de le poser sur la fiche d'accueil
+#  (`utils/fiche_arrivant_noms`, #3144) : il doit tenir sur UNE ligne. Arrivait déjà
+#  par `weasyprint`, à la même version : épinglé ici parce que le code l'importe
+#  directement (#1048). Pur Python, MIT.
+fonttools==4.69.1
 openpyxl==3.1.5

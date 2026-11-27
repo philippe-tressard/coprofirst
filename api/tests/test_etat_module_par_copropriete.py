@@ -102,6 +102,10 @@ DU_PROCESSUS = {
     ("utils/recherche_affaires.py", "_plat()"): (
         "le repli d'UN caractère (accents, casse) : fonction pure d'un caractère"
     ),
+    ("utils/fiche_arrivant_noms.py", "_metriques()"): (
+        "les chasses de la police embarquée dans l'image, lues pour mesurer un nom "
+        "(#3144) : un fichier du produit, aucune donnée de copropriété"
+    ),
     ("utils/pdf_theme.py", "_icones_cache"): (
         "le catalogue d'icônes, lu d'un fichier versionné avec le code"
     ),
