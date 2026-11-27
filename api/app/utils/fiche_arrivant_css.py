@@ -144,6 +144,11 @@ body {
     + _px(CONTENU_X_PX)
     + """ 4px; flex: 1; display: flex; flex-direction: column; gap: 5px;
 }
+/*  L'air avant le conseil, le syndic et les consignes (#3151) : la place que la page
+    laisse libre se partage en parts égales devant chaque section, au lieu de dormir
+    sous la dernière rubrique. Une marge `auto` ne prend que ce qui reste — jamais un
+    écart fixe, qui ferait déborder la feuille d'une résidence aux longues consignes. */
+.content > section { margin-top: auto; }
 h2, h3 {
   font-family: """
     + FONT_SERIF

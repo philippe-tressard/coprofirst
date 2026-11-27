@@ -159,3 +159,13 @@ def test_un_titre_sans_pictogramme_n_affiche_pas_de_case_vide():
     fiche = _fiche([("Stationnement", "Une ligne")])
     assert 'class="regle sans-pictogramme"' in fiche
     assert "regle-pictogramme" not in fiche.split("<body>")[1]
+
+
+def test_l_air_avant_les_sections_ne_prend_que_la_place_libre():
+    """#3151 : la place que la page laisse libre se partage devant le conseil, le
+    syndic et les consignes. Une marge `auto` ne prend que ce qui reste ; un écart
+    fixe ferait déborder la feuille d'une résidence aux longues consignes, et le
+    débordement est coupé sans un mot (#3143)."""
+    regle = dict(_regles()).get(".content > section")
+    assert regle, "les sections ne reçoivent plus l'air de la page"
+    assert re.search(r"margin-top:\s*auto\s*;", regle), f"écart fixe avant les sections : {regle}"
