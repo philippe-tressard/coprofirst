@@ -212,9 +212,10 @@ h3 { font-size: 17px; }
     + """ 5px; }
 .membre { padding: 2px 0; }
 .membre + .membre { border-top: 1px solid var(--border); margin-top: 1px; padding-top: 3px; }
-/*  La taille vient du document (`--taille-nom`, `fiche_arrivant_noms`) : la plus
-    grande où le plus long nom du bloc tient sur une ligne. `.long` : un nom qui ne
-    tient même pas abrégé passe à la ligne plutôt que d'être coupé. */
+/*  La taille vient du document (`--taille-nom` sur `.content`, `fiche_arrivant_noms`) :
+    UNE pour le conseil et le syndic, la plus grande où chaque nom tient sur une ligne,
+    photo comprise (#3151). `.long` : un nom qui ne tient pas même au plancher passe à
+    la ligne plutôt que d'être coupé. */
 .membre-nom {
   font-size: var(--taille-nom, 14.5px); font-weight: 700; line-height: 1.2;
   color: var(--navy); white-space: nowrap; letter-spacing: -.01em;

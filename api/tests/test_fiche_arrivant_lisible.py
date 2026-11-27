@@ -95,9 +95,11 @@ def test_les_consignes_s_impriment_en_gros_et_en_noir():
 def test_la_phrase_d_accueil_et_les_noms_restent_lisibles():
     assert _taille(".accueil") >= CORPS_CONSIGNES
     #  La taille des noms se calcule (`fiche_arrivant_noms`, #3144) : la feuille n'en
-    #  porte que le défaut, et le calcul ne descend jamais sous son plancher.
+    #  porte que le défaut, et le calcul ne descend jamais sous son plancher. Il
+    #  pourrait baisser pour qu'un nom tienne entier (#3151), jamais sous le corps
+    #  minimal de #2776 sans l'accord de l'utilisateur.
     assert "var(--taille-nom, 14.5px)" in CSS
-    assert noms.PLANCHER >= 12.5, "les noms du conseil rapetissent sous 12,5 px (9,4 pt)"
+    assert noms.PLANCHER >= 12.5, "les noms du conseil et du syndic rapetissent sous 12,5 px"
 
 
 # ── La police ─────────────────────────────────────────────────────────────────
