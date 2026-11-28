@@ -16,8 +16,16 @@ Les résidents qui reçoivent cette fiche sont souvent âgés. Les consignes
 s'imprimaient en 10,5 px (7,9 pt) et en gris : elles passent à 14 px (10,5 pt) et
 en noir, les titres de rubrique à 16,5 px (12,4 pt). La mise en page retenue par
 l'auteur est la variante « une page, règles en pleine largeur » : des lignes
-longues, donc des rubriques moins hautes, et le document tient toujours sur UNE
-feuille A4.
+longues, donc des rubriques moins hautes. Avec les rubriques du gabarit, le document
+tient sur UNE feuille A4.
+
+## Plus de rubriques : une seconde feuille, jamais une coupure (#3143, 28/11/2026)
+
+`.page` a une hauteur MINIMALE, jamais fixe : quand les consignes saisies dépassent
+une feuille (le conseil peut en saisir douze), la fiche passe sur la suivante.
+Auparavant, `height` et `overflow: hidden` coupaient sans un mot le bas de la page,
+pied compris. Une rubrique ne se coupe pas entre deux feuilles (`.regle`). 🔒
+`test_fiche_arrivant_debordement.py`.
 
 ## Cartes à bandeau (#3144, 27/11/2026)
 
@@ -36,8 +44,8 @@ WeasyPrint). Les petits libellés ne sont jamais en or : l'or de la charte sur b
 ne contraste qu'à 2,6:1.
 
 🔴 Le document se lit dans le NAVIGATEUR, qui l'imprime lui-même (le PDF n'existe
-que dans les tests) : une retouche se juge à l'impression de Chromium en A4, une
-seule page, jamais à l'écran.
+que dans les tests) : une retouche se juge à l'impression de Chromium en A4, jamais
+à l'écran.
 """
 
 from __future__ import annotations
@@ -88,6 +96,8 @@ CSS = (
 @media print {
   body { background: none !important; }
   .page { box-shadow: none !important; border: none !important; border-radius: 0 !important; }
+  /* Sur papier rien ne défile : la fiche passe sur la feuille suivante, jamais coupée (#3143). */
+  .page { overflow: visible !important; }
 }
 """
     + PALETTE_CSS
@@ -111,7 +121,7 @@ body {
   -webkit-print-color-adjust: exact; print-color-adjust: exact;
 }
 .page {
-  max-width: 210mm; height: 285mm; margin: 0 auto; background: var(--card);
+  max-width: 210mm; min-height: 285mm; margin: 0 auto; background: var(--card);
   border-radius: 12px; overflow: hidden; box-shadow: 0 4px 24px rgba(30,58,95,.12);
   display: flex; flex-direction: column;
 }
@@ -292,7 +302,7 @@ h3 { font-size: 17px; }
 .consigne-footer-note { text-align: center; font-size: 12px; color: var(--muted); font-style: italic; }
 
 .footer {
-  padding: 7px 26px; background: var(--navy); color: var(--sur-primaire); position: relative;
+  break-inside: avoid; padding: 7px 26px; background: var(--navy); color: var(--sur-primaire); position: relative;
   display: flex; justify-content: space-between; gap: 12px; font-size: 12px;
 }
 .footer::before {
