@@ -95,9 +95,11 @@ def test_les_consignes_s_impriment_en_gros_et_en_noir():
 def test_la_phrase_d_accueil_et_les_noms_restent_lisibles():
     assert _taille(".accueil") >= CORPS_CONSIGNES
     #  La taille des noms se calcule (`fiche_arrivant_noms`, #3144) : la feuille n'en
-    #  porte que le défaut, et le calcul ne descend jamais sous son plancher.
+    #  porte que le défaut, et le calcul ne descend jamais sous son plancher. Il
+    #  pourrait baisser pour qu'un nom tienne entier (#3151), jamais sous le corps
+    #  minimal de #2776 sans l'accord de l'utilisateur.
     assert "var(--taille-nom, 14.5px)" in CSS
-    assert noms.PLANCHER >= 12.5, "les noms du conseil rapetissent sous 12,5 px (9,4 pt)"
+    assert noms.PLANCHER >= 12.5, "les noms du conseil et du syndic rapetissent sous 12,5 px"
 
 
 # ── La police ─────────────────────────────────────────────────────────────────
@@ -157,3 +159,13 @@ def test_un_titre_sans_pictogramme_n_affiche_pas_de_case_vide():
     fiche = _fiche([("Stationnement", "Une ligne")])
     assert 'class="regle sans-pictogramme"' in fiche
     assert "regle-pictogramme" not in fiche.split("<body>")[1]
+
+
+def test_l_air_avant_les_sections_ne_prend_que_la_place_libre():
+    """#3151 : la place que la page laisse libre se partage devant le conseil, le
+    syndic et les consignes. Une marge `auto` ne prend que ce qui reste ; un écart
+    fixe ferait déborder la feuille d'une résidence aux longues consignes, et le
+    débordement est coupé sans un mot (#3143)."""
+    regle = dict(_regles()).get(".content > section")
+    assert regle, "les sections ne reçoivent plus l'air de la page"
+    assert re.search(r"margin-top:\s*auto\s*;", regle), f"écart fixe avant les sections : {regle}"
