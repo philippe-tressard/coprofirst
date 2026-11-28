@@ -88,6 +88,8 @@ CSS = (
 @media print {
   body { background: none !important; }
   .page { box-shadow: none !important; border: none !important; border-radius: 0 !important; }
+  /* Sur papier rien ne défile : la fiche passe sur la feuille suivante, jamais coupée (#3143). */
+  .page { overflow: visible !important; }
 }
 """
     + PALETTE_CSS
@@ -111,7 +113,7 @@ body {
   -webkit-print-color-adjust: exact; print-color-adjust: exact;
 }
 .page {
-  max-width: 210mm; height: 285mm; margin: 0 auto; background: var(--card);
+  max-width: 210mm; min-height: 285mm; margin: 0 auto; background: var(--card);
   border-radius: 12px; overflow: hidden; box-shadow: 0 4px 24px rgba(30,58,95,.12);
   display: flex; flex-direction: column;
 }
@@ -292,7 +294,7 @@ h3 { font-size: 17px; }
 .consigne-footer-note { text-align: center; font-size: 12px; color: var(--muted); font-style: italic; }
 
 .footer {
-  padding: 7px 26px; background: var(--navy); color: var(--sur-primaire); position: relative;
+  break-inside: avoid; padding: 7px 26px; background: var(--navy); color: var(--sur-primaire); position: relative;
   display: flex; justify-content: space-between; gap: 12px; font-size: 12px;
 }
 .footer::before {
