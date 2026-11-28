@@ -84,6 +84,13 @@ PREUVES_SANS_PERTE: dict[str, str] = {
         "count(prix_centimes) from petite_annonce → 4|0|1 (la 0353 a reporté chaque prix "
         "dans prix_centimes, puis vidé prix ; 0 écart relevé avant elle)"
     ),
+    "canal_distribution": (
+        "28/11/2026 04:37 — rpi2 (actif, primaire), v3.127.2, plateforme 0006 : select nom, "
+        "version, version_precedente from canal_distribution → replica|3.11.7|3.6.1 ; "
+        "count(*) → 1 — même ligne que sur rpi1 à 00:15, avant la bascule (le canal-branche "
+        "retiré par #3009, lu par aucun code depuis #2210 ; la sauvegarde du registre du "
+        "27/11 l'écarte déjà, `ignorees`)"
+    ),
 }
 
 #: La règle de la preuve naît avec #2937 : les retraits d'avant (0308, 0311) sont en
