@@ -144,6 +144,11 @@ body {
     + _px(CONTENU_X_PX)
     + """ 4px; flex: 1; display: flex; flex-direction: column; gap: 5px;
 }
+/*  L'air avant le conseil, le syndic et les consignes (#3151) : la place que la page
+    laisse libre se partage en parts égales devant chaque section, au lieu de dormir
+    sous la dernière rubrique. Une marge `auto` ne prend que ce qui reste — jamais un
+    écart fixe, qui ferait déborder la feuille d'une résidence aux longues consignes. */
+.content > section { margin-top: auto; }
 h2, h3 {
   font-family: """
     + FONT_SERIF
@@ -212,9 +217,10 @@ h3 { font-size: 17px; }
     + """ 5px; }
 .membre { padding: 2px 0; }
 .membre + .membre { border-top: 1px solid var(--border); margin-top: 1px; padding-top: 3px; }
-/*  La taille vient du document (`--taille-nom`, `fiche_arrivant_noms`) : la plus
-    grande où le plus long nom du bloc tient sur une ligne. `.long` : un nom qui ne
-    tient même pas abrégé passe à la ligne plutôt que d'être coupé. */
+/*  La taille vient du document (`--taille-nom` sur `.content`, `fiche_arrivant_noms`) :
+    UNE pour le conseil et le syndic, la plus grande où chaque nom tient sur une ligne,
+    photo comprise (#3151). `.long` : un nom qui ne tient pas même au plancher passe à
+    la ligne plutôt que d'être coupé. */
 .membre-nom {
   font-size: var(--taille-nom, 14.5px); font-weight: 700; line-height: 1.2;
   color: var(--navy); white-space: nowrap; letter-spacing: -.01em;
