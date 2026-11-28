@@ -8,8 +8,10 @@ caractères, dans une police dessinée pour les malvoyants, embarquée dans le
 document. Ces tests refusent le retour du petit corps, la perte de la police et la
 perte d'une ligne de consigne.
 
-Ce qu'ils ne voient pas : la tenue sur UNE page A4. Elle dépend du rendu, et se
-vérifie à l'impression de Chromium (`fiche_arrivant_css.py`, en tête).
+Ce qu'ils ne voient pas : la mise en page imprimée. Elle dépend du rendu, et se
+vérifie à l'impression de Chromium (`fiche_arrivant_css.py`, en tête) ; une fiche
+trop longue passe sur une seconde feuille sans rien couper
+(`test_fiche_arrivant_debordement.py`, #3143).
 """
 
 from __future__ import annotations

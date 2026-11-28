@@ -16,8 +16,16 @@ Les résidents qui reçoivent cette fiche sont souvent âgés. Les consignes
 s'imprimaient en 10,5 px (7,9 pt) et en gris : elles passent à 14 px (10,5 pt) et
 en noir, les titres de rubrique à 16,5 px (12,4 pt). La mise en page retenue par
 l'auteur est la variante « une page, règles en pleine largeur » : des lignes
-longues, donc des rubriques moins hautes, et le document tient toujours sur UNE
-feuille A4.
+longues, donc des rubriques moins hautes. Avec les rubriques du gabarit, le document
+tient sur UNE feuille A4.
+
+## Plus de rubriques : une seconde feuille, jamais une coupure (#3143, 28/11/2026)
+
+`.page` a une hauteur MINIMALE, jamais fixe : quand les consignes saisies dépassent
+une feuille (le conseil peut en saisir douze), la fiche passe sur la suivante.
+Auparavant, `height` et `overflow: hidden` coupaient sans un mot le bas de la page,
+pied compris. Une rubrique ne se coupe pas entre deux feuilles (`.regle`). 🔒
+`test_fiche_arrivant_debordement.py`.
 
 ## Cartes à bandeau (#3144, 27/11/2026)
 
@@ -36,8 +44,8 @@ WeasyPrint). Les petits libellés ne sont jamais en or : l'or de la charte sur b
 ne contraste qu'à 2,6:1.
 
 🔴 Le document se lit dans le NAVIGATEUR, qui l'imprime lui-même (le PDF n'existe
-que dans les tests) : une retouche se juge à l'impression de Chromium en A4, une
-seule page, jamais à l'écran.
+que dans les tests) : une retouche se juge à l'impression de Chromium en A4, jamais
+à l'écran.
 """
 
 from __future__ import annotations
