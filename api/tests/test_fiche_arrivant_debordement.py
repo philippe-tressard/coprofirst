@@ -26,17 +26,13 @@ from __future__ import annotations
 
 import re
 
-from annotated_types import MaxLen
-
 from app.utils.consignes_arrivant import Consignes
 from app.utils.fiche_arrivant import generer_fiche_arrivant
 from app.utils.fiche_arrivant_css import CSS
 from tests.aides_pdf import besoin_weasyprint
 
 #: Le nombre maximal de rubriques que l'API admet, lu sur le schéma, jamais recopié.
-MAX_RUBRIQUES = next(
-    m.max_length for m in Consignes.model_fields["consignes"].metadata if isinstance(m, MaxLen)
-)
+MAX_RUBRIQUES = Consignes.model_json_schema()["properties"]["consignes"]["maxItems"]
 #: Ce qui doit se lire en bas de la fiche, quelle que soit sa longueur.
 PIED = "Bienvenue chez vous"
 NOTE = "Ce document est un résumé."
